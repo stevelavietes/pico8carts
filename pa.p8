@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
-function make_board(w, h)
+function make_board(w, h, x, y, p)
  local b = {}  
  b.w = w
  b.h = h 
@@ -16,8 +16,9 @@ function make_board(w, h)
  end  
  b.cx = 0
  b.cy = 0
- b.p = 0
-  
+ b.x = x
+ b.y = y
+ b.p = p or 0
  return b
 end
 
@@ -60,7 +61,8 @@ function update_board(b)
  end
 end
 
-function draw_board(b)	
+function draw_board(b)	 
+ pushc(-b.x, -b.y)
  for h = 1, b.h do
   local r = b.t[h]
   for w = 1, b.w do
@@ -70,55 +72,79 @@ function draw_board(b)
  local x = b.cx*8
  local y = b.cy*8
  draw_curs(x, y, g.tick%30 < 15)
+ popc() 
 end
 
 function draw_curs(x, y, grow)
- local c=7
+ local c,l,p=7,1,0
  if grow then
-  line(x-1, y-1, x+2, y-1, c)
-  line(x-1, y-1, x-1, y+2, c)
-  line(x+6, y-1, x+10, y-1, c)
-  line(x+8, y-1, x+8, y+2, c)
-  line(x+13, y-1, x+16, y-1, c)
-  line(x+16, y-1, x+16, y+2, c)
-  line(x-1, y+8, x+2, y+8, c)
-  line(x-1, y+8, x-1, y+5, c)
-  line(x+6, y+8, x+10, y+8, c)
-  line(x+8, y+5, x+8, y+8, c)
-  line(x+13, y+8, x+16, y+8, c)
-  line(x+16, y+8, x+16, y+5, c)
- else
-  for i = 1,2 do
-   line(x, y, x+1, y, c)
-   line(x, y, x, y+1, c)
-   line(x+7, y, x+8, y, c)
-   line(x+8, y, x+8, y+1, c)
-   line(x, y+7, x+1, y+7, c)
-   line(x, y+7, x, y+6, c)
-   line(x+7, y+7, x+8, y+7, c)
-   line(x+8, y+7, x+8, y+6, c)
-   x+=8
-  end
+  l,p=2,1
+ end
+ pushc(-(x-p),-(y-p))
+ line(0,0,l,0,c)
+ line(0,0,0,l,c)
+ popc() 
+ pushc(-(x-p),-(y+7+p))
+ line(0,0,l,0,c)
+ line(0,0,0,-l,c)
+ popc()
+ pushc(-(x+15+p),-(y-p))
+ line(0,0,-l,0,c)
+ line(0,0,0,l,c)
+ popc()
+ pushc(-(x+15+p),-(y+7+p))
+ line(0,0,-l,0,c)
+ line(0,0,0,-l,c)
+ popc()
+ pushc(-(x+8),-(y-p))
+ line(-(1+p),0,1+p,0,c)
+ line(0,0,0,l,c)
+ popc()
+ pushc(-(x+8),-(y+7+p))
+ line(-(1+p),0,1+p,0,c)
+ line(0,0,0,-l,c)
+ popc()
+end
+--
+function pushc(x, y)
+	local l={0,0}
+	if #g._cms > 0 then
+	 l=g._cms[#g._cms]
+	end
+	local n={l[1]+x,l[2]+y}
+	add(g._cms, n)
+	camera(n[1], n[2])
+end
+function popc()
+	local len = #g._cms
+	if len > 0 then
+	 g._cms[len] = nil
+	end
+	len -= 1
+	if len > 0 then
+	 local xy=g._cms[len]
+	 camera(xy[1],xy[2])
+	else
+	 camera()
 	end
 end
-
 --
+function _update()
+ g.tick+=1
+ foreach(g._bs,update_board)
+end
 
 function _draw()
  cls()
- camera(-4, -4)
- draw_board(g.b1)
- camera(0, 0)
-end
-
-function _update()
- g.tick+=1
- update_board(g.b1)  
+ foreach(g._bs,draw_board)
 end
 
 function _init()
  g = {}
- g.b1 = make_board(6, 12)
+ g._cms = {}
+ g._bs = {}
+ add(g._bs, make_board(6,12,4,4))
+ add(g._bs, make_board(6,12,60,4,1))  
  g.tick = 0
 end
 
