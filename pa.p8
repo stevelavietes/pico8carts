@@ -22,42 +22,42 @@ end
 
 function update_board(b)
  if btnp(0, b.p) then
- 	if b.cx > 0 then
- 	 b.cx -= 1
- 	end
+  if b.cx > 0 then
+   b.cx -= 1
+  end
  end
  if btnp(1, b.p) then
- 	if b.cx < b.w - 2 then
- 	 b.cx += 1
- 	end
+  if b.cx < b.w - 2 then
+   b.cx += 1
+  end
  end
  if btnp(2, b.p) then
- 	if b.cy > 0 then
- 	 b.cy -= 1
- 	end
+  if b.cy > 0 then
+   b.cy -= 1
+  end
  end
  if btnp(3, b.p) then
- 	if b.cy < b.h - 1 then
- 	 b.cy += 1
- 	end
+  if b.cy < b.h - 1 then
+   b.cy += 1
+  end
  end
  
  --todo: multiframe flip
  if btnp(4, b.p) then
- 	local x = b.cx+1
- 	local y = b.cy+1
- 	local v = b.t[y][x]
- 	b.t[y][x] = b.t[y][x+1]
- 	b.t[y][x+1] = v
+  local x = b.cx+1
+  local y = b.cy+1
+  local v = b.t[y][x]
+  b.t[y][x] = b.t[y][x+1]
+  b.t[y][x+1] = v
  end
 end
 
 function draw_board(b)	
  for h = 1, b.h do
- 	local r = b.t[h]
- 	for w = 1, b.w do
- 	 spr(r[w].t,(w-1)*8,(h-1)*8)
- 	end
+  local r = b.t[h]
+  for w = 1, b.w do
+   spr(r[w].t,(w-1)*8,(h-1)*8)
+  end
  end
  local x = b.cx*8
  local y = b.cy*8
@@ -65,9 +65,9 @@ function draw_board(b)
 end
 
 function draw_curs(x, y, grow)
-	local c=7
-	if grow then
-	 line(x-1, y-1, x+2, y-1, c)
+ local c=7
+ if grow then
+  line(x-1, y-1, x+2, y-1, c)
   line(x-1, y-1, x-1, y+2, c)
   line(x+6, y-1, x+10, y-1, c)
   line(x+8, y-1, x+8, y+2, c)
@@ -79,16 +79,16 @@ function draw_curs(x, y, grow)
   line(x+8, y+5, x+8, y+8, c)
   line(x+13, y+8, x+16, y+8, c)
   line(x+16, y+8, x+16, y+5, c)
-	else
-	 for i = 1,2 do
-			line(x, y, x+1, y, c)
-  	line(x, y, x, y+1, c)
-  	line(x+7, y, x+8, y, c)
-  	line(x+8, y, x+8, y+1, c)
-  	line(x, y+7, x+1, y+7, c)
-  	line(x, y+7, x, y+6, c)
-  	line(x+7, y+7, x+8, y+7, c)
-  	line(x+8, y+7, x+8, y+6, c)
+ else
+  for i = 1,2 do
+   line(x, y, x+1, y, c)
+   line(x, y, x, y+1, c)
+   line(x+7, y, x+8, y, c)
+   line(x+8, y, x+8, y+1, c)
+   line(x, y+7, x+1, y+7, c)
+   line(x, y+7, x, y+6, c)
+   line(x+7, y+7, x+8, y+7, c)
+   line(x+8, y+7, x+8, y+6, c)
    x+=8
   end
 	end
@@ -97,10 +97,10 @@ end
 --
 
 function _draw()
-			cls()
-			camera(-4, -4)
-   draw_board(g.b1)
-   camera(0, 0)
+ cls()
+ camera(-4, -4)
+ draw_board(g.b1)
+ camera(0, 0)
 end
 
 function _update()
