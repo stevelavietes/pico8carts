@@ -86,7 +86,7 @@ function scan_board(b)
    end
 
    if t.t > 0 and not t.m then
-    if w < b.w-1 thenq
+    if w < b.w-1 then
      local wc = 1
      for i=(w+1),b.w do
       if t.t == r[i].t then
