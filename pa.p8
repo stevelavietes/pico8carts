@@ -10,15 +10,15 @@ function make_board(w, h, x, y, p)
   local r = {}
   for j = 1, w do
    r[j] = {}
-			local n = flr(rnd(5) + 1)
+   local n = flr(rnd(5) + 1)
    if j > 2 then
-   	if n == r[j-1].t and n == r[j-2].t then
-					n += 1
-					if n > g.l_b then
-						n = g.f_b
-					end
-   	end
-  	end
+    if n == r[j-1].t and n == r[j-2].t then
+     n += 1
+     if n > g.l_b then
+      n = g.f_b
+     end
+    end
+   end
    r[j].t = n
   end
   b.t[i] = r
@@ -93,32 +93,32 @@ function scan_board(b)
        wc+=1
       else
        break
-   	  end
-   	 end
-   	 if wc > 2 then
-   	  for i=w,w+(wc-1) do
-   	   add(ms, r[i])
-   	  end
-   	 end 
+      end
+     end
+     if wc > 2 then
+      for i=w,w+(wc-1) do
+       add(ms, r[i])
+      end
+     end 
     end
-    
+
     if h < b.h-1 then
      local hc = 1
-   	 for i=(h+1),b.h do
-   	  if t.t == b.t[i][w].t then
-   	  	hc+=1
-   	  else
-   	   break
-   	  end
-   	 end
+     for i=(h+1),b.h do
+      if t.t == b.t[i][w].t then
+       hc+=1
+      else
+       break
+      end
+     end
      if hc > 2 then
       for i=h,h+(hc-1) do
-   	   add(ms, b.t[i][w])
-   	  end
-   	 end
-   	 
+       add(ms, b.t[i][w])
+      end
+     end
+
     end
-   end  
+   end
   end
  end
  
@@ -128,7 +128,7 @@ function scan_board(b)
  
 end
 
-function draw_board(b)	 
+function draw_board(b)
  pushc(-b.x, -b.y)
  for h = 1, b.h do
   local r = b.t[h]
@@ -187,22 +187,22 @@ function elapsed(t)
 end
 
 function pushc(x, y)
-	local l=g.cs[#g.cs] or {0,0}
-	local n={l[1]+x,l[2]+y}
-	add(g.cs, n)
-	camera(n[1], n[2])
+ local l=g.cs[#g.cs] or {0,0}
+ local n={l[1]+x,l[2]+y}
+ add(g.cs, n)
+ camera(n[1], n[2])
 end
 
 function popc()
-	local len = #g.cs
-	g.cs[len] = nil
-	len -= 1
-	if len > 0 then
-	 local xy=g.cs[len]
-	 camera(xy[1],xy[2])
-	else
-	 camera()
-	end
+ local len = #g.cs
+ g.cs[len] = nil
+ len -= 1
+ if len > 0 then
+  local xy=g.cs[len]
+  camera(xy[1],xy[2])
+ else
+  camera()
+ end
 end
 --
 function _update()
