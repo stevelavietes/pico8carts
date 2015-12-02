@@ -66,11 +66,11 @@ function draw_board(b)
  for h = 1, b.h do
   local r = b.t[h]
   for w = 1, b.w do
-   spr(r[w].t,(w-1)*8,(h-1)*8)
+   spr(r[w].t,(w-1)*9,(h-1)*9)
   end
  end
- local x = b.cx*8
- local y = b.cy*8
+ local x = b.cx*9
+ local y = b.cy*9
  draw_curs(x, y, g.tick%30 < 15)
  popc() 
 end
@@ -88,11 +88,11 @@ function draw_curs(x, y, grow)
  line(0,0,l,0,c)
  line(0,0,0,-l,c)
  popc()
- pushc(-(x+15+p),-(y-p))
+ pushc(-(x+16+p),-(y-p))
  line(0,0,-l,0,c)
  line(0,0,0,l,c)
  popc()
- pushc(-(x+15+p),-(y+7+p))
+ pushc(-(x+16+p),-(y+7+p))
  line(0,0,-l,0,c)
  line(0,0,0,-l,c)
  popc()
@@ -150,8 +150,8 @@ function _init()
  g = {}
  g.cs = {}
  g.bs = {}
- add(g.bs, make_board(6,12,4,4))
- add(g.bs, make_board(6,12,76,4,1))  
+ add(g.bs, make_board(6,12,1,4))
+ add(g.bs, make_board(6,12,74,4,1))  
  g.tick = 0
 end
 
