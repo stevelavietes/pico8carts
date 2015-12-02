@@ -106,23 +106,26 @@ function draw_curs(x, y, grow)
  popc()
 end
 --
+function elapsed(t)
+ if g.tick>=t then
+  return g.tick - t
+ end
+ return 32767-t+g.tick
+end
+
 function pushc(x, y)
-	local l={0,0}
-	if #g._cms > 0 then
-	 l=g._cms[#g._cms]
-	end
+	local l=g.cs[#g.cs] or {0,0}
 	local n={l[1]+x,l[2]+y}
-	add(g._cms, n)
+	add(g.cs, n)
 	camera(n[1], n[2])
 end
+
 function popc()
-	local len = #g._cms
-	if len > 0 then
-	 g._cms[len] = nil
-	end
+	local len = #g.cs
+	g.cs[len] = nil
 	len -= 1
 	if len > 0 then
-	 local xy=g._cms[len]
+	 local xy=g.cs[len]
 	 camera(xy[1],xy[2])
 	else
 	 camera()
@@ -130,21 +133,25 @@ function popc()
 end
 --
 function _update()
- g.tick+=1
- foreach(g._bs,update_board)
+ if g.tick<32767then
+  g.tick+=1
+ else
+  g.tick=0
+ end
+ foreach(g.bs,update_board)
 end
 
 function _draw()
  cls()
- foreach(g._bs,draw_board)
+ foreach(g.bs,draw_board)
 end
 
 function _init()
  g = {}
- g._cms = {}
- g._bs = {}
- add(g._bs, make_board(6,12,4,4))
- add(g._bs, make_board(6,12,60,4,1))  
+ g.cs = {}
+ g.bs = {}
+ add(g.bs, make_board(6,12,4,4))
+ add(g.bs, make_board(6,12,76,4,1))  
  g.tick = 0
 end
 
