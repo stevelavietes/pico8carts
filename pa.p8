@@ -154,6 +154,9 @@ end
 
 function _init()
  g = {}
+ g.e_b = 0
+ g.f_b = 1
+ g.l_b = 5
  g.cs = {}
  g.bs = {}
  add(g.bs, make_board(6,12,1,4))
