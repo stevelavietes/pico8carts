@@ -11,6 +11,12 @@ function make_board(w, h, x, y, p)
   for j = 1, w do
    r[j] = {}
    r[j].t = rnd(5) + 1
+   
+   if j > 1 then
+   	if r[j] == r[j-1] and r[j] == r[j-2] then
+					r[j] = r[j] + 1
+   	end
+  	end
   end
   b.t[i] = r
  end  
