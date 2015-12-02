@@ -17,10 +17,9 @@ function make_board(w, h, x, y, p)
 					if n > g.l_b then
 						n = g.f_b
 					end
-					r[j].t = n
    	end
   	end
-
+   r[j].t = n
   end
   b.t[i] = r
  end  
