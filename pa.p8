@@ -10,13 +10,14 @@ function make_board(w, h, x, y, p)
   local r = {}
   for j = 1, w do
    r[j] = {}
-   r[j].t = flr(rnd(5) + 1)
+			local n = flr(rnd(5) + 1)
    if j > 2 then
-   	if r[j].t == r[j-1].t and r[j].t == r[j-2].t then
-					r[j].t = r[j].t + 1
-					if r[j].t > g.l_b then
-						r[j].t = g.f_b
+   	if n == r[j-1].t and n == r[j-2].t then
+					n += 1
+					if n > g.l_b then
+						n = g.f_b
 					end
+					r[j].t = n
    	end
   	end
 
