@@ -124,7 +124,7 @@ function scan_board(b)
    end
 
    if t.s then
-    if elapsed(t.s) > 2 then
+    if elapsed(t.s) > 1 then
      local t2 = r[w+1]
      r[w] = t2
      r[w+1] = t
@@ -194,7 +194,7 @@ function draw_board(b)
    local s = r[w].t
    
    if r[w].s then
-    pushc(-r[w].ss*elapsed(r[w].s),0)
+    pushc(-r[w].ss*(elapsed(r[w].s)+1),0)
    end
    
    if s > 0 then
