@@ -1,27 +1,31 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
+function make_row(w)
+ local r = {}
+ for j = 1, w do
+  r[j] = {}
+  local n = flr(rnd(5) + 1)
+  if j > 2 then
+   if n == r[j-1].t and n == r[j-2].t then
+    n += 1
+    if n > g.l_b then
+     n = g.f_b
+    end
+   end
+  end
+  r[j].t = n
+ end
+ return r
+end
+
 function make_board(w, h, x, y, p)
  local b = {}  
  b.w = w
  b.h = h 
  b.t = {}
  for i = 1, h do
-  local r = {}
-  for j = 1, w do
-   r[j] = {}
-   local n = flr(rnd(5) + 1)
-   if j > 2 then
-    if n == r[j-1].t and n == r[j-2].t then
-     n += 1
-     if n > g.l_b then
-      n = g.f_b
-     end
-    end
-   end
-   r[j].t = n
-  end
-  b.t[i] = r
+  b.t[i] = make_row(w)
  end  
  b.cx = 0
  b.cy = 0
