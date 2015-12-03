@@ -42,7 +42,7 @@ function make_board(w, h, x, y, p, v)
  return b
 end
 
-function update_board(b)
+function input_board(b)
  local m = false
  if btnp(0, b.p) then
   if b.cx > 0 then
@@ -70,6 +70,10 @@ function update_board(b)
  end
  if m then sfx(0) end
  
+ if b.s then
+  return
+ end
+
  --todo: multiframe flip
  if btnp(4, b.p) then
   local x = b.cx+1
@@ -78,15 +82,29 @@ function update_board(b)
   local t1 = b.t[y][x]
   local t2 = b.t[y][x+1]
 
-  if t1.m == nil and t2.m == nil then
-   b.t[y][x] = t2
-   b.t[y][x+1] = t1
+  if not busy(t1, t2) then
+   t1.s = g.tick
+   t1.ss = 1
+   t2.s = g.tick
+   t2.ss = -1
+   b.s = 1
    sfx(1)
   end
-  
  end
- 
+end
+
+function update_board(b)
+ input_board(b)
  scan_board(b)
+end
+
+function busy(...)
+ for t in all({...}) do
+  if t.m or t.s then
+   return true
+  end
+ end
+ return false
 end
 
 function scan_board(b)
@@ -105,12 +123,27 @@ function scan_board(b)
     end
    end
 
-   if t.t > 0 and not t.m then
+   if t.s then
+    if elapsed(t.s) > 2 then
+     local t2 = r[w+1]
+     r[w] = t2
+     r[w+1] = t
+     t.s = nil
+     t.ss = nil
+     t2.s = nil
+     t2.ss = nil
+     t = t2
+     b.s = nil
+    end
+
+   end
+
+   if t.t > 0 and not busy(t) then
     if w < b.w-1 then
      local wc = 1
      for i=(w+1),b.w do
       if t.t == r[i].t and
-        not r[i].m then
+        not busy(r[i]) then
        wc+=1
       else
        break
@@ -127,7 +160,7 @@ function scan_board(b)
      local hc = 1
      for i=(h+1),b.h do
       if t.t == b.t[i][w].t and
-        not b.t[i][w].m then
+        not busy(b.t[i][w]) then
        hc+=1
       else
        break
@@ -159,17 +192,27 @@ function draw_board(b)
   local r = b.t[h]
   for w = 1, b.w do
    local s = r[w].t
+   
+   if r[w].s then
+    pushc(-r[w].ss*elapsed(r[w].s),0)
+   end
+   
    if s > 0 then
     if r[w].m and elapsed(r[w].m)%3 == 0 then
      s+=16
     end
     spr(s,(w-1)*9,(h-1)*9)
    end
+   
+   if r[w].s then
+    popc()
+   end
+   
   end
  end
  local x = b.cx*9
  local y = b.cy*9
- draw_curs(x, y, g.tick%30 < 15)
+ draw_curs(x, y, b.s == nil and g.tick%30 < 15)
  popc() 
 end
 
