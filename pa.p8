@@ -102,7 +102,8 @@ function scan_board(b)
     if w < b.w-1 then
      local wc = 1
      for i=(w+1),b.w do
-      if t.t == r[i].t then
+      if t.t == r[i].t and
+        not r[i].m then
        wc+=1
       else
        break
@@ -118,7 +119,8 @@ function scan_board(b)
     if h < b.h-1 then
      local hc = 1
      for i=(h+1),b.h do
-      if t.t == b.t[i][w].t then
+      if t.t == b.t[i][w].t and
+        not b.t[i][w].m then
        hc+=1
       else
        break
