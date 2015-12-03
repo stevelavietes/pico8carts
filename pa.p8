@@ -67,10 +67,16 @@ function update_board(b)
  if btnp(4, b.p) then
   local x = b.cx+1
   local y = b.cy+1
-  local v = b.t[y][x]
-  b.t[y][x] = b.t[y][x+1]
-  b.t[y][x+1] = v
-  sfx(1)
+
+  local t1 = b.t[y][x]
+  local t2 = b.t[y][x+1]
+
+  if t1.m == nil and t2.m == nil then
+   b.t[y][x] = t2
+   b.t[y][x+1] = t1
+   sfx(1)
+  end
+  
  end
  
  scan_board(b)
@@ -85,8 +91,11 @@ function scan_board(b)
   for w = 1,b.w do
    local t = r[w]
 
-   if t.m ~= k then
-    t.m = nil
+   if t.m then
+    if elapsed(t.m) > 20 then
+     t.m = nil
+     t.t = 0
+    end
    end
 
    if t.t > 0 and not t.m then
@@ -139,7 +148,7 @@ function draw_board(b)
   for w = 1, b.w do
    local s = r[w].t
    if s > 0 then
-    if r[w].m then
+    if r[w].m and elapsed(r[w].m)%3 == 0 then
      s+=16
     end
     spr(s,(w-1)*9,(h-1)*9)
