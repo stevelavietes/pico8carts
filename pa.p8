@@ -34,8 +34,8 @@ function make_board(w, h, x, y, p, v)
   end  
   b.t[i] = make_row(w,e)
  end  
- b.cx = 0
- b.cy = 0
+ b.cx = flr(w/2)-1
+ b.cy = h - 4
  b.x = x
  b.y = y
  b.p = p or 0
