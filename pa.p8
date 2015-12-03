@@ -87,7 +87,7 @@ function input_board(b)
    t1.ss = 1
    t2.s = g.tick
    t2.ss = -1
-   b.s = 1
+   b.s = {t1, t2}
    sfx(1)
   end
  end
@@ -107,9 +107,37 @@ function busy(...)
  return false
 end
 
+function swapt(t,t2)
+ local tmp = {}
+ for k,v in pairs(t) do
+  tmp[k] = v
+  t[k] = nil
+ end
+ for k,v in pairs(t2) do
+  t[k] = v
+  t2[k] = nil
+ end
+ for k,v in pairs(tmp) do
+  t2[k] = v
+ end
+end
+
 function scan_board(b)
  local k = g.tick
  local ms = {}
+
+ if b.s then
+  local t = b.s[1]
+  if elapsed(t.s) > 1 then
+   local t2 = b.s[2]
+   t.s = nil
+   t.ss = nil
+   t2.s = nil
+   t2.ss = nil
+   b.s = nil
+   swapt(t, t2)
+  end
+ end
 
  for h = 1, b.h do
   local r = b.t[h]
@@ -121,21 +149,6 @@ function scan_board(b)
      t.m = nil
      t.t = 0
     end
-   end
-
-   if t.s then
-    if elapsed(t.s) > 1 then
-     local t2 = r[w+1]
-     r[w] = t2
-     r[w+1] = t
-     t.s = nil
-     t.ss = nil
-     t2.s = nil
-     t2.ss = nil
-     t = t2
-     b.s = nil
-    end
-
    end
 
    if t.t > 0 and not busy(t) then
