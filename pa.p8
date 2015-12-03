@@ -217,6 +217,7 @@ end
 function _draw()
  cls()
  foreach(g.bs,draw_board)
+ print('cpu:'..(flr(stat(1)*100))..'%')
 end
 
 function _init()
@@ -226,8 +227,8 @@ function _init()
  g.l_b = 5
  g.cs = {}
  g.bs = {}
- add(g.bs, make_board(6,12,1,4))
- add(g.bs, make_board(6,12,74,4,1))  
+ add(g.bs, make_board(6,12,1,8))
+ add(g.bs, make_board(6,12,74,8,1))  
  g.tick = 0
 end
 
