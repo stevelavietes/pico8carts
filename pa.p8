@@ -74,8 +74,7 @@ function input_board(b)
   return
  end
 
- --todo: multiframe flip
- if btnp(4, b.p) then
+ if btnp(5, b.p) then
   local x = b.cx+1
   local y = b.cy+1
 
@@ -100,7 +99,7 @@ end
 
 function busy(...)
  for t in all({...}) do
-  if t.m or t.s then
+  if t.m or t.s or t.f then
    return true
   end
  end
@@ -122,22 +121,25 @@ function swapt(t,t2)
  end
 end
 
+function update_swap(b)
+ if not b.s then return end
+ local t = b.s[1]
+ if elapsed(t.s) > 1 then
+  local t2 = b.s[2]
+  t.s = nil
+  t.ss = nil
+  t2.s = nil
+  t2.ss = nil
+  b.s = nil
+  swapt(t, t2)
+ end
+end
+
 function scan_board(b)
  local k = g.tick
  local ms = {}
 
- if b.s then
-  local t = b.s[1]
-  if elapsed(t.s) > 1 then
-   local t2 = b.s[2]
-   t.s = nil
-   t.ss = nil
-   t2.s = nil
-   t2.ss = nil
-   b.s = nil
-   swapt(t, t2)
-  end
- end
+ update_swap(b)
 
  for h = 1, b.h do
   local r = b.t[h]
