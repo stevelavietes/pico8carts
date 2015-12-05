@@ -135,10 +135,26 @@ function update_swap(b)
  end
 end
 
+function update_fall(b)
+ for x=1,b.w do
+  for y=b.h,1,-1 do
+   if y<b.h then
+    local t=b.t[y][x]
+    local t2=b.t[y+1][x]
+    if t2.t==0 and
+     not busy(t,t2) then
+      swapt(t, t2)
+    end
+   end
+  end
+ end
+end
+
 function scan_board(b)
  local k = g.tick
  local ms = {}
 
+ update_fall(b)
  update_swap(b)
 
  for h = 1, b.h do
