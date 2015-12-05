@@ -81,7 +81,8 @@ function input_board(b)
   local t1 = b.t[y][x]
   local t2 = b.t[y][x+1]
 
-  if not busy(t1, t2) then
+  if not busy(t1, t2) and
+    (t1.t>0 or t2.t>0) then
    t1.s = g.tick
    t1.ss = 1
    t2.s = g.tick
@@ -326,8 +327,8 @@ function _init()
  g.l_b = 5
  g.cs = {}
  g.bs = {}
- add(g.bs, make_board(6,12,1,8,nil,5))
- add(g.bs, make_board(6,12,74,8,1,5))  
+ add(g.bs, make_board(6,12,1,8,0,8))
+ add(g.bs, make_board(6,12,74,8,1,8))  
  g.tick = 0
 end
 
