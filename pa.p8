@@ -137,9 +137,9 @@ end
 
 function update_fall(b)
  for x=1,b.w do
-  for y=b.h,1,-1 do
-   if y<b.h then
-    local t=b.t[y][x]
+  for y=b.h-1,1,-1 do
+   local t=b.t[y][x] 
+   if y<b.h and t.t>0 then
     local t2=b.t[y+1][x]
     if t2.t==0 and
      not busy(t,t2) then
