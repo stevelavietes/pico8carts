@@ -105,7 +105,10 @@ function update_board(b)
  if b.o >= 9 then
   b.o=0
   del(b.t, b.t[1])
-  add(b.t, make_row(b.w,false)) 
+  add(b.t, make_row(b.w,false))
+  if b.cy>0 then
+   b.cy-=1
+  end 
  end
  input_board(b)
  scan_board(b)
