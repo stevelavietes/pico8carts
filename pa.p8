@@ -296,6 +296,18 @@ function update_fall(b)
  end
 end
 
+function above_solid(b,x,y)
+ --brute force test prevent
+ --mid-fall matches.
+ --todo:optimize
+ for i=y+1,b.h-1 do
+  if b.t[i][x].t==0 then
+   return false
+  end
+ end
+ return true
+end
+
 function scan_board(b)
  local k = g.tick
  local ms = {}
@@ -315,12 +327,15 @@ function scan_board(b)
     end
    end
 
-   if t.t > 0 and not busy(t) then
+   if t.t > 0 and
+     not busy(t) and
+     above_solid(b,w,h) then
     if w < b.w-1 then
      local wc = 1
      for i=(w+1),b.w do
       if t.t == r[i].t and
-        not busy(r[i]) then
+        not busy(r[i]) and
+        above_solid(b,i,h) then
        wc+=1
       else
        break
