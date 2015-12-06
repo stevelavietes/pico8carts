@@ -253,10 +253,9 @@ function update_fall(b)
      not busy(t,t2) then
       -- mark for falling
       set_falling(b, t, t2)
-
-      -- mark all blocks above
-      -- for falling
-      for a=y,b.h do
+       
+      -- blocks above fall too
+      for a=y-1,1,-1 do
        a_t = b.t[a][x]
        if busy(a_t) then
         break
