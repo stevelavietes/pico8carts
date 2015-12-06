@@ -69,6 +69,8 @@ function make_board(
  -- {current countdown value, 
  --  time countdown started}
  
+ b.s = nil -- tiles to swap
+ b.f = {}  -- tiles to fall
  return b
 end
 
@@ -233,6 +235,14 @@ function update_swap(b)
  end
 end
 
+function set_falling(b, t, t2)
+ t.s = g.tick
+ t.f = true
+ t2.f= true
+      
+ add(b.f, {t,t2})
+end
+
 function update_fall(b)
  for x=1,b.w do
   for y=b.h-1,1,-1 do
@@ -241,9 +251,38 @@ function update_fall(b)
     local t2=b.t[y+1][x]
     if t2.t==0 and
      not busy(t,t2) then
-      swapt(t, t2)
+      -- mark for falling
+      set_falling(b, t, t2)
+       
+      -- blocks above fall too
+      for a=y-1,1,-1 do
+       a_t = b.t[a][x]
+       if busy(a_t) then
+        break
+       end
+       set_falling(b, a_t, t)
+       t = a_t
+      end
     end
    end
+  end
+ end
+ 
+ -- detect fully fallen blocks
+ if not b.f then return end
+ for f_s in all(b.f) do
+  -- falling tile
+  local t = f_s[1]
+  if (elapsed(t.s) > 1) then
+   local t2 = f_s[2]
+   t.s = nil
+   t.ss = nil
+   t2.s = nil
+   t2.ss = nil
+   t.f = false
+   t2.f = false
+   swapt(t, t2)
+   del(b.f, f_s)
   end
  end
 end
@@ -325,7 +364,17 @@ function draw_board(b)
    local warn = (
        b.t[1][w].t > 0 and g.tick%16>7)
    if r[w].s then
-    pushc(-r[w].ss*(elapsed(r[w].s)+1),0)
+    if not r[w].f then
+     pushc(
+      -r[w].ss*(elapsed(r[w].s)+1)
+      ,0
+     )
+    else
+     pushc( 
+      0,
+      -1*(elapsed(r[w].s)+1)
+     ) 
+    end
    end
    
    if s > 0 then
