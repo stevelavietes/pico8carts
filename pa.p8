@@ -2,7 +2,6 @@ pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
 function make_row(w,e,nt)
- c = c or 5
  local r = {}
  for j = 1, w do
   r[j] = {}
