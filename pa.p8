@@ -1,7 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
-function make_row(w,e,nt)
+function make_row(
+  w, -- row width
+  e, -- row is empty or not
+  nt)-- number of tile types
+ 
  local r = {}
  for j = 1, w do
   r[j] = {}
@@ -23,12 +27,18 @@ function make_row(w,e,nt)
 end
 
 function make_board(
-  w,h,x,y,p,v,nt)
+  w, -- width
+  h, -- height
+  x, -- x position
+  y, -- y position
+  p, -- player
+  v, -- number of visible lines
+  nt)-- number of tile types
  local b = {}  
  b.w = w
  b.h = h 
- b.nt = nt or 5
- b.t = {}
+ b.nt = nt or 5 -- tile types
+ b.t = {} -- a list of rows
  for i = 1, h do
   local e=false
   if h-i>v then
@@ -36,20 +46,35 @@ function make_board(
   end  
   b.t[i] = make_row(w,e,b.nt)
  end  
+ 
+ -- cursor position (0 indexed)
  b.cx = flr(w/2)-1
  b.cy = h - 4
+ 
  b.x = x
  b.y = y
- b.p = p or 0
- b.o = 0
- b.r = 0.025
- b.st = 0
+ b.p = p or 0 -- player (input)
+ b.o = 0     -- rise offset
+ b.r = 0.025 -- rise rate
+ b.ri = nil  -- time since rise
+ 
+ -- board state enum
+ b.st = 0 -- playing
+ --     1 -- lose
+ --     2 -- win
+ --     3 -- countdown to start
+ 
+ -- countdown struct
+ b.cnt = nil 
+ -- {current countdown value, 
+ --  time countdown started}
+ 
  return b
 end
 
 function start_board(b)
- b.st = 3
- b.cnt = {3,g.tick}
+ b.st = 3 -- countdown to start
+ b.cnt = {3,g.tick} 
  b.ri = nil
 end
 
@@ -127,7 +152,8 @@ function offset_board(b)
  if b.o >= 9 then
   local r = b.t[1]
   for i=1,#r do
-   if r[i].t > 0 then
+   -- lose condition
+   if r[i].t > g.e_b then
     b.st=1
     return
    end
@@ -426,7 +452,8 @@ function update_title()
   if g.np==2then
    add(g.bs,
     make_board(6,12,1,16,0,6))
-   add(g.bs,     make_board(6,12,74,16,1,6))
+   add(g.bs,     
+    make_board(6,12,74,16,1,6))
   else
    add(g.bs,
     make_board(6,12,40,16,0,6))
@@ -484,6 +511,8 @@ function toscn(x,y)
 end
 --
 function _update()
+ -- naturally g.tick wraps to
+ -- neg int max instead of 0
  if g.tick<32767then
   g.tick+=1
  else
@@ -511,14 +540,18 @@ function _draw()
 end
 
 function _init()
+ -- globals struct
  g = {}
- g.e_b = 0
- g.f_b = 1
- g.l_b = 5
- g.cs = {}
- g.bs = {}
+ 
+ -- tile type enums
+ g.e_b = 0 -- empty tile
+ g.f_b = 1 -- first tile type
+ g.l_b = 5 -- last tile type
+ 
+ g.cs = {} -- camera stack
+ g.bs = {} -- boards
  g.tick = 0
- g.np = 2
+ g.np = 2  -- number of players
 end
 
 __gfx__
