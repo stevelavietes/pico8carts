@@ -134,6 +134,14 @@ function input_board(b)
  end
 end
 
+function end_game(b)
+ for t in all(b.s or {}) do
+  t.s=nil
+  t.ss=nil
+ end
+ b.s=nil
+end
+
 function offset_board(b)
  if b.st ~= 0 then return end
 
@@ -157,6 +165,7 @@ function offset_board(b)
    -- lose condition
    if r[i].t > g.e_t then
     b.st=1
+    end_game(b)
     return
    end
   end
@@ -273,7 +282,7 @@ function update_fall(b)
  for f_s in all(b.f) do
   -- falling tile
   local t = f_s[1]
-  if (elapsed(t.s) > 1) then
+  if (elapsed(t.s) > 0) then
    local t2 = f_s[2]
    t.s = nil
    t.ss = nil
