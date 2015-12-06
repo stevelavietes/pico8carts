@@ -392,13 +392,34 @@ function _update()
  else
   g.tick=0
  end
- foreach(g.bs,update_board)
+ 
+ if #g.bs>0 then
+ 	foreach(g.bs,update_board)
+ else
+  if btn(5,0) or btn(4,0) then
+   add(g.bs,
+     make_board(6,12,1,16,0,6))
+   add(g.bs,
+     make_board(6,12,74,16,1,6))
+  end
+ end
 end
 
 function _draw()
  cls()
- --spr(72,33,0,8,4)
- foreach(g.bs,draw_board)
+ if #g.bs > 0 then
+  foreach(g.bs,draw_board)
+ else
+  pushc(0,-128)
+  pushc(0,(g.tick%230))
+  sspr(8,0,8,8,16,0,32,32)
+  sspr(24,0,8,8,78,32,32,32)
+  sspr(32,0,8,8,28,64,32,32)
+  popc()
+  popc()
+  spr(72,33,40,8,4)
+    --32+sin(g.tick/30)*3,8,4) 
+ end
  print('cpu:'..(flr(stat(1)*100))..'%')
 end
 
@@ -409,11 +430,8 @@ function _init()
  g.l_b = 5
  g.cs = {}
  g.bs = {}
- add(g.bs,
-   make_board(6,12,1,16,0,6))
- add(g.bs,
-   make_board(6,12,74,16,1,6))
  g.tick = 0
+ g.bkg={}
 end
 
 __gfx__
