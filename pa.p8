@@ -9,14 +9,14 @@ function make_row(
  local r = {}
  for j = 1, w do
   r[j] = {}
-  local n=g.e_b
+  local n=g.e_t
   if not e then
    n = flr(rnd(nt) + 1)
    if j > 2 then
     if n == r[j-1].t and n == r[j-2].t then
      n += 1
-     if n > g.l_b then
-      n = g.f_b
+     if n > g.l_t then
+      n = g.f_t
      end
     end
    end
@@ -153,7 +153,7 @@ function offset_board(b)
   local r = b.t[1]
   for i=1,#r do
    -- lose condition
-   if r[i].t > g.e_b then
+   if r[i].t > g.e_t then
     b.st=1
     return
    end
@@ -544,9 +544,9 @@ function _init()
  g = {}
  
  -- tile type enums
- g.e_b = 0 -- empty tile
- g.f_b = 1 -- first tile type
- g.l_b = 5 -- last tile type
+ g.e_t = 0 -- empty tile
+ g.f_t = 1 -- first tile type
+ g.l_t = 5 -- last tile type
  
  g.cs = {} -- camera stack
  g.bs = {} -- boards
