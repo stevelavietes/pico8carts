@@ -51,6 +51,7 @@ end
 function start_board(b)
  b.st = 3
  b.cnt = {3,g.tick}
+ b.ri = nil
 end
 
 function input_cursor(b)
@@ -109,6 +110,15 @@ end
 
 function offset_board(b)
  if b.st ~= 0 then return end
+
+ if not b.ri then
+  b.ri=g.tick
+ end
+ if elapsed(b.ri) > 300 then
+  b.ri=g.tick
+  b.r+=0.01
+ end
+
  if btn(4,b.p) then
   b.o+=1
  else
@@ -394,12 +404,12 @@ function draw_title()
  for i=1,15 do
   pal(i,0)
  end
- spr(72,32,40,8,4)
- spr(72,34,40,8,4)
- spr(72,33,39,8,4)
- spr(72,33,41,8,4)
+ spr(72,32,36,8,4)
+ spr(72,34,36,8,4)
+ spr(72,33,35,8,4)
+ spr(72,33,37,8,4)
  pal()
- spr(72,33,40,8,4)
+ spr(72,33,36,8,4)
  print('1 player',50,81,0)
  print('2 player',50,91)
  color(7)
