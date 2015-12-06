@@ -69,6 +69,7 @@ function make_board(
  -- {current countdown value, 
  --  time countdown started}
  
+ b.s = nil -- tiles to swap
  return b
 end
 
