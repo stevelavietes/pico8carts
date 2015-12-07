@@ -405,7 +405,7 @@ function scan_board(b)
    sx+=b.w*9-7
   end
   add(g.go,make_bubble(
-    sx, b.y+20, mc,f))
+    sx, b.y+b.cy*9, mc,f))
   --todo, add hold
  end
 end
