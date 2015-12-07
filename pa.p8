@@ -389,6 +389,13 @@ function scan_board(b)
 end
 
 function draw_board(b)
+ pushc(-b.x,-b.y)
+ rectfill(-1,-9,b.w*9,b.h*9,0)
+ color(13)
+ line(-2,-9,-2,b.h*9)
+ line(b.w*9,-9,b.w*9,b.h*9)
+ color()
+ popc()
  local offset = b.o
  pushc(-b.x, -b.y + offset)
  for h = 1, b.h do
