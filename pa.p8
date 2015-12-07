@@ -140,6 +140,7 @@ function end_game(b)
   t.ss=nil
  end
  b.s=nil
+ b.tophold=nil
 end
 
 function offset_board(b)
@@ -164,11 +165,20 @@ function offset_board(b)
   for i=1,#r do
    -- lose condition
    if r[i].t > g.e_t then
-    b.st=1
-    end_game(b)
+    if b.tophold then
+     b.o=9
+     if elapsed(b.tophold) > 120 then
+      b.st=1
+      end_game(b)
+     end
+    else
+     b.tophold=g.tick 
+    end
     return
    end
   end
+
+  b.tophold=nil
 
   b.o=0
   del(b.t, b.t[1])
