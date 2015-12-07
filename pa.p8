@@ -663,7 +663,7 @@ function _update()
 
  for go in all(g.go) do
   if go.update then
-   go.update(go)
+   go:update()
   end
  end
 end
@@ -682,7 +682,7 @@ function _draw()
   if go.draw then
    pushc(-(go.x or 0),
      -(go.y or o))
-   go.draw(go)
+   go:draw()
    popc()
   end
  end
