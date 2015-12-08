@@ -359,7 +359,7 @@ function scan_board(b)
 
     if h < b.h-2 then
      local hc = 1
-     for i=(h+1),b.h do
+     for i=(h+1),b.h-1 do
       if t.t == b.t[i][w].t and
         not busy(b.t[i][w]) then
        hc+=1
