@@ -535,18 +535,15 @@ function make_bubble(x,y,n,f)
   x=x,y=y,n=n,b=g.tick,f=f,
   draw=function(t)
    local sx=1
-   --if t.f then
-   -- sx+=1
-   --end
    if t.n>9then
     sx-=1
    end
    spr(102,0,0,2,2,t.f)
    print(t.n,5+sx,3,6) 
   end,
-  update=function(t)
+  update=function(t,s)
    if elapsed(t.b) > 20 then
-    del(g.go,t)
+    del(s,t)
     return
    end
    t.y-=1
@@ -612,6 +609,25 @@ function update_title()
  end 
 end
 --
+function update_gobjs(s)
+ for o in all(s) do
+  if o.update then
+   o:update(s)
+  end
+ end
+end
+
+function draw_gobjs(s)
+ for o in all(s) do
+  if o.draw then
+   pushc(-(o.x or 0),
+     -(o.y or o))
+   o:draw(s)
+   popc()
+  end
+ end
+end
+
 function elapsed(t)
  if g.tick>=t then
   return g.tick - t
@@ -645,6 +661,7 @@ function toscn(x,y)
  local c=g.cs[#g.cs]
  return x-c[1],y-c[2]
 end
+
 --
 function _update()
  -- naturally g.tick wraps to
@@ -661,11 +678,7 @@ function _update()
   update_title()
  end
 
- for go in all(g.go) do
-  if go.update then
-   go:update()
-  end
- end
+ update_gobjs(g.go)
 end
 
 function _draw()
@@ -678,15 +691,7 @@ function _draw()
  print('cpu:'..
    (flr(stat(1)*100))..'%',0,0)
 
- for go in all(g.go) do
-  if go.draw then
-   pushc(-(go.x or 0),
-     -(go.y or o))
-   go:draw()
-   popc()
-  end
- end
-
+ draw_gobjs(g.go)
 end
 
 function _init()
