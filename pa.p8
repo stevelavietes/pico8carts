@@ -145,7 +145,11 @@ function end_game(b)
  end
  b.s=nil
  b.tophold=nil
- add(g.go,make_retry())
+ local np=1
+ if b.ob then
+  np=2
+ end
+ add(g.go,make_retry(np))
 end
 
 function offset_board(b)
@@ -574,16 +578,7 @@ function draw_title(t)
  spr(72,33,37,8,4)
  pal()
  spr(72,33,36,8,4)
- print('1 player',50,81,0)
- print('2 player',50,91)
- color(7)
- print('1 player',50,80)
- print('2 player',50,90)
- if t.np==1 then
-  spr(48,41,79)
- else
-  spr(48,41,89)
- end
+ draw_gobjs(t.mn)
 end
 
 function update_title(t,s)
@@ -606,40 +601,7 @@ function update_title(t,s)
   })
  end
  update_gobjs(t.ts)
- if btn(5,0)then
-  del(s,t)
-  local bs={}
-  if t.np==2then
-   add(bs,
-    make_board(6,12,1,16,0,6))
-   add(bs,     
-    make_board(6,12,74,16,1,6))
-   bs[1].ob=bs[2]
-   bs[2].ob=bs[1]
-  else
-   add(bs,
-    make_board(6,12,38,16,0,6))
-  end
-  for b in all(bs) do
-   add(g.go,b)
-   b:start()
-  end
-  sfx(4)
-  return
- end
-
- if (btnp(2,0) or
-   btnp(2,1)) and
-   t.np~=1 then
-  t.np=1
-  sfx(1)
- end
- if (btnp(3,0) or
-   btnp(3,1)) and
-   t.np~=2 then
-  t.np=2
-  sfx(1)
- end 
+ update_gobjs(t.mn)
 end
 
 function make_title()
@@ -647,39 +609,119 @@ function make_title()
   ts={},
   np=2, --num players
   draw=draw_title,
-  update=update_title
+  update=update_title,
+  mn={make_main()}
  }
 end
 
-function make_retry()
+function make_menu(
+ lbs, --menu lables
+ fnc, --chosen callback
+ x,y, --pos
+ omb --omit backdrop
+)
  return {
+  lbs=lbs,
+  f=fnc,
+  i=0, --item
   s=g.tick,
-  e=45,
-  x=64,
-  y=80,
+  e=10,
+  x=x or 64,
+  y=y or 80,
+  h=10*#lbs+4,
   b=false,
+  omb=omb,
   draw=function(t)
-   if elapsed(t.s)<t.e then
+   local e=elapsed(t.s)
+   if not t.omb then
+    local x=min(1,e/t.e)*32
+    rectfill(-x,0,x,t.h,0)
+    rect(-x,0,x,t.h,1)
+   end
+   if e<t.e then
     return
    end
-   rectfill(-32,0,32,16,0)
-   rect(-32,0,32,16,1)
-   print('continue',-16,5,7)
-   spr(48,-24,4)
+   for i,l in pairs(t.lbs) do
+    local y=4+(i-1)*10
+    print(l,-18,y+1,0)
+    print(l,-18,y,7)
+   end
+   spr(48,-18-9,3+10*t.i)
   end,
   update=function(t,s)
-   if elapsed(t.s)<t.e then
+   if elapsed(t.s)<(t.e*2) then
     return
    end
    if t.b and not btn(5,0) then
-    g.go={[1]=make_title()}
+    if t.f then
+     t:f(t.i,s)
+     sfx(2)
+    end
    end
    if btn(5,0) then
     t.b=true
    end
+
+   if (btnp(2,0) or
+    btnp(2,1)) and
+    t.i>0 then
+    t.i-=1
+    sfx(1)
+   end
+   if (btnp(3,0) or
+    btnp(3,1)) and
+    t.i<(#t.lbs-1) then
+    t.i+=1
+    sfx(1)
+   end
   end
  }
 end
+
+function make_retry(np)
+ local m = make_menu(
+  {'retry','quit'},
+  function(t,i,s)
+   if i==0 then
+    start_game(t.np)
+   else
+    g.go={[1]=make_title()}
+   end
+  end)
+  m.np=np
+ return m
+end
+
+function make_main()
+ return make_menu(
+  {'1 player','2 player'},
+  function(t,i,s)
+   start_game(i+1)
+  end,
+  68,76,true
+ )
+end
+
+function start_game(np)
+ g.go={}
+ local bs={}
+ if np==2 then
+  add(bs,
+   make_board(6,12,1,16,0,6))
+  add(bs,
+   make_board(6,12,74,16,1,6))
+  bs[1].ob=bs[2]
+  bs[2].ob=bs[1]
+ else
+  add(bs,
+   make_board(6,12,38,16,0,6))
+ end
+ for b in all(bs) do
+  add(g.go,b)
+  b:start()
+ end
+end
+
 --
 function update_gobjs(s)
  for o in all(s) do
