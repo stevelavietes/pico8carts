@@ -554,13 +554,7 @@ function make_bubble(x,y,n,f)
 end
 
 function draw_title(t)
- pushc(0,-128)
- pushc(0,(g.tick%230))
- sspr(8,0,8,8,8,0,32,32)
- sspr(24,0,8,8,78,32,32,32)
- sspr(32,0,8,8,28,64,32,32)
- popc()
- popc()
+ draw_gobjs(t.ts)
  for i=1,15 do
   pal(i,0)
  end
@@ -583,6 +577,25 @@ function draw_title(t)
 end
 
 function update_title(t,s)
+ if rnd(1)>.92 then
+  add(t.ts,{
+   x=flr(rnd(128)),
+   y=128+16,
+   r=flr(rnd(2))+1,
+   sx=8*(flr(rnd(5))+1),
+   update=function(t,s)
+    t.y-=t.r
+    if t.y<-16 then
+     del(s,t)
+    end
+   end,
+   draw=function(t)
+    rect(-17,-17,16,16,0)
+    sspr(t.sx,0,8,8,-16,-16,32,32)
+   end
+  })
+ end
+ update_gobjs(t.ts)
  if btn(5,0)then
   del(s,t)
   local bs={}
@@ -619,6 +632,7 @@ end
 
 function make_title()
  return {
+  ts={},
   np=2, --num players
   draw=draw_title,
   update=update_title
