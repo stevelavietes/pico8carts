@@ -145,6 +145,7 @@ function end_game(b)
  end
  b.s=nil
  b.tophold=nil
+ add(g.go,make_retry())
 end
 
 function offset_board(b)
@@ -617,7 +618,7 @@ function update_title(t,s)
    bs[2].ob=bs[1]
   else
    add(bs,
-    make_board(6,12,40,16,0,6))
+    make_board(6,12,38,16,0,6))
   end
   for b in all(bs) do
    add(g.go,b)
@@ -647,6 +648,36 @@ function make_title()
   np=2, --num players
   draw=draw_title,
   update=update_title
+ }
+end
+
+function make_retry()
+ return {
+  s=g.tick,
+  e=45,
+  x=64,
+  y=80,
+  b=false,
+  draw=function(t)
+   if elapsed(t.s)<t.e then
+    return
+   end
+   rectfill(-32,0,32,16,0)
+   rect(-32,0,32,16,1)
+   print('continue',-16,5,7)
+   spr(48,-24,4)
+  end,
+  update=function(t,s)
+   if elapsed(t.s)<t.e then
+    return
+   end
+   if t.b and not btn(5,0) then
+    g.go={[1]=make_title()}
+   end
+   if btn(5,0) then
+    t.b=true
+   end
+  end
  }
 end
 --
