@@ -174,6 +174,10 @@ function offset_board(b)
      if elapsed(b.tophold) > 120 then
       b.st=1
       end_game(b)
+      if b.ob then
+       b.ob.st=2
+       end_game(b.ob)
+      end
      end
     else
      b.tophold=g.tick 
@@ -490,6 +494,11 @@ function draw_board(b)
   local y=(b.h*9)/2-8
    +sin(g.tick/35)*3
   spr(68,x,y,4,2)
+ elseif b.st==2 then
+  local x=(b.w*9)/2-16
+  local y=(b.h*9)/2-8
+   +sin(g.tick/35)*3
+  spr(64,x,y,4,2)
  end
  if b.st==3 then
   pal(6,0)
@@ -604,6 +613,8 @@ function update_title(t,s)
     make_board(6,12,1,16,0,6))
    add(bs,     
     make_board(6,12,74,16,1,6))
+   bs[1].ob=bs[2]
+   bs[2].ob=bs[1]
   else
    add(bs,
     make_board(6,12,40,16,0,6))
