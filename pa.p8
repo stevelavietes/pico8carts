@@ -68,19 +68,15 @@ function make_board(
  --     2 -- win
  --     3 -- countdown to start
  
- -- countdown struct
- b.cnt = nil 
- -- {current countdown value, 
- --  time countdown started}
- 
  b.s = nil -- tiles to swap
  b.f = {}  -- tiles to fall
+ b.go = {} -- general objects
  return b
 end
 
 function start_board(b)
  b.st = 3 -- countdown to start
- b.cnt = {3,g.tick} 
+ add(b.go,make_cnt(b))
  b.ri = nil
 end
 
@@ -150,6 +146,8 @@ function end_game(b)
   np=2
  end
  add(g.go,make_retry(np))
+ add(b.go,make_winlose(b.st==2,
+   (b.w*9)/2-16,(b.h*9)/2-16))
 end
 
 function offset_board(b)
@@ -205,28 +203,16 @@ function offset_board(b)
 end
 
 function update_board(b)
- if b.st==1 then
-  return
- elseif b.st==2 then
-  return
- elseif b.st==3 then
-  if elapsed(b.cnt[2])>30 then
-   b.cnt[1]-=1
-   if b.cnt[1]==0 then
-    b.st=0
-    b.cnt=nil
-    sfx(5)
-   else
-    sfx(4)
-    b.cnt[2]=g.tick
-   end
-  end
+ if b.st==0 then
+  offset_board(b)
  end
- offset_board(b)
- input_board(b)
- if b.st == 0 then
+ if b.st==0 or b.st==3 then
+  input_board(b)
+ end
+ if b.st==0 then
   scan_board(b)
  end
+ update_gobjs(b.go)
 end
 
 function busy(...)
@@ -494,24 +480,9 @@ function draw_board(b)
  if b.st<1 or b.st>2 then
   draw_curs(x, y, b.s==nil and
     g.tick%30 < 15)
- elseif b.st==1 then
-  local x=(b.w*9)/2-16
-  local y=(b.h*9)/2-8
-   +sin(g.tick/35)*3
-  spr(68,x,y,4,2)
- elseif b.st==2 then
-  local x=(b.w*9)/2-16
-  local y=(b.h*9)/2-8
-   +sin(g.tick/35)*3
-  spr(64,x,y,4,2)
- end
- if b.st==3 then
-  pal(6,0)
-  spr(96+(3-b.cnt[1])*2,
-   b.w*9/2-8,b.h*9/2-8,2,2)
-  pal()
  end
  
+ draw_gobjs(b.go)
  popc() 
 end
 
@@ -544,6 +515,58 @@ function draw_curs(x, y, grow)
  line(-(1+p),0,1+p,0,c)
  line(0,0,0,-l,c)
  popc()
+end
+
+function make_winlose(
+  wl, --true win
+  x,y
+ )
+ local r={
+  x=x,y=y,
+  e=g.tick,
+  draw=function(t)
+   local y=sin(g.tick/35)*3
+   local e=elapsed(t.e)
+   if e<10 then
+    y=(10-e)*-4
+   end
+   spr(t.s,0,y,4,2)
+  end
+ }
+ if wl then
+  r.s=64
+ else
+  r.s=68
+ end
+ return r
+end
+
+function make_cnt(b)
+ return {
+  x=b.w*9/2-8,
+  y=b.h*9/2-8,2,
+  c=3,
+  e=g.tick,
+  b=b, --potential cycle
+  draw=function(t)
+   pal(6,0)
+   spr(96+(3-t.c)*2,0,0,2,2)
+   pal()
+  end,
+  update=function(t,s)
+   if elapsed(t.e)>30 then
+    t.c-=1
+    if t.c==0 then
+     t.b.st=0
+     del(s,t)
+     sfx(5)
+    else
+     sfx(4)
+     t.e=g.tick
+    end
+   end
+  end
+ }
 end
 
 function make_bubble(x,y,n,f)
