@@ -829,7 +829,6 @@ function _init()
  g.l_t = 5 -- last tile type
  
  g.cs = {} -- camera stack
- g.bs = {} -- boards
  g.tick = 0
  g.go = {} -- general objects
 
