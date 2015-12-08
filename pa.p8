@@ -34,7 +34,11 @@ function make_board(
   p, -- player
   v, -- number of visible lines
   nt)-- number of tile types
- local b = {}  
+ local b = {
+  draw=draw_board,
+  update=update_board,
+  start=start_board,
+ }
  b.w = w
  b.h = h 
  b.nt = nt or 5 -- tile types
@@ -411,15 +415,13 @@ function scan_board(b)
 end
 
 function draw_board(b)
- pushc(-b.x,-b.y)
  rectfill(-1,-9,b.w*9,b.h*9,0)
  color(1)
  line(-2,-9,-2,b.h*9)
  line(b.w*9,-9,b.w*9,b.h*9)
  color()
- popc()
  local offset = b.o
- pushc(-b.x, -b.y + offset)
+ pushc(0,offset)
  for h = 1, b.h do
   local r = b.t[h]
   for w = 1, b.w do
@@ -551,7 +553,7 @@ function make_bubble(x,y,n,f)
  }
 end
 
-function draw_title()
+function draw_title(t)
  pushc(0,-128)
  pushc(0,(g.tick%230))
  sspr(8,0,8,8,8,0,32,32)
@@ -573,40 +575,54 @@ function draw_title()
  color(7)
  print('1 player',50,80)
  print('2 player',50,90)
- if g.np==1 then
+ if t.np==1 then
   spr(48,41,79)
  else
   spr(48,41,89)
  end
 end
 
-function update_title()
+function update_title(t,s)
  if btn(5,0)then
-  if g.np==2then
-   add(g.bs,
+  del(s,t)
+  local bs={}
+  if t.np==2then
+   add(bs,
     make_board(6,12,1,16,0,6))
-   add(g.bs,     
+   add(bs,     
     make_board(6,12,74,16,1,6))
   else
-   add(g.bs,
+   add(bs,
     make_board(6,12,40,16,0,6))
   end
-  foreach(g.bs, start_board)
+  for b in all(bs) do
+   add(g.go,b)
+   b:start()
+  end
   sfx(4)
+  return
  end
 
  if (btnp(2,0) or
    btnp(2,1)) and
-   g.np~=1 then
-  g.np=1
+   t.np~=1 then
+  t.np=1
   sfx(1)
  end
  if (btnp(3,0) or
    btnp(3,1)) and
-   g.np~=2 then
-  g.np=2
+   t.np~=2 then
+  t.np=2
   sfx(1)
  end 
+end
+
+function make_title()
+ return {
+  np=2, --num players
+  draw=draw_title,
+  update=update_title
+ }
 end
 --
 function update_gobjs(s)
@@ -621,7 +637,7 @@ function draw_gobjs(s)
  for o in all(s) do
   if o.draw then
    pushc(-(o.x or 0),
-     -(o.y or o))
+     -(o.y or 0))
    o:draw(s)
    popc()
   end
@@ -671,27 +687,15 @@ function _update()
  else
   g.tick=0
  end
- 
- if #g.bs>0 then
- 	foreach(g.bs,update_board)
- else
-  update_title()
- end
 
  update_gobjs(g.go)
 end
 
 function _draw()
  cls()
- if #g.bs > 0 then
-  foreach(g.bs,draw_board)
- else
-  draw_title() 
- end
+ draw_gobjs(g.go)
  print('cpu:'..
    (flr(stat(1)*100))..'%',0,0)
-
- draw_gobjs(g.go)
 end
 
 function _init()
@@ -706,8 +710,9 @@ function _init()
  g.cs = {} -- camera stack
  g.bs = {} -- boards
  g.tick = 0
- g.np = 2  -- number of players
  g.go = {} -- general objects
+
+ add(g.go,make_title())
 end
 
 __gfx__
