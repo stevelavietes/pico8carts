@@ -655,7 +655,7 @@ function make_menu(
   f=fnc,
   i=0, --item
   s=g.tick,
-  e=10,
+  e=5,
   x=x or 64,
   y=y or 80,
   h=10*#lbs+4,
