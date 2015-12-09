@@ -486,13 +486,10 @@ function draw_board(b)
  popc()
 
  if b.tophold then
-  local sx=-10
-  if b.p==0 then
-   sx=b.w*9+1
-  end
+  local sx=b.w*9-8
   spr(
    49+elapsed(b.tophold)/120*8,
-    sx,-10)
+    sx,-17)
  end
 end
 
@@ -712,17 +709,22 @@ function make_menu(
 end
 
 function make_retry(np)
- local m = make_menu(
-  {'retry','quit'},
-  function(t,i,s)
-   if i==0 then
-    start_game(t.np)
-   else
-    g.go={[1]=make_title()}
-   end
-  end)
-  m.np=np
- return m
+ return make_timer(30,
+  function(t,s)
+   local m = make_menu(
+    {'retry','quit'},
+    function(t,i,s)
+     if i==0 then
+      start_game(t.np)
+     else
+      g.go={make_title()}
+     end
+    end
+   )
+   m.np=t.d
+   add(s,m)
+  end,
+  np) --added to timer as d
 end
 
 function make_main()
@@ -809,6 +811,17 @@ function toscn(x,y)
  return x-c[1],y-c[2]
 end
 
+function make_timer(e,f,d)
+ return {
+  e=e,f=f,d=d,s=g.tick,
+  update=function(t,s)
+   if elapsed(t.s)>t.e then
+    del(s,t)
+    t.f(t,s)
+   end
+  end
+ }
+end
 --
 function _update()
  -- naturally g.tick wraps to
