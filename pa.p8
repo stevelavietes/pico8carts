@@ -4,7 +4,9 @@ __lua__
 function make_row(
   w, -- row width
   e, -- row is empty or not
-  nt)-- number of tile types
+  nt,-- number of tile types
+  ra,-- row above (check match)
+  raa)--row above row above
  
  local r = {}
  for j = 1, w do
@@ -12,12 +14,20 @@ function make_row(
   local n=g.e_t
   if not e then
    n = flr(rnd(nt) + 1)
-   if j > 2 then
-    if n == r[j-1].t and n == r[j-2].t then
-     n += 1
-     if n > g.l_t then
-      n = g.f_t
-     end
+   local tries=0
+   while (j > 2 and (n == r[j-1].t 
+     and n == r[j-2].t)
+     or (ra 
+         and raa 
+         and
+         (raa[j].t == n 
+         and ra[j].t == n)))
+         and 
+      tries < g.l_t do
+    n += 1
+    tries += 1
+    if n > g.l_t then
+     n = g.f_t
     end
    end
   end
@@ -43,12 +53,17 @@ function make_board(
  b.h = h 
  b.nt = nt or 5 -- tile types
  b.t = {} -- a list of rows
- for i = 1, h do
+ for i = h,1,-1 do
   local e=false
   if h-i>v then
    e=true
   end  
-  b.t[i] = make_row(w,e,b.nt)
+  if h-i < 3 or e then
+   b.t[i] = make_row(w,e,b.nt)
+  else
+   b.t[i] = make_row(
+    w,e,b.nt,b.t[i+1],b.t[i+2])
+  end
  end  
  
  -- cursor position (0 indexed)
