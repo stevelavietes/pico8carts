@@ -668,7 +668,8 @@ function make_menu(
   tw=0,--text width
   draw=function(t)
    local e=elapsed(t.s)
-   local x=min(1,e/t.e)*32
+   local w=t.tw*4+10
+   local x=min(1,e/t.e)*(w+9)/2
    if not t.omb then
     rectfill(-x,0,x,t.h,0)
     rect(-x,0,x,t.h,1)
@@ -676,13 +677,13 @@ function make_menu(
    if e<t.e then
     return
    end
-   x=-t.tw*4/2
+   x=w/2+1
    for i,l in pairs(t.lbs) do
     local y=4+(i-1)*10
-    print(l,x,y+1,0)
-    print(l,x,y,7)
+    print(l,-x+9,y+1,0)
+    print(l,-x+9,y,7)
    end
-   spr(48,x-9,3+10*t.i)
+   spr(48,-x,3+10*t.i)
   end,
   update=function(t,s)
    if elapsed(t.s)<(t.e*2) then
@@ -743,7 +744,7 @@ function make_main()
   function(t,i,s)
    start_game(i+1)
   end,
-  65,76,true
+  62,76,true
  )
 end
 
