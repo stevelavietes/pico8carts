@@ -654,7 +654,7 @@ function make_menu(
  x,y, --pos
  omb --omit backdrop
 )
- return {
+ local m={
   lbs=lbs,
   f=fnc,
   i=0, --item
@@ -665,22 +665,24 @@ function make_menu(
   h=10*#lbs+4,
   b=false,
   omb=omb,
+  tw=0,--text width
   draw=function(t)
    local e=elapsed(t.s)
+   local x=min(1,e/t.e)*32
    if not t.omb then
-    local x=min(1,e/t.e)*32
     rectfill(-x,0,x,t.h,0)
     rect(-x,0,x,t.h,1)
    end
    if e<t.e then
     return
    end
+   x=-t.tw*4/2
    for i,l in pairs(t.lbs) do
     local y=4+(i-1)*10
-    print(l,-18,y+1,0)
-    print(l,-18,y,7)
+    print(l,x,y+1,0)
+    print(l,x,y,7)
    end
-   spr(48,-18-9,3+10*t.i)
+   spr(48,x-9,3+10*t.i)
   end,
   update=function(t,s)
    if elapsed(t.s)<(t.e*2) then
@@ -710,6 +712,10 @@ function make_menu(
    end
   end
  }
+ for l in all(lbs) do
+  m.tw=max(m.tw,#l)
+ end
+ return m
 end
 
 function make_retry(np)
@@ -737,7 +743,7 @@ function make_main()
   function(t,i,s)
    start_game(i+1)
   end,
-  68,76,true
+  65,76,true
  )
 end
 
