@@ -463,7 +463,8 @@ function draw_board(b)
     if t.g[1]==0 and t.g[2]==0
       then
      local warn=false
-     if g.tick%16>7 then
+     if b.st==0 and
+       g.tick%16>7 then
       for i=w,w+t.g[3]-1 do
        if b.t[1][i].t>0 then
         warn=true
@@ -471,9 +472,13 @@ function draw_board(b)
        end
       end
      end
+     if b.st==1 or b.st==2 then
+      pal(13,6)
+     end
      draw_garb((w-1)*9,
       (h-1)*9, t.g[3],t.g[4],
        warn)
+     pal()
     end
    elseif s > 0 then
     if b.st<1 or b.st>2 then
