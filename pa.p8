@@ -816,7 +816,7 @@ function make_stats(b,x,y)
   b=b,x=x,y=y,
   draw=function(t)
    print('speed '..
-    t.b.r/0.025,0,0,7)
+    (t.b.r-0.025)/0.01+1,0,0,7)
   end
  }
 end
