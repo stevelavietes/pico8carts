@@ -93,7 +93,7 @@ function start_board(b)
  b.st = 3 -- countdown to start
  add(b.go,make_cnt(b))
  b.ri = nil
- if true then
+ if false then
   add_garb(b,0,3,4,2)
   add_garb(b,2,2,3,1)
  end
