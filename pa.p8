@@ -811,6 +811,16 @@ function make_main()
  )
 end
 
+function make_stats(b,x,y)
+ return {
+  b=b,x=x,y=y,
+  draw=function(t)
+   print('speed '..
+    t.b.r/0.025,0,0,7)
+  end
+ }
+end
+
 function start_game(np)
  g.go={}
  local bs={}
@@ -824,6 +834,7 @@ function start_game(np)
  else
   add(bs,
    make_board(6,12,38,26,0,6))
+  add(g.go,make_stats(bs[1],2,2))
  end
  for b in all(bs) do
   add(g.go,b)
@@ -921,7 +932,8 @@ function _draw()
  
  draw_gobjs(g.go)
  print('cpu:'..
-   (flr(stat(1)*100))..'%',0,0)
+   (flr(stat(1)*100))..'%',100,0,
+    7)
 end
 
 function _init()
