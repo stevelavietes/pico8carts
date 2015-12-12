@@ -126,15 +126,11 @@ local m = false
   end
  end
  if m then sfx(0) end
- 
- if b.s then
-  return
- end
 end
 
 function input_board(b)
  input_cursor(b)
- if btnp(5, b.p) and b.st==0 then
+ if btnn(5,b.p) and b.st==0 then
   local x = b.cx+1
   local y = b.cy+1
 
@@ -815,7 +811,8 @@ function make_menu(
  lbs, --menu lables
  fnc, --chosen callback
  x,y, --pos
- omb --omit backdrop
+ omb, --omit backdrop
+ p    --player
 )
  local m={
   lbs=lbs,
@@ -826,9 +823,9 @@ function make_menu(
   x=x or 64,
   y=y or 80,
   h=10*#lbs+4,
-  b=false,
   omb=omb,
   tw=0,--text width
+  p=p or -1,
   draw=function(t)
    local e=elapsed(t.s)
    local w=t.tw*4+10
@@ -852,25 +849,21 @@ function make_menu(
    if elapsed(t.s)<(t.e*2) then
     return
    end
-   if t.b and not btn(5,0) then
+
+   if btnn(5,t.p) then
     if t.f then
      t:f(t.i,s)
      sfx(2)
     end
    end
-   if btn(5,0) then
-    t.b=true
-   end
 
-   if (btnp(2,0) or
-    btnp(2,1)) and
-    t.i>0 then
+   if btnn(2,t.p) and
+     t.i>0 then
     t.i-=1
     sfx(1)
    end
-   if (btnp(3,0) or
-    btnp(3,1)) and
-    t.i<(#t.lbs-1) then
+   if btnn(3,t.p) and
+     t.i<(#t.lbs-1) then
     t.i+=1
     sfx(1)
    end
@@ -1010,6 +1003,27 @@ function make_timer(e,f,d)
   end
  }
 end
+
+--returns state,changed
+function btns(i,p)
+ i=shl(1,i)
+ if p==1 then
+  i=shl(i,8)
+ end
+ local c=band(i,g.ct)
+ local cng=band(i,g.ctl)
+ return c>0,c~=cng
+end
+
+--returns new press only
+function btnn(i,p)
+ if p==-1 then --either
+  return btnn(i,0) or btnn(i,1)
+ end
+ local pr,chg=btns(i,p)
+ return pr and chg
+end
+
 --
 function _update()
  -- naturally g.tick wraps to
@@ -1019,6 +1033,10 @@ function _update()
  else
   g.tick=0
  end
+
+ -- current/last controller
+ g.ctl = g.ct
+ g.ct = btn()
 
  update_gobjs(g.go)
 end
@@ -1042,7 +1060,7 @@ end
 function _init()
  -- globals struct
  g = {}
- 
+ --g.dbg=true
  -- tile type enums
  g.e_t = 0 -- empty tile
  g.f_t = 1 -- first tile type
@@ -1051,7 +1069,8 @@ function _init()
  g.cs = {} -- camera stack
  g.tick = 0
  g.go = {} -- general objects
-
+ g.ct = btn()
+ g.ctl = g.cs
  add(g.go,make_title())
 end
 
