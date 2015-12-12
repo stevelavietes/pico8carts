@@ -171,6 +171,19 @@ end
 
 function offset_board(b)
  if b.st ~= 0 then return end
+ if b.hd then
+  if b.hd > 0 then
+   b.hd-=1
+   if b.tophold then
+    b.tophold=g.tick
+   end
+  else
+   b.hd=nil
+   --for no speed-up during
+   --hold
+   --b.ri=g.tick
+  end
+ end
 
  if not b.ri then
   b.ri=g.tick
@@ -182,7 +195,7 @@ function offset_board(b)
 
  if btn(4,b.p) then
   b.o+=1
- else
+ elseif not b.hd then
   b.o+=b.r
  end
 
@@ -407,6 +420,11 @@ function scan_board(b)
  end
  
  if #ms > 3 then
+  if not b.hd then
+   b.hd=0
+  end
+  b.hd+=50 --todo:tune
+
   local mc=0
   local um={}
   for t in all(ms) do
@@ -817,6 +835,9 @@ function make_stats(b,x,y)
   draw=function(t)
    print('speed '..
     (t.b.r-0.025)/0.01+1,0,0,7)
+   if b.hd then
+    print('hold '..b.hd,0,8,7)
+   end
   end
  }
 end
