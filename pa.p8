@@ -353,6 +353,52 @@ function above_solid(b,x,y)
  return true
 end
 
+function clr_match(b,x,y)
+ local t=b.t[y][x]
+ t.m=nil
+ t.t=0
+ --update chain count above
+ local ch=t.ch
+ if not ch then
+  ch=2
+ else
+  t.ch=nil
+  ch+=1
+ end
+ for i=y-1,1,-1 do
+  local t2=b.t[i][x]
+  if t2.t>0 and
+    not busy(t2) then
+   if t2.ch then
+    t2.ch=max(ch,t2.ch)
+   else
+    t2.ch=ch
+   end
+  end
+ end
+end
+
+function reset_chain(b)
+ for x=1,b.w do
+  local tt = b.t[b.h-1][x]
+  if not busy(tt) then
+   tt.ch=nil
+  end
+  for y=b.h-2,1,-1 do
+   local t=b.t[y][x]
+   if not busy(t) and t.ch then
+    if (tt.t>0 and
+      not busy(tt)) and
+      not tt.ch
+      then
+     t.ch=nil
+    end
+   end
+   tt=t
+  end
+ end
+end
+
 function scan_board(b)
  local k = g.tick
  local ms = {}
@@ -367,8 +413,7 @@ function scan_board(b)
 
    if t.m then
     if elapsed(t.m) > 15 then
-     t.m = nil
-     t.t = 0
+     clr_match(b,w,h)
     end
    end
 
@@ -414,40 +459,52 @@ function scan_board(b)
   end
  end
  
- for _,t in pairs(ms) do
+ for t in all(ms) do
   t.m = k
  end
  
- if #ms > 0 then
+ --collase to unique matches
+ local mc=0
+ local um={}
+ local ch=1
+ for t in all(ms) do
+  if not um[t] then
+   um[t]=1
+   mc+=1
+   if t.ch then
+    ch=max(ch,t.ch)
+   end
+  end
+ end
+
+ if mc>0 then
   sfx(2)
  end
  
- if #ms > 3 then
-  if not b.hd then
-   b.hd=0
-  end
-  b.hd+=50 --todo:tune
-
-  local mc=0
-  local um={}
-  for t in all(ms) do
-   if not um[t] then
-    um[t]=1
-    mc+=1
-   end
-  end
-  local sx=b.x
-  local f=false
-  if b.p>0 then
-   sx-=9
-   f=true
-  else
-   sx+=b.w*9-7
-  end
+ if ch>1 then
   add(g.go,make_bubble(
-    sx, b.y+b.cy*9, mc,f))
-  --todo, add hold
+    max(0,b.x+b.cx*9-17),
+    b.y+b.cy*9,ch..'x',true,9,0))
+  incr_hold(b,ch*25)	--tune
  end
+
+ if mc>3 then
+  incr_hold(b,50) --todo tune
+  local sx=b.x+(b.cx+2)*9
+  local f=false
+  add(g.go,make_bubble(
+    min(128-16,sx),
+    b.y+b.cy*9,mc,f))
+ end
+
+ reset_chain(b)
+end
+
+function incr_hold(b,v)
+ if not b.hd then
+  b.hd=0
+ end
+ b.hd+=v
 end
 
 function draw_board(b)
@@ -524,6 +581,10 @@ function draw_board(b)
      s+=16
     end
     spr(s,(w-1)*9,(h-1)*9)
+    if g.dbg and t.ch then
+     print(t.ch,
+      (w-1)*9+2,(h-1)*9+1,7)
+    end
    end
 
    if r[w].s then
@@ -672,19 +733,28 @@ function make_cnt(b)
  }
 end
 
-function make_bubble(x,y,n,f)
+function make_bubble(
+  x,y,n,f,p,p2)
  return {
-  x=x,y=y,n=n,b=g.tick,f=f,
+  x=x,y=y,n=n..'',
+  b=g.tick,f=f,p=p,p2=p2,
   draw=function(t)
+   if t.p then
+    pal(13,t.p)
+   end
+   if t.p2 then
+    pal(6,t.p2)
+   end
    local sx=1
-   if t.n>9then
+   if #t.n>1 then
     sx-=1
    end
    spr(102,0,0,2,2,t.f)
-   print(t.n,5+sx,3,6) 
+   print(t.n,5+sx,3,6)
+   pal()
   end,
   update=function(t,s)
-   if elapsed(t.b) > 20 then
+   if elapsed(t.b) > 60 then
     del(s,t)
     return
    end
