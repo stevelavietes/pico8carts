@@ -510,6 +510,11 @@ function draw_board(b)
  line(-1,-9,-1,b.h*9)
  line(b.w*9-1,-9,b.w*9-1,b.h*9)
  line(-1,-10,b.w*9-1,-10)
+ if b.hd then
+  local btm=(b.h-1)*9+2
+  line(-1,btm,-1,
+    max(-9,btm-b.hd),12)
+ end
  color()
  local offset = b.o
  if b.et then
