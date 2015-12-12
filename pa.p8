@@ -160,6 +160,7 @@ function end_game(b)
  end
  b.s=nil
  b.tophold=nil
+ b.hd=nil
  local np=1
  if b.ob then
   np=2
