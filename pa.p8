@@ -812,11 +812,13 @@ function make_menu(
  fnc, --chosen callback
  x,y, --pos
  omb, --omit backdrop
- p    --player
+ p,   --player
+ cfnc --cancel callback
 )
  local m={
   lbs=lbs,
   f=fnc,
+  fc=cfnc,
   i=0, --item
   s=g.tick,
   e=5,
@@ -853,6 +855,14 @@ function make_menu(
    if btnn(5,t.p) then
     if t.f then
      t:f(t.i,s)
+     sfx(2)
+    end
+   end
+
+   --cancel
+   if btnn(4,t.p) then
+    if t.fc then
+     t:fc(t.i,s)
      sfx(2)
     end
    end
