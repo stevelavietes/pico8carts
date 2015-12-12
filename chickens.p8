@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
--- chickens!!! v1.0
+-- chickens!!! v1.1
 -- by jminor
 
 sprites={}
@@ -17,6 +17,8 @@ fences={}
 players={}
 living={}
 obstacles={}
+shouted=false
+gated=false
 
 function mksprite(x,y,vx,vy,v)
  return {
@@ -57,6 +59,7 @@ function _init()
      v)
     s.ntiles=2
     s.update=chx_update
+    s.eating=false
     add(sprites,s)
     add(chickens,s)
     add(living,s)
@@ -149,6 +152,7 @@ function _update()
   s:update()
  end
  if btnp(4) then
+  gated=true
   toggle_gate()
  end
 end
@@ -163,7 +167,7 @@ function _draw()
   if gate_open then
    cprint2("z to open/close the gate",64,14*8,7)
   else
-   cprint2("you win!!!",64,14*8,rnd(16))
+   cprint2("you win!!!",64,12*8,rnd(16))
    if #players == 1 then
 	   players[1]:say("i did it!")
 	  else
@@ -176,9 +180,12 @@ function _draw()
   if t<200 then
    cprint2("get all the chickens",64,13*8,7)
    cprint2("into the coop",64,14*8,7)
-  elseif t<400 then
-   cprint2("x to shout",64,13*8,7)
-   cprint2("z to open/close the gate",64,14*8,7)
+  else
+   if not shouted then
+    cprint2("x to shout",64,13*8,7)
+   elseif not gated then
+    cprint2("z to open/close the gate",64,13*8,7)
+   end
   end
  end
 end
@@ -301,9 +308,15 @@ function ply_update(s)
  if btn(2) then s.vy=-1/8 end
  if btn(3) then s.vy=1/8 end
  if btnp(5) then
+  shouted=true
   s:say("!!!")
   for c in all(chickens) do
    flee(c,s)
+   if c.eating then
+    c:say("?")
+   else
+    c:say("!")
+   end
   end
  end
 
@@ -329,9 +342,11 @@ function chx_update(s)
   s.vy=0
   s.tile=2
   s.ntiles=4
+  s.eating=true
  else
   s.tile=1
   s.ntiles=2
+  s.eating=false
  end
 
  o=willbump(s,s.vx,s.vy,living)
