@@ -489,7 +489,7 @@ function scan_board(b)
  end
 
  if mc>3 then
-  incr_hold(b,50) --todo tune
+  incr_hold(b,mc*12) --todo tune
   local sx=b.x+(b.cx+2)*9
   local f=false
   add(g.go,make_bubble(
