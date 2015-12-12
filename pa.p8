@@ -158,6 +158,9 @@ function end_game(b)
   t.s=nil
   t.ss=nil
  end
+ if b.st==1 then
+  b.et=g.tick
+ end
  b.s=nil
  b.tophold=nil
  local np=1
@@ -455,6 +458,14 @@ function draw_board(b)
  line(-1,-10,b.w*9-1,-10)
  color()
  local offset = b.o
+ if b.et then
+  local e=elapsed(b.et)
+  if e<10 then
+   offset+=sin(e/5)*3*((9-e)/9)
+  else
+   b.et=nil
+  end
+ end
  pushc(0,offset)
  for h = 1, b.h do
   local r = b.t[h]
