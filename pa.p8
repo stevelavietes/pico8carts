@@ -316,7 +316,9 @@ function update_fall(b)
    if (t.g 
        and t.g[1] ==0 
        and t.g[2] ==0) then
-    if not t.f then
+    if (not t.f and 
+       not t.s and 
+       not t.m) then
      update_fall_gb(b,x,y)
     end
    elseif y<b.h and t.t>0 then
