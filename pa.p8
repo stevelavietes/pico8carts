@@ -985,36 +985,70 @@ function make_retry(np)
   np) --added to timer as d
 end
 
-function make_lmenu(pm)
+function make_lmenu(p,pm)
  local m=make_menu(
   {'easy',
    'normal',
    'hard',
    'expert'},
   function(t,i,s)
-   g.lv[1]=i
-   start_game(1)
-  end,
-  64,70,nil,0,
-  function(t,s)
-   t.pm.off=nil
+   t.off=true
+   g.lv[p+1]=i
+   t.pm:accept(t,s)
    del(s,t)
+  end,
+  64,70,nil,p,
+  function(t,s)
+   t.pm:cancel(t,s)
   end
  )
+ m.i=g.lv[p+1]
+ m.p=p
  m.pm=pm
  return m
+end
+
+function make_lmenuc(pm,np,s)
+ local c={
+  np=np,
+  pm=pm,
+  ac=0, --num accepted
+  mns={},
+  accept=function(t,mn,s)
+   t.ac+=1
+   if t.ac==t.np then
+    t:_done()
+    start_game(t.np)
+   end
+  end,
+  cancel=function(t,mn,s)
+   t.pm.off=nil
+   t:_done(s)
+  end,
+  _done=function(t,s)
+   for mn in all(t.mns) do
+    del(s,mn)
+   end
+   del(s,t)
+  end
+ }
+ for i=1,np do
+  local mn=make_lmenu(i-1,c)
+  if np==2 then
+   mn.x+=(i*2-3)*25
+  end
+  add(c.mns,mn)
+  add(s,mn)
+ end
+ add(s,c)
 end
 
 function make_main()
  return make_menu(
   {'1 player','2 player'},
   function(t,i,s)
-   if i==0 then
-    t.off=1
-    add(s,make_lmenu(t))
-   else
-    start_game(i+1)
-   end
+   t.off=true
+   make_lmenuc(t,i+1,s)
   end,
   62,76,true
  )
