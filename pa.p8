@@ -1286,6 +1286,10 @@ function _init()
  g.ct = btn()
  g.ctl = g.cs
  add(g.go,make_title())
+
+ if false then --disable sound
+  memset(0x3200,0,0x4300-0x3200)
+ end
 end
 
 __gfx__
