@@ -86,6 +86,8 @@ function make_board(
  b.s = nil -- tiles to swap
  b.f = {}  -- tiles to fall
  b.go = {} -- general objects
+ 
+ b.mc = 0 -- match count
  return b
 end
 
@@ -172,6 +174,14 @@ end
 
 function offset_board(b)
  if b.st ~= 0 then return end
+ --pause while matching
+ if b.mc>0 then
+  if b.tophold then
+   b.tophold+=1
+  end
+  return
+ end
+
  if b.hd then
   if b.hd > 0 then
    b.hd-=1
@@ -375,6 +385,7 @@ function clr_match(b,x,y)
    end
   end
  end
+ b.mc-=1
 end
 
 function reset_chain(b)
@@ -477,6 +488,7 @@ function scan_board(b)
   end
  end
 
+ b.mc+=mc
  if mc>0 then
   sfx(2)
  end
@@ -941,6 +953,7 @@ function make_stats(b,x,y)
    if b.hd then
     print('hold '..b.hd,0,8,7)
    end
+   --print('mc '..b.mc,0,16,7)
   end
  }
 end
