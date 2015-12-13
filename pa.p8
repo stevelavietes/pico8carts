@@ -881,6 +881,7 @@ function make_menu(
    spr(48,-x,3+10*t.i)
   end,
   update=function(t,s)
+   if (t.off) return
    if elapsed(t.s)<(t.e*2) then
     return
    end
@@ -895,7 +896,7 @@ function make_menu(
    --cancel
    if btnn(4,t.p) then
     if t.fc then
-     t:fc(t.i,s)
+     t:fc(s)
      sfx(2)
     end
    end
@@ -937,11 +938,36 @@ function make_retry(np)
   np) --added to timer as d
 end
 
+function make_lmenu(pm)
+ local m=make_menu(
+  {'easy',
+   'normal',
+   'hard',
+   'expert'},
+  function(t,i,s)
+   g.lv[1]=i
+   start_game(1)
+  end,
+  64,70,nil,0,
+  function(t,s)
+   t.pm.off=nil
+   del(s,t)
+  end
+ )
+ m.pm=pm
+ return m
+end
+
 function make_main()
  return make_menu(
   {'1 player','2 player'},
   function(t,i,s)
-   start_game(i+1)
+   if i==0 then
+    t.off=1
+    add(s,make_lmenu(t))
+   else
+    start_game(i+1)
+   end
   end,
   62,76,true
  )
@@ -963,12 +989,12 @@ end
 
 function get_lv(l)
  local r={}
- if l>3 then
+ if l>2 then
   r.nt=6
  else
   r.nt=5
  end
- r.r=0.025+l*0.1
+ r.r=0.025+l*0.2
  return r
 end
 
