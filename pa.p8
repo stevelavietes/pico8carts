@@ -1036,7 +1036,7 @@ function make_lmenuc(pm,np,s)
  for i=1,np do
   local mn=make_lmenu(i-1,c)
   if np==2 then
-   mn.x+=(i*2-3)*25
+   mn.x+=(i*2-3)*39.5
   end
   add(c.mns,mn)
   add(s,mn)
