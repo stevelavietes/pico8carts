@@ -313,34 +313,11 @@ function update_fall(b)
   for y=b.h-1,1,-1 do
    local t=b.t[y][x] 
    
-   -- garbage block
    if (t.g 
        and t.g[1] ==0 
        and t.g[2] ==0) then
-    local should_fall = true
-    local lastgx=t.g[3]+x-1
-    local lastgy=t.g[4]+y-1
-    local have_cleared=false
-    for xg=x,lastgx do
-     local t2 = b.t[lastgy+1][xg]
-     if (t2.t~=0 
-         and not t2.f) 
-        or busy(t2) then
-      should_fall = false
-      break
-     end
-    end
-    if should_fall then
-     for xg=x,lastgx do
-      for yg=lastgy,y,-1 do
-       local tg1=b.t[yg][xg]
-       local tg2=b.t[yg+1][xg]
-       set_falling(b, tg1, tg2)
-       if yg==y then
-        fall_above(xg,y,tg1,b)
-       end
-      end
-     end
+    if not t.f then
+     update_fall_gb(b,x,y)
     end
    elseif y<b.h and t.t>0 then
     local t2=b.t[y+1][x]
@@ -375,9 +352,44 @@ function update_fall(b)
  end
 end
 
+function update_fall_gb(b,x,y)
+ local t = b.t[y][x]
+
+ local should_fall = true
+ local lastgx=t.g[3]+x-1
+ local lastgy=t.g[4]+y-1
+ local have_cleared=false
+ for xg=x,lastgx do
+  local t2 = b.t[lastgy+1][xg]
+  if t2.t~=0 and not t2.f then
+   should_fall = false
+   break
+  end
+ end
+ if should_fall then
+  for xg=x,lastgx do
+   for yg=lastgy,y,-1 do
+    local tg1=b.t[yg][xg]
+    local tg2=b.t[yg+1][xg]
+    set_falling(b, tg1, tg2)
+    if yg==y then
+     fall_above(xg,y,tg1,b)
+    end
+   end
+  end
+ end
+end
+
 function fall_above(x,y,t,b)
  for a=y-1,1,-1 do
   local a_t = b.t[a][x]
+  if a_t.g and not a_t.f then
+   update_fall_gb(
+    b,
+    x-a_t.g[1],
+    a-a_t.g[2])
+   break
+  end
   if busy(a_t) then
    break
   end
