@@ -176,6 +176,8 @@ function offset_board(b)
  if b.st ~= 0 then return end
  --pause while matching
  if b.mc>0 then
+  --todo, still allow
+  --manual rise
   if b.tophold then
    b.tophold+=1
   end
