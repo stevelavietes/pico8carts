@@ -459,6 +459,26 @@ function reset_chain(b)
  end
 end
 
+function match_garb(b,x,y)
+ local t=b.t[y][x]
+ if not t.g then
+  return
+ end
+ x-=t.g[1]
+ y-=t.g[2]
+ local xe=x+t.g[3]-1
+ local ye=y+t.g[4]-1
+ for xx=x,xe do
+  for yy=y,ye do
+   t=b.t[yy][xx]
+   --todo, statefulness
+   --charge preservation
+   t.t=flr(rnd(b.nt) + 1)
+   t.g=nil
+  end
+ end
+end
+
 function scan_board(b)
  local k = g.tick
  local ms = {}
@@ -493,7 +513,7 @@ function scan_board(b)
      end
      if wc > 2 then
       for i=w,w+(wc-1) do
-       add(ms, r[i])
+       add(ms,{r[i],i,h})
       end
      end 
     end
@@ -510,7 +530,7 @@ function scan_board(b)
      end
      if hc > 2 then
       for i=h,h+(hc-1) do
-       add(ms, b.t[i][w])
+       add(ms,{b.t[i][w],w,i})
       end
      end
 
@@ -520,16 +540,19 @@ function scan_board(b)
  end
  
  for t in all(ms) do
-  t.m = k
+  t[1].m = k
  end
  
  --collase to unique matches
  local mc=0
  local um={}
  local ch=1
- for t in all(ms) do
+ for m in all(ms) do
+  local t=m[1]
+  local x=m[2]
+  local y=m[3]
   if not um[t] then
-   um[t]=1
+   um[t]={x,y}
    mc+=1
    t.e=30-((mc*3)%15)
    if t.ch then
@@ -543,6 +566,24 @@ function scan_board(b)
   sfx(2)
  end
  
+ --check for adjacent garbage
+ for t,xy in pairs(um) do
+  local x=xy[1]
+  local y=xy[2]
+  if x>1 then
+   match_garb(b,x-1,y)
+  end
+  if x<b.w-1 then
+   match_garb(b,x+1,y)
+  end
+  if y>1 then
+   match_garb(b,x,y-1)
+  end
+  if y<b.h-1 then
+   match_garb(b,x,y+1)
+  end
+ end
+
  if ch>1 then
   add(g.go,make_bubble(
     max(0,b.x+b.cx*9-17),
@@ -1064,7 +1105,7 @@ function make_stats(b,x,y)
    if b.hd then
     print('hold '..b.hd,0,8,7)
    end
-   --print('mc '..b.mc,0,16,7)
+   print('mc '..b.mc,0,16,7)
   end
  }
 end
