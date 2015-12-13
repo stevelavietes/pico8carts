@@ -7,17 +7,19 @@ x=10
 y=10
 ticks=0
 moving=false
-
+flipped=false
 function _update()
  ticks+=1
  moving=false
  if btn(0,0) then
   x-=1
   moving=true
+  flipped=true
  end
  if btn(1,0) then
   x+=1
   moving=true
+  flipped=false
  end
  if btn(2,0) then
   y-=1
@@ -36,7 +38,7 @@ function _draw()
   if moving and ticks%15>7 then
    s+=2
   end
-  spr(s,x,y+i*20,2,2)
+  spr(s,x,y+i*20,2,2,flipped)
  end
 end
 
