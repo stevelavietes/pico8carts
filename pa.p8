@@ -470,7 +470,7 @@ function scan_board(b)
   if not um[t] then
    um[t]=1
    mc+=1
-   t.e=25-mc*2
+   t.e=30-mc*3
    if t.ch then
     ch=max(ch,t.ch)
    end
