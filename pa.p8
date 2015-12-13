@@ -921,9 +921,11 @@ function make_menu(
    end
    x=w/2+1
    for i,l in pairs(t.lbs) do
-    local y=4+(i-1)*10
-    print(l,-x+9,y+1,0)
-    print(l,-x+9,y,7)
+    if not t.off or i==t.i+1 then
+     local y=4+(i-1)*10
+     print(l,-x+9,y+1,0)
+     print(l,-x+9,y,7)
+    end
    end
    spr(48,-x,3+10*t.i)
   end,
@@ -995,7 +997,6 @@ function make_lmenu(p,pm)
    t.off=true
    g.lv[p+1]=i
    t.pm:accept(t,s)
-   del(s,t)
   end,
   64,70,nil,p,
   function(t,s)
