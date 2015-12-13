@@ -312,7 +312,37 @@ function update_fall(b)
  for x=1,b.w do
   for y=b.h-1,1,-1 do
    local t=b.t[y][x] 
-   if y<b.h and t.t>0 then
+   
+   -- garbage block
+   if (t.g 
+       and t.g[1] ==0 
+       and t.g[2] ==0) then
+    local should_fall = true
+    local lastgx=t.g[3]+x-1
+    local lastgy=t.g[4]+y-1
+    local have_cleared=false
+    for xg=x,lastgx do
+     local t2 = b.t[lastgy+1][xg]
+     if (t2.t~=0 
+         and not t2.f) 
+        or busy(t2) then
+      should_fall = false
+      break
+     end
+    end
+    if should_fall then
+     for xg=x,lastgx do
+      for yg=lastgy,y,-1 do
+       local tg1=b.t[yg][xg]
+       local tg2=b.t[yg+1][xg]
+       set_falling(b, tg1, tg2)
+       if yg==y then
+        fall_above(xg,y,tg1,b)
+       end
+      end
+     end
+    end
+   elseif y<b.h and t.t>0 then
     local t2=b.t[y+1][x]
     if t2.t==0 and
      not busy(t,t2) then
@@ -320,25 +350,18 @@ function update_fall(b)
       set_falling(b, t, t2)
        
       -- blocks above fall too
-      for a=y-1,1,-1 do
-       a_t = b.t[a][x]
-       if busy(a_t) then
-        break
-       end
-       set_falling(b, a_t, t)
-       t = a_t
-      end
+      fall_above(x,y,t,b)
     end
    end
   end
  end
  
- -- detect fully fallen blocks
  if not b.f then return end
+ 
  for f_s in all(b.f) do
-  -- falling tile
   local t = f_s[1]
   if (elapsed(t.s) > 0) then
+   -- execute the fall
    local t2 = f_s[2]
    t.s = nil
    t.ss = nil
@@ -352,6 +375,16 @@ function update_fall(b)
  end
 end
 
+function fall_above(x,y,t,b)
+ for a=y-1,1,-1 do
+  local a_t = b.t[a][x]
+  if busy(a_t) then
+   break
+  end
+  set_falling(b, a_t, t)
+  t = a_t
+ end
+end
 function above_solid(b,x,y)
  --brute force test prevent
  --mid-fall matches.
