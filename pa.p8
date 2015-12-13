@@ -1076,7 +1076,10 @@ function get_lv(l)
  else
   r.nt=5
  end
- r.r=0.025+l*0.2
+ r.r=0.025
+ for i=1,l*20-1 do
+  r.r+=0.01
+ end
  return r
 end
 
