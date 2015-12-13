@@ -945,20 +945,36 @@ function make_stats(b,x,y)
  }
 end
 
+function get_lv(l)
+ local r={}
+ if l>3 then
+  r.nt=6
+ else
+  r.nt=5
+ end
+ r.r=0.025+l*0.1
+ return r
+end
+
 function start_game(np)
  g.go={}
  local bs={}
+ local l1=get_lv(g.lv[1])
  if np==2 then
   add(bs,
-   make_board(6,12,1,26,0,6))
+   make_board(6,12,1,26,0,6,l1.nt))
+  local l2=get_lv(g.lv[2])
   add(bs,
-   make_board(6,12,74,26,1,6))
+   make_board(6,12,74,26,1,6,l2.nt))
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
+  bs[1].r=l1.r
+  bs[2].r=l2.r
  else
   add(bs,
-   make_board(6,12,38,26,0,6))
+   make_board(6,12,38,26,0,6,l1.nt))
   add(g.go,make_stats(bs[1],2,2))
+  bs[1].r=l1.r
  end
  for b in all(bs) do
   add(g.go,b)
@@ -1094,6 +1110,8 @@ function _init()
  g.f_t = 1 -- first tile type
  g.l_t = 5 -- last tile type
  
+ g.lv={0,0} --p1/p2 game level
+
  g.cs = {} -- camera stack
  g.tick = 0
  g.go = {} -- general objects
