@@ -88,6 +88,9 @@ function make_board(
  b.go = {} -- general objects
  
  b.mc = 0 -- match count
+ 
+ -- background object
+ add(b.go, make_flyingbg(b))
  return b
 end
 
@@ -248,6 +251,8 @@ function offset_board(b)
 end
 
 function update_board(b)
+ 
+ update_gobjs(b.ts)
  if b.st==0 then
   offset_board(b)
  end
@@ -622,6 +627,7 @@ function incr_hold(b,v)
 end
 
 function draw_board(b)
+ draw_gobjs(b.ts)
  rectfill(-1,-9,b.w*9-2,b.h*9,0)
  color(1)
  line(-1,-9,-1,b.h*9)
@@ -956,13 +962,13 @@ function update_title(t,s)
  update_gobjs(t.mn)
 end
 
-function make_flyingbg()
+function make_flyingbg(b)
 	return {
 	 update=function(t,s)
 	  if rnd(1)>.92 then
-	   add(t.ts,make_bg_block(false))
+	   add(b.ts,make_bg_block(false))
 	  end
-	  update_gobjs(t.ts)
+	  update_gobjs(b.ts)
 	 end
 	}
 end
