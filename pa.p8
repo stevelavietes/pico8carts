@@ -1236,6 +1236,27 @@ function btnn(i,p)
  return pr and chg
 end
 
+function trans(s)
+ if s<1 then
+  return
+ end
+ s=2^s
+ local b=0x6000
+ local m=15
+ for y=0,128-s,s do
+  for x=0,128-s,s do
+   local a=b+x/2
+   local c=band(peek(a),m)
+   c=bor(c,shl(c,4))
+   for i=1,s do
+    memset(a,c,s/2)
+    a+=64
+   end
+  end
+  b+=s*64
+ end
+end
+
 --
 function _update()
  -- naturally g.tick wraps to
@@ -1256,14 +1277,13 @@ end
 function _draw()
  cls()
  rectfill(0,0,127,127,5)
- --local sx=58+(g.tick%15)/5
- --for x=0,15 do
- -- for y=0,15 do
- --  spr(sx,x*8,y*8)
- -- end
- --end
  
  draw_gobjs(g.go)
+ 
+ if false then
+  trans(
+   flr(abs(sin(g.tick/50))*5))
+ end
  print('cpu:'..
    (flr(stat(1)*100))..'%',100,0,
     7)
