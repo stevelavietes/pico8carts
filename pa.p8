@@ -1018,7 +1018,11 @@ function make_retry(np)
      if i==0 then
       start_game(t.np)
      else
-      g.go={make_title()}
+      add(g.go,(make_trans(
+       function()
+        g.go={
+         make_title()}
+       end)))
      end
     end
    )
@@ -1060,7 +1064,10 @@ function make_lmenuc(pm,np,s)
    t.ac+=1
    if t.ac==t.np then
     t:_done()
-    start_game(t.np)
+    add(g.go,make_trans(
+     function(t,s)
+     	start_game(t.d)
+     end,t.np))
    end
   end,
   cancel=function(t,mn,s)
@@ -1237,16 +1244,15 @@ function btnn(i,p)
 end
 
 function trans(s)
- if s<1 then
-  return
- end
+ if (s<1) return
  s=2^s
  local b=0x6000
  local m=15
+ local o=s/2-1+(32*s)
  for y=0,128-s,s do
   for x=0,128-s,s do
    local a=b+x/2
-   local c=band(peek(a),m)
+   local c=band(peek(a+o),m)
    c=bor(c,shl(c,4))
    for i=1,s do
     memset(a,c,s/2)
@@ -1255,6 +1261,32 @@ function trans(s)
   end
   b+=s*64
  end
+end
+
+function make_trans(f,d,i)
+ return {
+  d=d,
+  e=g.tick,
+  f=f,
+  i=i,
+  update=function(t,s)
+   if elapsed(t.e)>10 then
+    if (f) f(t,s)
+    del(s,t)
+    if not t.i then
+     add(g.go,
+       make_trans(nil,nil,1))
+    end
+   end
+  end,
+  draw=function(t)
+   local x=flr(elapsed(t.e)/2)
+   if t.i then
+    x=5-x
+   end
+   trans(x)
+  end
+ }
 end
 
 --
@@ -1277,13 +1309,7 @@ end
 function _draw()
  cls()
  rectfill(0,0,127,127,5)
- 
  draw_gobjs(g.go)
- 
- if false then
-  trans(
-   flr(abs(sin(g.tick/50))*5))
- end
  print('cpu:'..
    (flr(stat(1)*100))..'%',100,0,
     7)
