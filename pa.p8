@@ -1341,7 +1341,11 @@ function _init()
  g.go = {} -- general objects
  g.ct = btn()
  g.ctl = g.cs
- add(g.go,make_title())
+ add(g.go,
+  make_trans(function()
+   add(g.go,make_title())
+  end
+ ))
 
  if false then --disable sound
   memset(0x3200,0,0x4300-0x3200)
