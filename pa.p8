@@ -919,9 +919,14 @@ function draw_title(t)
  draw_gobjs(t.mn)
 end
 
-function update_title(t,s)
- if rnd(1)>0.92 then
-  add(t.ts,{
+function make_bg_block(sprite)
+ local h=16
+ local w=16
+ if not sprite then
+  h=rnd(16)
+  w=rnd(16)
+ end
+ return {
    x=flr(rnd(128)),
    y=144,
    r=flr(rnd(2))+1,
@@ -933,13 +938,33 @@ function update_title(t,s)
     end
    end,
    draw=function(t)
-    rect(-17,-17,16,16,0)
-    sspr(t.sx,0,8,8,-16,-16,32,32)
+    rect(-17,-17,w,h,0)
+    if (sprite) then
+     sspr(t.sx,0,8,8,-16,-16,32,32)
+    else
+     rectfill(-17,-17,w,h,12)
+    end
    end
-  })
+  }
+end
+
+function update_title(t,s)
+ if rnd(1)>.92 then
+  add(t.ts,make_bg_block(true))
  end
  update_gobjs(t.ts)
  update_gobjs(t.mn)
+end
+
+function make_flyingbg()
+	return {
+	 update=function(t,s)
+	  if rnd(1)>.92 then
+	   add(t.ts,make_bg_block(false))
+	  end
+	  update_gobjs(t.ts)
+	 end
+	}
 end
 
 function make_title()
@@ -1337,6 +1362,13 @@ end
 function _draw()
  cls()
  rectfill(0,0,127,127,5)
+ --local sx=58+(g.tick%15)/5
+ --for x=0,15 do
+ -- for y=0,15 do
+ --  spr(sx,x*8,y*8)
+ -- end
+ --end
+ 
  draw_gobjs(g.go)
  print('cpu:'..
    (flr(stat(1)*100))..'%',100,0,
