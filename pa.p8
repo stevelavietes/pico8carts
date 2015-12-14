@@ -547,10 +547,15 @@ function scan_board(b)
  local mc=0
  local um={}
  local ch=1
+ local mm={b.w,0,b.h,0}
  for m in all(ms) do
   local t=m[1]
   local x=m[2]
   local y=m[3]
+  mm[1]=min(x,mm[1])
+  mm[2]=max(x,mm[2])
+  mm[3]=min(y,mm[3])
+  mm[4]=max(y,mm[4])
   if not um[t] then
    um[t]={x,y}
    mc+=1
@@ -560,7 +565,8 @@ function scan_board(b)
    end
   end
  end
-
+ local mx=mm[1]+(mm[2]-mm[1])/2
+ local my=mm[3]+(mm[4]-mm[3])/2-1
  b.mc+=mc
  if mc>0 then
   sfx(2)
@@ -586,18 +592,18 @@ function scan_board(b)
 
  if ch>1 then
   add(g.go,make_bubble(
-    max(0,b.x+b.cx*9-17),
-    b.y+b.cy*9,ch..'x',true,9,0))
+    max(0,b.x+(mx-1)*9-17),
+    b.y+my*9,ch..'x',true,9,0))
   incr_hold(b,ch*25)	--tune
  end
 
  if mc>3 then
   incr_hold(b,mc*12) --todo tune
-  local sx=b.x+(b.cx+2)*9
+  local sx=b.x+mx*9
   local f=false
   add(g.go,make_bubble(
     min(128-16,sx),
-    b.y+b.cy*9,mc,f))
+    b.y+my*9-5,mc,f))
  end
 
  reset_chain(b)
