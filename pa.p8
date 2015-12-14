@@ -1016,7 +1016,11 @@ function make_retry(np)
     {'retry','quit'},
     function(t,i,s)
      if i==0 then
-      start_game(t.np)
+      add(g.go,(make_trans(
+       function(t,s)
+        start_game(t.d)
+       end,
+       t.np)))
      else
       add(g.go,(make_trans(
        function()
