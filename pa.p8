@@ -1281,7 +1281,7 @@ function make_trans(f,d,i)
   i=i,
   update=function(t,s)
    if elapsed(t.e)>10 then
-    if (f) f(t,s)
+    if (t.f) t:f(s)
     del(s,t)
     if not t.i then
      add(g.go,
