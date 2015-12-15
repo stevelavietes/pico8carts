@@ -102,7 +102,7 @@ function start_board(b)
 end
 
 function input_cursor(b)
-local m = false
+ local m = false
  if btnp(0, b.p) then
   if b.cx > 0 then
    b.cx -= 1
@@ -613,10 +613,7 @@ function scan_board(b)
 end
 
 function incr_hold(b,v)
- if not b.hd then
-  b.hd=0
- end
- b.hd+=v
+ b.hd=(b.hd or 0)+v
 end
 
 function draw_board(b)
@@ -734,12 +731,9 @@ function draw_board(b)
  clip()
  pal()
 
- local x = b.cx*9
- local y = b.cy*9
-
  if b.st<1 or b.st>2 then
-  draw_curs(x, y, b.s==nil and
-    g.tick%30 < 15)
+  draw_curs(b.cx*9,b.cy*9,
+    b.s==nil and g.tick%30 < 15)
  end
  
  draw_gobjs(b.go)
@@ -747,12 +741,11 @@ function draw_board(b)
  popc()
 
  if b.tophold then
-  local sx=b.w*9-7
   palt(2,true)
   palt(0,false)
   spr(
    49+elapsed(b.tophold)/120*8,
-    sx,-18)
+    b.w*9-7,-18)
   palt()
  end
 end
@@ -883,7 +876,6 @@ function make_bubble(
   update=function(t,s)
    if elapsed(t.b) > 60 then
     del(s,t)
-    return
    end
    t.y-=1
   end
@@ -905,7 +897,7 @@ function draw_title(t)
 end
 
 function update_title(t,s)
- if rnd(1)>.92 then
+ if rnd(1)>0.92 then
   add(t.ts,{
    x=flr(rnd(128)),
    y=128+16,
@@ -1138,7 +1130,7 @@ function get_lv(l)
   r.nt=5
  end
  r.r=0.025
- for i=1,l*20-1 do
+ for i=2,l*20 do
   r.r+=0.01
  end
  return r
@@ -1350,9 +1342,8 @@ function _init()
   end
  ))
 
- if false then --disable sound
-  memset(0x3200,0,0x4300-0x3200)
- end
+ --disable sound
+ --memset(0x3200,0,0x4300-0x3200)
 end
 
 __gfx__
