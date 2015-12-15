@@ -468,12 +468,15 @@ function match_garb(b,x,y)
  y-=t.g[2]
  local xe=x+t.g[3]-1
  local ye=y+t.g[4]-1
- for xx=x,xe do
-  for yy=y,ye do
+ local w=t.g[3]
+ for yy=y,ye do
+  local r=make_row(
+    w,false,b.nt)
+  for xx=x,xe do
    t=b.t[yy][xx]
    --todo, statefulness
    --charge preservation
-   t.t=flr(rnd(b.nt) + 1)
+   t.t=r[xx-x+1].t
    t.g=nil
   end
  end
