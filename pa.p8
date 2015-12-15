@@ -1367,7 +1367,7 @@ end
 
 function _draw()
  cls()
- rectfill(0,0,127,127,5)
+ rectfill(0,0,127,127,1)
  --local sx=58+(g.tick%15)/5
  --for x=0,15 do
  -- for y=0,15 do
