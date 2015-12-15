@@ -86,11 +86,11 @@ function make_board(
  --b.s = nil -- tiles to swap
  b.f = {}  -- tiles to fall
  b.go = {} -- general objects
+ b.ts = {} -- background tiles
  
  b.mc = 0 -- match count
  
  -- background object
- add(b.go, make_flyingbg(b))
  return b
 end
 
@@ -251,8 +251,6 @@ function offset_board(b)
 end
 
 function update_board(b)
- 
- update_gobjs(b.ts)
  if b.st==0 then
   offset_board(b)
  end
@@ -627,7 +625,10 @@ function incr_hold(b,v)
 end
 
 function draw_board(b)
- draw_gobjs(b.ts)
+ pushc(b.x,b.y)
+  draw_gobjs(b.ts)
+ popc()
+
  rectfill(-1,-9,b.w*9-2,b.h*9,0)
  color(1)
  line(-1,-9,-1,b.h*9)
@@ -777,6 +778,7 @@ function draw_board(b)
     b.w*9-7,-18)
   palt()
  end
+
 end
 
 function draw_curs(x, y, grow)
@@ -873,6 +875,7 @@ function make_cnt(b)
      t.b.st=0
      del(s,t)
      sfx(5)
+     add(b.go, make_flyingbg(b))
     else
      sfx(4)
      t.e=g.tick
@@ -925,7 +928,7 @@ function draw_title(t)
  draw_gobjs(t.mn)
 end
 
-function make_bg_block(sprite)
+function make_bg_block(sprite,b)
  local h=16
  local w=16
  if not sprite then
@@ -936,8 +939,18 @@ function make_bg_block(sprite)
    x=flr(rnd(128)),
    y=144,
    r=flr(rnd(2))+1,
+   b=b,
+   bo_l=nil,
    sx=8*(flr(rnd(5))+1),
    update=function(t,s)
+    if not sprite then
+     if not t.bo_l or
+       t.bo_l > t.b.o then
+      t.bo_l = t.b.o
+     end
+     t.r=t.b.o-t.bo_l
+     t.bo_l = t.b.o
+    end
     t.y-=t.r
     if t.y<-16 then
      del(s,t)
@@ -945,17 +958,17 @@ function make_bg_block(sprite)
    end,
    draw=function(t)
     rect(-17,-17,w,h,0)
-    if (sprite) then
+    --if (sprite) then
      sspr(t.sx,0,8,8,-16,-16,32,32)
-    else
-     rectfill(-17,-17,w,h,12)
-    end
+    --else
+    -- rectfill(-17,-17,w,h,14)
+    --end
    end
   }
 end
 
 function update_title(t,s)
- if rnd(1)>.92 then
+ if rnd(1)>0.92 then
   add(t.ts,make_bg_block(true))
  end
  update_gobjs(t.ts)
@@ -964,10 +977,15 @@ end
 
 function make_flyingbg(b)
 	return {
+	 bo=nil,
+	 b=b,
 	 update=function(t,s)
-	  if rnd(1)>.92 then
-	   add(b.ts,make_bg_block(false))
-	  end
+   if not t.bo or 
+    (t.b.o-t.bo>0.1 and 
+     rnd(1)>0.97) then
+	   add(b.ts,make_bg_block(false,b))
+    t.bo = t.b.o
+   end
 	  update_gobjs(b.ts)
 	 end
 	}
