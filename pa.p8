@@ -75,7 +75,7 @@ function make_board(
  b.p = p or 0 -- player (input)
  b.o = 0     -- rise offset
  b.r = 0.025 -- rise rate
- b.ri = nil  -- time since rise
+ --b.ri = nil  -- time since rise
  
  -- board state enum
  b.st = 0 -- playing
@@ -83,7 +83,7 @@ function make_board(
  --     2 -- win
  --     3 -- countdown to start
  
- b.s = nil -- tiles to swap
+ --b.s = nil -- tiles to swap
  b.f = {}  -- tiles to fall
  b.go = {} -- general objects
  
@@ -184,25 +184,26 @@ function offset_board(b)
   end
  end
 
+ local tick=g.tick
  if b.hd then
   if b.hd > 0 then
    b.hd-=1
    if b.tophold then
-    b.tophold=g.tick
+    b.tophold=tick
    end
   else
    b.hd=nil
    --for no speed-up during
    --hold
-   --b.ri=g.tick
+   --b.ri=tick
   end
  end
 
  if not b.ri then
-  b.ri=g.tick
+  b.ri=tick
  end
  if elapsed(b.ri) > 300 then
-  b.ri=g.tick
+  b.ri=tick
   b.r+=0.01
  end
 
@@ -229,7 +230,7 @@ function offset_board(b)
       end
      end
     else
-     b.tophold=g.tick 
+     b.tophold=tick
     end
     return
    end
@@ -335,7 +336,7 @@ function update_fall(b)
   end
  end
  
- if not b.f then return end
+ if (not b.f) return
  
  for f_s in all(b.f) do
   local t = f_s[1]
@@ -602,11 +603,9 @@ function scan_board(b)
 
  if mc>3 then
   incr_hold(b,mc*12) --todo tune
-  local sx=b.x+mx*9
-  local f=false
   add(g.go,make_bubble(
-    min(128-16,sx),
-    b.y+my*9-5,mc,f))
+    min(112,b.x+mx*9),
+      b.y+my*9-5,mc,false))
  end
 
  reset_chain(b)
@@ -900,7 +899,7 @@ function update_title(t,s)
  if rnd(1)>0.92 then
   add(t.ts,{
    x=flr(rnd(128)),
-   y=128+16,
+   y=144,
    r=flr(rnd(2))+1,
    sx=8*(flr(rnd(5))+1),
    update=function(t,s)
