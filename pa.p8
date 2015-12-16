@@ -1283,9 +1283,18 @@ function start_game(np)
   bs[2].ob=bs[1]
   bs[1].r=l1.r
   bs[2].r=l2.r
+  --sync initial tiles
+  if bs[1].nt == bs[2].nt then
+   for y=1,bs[1].h do
+    for x=1,bs[2].w do
+     bs[2].t[y][x].t=
+       bs[1].t[y][x].t
+    end
+   end
+  end
  else
   add(bs,
-   make_board(6,11,38,30,0,6,l1.nt))
+   make_board(6,12,38,30,0,6,l1.nt))
   add(g.go,make_stats(bs[1],2,2))
   bs[1].r=l1.r
  end
