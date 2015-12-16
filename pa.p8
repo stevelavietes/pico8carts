@@ -1,6 +1,49 @@
 pico-8 cartridge // http://www.pico-8.com
 version 5
 __lua__
+function _init()
+ -- globals struct
+ g = {}
+ g.lv={0,0} --p1/p2 game level
+
+ g.cs = {} -- camera stack
+ g.tick = 0
+ g.go = {} -- general objects
+ g.ct = btn()
+ g.ctl = g.cs
+ add(g.go,
+  make_trans(function()
+   add(g.go,make_title())
+  end
+ ))
+ --disable sound
+ --memset(0x3200,0,0x4300-0x3200)
+end
+
+function _update()
+ -- naturally g.tick wraps to
+ -- neg int max instead of 0
+ if g.tick<32767then
+  g.tick+=1
+ else
+  g.tick=0
+ end
+ -- current/last controller
+ g.ctl = g.ct
+ g.ct = btn()
+ -- top-level objects
+ update_gobjs(g.go)
+end
+
+function _draw()
+ cls()
+ rectfill(0,0,127,127,5)
+ draw_gobjs(g.go)
+ print('cpu:'..
+   (flr(stat(1)*100))..'%',100,0,
+    7)
+end
+--
 function make_row(
   w, -- row width
   e, -- row is empty or not
@@ -1315,54 +1358,6 @@ function make_trans(f,d,i)
    trans(x)
   end
  }
-end
-
---
-function _update()
- -- naturally g.tick wraps to
- -- neg int max instead of 0
- if g.tick<32767then
-  g.tick+=1
- else
-  g.tick=0
- end
-
- -- current/last controller
- g.ctl = g.ct
- g.ct = btn()
-
- update_gobjs(g.go)
-end
-
-function _draw()
- cls()
- rectfill(0,0,127,127,5)
- draw_gobjs(g.go)
- print('cpu:'..
-   (flr(stat(1)*100))..'%',100,0,
-    7)
-end
-
-function _init()
- -- globals struct
- g = {}
- --g.dbg=true
- 
- g.lv={0,0} --p1/p2 game level
-
- g.cs = {} -- camera stack
- g.tick = 0
- g.go = {} -- general objects
- g.ct = btn()
- g.ctl = g.cs
- add(g.go,
-  make_trans(function()
-   add(g.go,make_title())
-  end
- ))
-
- --disable sound
- --memset(0x3200,0,0x4300-0x3200)
 end
 
 __gfx__
