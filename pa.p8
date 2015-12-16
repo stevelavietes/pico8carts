@@ -294,8 +294,11 @@ function update_board(b)
   if #b.gq > 0 and
     elapsed(b.gq[1][3])>40
      then
-   add_garb(b,0,0,3,1)
-   del(b.gq,b.gq[1])
+   local x=garb_fits(b,3,1)
+   if x then
+    add_garb(b,x,0,3,1)
+    del(b.gq,b.gq[1])
+   end
   end
   offset_board(b)
  end
@@ -307,6 +310,20 @@ function update_board(b)
  end
  update_gobjs(b.go)
 end
+
+function garb_fits(b,w,h)
+ local sx=flr(rnd(b.w-w+0.99))
+ for x=sx+1,sx+w do
+  for y=1,h do
+   local t=b.t[y][x]
+   if busy(t) or t.t>0 then
+    return nil
+   end
+  end
+ end
+ return sx
+end
+
 
 function busy(...)
  for t in all({...}) do
