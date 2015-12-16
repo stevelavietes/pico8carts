@@ -11,7 +11,7 @@ function make_row(
  local r = {}
  for j = 1, w do
   r[j] = {}
-  local n=g.e_t
+  local n=0
   if not e then
    n = flr(rnd(nt) + 1)
    local tries=0
@@ -23,11 +23,11 @@ function make_row(
          (raa[j].t == n 
          and ra[j].t == n)))
          and 
-      tries < g.l_t do
+      tries < nt do
     n += 1
     tries += 1
-    if n > g.l_t then
-     n = g.f_t
+    if n > nt then
+     n = 1
     end
    end
   end
@@ -216,7 +216,7 @@ function offset_board(b)
   local r = b.t[1]
   for i=1,#r do
    -- lose condition
-   if r[i].t > g.e_t then
+   if r[i].t > 0 then
     if b.tophold then
      b.o=9
      if elapsed(b.tophold) > 120 then
@@ -1347,10 +1347,6 @@ function _init()
  -- globals struct
  g = {}
  --g.dbg=true
- -- tile type enums
- g.e_t = 0 -- empty tile
- g.f_t = 1 -- first tile type
- g.l_t = 5 -- last tile type
  
  g.lv={0,0} --p1/p2 game level
 
