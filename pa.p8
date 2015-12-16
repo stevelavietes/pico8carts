@@ -116,7 +116,7 @@ function make_board(
  b.x = x
  b.y = y
  b.p = p or 0 -- player (input)
- b.o = 0     -- rise offset
+ b.o = 4     -- rise offset
  b.r = 0.025 -- rise rate
  --b.ri = nil  -- time since rise
  
@@ -719,7 +719,7 @@ function draw_board(b)
  if b.hd then
   local btm=(b.h-1)*9+2
   line(-1,btm,-1,
-    max(-9,btm-b.hd),12)
+    max(-10,btm-b.hd),12)
  end
  color()
 
@@ -861,8 +861,8 @@ function draw_board(b)
  palt()
 
  --bottom cover
- rectfill(-1,b.h*9-9-1,
-   b.w*9-1,b.h*9-1,1)
+ --rectfill(-1,b.h*9-9-1,
+ --  b.w*9-1,b.h*9-1,1)
  ----tokens-permitting
  --palt(0,false)
  --palt(1,true)
@@ -1268,17 +1268,17 @@ function start_game(np)
  local l1=get_lv(g.lv[1])
  if np==2 then
   add(bs,
-   make_board(6,11,1,35,0,6,l1.nt))
+   make_board(6,11,1,39,0,6,l1.nt))
   local l2=get_lv(g.lv[2])
   add(bs,
-   make_board(6,11,74,35,1,6,l2.nt))
+   make_board(6,11,74,39,1,6,l2.nt))
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
   bs[1].r=l1.r
   bs[2].r=l2.r
  else
   add(bs,
-   make_board(6,11,38,35,0,6,l1.nt))
+   make_board(6,11,38,39,0,6,l1.nt))
   add(g.go,make_stats(bs[1],2,2))
   bs[1].r=l1.r
  end
