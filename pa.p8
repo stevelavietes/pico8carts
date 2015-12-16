@@ -139,8 +139,6 @@ function start_board(b)
  b.st = 3 -- countdown to start
  add(b.go,make_cnt(b))
  b.ri = nil
- --add_garb(b,0,3,4,2)
- --add_garb(b,2,2,3,1)
 end
 
 function input_cursor(b)
@@ -883,34 +881,20 @@ function draw_board(b)
 end
 
 function draw_curs(x, y, grow)
- local c,l,p=7,1,0
+ local s=12
  if grow then
-  l,p=2,1
+  s=13
  end
- pushc(-(x-p),-(y-p))
- line(0,0,l,0,c)
- line(0,0,0,l,c)
- popc() 
- pushc(-(x-p),-(y+7+p))
- line(0,0,l,0,c)
- line(0,0,0,-l,c)
- popc()
- pushc(-(x+16+p),-(y-p))
- line(0,0,-l,0,c)
- line(0,0,0,l,c)
- popc()
- pushc(-(x+16+p),-(y+7+p))
- line(0,0,-l,0,c)
- line(0,0,0,-l,c)
- popc()
- pushc(-(x+8),-(y-p))
- line(-(1+p),0,1+p,0,c)
- line(0,0,0,l,c)
- popc()
- pushc(-(x+8),-(y+7+p))
- line(-(1+p),0,1+p,0,c)
- line(0,0,0,-l,c)
- popc()
+ spr(s,x-1,y-1)
+ spr(s,x+10,y-1,1,1,true)
+ spr(s,x-1,y+1,1,1,
+   false,true)
+ spr(s,x+10,y+1,1,1,
+   true,true)
+ s+=2
+ spr(s,x+6,y-1)
+ spr(s,x+6,y+1,1,1,
+   false,true)
 end
 
 function add_garb(b,x,y,w,h)
@@ -1427,9 +1411,9 @@ function make_trans(f,d,i)
 end
 
 __gfx__
-0000000088888888ccccccccbbbbbbbbeeeeeeee9999999922222222d555555d00000000dddddddd222222220011001100000000000000000000000000000000
-00000000888ee888ccccccccb333333beeeffeee999ff99922e22e22555665550dddddd05d5d5d5d222222220110011000000000000000000000000000000000
-00000000888ee888cc6666ccb3bbbb3beeffffee99f99f992ee22ee2555665550d5dd5d0dddddddd626222221100110000000000000000000000000000000000
+0000000088888888ccccccccbbbbbbbbeeeeeeee9999999922222222d555555d00000000dddddddd222222220011001100000000777000000000000077777000
+00000000888ee888ccccccccb333333beeeffeee999ff99922e22e22555665550dddddd05d5d5d5d222222220110011007700000700000000777000000700000
+00000000888ee888cc6666ccb3bbbb3beeffffee99f99f992ee22ee2555665550d5dd5d0dddddddd626222221100110007000000700000000070000000700000
 000000008eeeeee8cc6666ccb3bbbb3beffffffe9f9999f922222222555665550d5dd5d05d5d5d5d262222221001100100000000000000000000000000000000
 000000008eeeeee8cc6666ccb3bbbb3beffffffe9f9999f922222222555665550dddddd0dddddddd626222220011001100000000000000000000000000000000
 00000000888ee888cc6666ccb3bbbb3beeffffee99f99f992ee22ee2555555550d5555d05d5d5d5d222222220110011000000000000000000000000000000000
