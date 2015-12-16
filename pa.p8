@@ -293,6 +293,12 @@ end
 
 function update_board(b)
  if b.st==0 then
+  if #b.gq > 0 and
+    elapsed(b.gq[1][3])>40
+     then
+   add_garb(b,0,0,3,1)
+   del(b.gq,b.gq[1])
+  end
   offset_board(b)
  end
  if b.st==0 or b.st==3 then
@@ -664,7 +670,7 @@ function scan_board(b)
     b.x+mx*9,
     b.y+my*9,
     b.ob,
-    {ch,mc},
+    {ch,mc,g.tick},
     g.tick)
  end
 
@@ -1268,17 +1274,17 @@ function start_game(np)
  local l1=get_lv(g.lv[1])
  if np==2 then
   add(bs,
-   make_board(6,11,1,39,0,6,l1.nt))
+   make_board(6,12,1,30,0,6,l1.nt))
   local l2=get_lv(g.lv[2])
   add(bs,
-   make_board(6,11,74,39,1,6,l2.nt))
+   make_board(6,12,74,30,1,6,l2.nt))
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
   bs[1].r=l1.r
   bs[2].r=l2.r
  else
   add(bs,
-   make_board(6,11,38,39,0,6,l1.nt))
+   make_board(6,11,38,30,0,6,l1.nt))
   add(g.go,make_stats(bs[1],2,2))
   bs[1].r=l1.r
  end
