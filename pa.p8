@@ -3,19 +3,23 @@ version 5
 __lua__
 function _init()
  -- globals struct
- g = {}
- g.lv={0,0} --p1/p2 game level
+ g = {
+  tick = 0,
+  cs = {},   --camera stack
+  ct = 0,    --controllers
+  ctl = 0,   --last controllers
+  lv = {0,0} --p1/p2 game level
+ }
 
- g.cs = {} -- camera stack
- g.tick = 0
- g.go = {} -- general objects
- g.ct = btn()
- g.ctl = g.cs
- add(g.go,
-  make_trans(function()
-   add(g.go,make_title())
-  end
- ))
+ --general objects
+ g.go = {
+  make_trans(
+   function()
+    add(g.go,make_title())
+   end
+  )
+ }
+
  --disable sound
  --memset(0x3200,0,0x4300-0x3200)
 end
