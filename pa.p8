@@ -291,13 +291,14 @@ end
 
 function update_board(b)
  if b.st==0 then
-  if #b.gq > 0 and
-    elapsed(b.gq[1][3])>40
-     then
-   local x=garb_fits(b,3,1)
+  local gb=b.gq[1]
+  if gb and
+    elapsed(gb[3])>40 then
+   local x=garb_fits(b,gb[1],
+     gb[2])
    if x then
-    add_garb(b,x,0,3,1)
-    del(b.gq,b.gq[1])
+    add_garb(b,x,0,gb[1],gb[2])
+    del(b.gq,gb)
    end
   end
   offset_board(b)
@@ -527,7 +528,7 @@ end
 
 function match_garb(b,x,y)
  local t=b.t[y][x]
- if not t.g then
+ if not t.g or t.gm then
   return
  end
  x-=t.g[1]
@@ -692,12 +693,28 @@ function scan_board(b)
  reset_chain(b)
 end
 
+function garb_size(gb)
+ local r={}
+ local sum=(gb[2]-1)*gb[1]
+ local left=sum%6
+ if sum-left>0 then
+  add(r,{6,flr(sum/6),gb[3]})
+ end
+ if left>2 then
+  add(r,{left,1,gb[3]})
+ end
+ return r
+end
+
 function send_garb(sx,sy,b,gb,e)
  add(g.go, {
   sx=sx,sy=sy,b=b,gb=gb,e=e,
   update=function(t,s)
    if elapsed(t.e)>15 then
-    add(t.b.gq,t.gb)
+    for gb in all(
+      garb_size(t.gb)) do
+     add(t.b.gq,gb)
+    end
     del(s,t)
    end
   end,
