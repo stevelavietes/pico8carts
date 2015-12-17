@@ -139,6 +139,10 @@ function start_board(b)
  b.st = 3 -- countdown to start
  add(b.go,make_cnt(b))
  b.ri = nil
+ if b.ob then
+  b.mtlidx=1
+  b.mtlcnt=0
+ end
 end
 
 function input_cursor(b)
@@ -282,6 +286,20 @@ function offset_board(b)
   del(b.t, b.t[1])
   add(b.t, make_row(b.w,false,
     b.nt))
+  if b.mtlidx then
+   b.mtlcnt+=1
+   if b.mtlcnt >=
+     g.nxtmtl[b.mtlidx] then
+    b.mtlidx+=1
+    if b.mtlidx > #g.nxtmtl
+      then
+     b.mtlidx=1
+    end
+    b.mtlcnt=0
+    b.t[b.h][
+      flr(rnd(b.w))+1].t=7
+   end
+  end
   if b.cy>0 then
    b.cy-=1
   end
@@ -1324,6 +1342,10 @@ function start_game(np)
  for b in all(bs) do
   add(g.go,b)
   b:start()
+ end
+ g.nxtmtl={}
+ for i=1,100 do
+  add(g.nxtmtl,flr(rnd(5)))
  end
 end
 
