@@ -541,11 +541,17 @@ function match_garb(b,x,y)
     w,false,b.nt)
   for xx=x,xe do
    t=b.t[yy][xx]
-   --todo, statefulness
-   --charge preservation
+   --todo charge preservation
    t.t=r[xx-x+1].t
-   --t.g=nil
    t.gm=g.tick
+   --match top and bottom
+   if yy==y and yy>1 then
+    match_garb(b,xx,yy-1)
+   end
+   if yy==ye and yy<b.h-1 then
+    match_garb(b,xx,yy+1)
+   end
+   --
   end
  end
 end
