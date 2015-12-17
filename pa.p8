@@ -315,7 +315,8 @@ function update_board(b)
    local x=garb_fits(b,gb[1],
      gb[2])
    if x then
-    add_garb(b,x,0,gb[1],gb[2])
+    add_garb(b,x,0,gb[1],gb[2],
+      gb[4])
     del(b.gq,gb)
    end
   end
@@ -544,11 +545,16 @@ function reset_chain(b)
  end
 end
 
-function match_garb(b,x,y)
+function match_garb(b,x,y,gbt)
  local t=b.t[y][x]
  if not t.g or t.gm then
   return
  end
+ --metal vs regular
+ if gbt and t.g[5] ~= gbt then
+  return
+ end
+ gbt=t.g[5]
  x-=t.g[1]
  y-=t.g[2]
  local xe=x+t.g[3]-1
@@ -564,10 +570,10 @@ function match_garb(b,x,y)
    t.gm=g.tick
    --match top and bottom
    if yy==y and yy>1 then
-    match_garb(b,xx,yy-1)
+    match_garb(b,xx,yy-1,gbt)
    end
    if yy==ye and yy<b.h-1 then
-    match_garb(b,xx,yy+1)
+    match_garb(b,xx,yy+1,gbt)
    end
    --
   end
@@ -645,6 +651,7 @@ function scan_board(b)
  
  --collase to unique matches
  local mc=0
+ local mtlc=0 --mtl count
  local um={}
  local ch=1
  local mm={b.w,0,b.h,0}
@@ -658,7 +665,11 @@ function scan_board(b)
   mm[4]=max(y,mm[4])
   if not um[t] then
    um[t]={x,y}
-   mc+=1
+   if t.t==7 then
+    mtlc+=1
+   else
+    mc+=1
+   end
    t.e=30-((mc*3)%15)
    if t.ch then
     ch=max(ch,t.ch)
@@ -704,13 +715,23 @@ function scan_board(b)
       b.y+my*9-5,mc,false))
  end
 
+ if mtlc>2 then
+  incr_hold(b,mtlc*12) --todo tune
+  send_garb(
+    b.x+mx*9,
+    b.y+my*9,
+    b.ob,
+    {1,(mtlc-2)*6+1,g.tick,1},
+    g.tick)
+ end
+
  if b.ob and
    (ch>1 or mc>3) then
   send_garb(
     b.x+mx*9,
     b.y+my*9,
     b.ob,
-    {ch,mc,g.tick},
+    {ch,mc,g.tick,0},
     g.tick)
  end
 
@@ -722,10 +743,10 @@ function garb_size(gb)
  local sum=(gb[2]-1)*gb[1]
  local left=sum%6
  if sum-left>0 then
-  add(r,{6,flr(sum/6),gb[3]})
+  add(r,{6,flr(sum/6),gb[3],gb[4]})
  end
  if left>2 then
-  add(r,{left,1,gb[3]})
+  add(r,{left,1,gb[3],gb[4]})
  end
  return r
 end
@@ -845,7 +866,7 @@ function draw_board(b)
      end
      draw_garb((w-1)*9,
       (h-1)*9, t.g[3],t.g[4],
-       warn)
+       warn,t.g[5])
      pal()
     end
    elseif s > 0 then
@@ -955,17 +976,22 @@ function draw_curs(x, y, grow)
    false,true)
 end
 
-function add_garb(b,x,y,w,h)
+function add_garb(b,x,y,w,h,mtl)
  for by=y+1,min(b.h,y+h) do
   for bx=x+1,min(b.w,x+w) do
    local t=b.t[by][bx]
-   t.g={bx-x-1,by-y-1,w,h}
+   t.g={bx-x-1,by-y-1,w,h,mtl}
    t.t=8
   end
  end
 end
 
-function draw_garb(x,y,w,h,warn)
+function draw_garb(x,y,w,h,warn,
+		mtl)
+ if mtl==1 then
+  pal(13,5)
+  pal(5,13)
+ end
  rectfill(x,y,x+w*9-2,
     y+h*9-2,13)
  rect(x,y,x+w*9-2,y+h*9-2,5)
@@ -973,6 +999,7 @@ function draw_garb(x,y,w,h,warn)
  if warn then s+=32 end
  spr(s,x+(w*9)/2-4-((w+1)%2),
    y+((h-1)*9)/2)
+	pal()
 end
 
 function make_winlose(
@@ -1316,10 +1343,10 @@ function start_game(np)
  local l1=get_lv(g.lv[1])
  if np==2 then
   add(bs,
-   make_board(6,12,1,30,0,6,l1.nt))
+   make_board(6,12,1,30,0,5,l1.nt))
   local l2=get_lv(g.lv[2])
   add(bs,
-   make_board(6,12,74,30,1,6,l2.nt))
+   make_board(6,12,74,30,1,5,l2.nt))
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
   bs[1].r=l1.r
@@ -1345,7 +1372,7 @@ function start_game(np)
  end
  g.nxtmtl={}
  for i=1,100 do
-  add(g.nxtmtl,flr(rnd(5)))
+  add(g.nxtmtl,flr(rnd(4)))
  end
 end
 
