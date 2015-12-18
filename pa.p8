@@ -682,7 +682,7 @@ function scan_board(b)
  end
  local mx=mm[1]+(mm[2]-mm[1])/2
  local my=mm[3]+(mm[4]-mm[3])/2-1
- b.mc+=mc
+ b.mc+=mc+mtlc
  if mc>0 then
   sfx(2)
  end
@@ -1369,6 +1369,8 @@ function start_game(np)
    make_board(6,12,38,30,0,6,l1.nt))
   add(g.go,make_stats(bs[1],2,2))
   bs[1].r=l1.r
+  -- uncomment to test garbage
+  --bs[1].ob=bs[1]
  end
  for b in all(bs) do
   add(g.go,b)
