@@ -43,9 +43,9 @@ function _draw()
  cls()
  rectfill(0,0,127,127,5)
  draw_gobjs(g.go)
- print('cpu:'..
-   (flr(stat(1)*100))..'%',100,0,
-    7)
+ --print('cpu:'..
+ --  (flr(stat(1)*100))..'%',100,0,
+ --   7)
 end
 --
 function make_row(
@@ -95,11 +95,25 @@ function make_board(
   draw=draw_board,
   update=update_board,
   start=start_board,
+  w=w,
+  h=h,
+  nt=nt or 5, --tile types
+  t={}, -- a list of rows
+  -- cursor position (0 indexed)
+  cx=flr(w/2)-1,
+  cy=h-4,
+  x=x,
+  y=y,
+  p=p or 0, -- player (input)
+  o=4,     -- rise offset
+  r=0.025, -- rise rate
+  mc=0, --match count
+  f={},  -- tiles to fall
+  go={}, -- general objects
+  gq={}, -- queued garbage
+  st=0   -- board state
  }
- b.w = w
- b.h = h 
- b.nt = nt or 5 -- tile types
- b.t = {} -- a list of rows
+
  for i = h,1,-1 do
   local e=false
   if h-i>v then
@@ -113,30 +127,17 @@ function make_board(
   end
  end  
  
- -- cursor position (0 indexed)
- b.cx = flr(w/2)-1
- b.cy = h - 4
- 
- b.x = x
- b.y = y
- b.p = p or 0 -- player (input)
- b.o = 4     -- rise offset
- b.r = 0.025 -- rise rate
+ -- additional fields
+ --b.s = nil -- tiles to swap
  --b.ri = nil  -- time since rise
- 
  -- board state enum
- b.st = 0 -- playing
+ --     0 -- playing
  --     1 -- lose
  --     2 -- win
  --     3 -- countdown to start
  
- --b.s = nil -- tiles to swap
- b.f = {}  -- tiles to fall
- b.go = {} -- general objects
  
- b.mc = 0 -- match count
- b.gq = {} -- queued garbage
- return b
+  return b
 end
 
 function start_board(b)
