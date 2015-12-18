@@ -649,11 +649,7 @@ function scan_board(b)
    end
   end
  end
- 
- for t in all(ms) do
-  t[1].m = k
- end
- 
+
  --collase to unique matches
  local mc=0
  local mtlc=0 --mtl count
@@ -670,6 +666,7 @@ function scan_board(b)
   mm[4]=max(y,mm[4])
   if not um[t] then
    um[t]={x,y}
+   t.m=k
    if t.t==7 then
     mtlc+=1
    else
@@ -727,7 +724,7 @@ function scan_board(b)
     b.y+my*9,
     b.ob,
     {1,(mtlc-2)*6+1,g.tick,1},
-    g.tick)
+    k)
  end
 
  if b.ob and
@@ -737,7 +734,7 @@ function scan_board(b)
     b.y+my*9,
     b.ob,
     {ch,mc,g.tick,0},
-    g.tick)
+    k)
  end
 
  reset_chain(b)
@@ -1329,6 +1326,7 @@ function make_stats(b,x,y)
 end
 
 function get_lv(l)
+ l=g.lv[l]
  local r={}
  if l>2 then
   r.nt=6
@@ -1345,17 +1343,18 @@ end
 function start_game(np)
  g.go={}
  local bs={}
- local l1=get_lv(g.lv[1])
+ local lv={get_lv(1),get_lv(2)}
  if np==2 then
-  add(bs,
-   make_board(6,12,1,30,0,5,l1.nt))
-  local l2=get_lv(g.lv[2])
-  add(bs,
-   make_board(6,12,74,30,1,5,l2.nt))
+  for i=1,2 do
+   bs[i] = make_board(
+     6,12,1,30,i-1,5,
+       lv[i].nt)
+   bs[i].r=lv[i].r
+  end
+  bs[2].x=74
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
-  bs[1].r=l1.r
-  bs[2].r=l2.r
+
   --sync initial tiles
   if bs[1].nt == bs[2].nt then
    for y=1,bs[1].h do
@@ -1367,9 +1366,11 @@ function start_game(np)
   end
  else
   add(bs,
-   make_board(6,12,38,30,0,6,l1.nt))
+   make_board(6,12,38,30,0,6,
+     lv[1].nt))
   add(g.go,make_stats(bs[1],2,2))
-  bs[1].r=l1.r
+  bs[1].r=lv[1].r
+
   -- uncomment to test garbage
   --bs[1].ob=bs[1]
  end
