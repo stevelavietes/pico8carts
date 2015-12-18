@@ -1026,6 +1026,9 @@ function make_winlose(
 end
 
 function make_cnt(b)
+ if b.p==0 then
+  addggo(make_clock(b))
+ end
  return {
   x=b.w*9/2-8,
   y=b.h*9/2-8,2,
@@ -1053,6 +1056,8 @@ function make_cnt(b)
  }
 end
 
+--todo, trim palette stuff
+--      to a sprite for tokens
 function make_bubble(
   x,y,n,f,p,p2)
  return {
@@ -1078,6 +1083,36 @@ function make_bubble(
     del(s,t)
    end
    t.y-=1
+  end
+ }
+end
+
+function make_clock(b)
+ return {
+  x=54,y=2,c=0,b=b,m=0,s=0,
+  draw=function(t)
+   rectfill(-1,-1,19,5,6)
+   local mp,sp = '',''
+   if (t.m<10) mp=0
+   if (t.s<10) sp=0
+   print(mp..t.m..':'..sp..t.s,
+     0,0,0)
+  end,
+  update=function(t)
+   if (t.b.st~=0) return
+   t.c+=1
+   --fixed-point math not
+   --accurate enough for
+   --division of seconds.
+   --do addition instead
+   if t.c>=30 then
+    t.c=0
+    t.s+=1
+    if t.s>=60 then
+     t.s=0
+     t.m+=1
+    end
+   end
   end
  }
 end
@@ -1308,19 +1343,19 @@ function make_main()
  )
 end
 
-function make_stats(b,x,y)
- return {
-  b=b,x=x,y=y,
-  draw=function(t)
-   print('speed '..
-    (t.b.r-0.025)/0.01+1,0,0,6)
-   if b.hd then
-    print('hold '..b.hd,0,8,6)
-   end
-   print('mc '..b.mc,0,16,6)
-  end
- }
-end
+--function make_stats(b,x,y)
+-- return {
+--  b=b,x=x,y=y,
+--  draw=function(t)
+--   print('speed '..
+--    (t.b.r-0.025)/0.01+1,0,0,6)
+--   if b.hd then
+--    print('hold '..b.hd,0,8,6)
+--   end
+--   print('mc '..b.mc,0,16,6)
+--  end
+-- }
+--end
 
 function get_lv(l)
  l=g.lv[l]
@@ -1365,7 +1400,7 @@ function start_game(np)
   add(bs,
    make_board(6,12,38,30,0,6,
      lv[1].nt))
-  addggo(make_stats(bs[1],2,2))
+  --addggo(make_stats(bs[1],2,2))
   bs[1].r=lv[1].r
 
   -- uncomment to test garbage
