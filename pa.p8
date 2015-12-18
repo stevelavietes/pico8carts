@@ -3,16 +3,16 @@ version 5
 __lua__
 function _init()
  -- globals struct
- g = {
-  tick = 0,
-  cs = {},   --camera stack
-  ct = 0,    --controllers
-  ctl = 0,   --last controllers
-  lv = {0,0} --p1/p2 game level
- }
+
+ g_tick = 0
+ g_cs = {}   --camera stack
+ g_ct = 0    --controllers
+ g_ctl = 0   --last controllers
+ g_lv = {0,0} --p1/p2 game level
+
 
  --general objects
- g.go = {
+ g_go = {
   make_trans(
    function()
     addggo(make_title())
@@ -25,21 +25,21 @@ function _init()
 end
 
 function _update()
- -- naturally g.tick wraps to
+ -- naturally g_tick wraps to
  -- neg int max instead of 0
- g.tick = max(0,g.tick+1)
+ g_tick = max(0,g_tick+1)
 
  -- current/last controller
- g.ctl = g.ct
- g.ct = btn()
+ g_ctl = g_ct
+ g_ct = btn()
  -- top-level objects
- update_gobjs(g.go)
+ update_gobjs(g_go)
 end
 
 function _draw()
  cls()
  rectfill(0,0,127,127,5)
- draw_gobjs(g.go)
+ draw_gobjs(g_go)
  --print('cpu:'..
  --  (flr(stat(1)*100))..'%',100,0,
  --   7)
@@ -185,9 +185,9 @@ function input_board(b)
 
   if not busy(t1, t2) and
     (t1.t>0 or t2.t>0) then
-   t1.s = g.tick
+   t1.s = g_tick
    t1.ss = 1
-   t2.s = g.tick
+   t2.s = g_tick
    t2.ss = -1
    b.s = {t1, t2}
    sfx(1)
@@ -201,7 +201,7 @@ function end_game(b)
   t.ss=nil
  end
  if b.st==1 then
-  b.et=g.tick
+  b.et=g_tick
   sfx(6)
  end
  b.s=nil
@@ -227,26 +227,25 @@ function offset_board(b)
   end
  end
 
- local tick=g.tick
  if b.hd then
   if b.hd > 0 then
    b.hd-=1
    if b.tophold then
-    b.tophold=tick
+    b.tophold=g_tick
    end
   else
    b.hd=nil
    --for no speed-up during
    --hold
-   --b.ri=tick
+   --b.ri=g_tick
   end
  end
 
  if not b.ri then
-  b.ri=tick
+  b.ri=g_tick
  end
  if elapsed(b.ri) > 300 then
-  b.ri=tick
+  b.ri=g_tick
   b.r+=0.01
  end
 
@@ -273,7 +272,7 @@ function offset_board(b)
       end
      end
     else
-     b.tophold=tick
+     b.tophold=g_tick
     end
     return
    end
@@ -288,9 +287,9 @@ function offset_board(b)
   if b.mtlidx then
    b.mtlcnt+=1
    if b.mtlcnt >=
-     g.nxtmtl[b.mtlidx] then
+     g_nxtmtl[b.mtlidx] then
     b.mtlidx+=1
-    if b.mtlidx > #g.nxtmtl
+    if b.mtlidx > #g_nxtmtl
       then
      b.mtlidx=1
     end
@@ -384,7 +383,7 @@ function update_swap(b)
 end
 
 function set_falling(b, t, t2)
- t.s = g.tick
+ t.s = g_tick
  t.f = true
  t2.f= true
       
@@ -567,7 +566,7 @@ function match_garb(b,x,y,ch,gbt)
    --charge preservation
    t.ch=max(ch,t.ch or 1)
    t.t=r[xx-x+1].t
-   t.gm=g.tick
+   t.gm=g_tick
    --match top and bottom
    if yy==y and yy>1 then
     match_garb(b,xx,yy-1,ch,gbt)
@@ -581,7 +580,6 @@ function match_garb(b,x,y,ch,gbt)
 end
 
 function scan_board(b)
- local k = g.tick
  local ms = {}
 
  update_fall(b)
@@ -661,7 +659,7 @@ function scan_board(b)
   mm[4]=max(y,mm[4])
   if not um[t] then
    um[t]={x,y}
-   t.m=k
+   t.m=g_tick
    if t.t==7 then
     mtlc+=1
    else
@@ -720,8 +718,8 @@ function scan_board(b)
     b.x+mx*9,
     b.y+my*9,
     b.ob,
-    {1,(mtlc-2)*6+1,g.tick,1},
-    k)
+    {1,(mtlc-2)*6+1,g_tick,1},
+    g_tick)
  end
 
  if b.ob and
@@ -730,8 +728,8 @@ function scan_board(b)
     b.x+mx*9,
     b.y+my*9,
     b.ob,
-    {ch,mc,g.tick,0},
-    k)
+    {ch,mc,g_tick,0},
+    g_tick)
  end
 
  reset_chain(b)
@@ -813,7 +811,7 @@ function draw_board(b)
   for w = 1, b.w do
    local s = r[w].t
    local warn = (
-       b.t[1][w].t > 0 and g.tick%16>7)
+       b.t[1][w].t > 0 and g_tick%16>7)
    if r[w].s then
     if not r[w].f then
      pushc(
@@ -852,7 +850,7 @@ function draw_board(b)
       t.g[2]==0 then
      local warn=false
      if b.st==0 and
-       g.tick%16>7 then
+       g_tick%16>7 then
       for i=w,w+t.g[3]-1 do
        if b.t[1][i].t>0 then
         warn=true
@@ -893,7 +891,7 @@ function draw_board(b)
      s+=16
     end
     spr(s,(w-1)*9,(h-1)*9)
-    --if g.dbg and t.ch then
+    --if g_dbg and t.ch then
     -- print(t.ch,
     --  (w-1)*9+2,(h-1)*9+1,7)
     --end
@@ -912,7 +910,7 @@ function draw_board(b)
  clip(sx, sy-offset,b.w*9, 17)
  for y=0,1 do
   for x=1,b.w do
-   --+(g.tick%3)*16
+   --+(g_tick%3)*16
    spr(16+(y*16),(x-1)*9,by-(y*8))
   end
  end
@@ -921,7 +919,7 @@ function draw_board(b)
 
  if b.st<1 or b.st>2 then
   draw_curs(b.cx*9,b.cy*9,
-    b.s==nil and g.tick%30 < 15)
+    b.s==nil and g_tick%30 < 15)
  end
  
  draw_gobjs(b.go)
@@ -1007,9 +1005,9 @@ function make_winlose(
  )
  local r={
   x=x,y=y,
-  e=g.tick,
+  e=g_tick,
   draw=function(t)
-   local y=sin(g.tick/35)*3
+   local y=sin(g_tick/35)*3
    local e=elapsed(t.e)
    if e<10 then
     y=(10-e)*-4
@@ -1033,7 +1031,7 @@ function make_cnt(b)
   x=b.w*9/2-8,
   y=b.h*9/2-8,2,
   c=3,
-  e=g.tick,
+  e=g_tick,
   b=b, --potential cycle
   draw=function(t)
    pal(6,0)
@@ -1049,7 +1047,7 @@ function make_cnt(b)
      sfx(5)
     else
      sfx(4)
-     t.e=g.tick
+     t.e=g_tick
     end
    end
   end
@@ -1062,7 +1060,7 @@ function make_bubble(
   x,y,n,f,p,p2)
  return {
   x=x,y=y,n=n..'',
-  b=g.tick,f=f,p=p,p2=p2,
+  b=g_tick,f=f,p=p,p2=p2,
   draw=function(t)
    if t.p then
     pal(13,t.p)
@@ -1177,7 +1175,7 @@ function make_menu(
   f=fnc,
   fc=cfnc,
   i=0, --item
-  s=g.tick,
+  s=g_tick,
   e=5,
   x=x or 64,
   y=y or 80,
@@ -1260,7 +1258,7 @@ function make_retry(np)
      else
       addggo(make_trans(
        function()
-        g.go={
+        g_go={
          make_title()}
        end))
      end
@@ -1280,7 +1278,7 @@ function make_lmenu(p,pm)
    'expert'},
   function(t,i,s)
    t.off=true
-   g.lv[p+1]=i
+   g_lv[p+1]=i
    t.pm:accept(t,s)
   end,
   64,70,nil,p,
@@ -1288,7 +1286,7 @@ function make_lmenu(p,pm)
    t.pm:cancel(t,s)
   end
  )
- m.i=g.lv[p+1]
+ m.i=g_lv[p+1]
  m.p=p
  m.pm=pm
  return m
@@ -1358,7 +1356,7 @@ end
 --end
 
 function get_lv(l)
- l=g.lv[l]
+ l=g_lv[l]
  local r={}
  if l>2 then
   r.nt=6
@@ -1373,7 +1371,7 @@ function get_lv(l)
 end
 
 function start_game(np)
- g.go={}
+ g_go={}
  local bs={}
  local lv={get_lv(1),get_lv(2)}
  if np==2 then
@@ -1410,9 +1408,9 @@ function start_game(np)
   addggo(b)
   b:start()
  end
- g.nxtmtl={}
+ g_nxtmtl={}
  for i=1,100 do
-  add(g.nxtmtl,flr(rnd(4)))
+  add(g_nxtmtl,flr(rnd(4)))
  end
 end
 
@@ -1437,25 +1435,25 @@ function draw_gobjs(s)
 end
 
 function elapsed(t)
- if g.tick>=t then
-  return g.tick - t
+ if g_tick>=t then
+  return g_tick - t
  end
- return 32767-t+g.tick
+ return 32767-t+g_tick
 end
 
 function pushc(x, y)
- local l=g.cs[#g.cs] or {0,0}
+ local l=g_cs[#g_cs] or {0,0}
  local n={l[1]+x,l[2]+y}
- add(g.cs, n)
+ add(g_cs, n)
  camera(n[1], n[2])
 end
 
 function popc()
- local len = #g.cs
- g.cs[len] = nil
+ local len = #g_cs
+ g_cs[len] = nil
  len -= 1
  if len > 0 then
-  local xy=g.cs[len]
+  local xy=g_cs[len]
   camera(xy[1],xy[2])
  else
   camera()
@@ -1463,16 +1461,16 @@ function popc()
 end
 
 function toscn(x,y)
- if #g.cs==0 then
+ if #g_cs==0 then
   return x,y
  end
- local c=g.cs[#g.cs]
+ local c=g_cs[#g_cs]
  return x-c[1],y-c[2]
 end
 
 function make_timer(e,f,d)
  return {
-  e=e,f=f,d=d,s=g.tick,
+  e=e,f=f,d=d,s=g_tick,
   update=function(t,s)
    if elapsed(t.s)>t.e then
     del(s,t)
@@ -1489,8 +1487,8 @@ function btns(i,p)
   i=shl(i,8)
  end
  local c,cng =
-   band(i,g.ct),
-   band(i,g.ctl)
+   band(i,g_ct),
+   band(i,g_ctl)
  return c>0,c~=cng
 end
 
@@ -1504,7 +1502,7 @@ function btnn(i,p)
 end
 
 function addggo(t)
- add(g.go,t)
+ add(g_go,t)
 end
 
 function trans(s)
@@ -1532,7 +1530,7 @@ end
 function make_trans(f,d,i)
  return {
   d=d,
-  e=g.tick,
+  e=g_tick,
   f=f,
   i=i,
   update=function(t,s)
