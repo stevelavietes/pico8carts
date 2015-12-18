@@ -27,11 +27,8 @@ end
 function _update()
  -- naturally g.tick wraps to
  -- neg int max instead of 0
- if g.tick<32767then
-  g.tick+=1
- else
-  g.tick=0
- end
+ g.tick = max(0,g.tick+1)
+
  -- current/last controller
  g.ctl = g.ct
  g.ct = btn()
@@ -97,14 +94,14 @@ function make_board(
   start=start_board,
   w=w,
   h=h,
-  nt=nt or 5, --tile types
+  nt=nt, --tile types
   t={}, -- a list of rows
   -- cursor position (0 indexed)
   cx=flr(w/2)-1,
   cy=h-4,
   x=x,
   y=y,
-  p=p or 0, -- player (input)
+  p=p, -- player (input)
   o=4,     -- rise offset
   r=0.025, -- rise rate
   mc=0, --match count
@@ -115,16 +112,11 @@ function make_board(
  }
 
  for i = h,1,-1 do
-  local e=false
-  if h-i>v then
-   e=true
-  end  
-  if h-i < 3 or e then
-   b.t[i] = make_row(w,e,b.nt)
-  else
-   b.t[i] = make_row(
-    w,e,b.nt,b.t[i+1],b.t[i+2])
-  end
+  local e,r2,r3 = h-i > v,
+    b.t[i+1],
+    b.t[i+2]
+  b.t[i] = make_row(
+    w,e,b.nt,r2,r3)
  end  
  
  -- additional fields
@@ -182,11 +174,12 @@ end
 function input_board(b)
  input_cursor(b)
  if btnn(5,b.p) and b.st==0 then
-  local x = b.cx+1
-  local y = b.cy+1
-
-  local t1 = b.t[y][x]
-  local t2 = b.t[y][x+1]
+  local x,y =
+   b.cx+1,
+   b.cy+1
+  local t1,t2 =
+   b.t[y][x],
+   b.t[y][x+1]
 
   if not busy(t1, t2) and
     (t1.t>0 or t2.t>0) then
@@ -213,9 +206,8 @@ function end_game(b)
  b.tophold=nil
  b.hd=nil
  local np=1
- if b.ob then
-  np=2
- end
+ if (b.ob) np=2
+
  add(g.go,make_retry(np))
  add(b.go,make_winlose(b.st==2,
    (b.w*9)/2-16,(b.h*9)/2-16))
@@ -377,9 +369,9 @@ end
 
 function update_swap(b)
  if not b.s then return end
- local t = b.s[1]
+ local t,t2 = b.s[1]
  if elapsed(t.s) > 1 then
-  local t2 = b.s[2]
+  t2 = b.s[2]
   t.s = nil
   t.ss = nil
   t2.s = nil
@@ -427,10 +419,10 @@ function update_fall(b)
  if (not b.f) return
  
  for f_s in all(b.f) do
-  local t = f_s[1]
+  local t,t2 = f_s[1]
   if (elapsed(t.s) > 0) then
    -- execute the fall
-   local t2 = f_s[2]
+   t2 = f_s[2]
    t.s = nil
    t.ss = nil
    t2.s = nil
