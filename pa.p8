@@ -544,7 +544,7 @@ function reset_chain(b)
  end
 end
 
-function match_garb(b,x,y,gbt)
+function match_garb(b,x,y,ch,gbt)
  local t=b.t[y][x]
  if not t.g or t.gm then
   return
@@ -564,15 +564,16 @@ function match_garb(b,x,y,gbt)
     w,false,b.nt)
   for xx=x,xe do
    t=b.t[yy][xx]
-   --todo charge preservation
+   --charge preservation
+   t.ch=max(ch,t.ch or 1)
    t.t=r[xx-x+1].t
    t.gm=g.tick
    --match top and bottom
    if yy==y and yy>1 then
-    match_garb(b,xx,yy-1,gbt)
+    match_garb(b,xx,yy-1,ch,gbt)
    end
    if yy==ye and yy<b.h-1 then
-    match_garb(b,xx,yy+1,gbt)
+    match_garb(b,xx,yy+1,ch,gbt)
    end
    --
   end
@@ -681,19 +682,21 @@ function scan_board(b)
  
  --check for adjacent garbage
  for t,xy in pairs(um) do
-  local x=xy[1]
-  local y=xy[2]
+  local x,y,chp =
+    xy[1],
+    xy[2],
+    ch+1
   if x>1 then
-   match_garb(b,x-1,y)
+   match_garb(b,x-1,y,chp)
   end
   if x<b.w-1 then
-   match_garb(b,x+1,y)
+   match_garb(b,x+1,y,chp)
   end
   if y>1 then
-   match_garb(b,x,y-1)
+   match_garb(b,x,y-1,chp)
   end
   if y<b.h-1 then
-   match_garb(b,x,y+1)
+   match_garb(b,x,y+1,chp)
   end
  end
 
