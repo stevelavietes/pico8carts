@@ -1115,14 +1115,6 @@ function make_clock(b)
  }
 end
 
-function draw_title(t)
- draw_gobjs(t.ts)
- pal(2,0)
- spr(128,33,36,9,4)
- pal()
- draw_gobjs(t.mn)
-end
-
 function update_title(t,s)
  if rnd(1)>0.92 then
   add(t.ts,{
@@ -1150,7 +1142,13 @@ function make_title()
  return {
   ts={},
   np=2, --num players
-  draw=draw_title,
+  draw=function(t)
+   draw_gobjs(t.ts)
+   pal(2,0)
+   spr(128,33,36,9,4)
+   pal()
+   draw_gobjs(t.mn)
+  end,
   update=update_title,
   mn={make_main()}
  }
