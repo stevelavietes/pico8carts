@@ -15,7 +15,7 @@ function _init()
  g.go = {
   make_trans(
    function()
-    add(g.go,make_title())
+    addggo(make_title())
    end
   )
  }
@@ -129,7 +129,7 @@ function make_board(
  --     3 -- countdown to start
  
  
-  return b
+ return b
 end
 
 function start_board(b)
@@ -143,32 +143,34 @@ function start_board(b)
 end
 
 function input_cursor(b)
- local m = false
- if btnp(0, b.p) then
+ local m,p =
+   false,
+   b.p
+ if btnp(0, p) then
   if b.cx > 0 then
    b.cx -= 1
    m = true
   end
  end
- if btnp(1, b.p) then
+ if btnp(1, p) then
   if b.cx < b.w - 2 then
    b.cx += 1
    m = true
   end
  end
- if btnp(2, b.p) then
+ if btnp(2, p) then
   if b.cy > 0 then
    b.cy -= 1
    m = true
   end
  end
- if btnp(3, b.p) then
+ if btnp(3, p) then
   if b.cy < b.h - 2 then
    b.cy += 1
    m = true
   end
  end
- if m then sfx(0) end
+ if (m) sfx(0)
 end
 
 function input_board(b)
@@ -208,7 +210,7 @@ function end_game(b)
  local np=1
  if (b.ob) np=2
 
- add(g.go,make_retry(np))
+ addggo(make_retry(np))
  add(b.go,make_winlose(b.st==2,
    (b.w*9)/2-16,(b.h*9)/2-16))
 end
@@ -696,7 +698,7 @@ function scan_board(b)
  end
 
  if ch>1 then
-  add(g.go,make_bubble(
+  addggo(make_bubble(
     max(0,b.x+(mx-1)*9-17),
     b.y+my*9,ch..'x',true,9,0))
   incr_hold(b,ch*25)	--tune
@@ -704,7 +706,7 @@ function scan_board(b)
 
  if mc>3 then
   incr_hold(b,mc*12) --todo tune
-  add(g.go,make_bubble(
+  addggo(make_bubble(
     min(112,b.x+mx*9),
       b.y+my*9-5,mc,false))
  end
@@ -746,7 +748,7 @@ function garb_size(gb)
 end
 
 function send_garb(sx,sy,b,gb,e)
- add(g.go, {
+ addggo({
   sx=sx,sy=sy,b=b,gb=gb,e=e,
   update=function(t,s)
    if elapsed(t.e)>15 then
@@ -1212,17 +1214,17 @@ function make_retry(np)
     {'retry','quit'},
     function(t,i,s)
      if i==0 then
-      add(g.go,(make_trans(
+      addggo(make_trans(
        function(t,s)
         start_game(t.d)
        end,
-       t.np)))
+       t.np))
      else
-      add(g.go,(make_trans(
+      addggo(make_trans(
        function()
         g.go={
          make_title()}
-       end)))
+       end))
      end
     end
    )
@@ -1264,7 +1266,7 @@ function make_lmenuc(pm,np,s)
    t.ac+=1
    if t.ac==t.np then
     t:_done()
-    add(g.go,make_trans(
+    addggo(make_trans(
      function(t,s)
      	start_game(t.d)
      end,t.np))
@@ -1360,14 +1362,14 @@ function start_game(np)
   add(bs,
    make_board(6,12,38,30,0,6,
      lv[1].nt))
-  add(g.go,make_stats(bs[1],2,2))
+  addggo(make_stats(bs[1],2,2))
   bs[1].r=lv[1].r
 
   -- uncomment to test garbage
   --bs[1].ob=bs[1]
  end
  for b in all(bs) do
-  add(g.go,b)
+  addggo(b)
   b:start()
  end
  g.nxtmtl={}
@@ -1448,8 +1450,9 @@ function btns(i,p)
  if p==1 then
   i=shl(i,8)
  end
- local c=band(i,g.ct)
- local cng=band(i,g.ctl)
+ local c,cng =
+   band(i,g.ct),
+   band(i,g.ctl)
  return c>0,c~=cng
 end
 
@@ -1462,12 +1465,18 @@ function btnn(i,p)
  return pr and chg
 end
 
+function addggo(t)
+ add(g.go,t)
+end
+
 function trans(s)
  if (s<1) return
  s=2^s
- local b=0x6000
- local m=15
- local o=s/2-1+(32*s)
+ local b,m,o =
+   0x6000,
+   15,
+   s/2-1+(32*s)
+
  for y=0,128-s,s do
   for x=0,128-s,s do
    local a=b+x/2
@@ -1493,7 +1502,7 @@ function make_trans(f,d,i)
     if (t.f) t:f(s)
     del(s,t)
     if not t.i then
-     add(g.go,
+     addggo(
        make_trans(nil,nil,1))
     end
    end
