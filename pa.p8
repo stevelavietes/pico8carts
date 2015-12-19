@@ -1084,11 +1084,9 @@ function make_vsscore()
 end
 
 function numstrlen(num)
- local n=1
- while(num>=10^n) do
-  n+=1
+ for i=1,5 do
+  if (num<10^i) return i
  end
- return n
 end
 
 function make_garbscore()
