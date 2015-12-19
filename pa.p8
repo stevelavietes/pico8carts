@@ -1093,13 +1093,15 @@ end
 
 function make_garbscore()
  return {
-  x=0,y=0,s=0,
+  x=119,y=0,s=0,sp=74,
   gq={},
   draw=function(t)
-   rectfill(1,1,
-     7+4*numstrlen(t.s),7,6)
-   spr(74,1,1)
+   local w=4*numstrlen(t.s)
+   pushc(w,0)
+   rectfill(1,1,7+w,7,6)
+   spr(t.sp,1,1)
    print(t.s,8,2,0)
+   popc()
   end,
   update=function(t)
    for gb in all(t.gq) do
