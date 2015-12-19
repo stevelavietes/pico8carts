@@ -375,10 +375,9 @@ function swapt(t,t2)
 end
 
 function update_swap(b)
- if not b.s then return end
- local t,t2 = b.s[1]
+ if (not b.s) return
+ local t,t2 = b.s[1],b.s[2]
  if elapsed(t.s) > 1 then
-  t2 = b.s[2]
   t.s = nil
   t.ss = nil
   t2.s = nil
@@ -423,13 +422,23 @@ function update_fall(b)
   end
  end
  
- if (not b.f) return
+ --if (not b.f) return
  
  for f_s in all(b.f) do
-  local t,t2 = f_s[1]
-  if (elapsed(t.s) > 0) then
+  local t,t2 = f_s[1],f_s[2]
+  --xxx: can't find what's
+  --causing non-falling entries
+  --in b.f, for now, ignore
+  --and remove
+  if not t.s then
+   del(b.f,f_s)
+   --cls()
+   --print(t.f)
+   --print(t.g)
+   --print(t.gm)
+   --stop()
+  elseif (elapsed(t.s) > 0) then
    -- execute the fall
-   t2 = f_s[2]
    t.s = nil
    t.ss = nil
    t2.s = nil
@@ -1129,7 +1138,7 @@ function make_1playgarb(b)
   update=function(t)
    if (b.st~=0) return
    --every two seconds
-   if g_tick%60==59 then
+   if g_tick%60>=59 then
     --increased odds by level
     if rnd(100)>85-(g_lv[1]*12)
       then
