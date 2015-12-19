@@ -1084,7 +1084,7 @@ function make_vsscore()
 end
 
 function numstrlen(num)
- for i=1,5 do
+ for i=1,6 do
   if (num<10^i) return i
  end
 end
