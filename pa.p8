@@ -10,6 +10,13 @@ function _init()
  g_ctl = 0   --last controllers
  g_lv = {0,0} --p1/p2 game level
 
+ --previously per-board
+ --global for tokens savings
+ g_h = 12    --board height
+ g_w = 6     --board width
+ g_hp = g_h*9 --height/pixels
+ g_wp = g_w*9 --width/pixels
+
  --general objects
  g_go = {
   make_trans(
@@ -80,8 +87,6 @@ function make_row(
 end
 
 function make_board(
-  w, -- width
-  h, -- height
   x, -- x position
   y, -- y position
   p, -- player
@@ -91,10 +96,6 @@ function make_board(
   draw=draw_board,
   update=update_board,
   start=start_board,
-  w=w,
-  h=h,
-  ww=w*9,
-  hh=h*9,
   nt=nt, --tile types
   t={}, -- a list of rows
   -- cursor position (0 indexed)
@@ -113,12 +114,12 @@ function make_board(
   lc=0   -- lines cleared
  }
 
- for i = h,1,-1 do
-  local e,r2,r3 = h-i > v,
+ for i = g_h,1,-1 do
+  local e,r2,r3 = g_h-i > v,
     b.t[i+1],
     b.t[i+2]
   b.t[i] = make_row(
-    w,e,b.nt,r2,r3)
+    g_w,e,b.nt,r2,r3)
  end  
  
  -- additional fields
@@ -155,7 +156,7 @@ function input_cursor(b)
   end
  end
  if btnp(1, p) then
-  if b.cx < b.w - 2 then
+  if b.cx < g_w - 2 then
    b.cx += 1
    m = true
   end
@@ -167,7 +168,7 @@ function input_cursor(b)
   end
  end
  if btnp(3, p) then
-  if b.cy < b.h - 2 then
+  if b.cy < g_h - 2 then
    b.cy += 1
    m = true
   end
@@ -216,7 +217,7 @@ function end_game(b)
 
  addggo(make_retry(np))
  add(b.go,make_winlose(b.st==2,
-   (b.ww)/2-16,(b.hh)/2-16))
+   (g_wp)/2-16,(g_hp)/2-16))
 end
 
 function offset_board(b)
@@ -286,7 +287,7 @@ function offset_board(b)
 
   b.o=0
   del(b.t, b.t[1])
-  add(b.t, make_row(b.w,false,
+  add(b.t, make_row(g_w,false,
     b.nt))
   b.lc+=1
   if b.mtlidx then
@@ -299,8 +300,8 @@ function offset_board(b)
      b.mtlidx=1
     end
     b.mtlcnt=0
-    b.t[b.h][
-      flr(rnd(b.w))+1].t=7
+    b.t[g_h][
+      flr(rnd(g_w))+1].t=7
    end
   end
   if b.cy>0 then
@@ -335,7 +336,7 @@ function update_board(b)
 end
 
 function garb_fits(b,w,h)
- local sx=flr(rnd(b.w-w+0.99))
+ local sx=flr(rnd(g_w-w+0.99))
  for x=sx+1,sx+w do
   for y=1,h do
    local t=b.t[y][x]
@@ -396,8 +397,8 @@ function set_falling(b, t, t2)
 end
 
 function update_fall(b)
- for x=1,b.w do
-  for y=b.h-1,1,-1 do
+ for x=1,g_w do
+  for y=g_h-1,1,-1 do
    local t=b.t[y][x] 
    
    if (t.g 
@@ -408,7 +409,7 @@ function update_fall(b)
        not t.m) then
      update_fall_gb(b,x,y)
     end
-   elseif y<b.h and t.t>0 then
+   elseif y<g_h and t.t>0 then
     local t2=b.t[y+1][x]
     if t2.t==0 and
      not busy(t,t2) then
@@ -492,7 +493,7 @@ function above_solid(b,x,y)
  --brute force test prevent
  --mid-fall matches.
  --todo:optimize
- for i=y+1,b.h-1 do
+ for i=y+1,g_h-1 do
   if b.t[i][x].t==0 then
    return false
   end
@@ -528,12 +529,12 @@ function clr_match(b,x,y)
 end
 
 function reset_chain(b)
- for x=1,b.w do
-  local tt = b.t[b.h-1][x]
+ for x=1,g_w do
+  local tt = b.t[g_h-1][x]
   if not busy(tt) then
    tt.ch=nil
   end
-  for y=b.h-2,1,-1 do
+  for y=g_h-2,1,-1 do
    local t=b.t[y][x]
    if not busy(t) and t.ch then
     if (tt.t>0 and
@@ -576,7 +577,7 @@ function match_garb(b,x,y,ch,gbt)
    if yy==y and yy>1 then
     match_garb(b,xx,yy-1,ch,gbt)
    end
-   if yy==ye and yy<b.h-1 then
+   if yy==ye and yy<g_h-1 then
     match_garb(b,xx,yy+1,ch,gbt)
    end
    --
@@ -590,9 +591,9 @@ function scan_board(b)
  update_fall(b)
  update_swap(b)
 
- for h = 1, b.h do
+ for h = 1, g_h do
   local r = b.t[h]
-  for w = 1,b.w do
+  for w = 1,g_w do
    local t = r[w]
 
    if t.m then
@@ -609,9 +610,9 @@ function scan_board(b)
    if t.t > 0 and
      not busy(t) and
      above_solid(b,w,h) then
-    if w < b.w-1 then
+    if w < g_w-1 then
      local wc = 1
-     for i=(w+1),b.w do
+     for i=(w+1),g_w do
       if t.t == r[i].t and
         not busy(r[i]) and
         above_solid(b,i,h) then
@@ -627,9 +628,9 @@ function scan_board(b)
      end 
     end
 
-    if h < b.h-2 then
+    if h < g_h-2 then
      local hc = 1
-     for i=(h+1),b.h-1 do
+     for i=(h+1),g_h-1 do
       if t.t == b.t[i][w].t and
         not busy(b.t[i][w]) then
        hc+=1
@@ -653,7 +654,7 @@ function scan_board(b)
  local mtlc=0 --mtl count
  local um={}
  local ch=1
- local mm={b.w,0,b.h,0}
+ local mm={g_w,0,g_h,0}
  for m in all(ms) do
   local t=m[1]
   local x=m[2]
@@ -692,13 +693,13 @@ function scan_board(b)
   if x>1 then
    match_garb(b,x-1,y,chp)
   end
-  if x<b.w-1 then
+  if x<g_w-1 then
    match_garb(b,x+1,y,chp)
   end
   if y>1 then
    match_garb(b,x,y-1,chp)
   end
-  if y<b.h-1 then
+  if y<g_h-1 then
    match_garb(b,x,y+1,chp)
   end
  end
@@ -798,13 +799,13 @@ function calc_offset(b)
 end
 
 function draw_board(b)
- rectfill(-1,-9,b.ww-2,b.hh,0)
+ rectfill(-1,-9,g_wp-2,g_hp,0)
  color(1)
- line(-1,-9,-1,b.hh)
- line(b.ww-1,-9,b.ww-1,b.hh)
- line(-1,-10,b.ww-1,-10)
+ line(-1,-9,-1,g_hp)
+ line(g_wp-1,-9,g_wp-1,g_hp)
+ line(-1,-10,g_wp-1,-10)
  if b.hd then
-  local btm=b.hh-7
+  local btm=g_hp-7
   line(-1,btm,-1,
     max(-10,btm-b.hd),12)
  end
@@ -813,9 +814,9 @@ function draw_board(b)
  local offset = calc_offset(b)
  pushc(0,offset)
 
- for h = 1, b.h do
+ for h = 1, g_h do
   local r = b.t[h]
-  for w = 1, b.w do
+  for w = 1, g_w do
    local s = r[w].t
    local warn = (
        b.t[1][w].t > 0 and g_tick%16>7)
@@ -912,11 +913,11 @@ function draw_board(b)
  end
 
  pal(1,0)
- local by = b.hh-9+offset
+ local by = g_hp-9+offset
  local sx,sy = toscn(0,by)
- clip(sx, sy-offset,b.ww, 17)
+ clip(sx, sy-offset,g_wp, 17)
  for y=0,1 do
-  for x=1,b.w do
+  for x=1,g_w do
    --+(g_tick%3)*16
    spr(16+(y*16),(x-1)*9,by-(y*8))
   end
@@ -938,7 +939,7 @@ function draw_board(b)
  if b.tophold then
   spr(
    49+elapsed(b.tophold)/120*8,
-    b.ww-7,-18)
+    g_wp-7,-18)
  end
  if #b.gq > 0 then
   spr(26,0,-18,2,1)
@@ -948,14 +949,14 @@ function draw_board(b)
  palt()
 
  --bottom cover
- --rectfill(-1,b.hh-9-1,
- --  b.ww-1,b.hh-1,1)
+ --rectfill(-1,g_hp-9-1,
+ --  g_wp-1,g_hp-1,1)
  ----tokens-permitting
  --palt(0,false)
  --palt(1,true)
- --clip(b.x,0,b.ww-1,128)
- --local y=b.hh-9
- --for i=0,b.w do
+ --clip(b.x,0,g_wp-1,128)
+ --local y=g_hp-9
+ --for i=0,g_w do
  -- spr(11,i*8,y,1,1,b.p==1)
  --end
  --clip()
@@ -981,8 +982,8 @@ function draw_curs(x, y, grow)
 end
 
 function add_garb(b,x,y,w,h,mtl)
- for by=y+1,min(b.h,y+h) do
-  for bx=x+1,min(b.w,x+w) do
+ for by=y+1,min(g_h,y+h) do
+  for bx=x+1,min(g_w,x+w) do
    local t=b.t[by][bx]
    t.g={bx-x-1,by-y-1,w,h,mtl}
    t.t=8
@@ -1040,8 +1041,8 @@ function make_cnt(b)
   addggo(make_vsscore())
  end
  return {
-  x=b.ww/2-8,
-  y=b.hh/2-8,
+  x=g_wp/2-8,
+  y=g_hp/2-8,
   c=3,
   e=g_tick,
   b=b, --potential cycle
@@ -1442,8 +1443,7 @@ function start_game(np)
  if np==2 then
   for i=1,2 do
    bs[i] = make_board(
-     6,12,1,30,i-1,5,
-       lv[i].nt)
+     1,30,i-1,5,lv[i].nt)
    bs[i].r=lv[i].r
   end
   bs[2].x=74
@@ -1452,8 +1452,8 @@ function start_game(np)
 
   --sync initial tiles
   if bs[1].nt == bs[2].nt then
-   for y=1,bs[1].h do
-    for x=1,bs[2].w do
+   for y=1,g_h do
+    for x=1,g_w do
      bs[2].t[y][x].t=
        bs[1].t[y][x].t
     end
@@ -1461,7 +1461,7 @@ function start_game(np)
   end
  else
   add(bs,
-   make_board(6,12,38,30,0,6,
+   make_board(38,30,0,6,
      lv[1].nt))
   --addggo(make_stats(bs[1],2,2))
   bs[1].r=lv[1].r
