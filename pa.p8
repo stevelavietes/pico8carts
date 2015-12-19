@@ -1115,25 +1115,25 @@ function make_linecount(b)
  local r=make_garbscore()
  r.ra=nil --right align
  r.sp=75 --sprite
- r.b=b
+ --r.b=b --lexical scoping to b
  r.x=0
  r.update=function(t)
-  t.s=t.b.lc
+  t.s=b.lc--t.b.lc
  end
  return r
 end
 
 function make_1playgarb(b)
  return {
-  b=b,
+  --b=b,
   update=function(t)
-   if (t.b.st~=0) return
+   if (b.st~=0) return
    --every two seconds
    if g_tick%60==59 then
     --increased odds by level
-    if rnd(100)>75-(g_lv[1]*7)
+    if rnd(100)>85-(g_lv[1]*12)
       then
-     add(t.b.gq,{3,1,g_tick})
+     add(b.gq,{3,1,g_tick})
     end
    end
   end
