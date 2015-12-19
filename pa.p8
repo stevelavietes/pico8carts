@@ -118,8 +118,8 @@ function make_board(
   local e,r2,r3 = g_h-i > v,
     b.t[i+1],
     b.t[i+2]
-  b.t[i] = make_row(
-    g_w,e,b.nt,r2,r3)
+    b.t[i] = make_row(
+      g_w,e,b.nt,r2,r3)
  end  
  
  -- additional fields
@@ -1252,23 +1252,23 @@ function make_menu(
  cfnc --cancel callback
 )
  local m={
-  lbs=lbs,
-  f=fnc,
-  fc=cfnc,
+  --lbs=lbs,
+  --f=fnc,
+  --fc=cfnc,
   i=0, --item
   s=g_tick,
   e=5,
   x=x or 64,
   y=y or 80,
   h=10*#lbs+4,
-  omb=omb,
+  --omb=omb,
   tw=0,--text width
   p=p or -1,
   draw=function(t)
    local e=elapsed(t.s)
    local w=t.tw*4+10
    local x=min(1,e/t.e)*(w+9)/2
-   if not t.omb then
+   if not omb then
     rectfill(-x,0,x,t.h,0)
     rect(-x,0,x,t.h,1)
    end
@@ -1276,7 +1276,7 @@ function make_menu(
     return
    end
    x=w/2+1
-   for i,l in pairs(t.lbs) do
+   for i,l in pairs(lbs) do
     if not t.off or i==t.i+1 then
      local y=4+(i-1)*10
      print(l,-x+9,y+1,0)
@@ -1292,16 +1292,16 @@ function make_menu(
    end
 
    if btnn(5,t.p) then
-    if t.f then
-     t:f(t.i,s)
+    if fnc then
+     fnc(t,t.i,s)
      sfx(2)
     end
    end
 
    --cancel
    if btnn(4,t.p) then
-    if t.fc then
-     t:fc(s)
+    if cfnc then
+     cfnc(t,s)
      sfx(2)
     end
    end
@@ -1312,7 +1312,7 @@ function make_menu(
     sfx(1)
    end
    if btnn(3,t.p) and
-     t.i<(#t.lbs-1) then
+     t.i<(#lbs-1) then
     t.i+=1
     sfx(1)
    end
@@ -1550,11 +1550,13 @@ end
 
 function make_timer(e,f,d)
  return {
-  e=e,f=f,d=d,s=g_tick,
+  --e=e,f=f,  --closure
+  d=d,  --data for callback
+  s=g_tick,
   update=function(t,s)
-   if elapsed(t.s)>t.e then
+   if elapsed(t.s) > e then
     del(s,t)
-    t.f(t,s)
+    f(t,s)
    end
   end
  }
