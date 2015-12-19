@@ -704,7 +704,7 @@ function scan_board(b)
  if ch>1 then
   addggo(make_bubble(
     max(0,b.x+(mx-1)*9-17),
-    b.y+my*9,ch..'x',true,9,0))
+    b.y+my*9,ch..'x',true))
   incr_hold(b,ch*25)	--tune
  end
 
@@ -1096,7 +1096,8 @@ function make_garbscore()
   x=0,y=0,s=0,
   gq={},
   draw=function(t)
-   rectfill(1,1,7+4*numstrlen(t.s),7,6)
+   rectfill(1,1,
+     7+4*numstrlen(t.s),7,6)
    spr(74,1,1)
    print(t.s,8,2,0)
   end,
@@ -1112,24 +1113,17 @@ end
 --todo, trim palette stuff
 --      to a sprite for tokens
 function make_bubble(
-  x,y,n,f,p,p2)
+  x,y,n,f)
  return {
   x=x,y=y,n=n..'',
-  b=g_tick,f=f,p=p,p2=p2,
+  b=g_tick,f=f,
   draw=function(t)
-   --if t.p then
-   -- pal(13,t.p)
-   --end
-   --if t.p2 then
-   -- pal(6,t.p2)
-   --end
    local sx=1
    if #t.n>1 then
     sx-=1
    end
    spr(102,0,0,2,2,t.f)
    print(t.n,5+sx,3,6)
-   --pal()
   end,
   update=function(t,s)
    if elapsed(t.b) > 60 then
