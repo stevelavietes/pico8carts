@@ -93,11 +93,13 @@ function make_board(
   start=start_board,
   w=w,
   h=h,
+  ww=w*9,
+  hh=h*9,
   nt=nt, --tile types
   t={}, -- a list of rows
   -- cursor position (0 indexed)
-  cx=flr(w/2)-1,
-  cy=h-4,
+  cx=2, --flr(w/2)-1
+  cy=8, --h-4
   x=x,
   y=y,
   p=p, -- player (input)
@@ -214,7 +216,7 @@ function end_game(b)
 
  addggo(make_retry(np))
  add(b.go,make_winlose(b.st==2,
-   (b.w*9)/2-16,(b.h*9)/2-16))
+   (b.ww)/2-16,(b.hh)/2-16))
 end
 
 function offset_board(b)
@@ -796,13 +798,13 @@ function calc_offset(b)
 end
 
 function draw_board(b)
- rectfill(-1,-9,b.w*9-2,b.h*9,0)
+ rectfill(-1,-9,b.ww-2,b.hh,0)
  color(1)
- line(-1,-9,-1,b.h*9)
- line(b.w*9-1,-9,b.w*9-1,b.h*9)
- line(-1,-10,b.w*9-1,-10)
+ line(-1,-9,-1,b.hh)
+ line(b.ww-1,-9,b.ww-1,b.hh)
+ line(-1,-10,b.ww-1,-10)
  if b.hd then
-  local btm=(b.h-1)*9+2
+  local btm=b.hh-7
   line(-1,btm,-1,
     max(-10,btm-b.hd),12)
  end
@@ -910,9 +912,9 @@ function draw_board(b)
  end
 
  pal(1,0)
- local by = (b.h-1)*9+offset
+ local by = b.hh-9+offset
  local sx,sy = toscn(0,by)
- clip(sx, sy-offset,b.w*9, 17)
+ clip(sx, sy-offset,b.ww, 17)
  for y=0,1 do
   for x=1,b.w do
    --+(g_tick%3)*16
@@ -936,7 +938,7 @@ function draw_board(b)
  if b.tophold then
   spr(
    49+elapsed(b.tophold)/120*8,
-    b.w*9-7,-18)
+    b.ww-7,-18)
  end
  if #b.gq > 0 then
   spr(26,0,-18,2,1)
@@ -946,13 +948,13 @@ function draw_board(b)
  palt()
 
  --bottom cover
- --rectfill(-1,b.h*9-9-1,
- --  b.w*9-1,b.h*9-1,1)
+ --rectfill(-1,b.hh-9-1,
+ --  b.ww-1,b.hh-1,1)
  ----tokens-permitting
  --palt(0,false)
  --palt(1,true)
- --clip(b.x,0,b.w*9-1,128)
- --local y=b.h*9-9
+ --clip(b.x,0,b.ww-1,128)
+ --local y=b.hh-9
  --for i=0,b.w do
  -- spr(11,i*8,y,1,1,b.p==1)
  --end
@@ -1009,7 +1011,7 @@ function make_winlose(
   x,y
  )
  local r={
-  x=x,y=y,
+  x=x,y=y,s=68,
   e=g_tick,
   draw=function(t)
    local y=sin(g_tick/35)*3
@@ -1020,11 +1022,7 @@ function make_winlose(
    spr(t.s,0,y,4,2)
   end
  }
- if wl then
-  r.s=64
- else
-  r.s=68
- end
+ if (wl) r.s=64
  return r
 end
 
@@ -1035,13 +1033,14 @@ function make_cnt(b)
    local gs=make_garbscore()
    addggo(gs)
    b.sb=gs
+   --addggo(make_1playgarb(b))
   end
  else
   addggo(make_vsscore())
  end
  return {
-  x=b.w*9/2-8,
-  y=b.h*9/2-8,2,
+  x=b.ww/2-8,
+  y=b.hh/2-8,
   c=3,
   e=g_tick,
   b=b, --potential cycle
@@ -1110,6 +1109,17 @@ function make_garbscore()
  }
 end
 
+--function make_1playgarb(b)
+-- return {
+--  b=b,
+--  update=function(t)
+--   if rnd(2000)>1995 then
+--    add(t.b.gq,{3,1,g_tick})
+--   end
+--  end
+-- }
+--end
+
 --todo, trim palette stuff
 --      to a sprite for tokens
 function make_bubble(
@@ -1165,7 +1175,7 @@ function make_clock(b)
 end
 
 function update_title(t,s)
- if rnd(1)>0.92 then
+ if rnd(100)>92 then
   add(t.ts,{
    x=flr(rnd(128)),
    y=144,
@@ -1178,7 +1188,7 @@ function update_title(t,s)
     end
    end,
    draw=function(t)
-    rect(-17,-17,16,16,0)
+    --rect(-17,-17,16,16,0)
     sspr(t.sx,0,8,8,-16,-16,32,32)
    end
   })
