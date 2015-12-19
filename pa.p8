@@ -1202,7 +1202,7 @@ function update_title(t,s)
     end
    end,
    draw=function(t)
-    --rect(-17,-17,16,16,0)
+    rect(-17,-17,16,16,0)
     sspr(t.sx,0,8,8,-16,-16,32,32)
    end
   })
