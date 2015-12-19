@@ -1035,7 +1035,7 @@ function make_cnt(b)
    addggo(gs)
    b.sb=gs
    addggo(make_linecount(b))
-   --addggo(make_1playgarb(b))
+   addggo(make_1playgarb(b))
   end
  else
   addggo(make_vsscore())
@@ -1123,16 +1123,22 @@ function make_linecount(b)
  return r
 end
 
---function make_1playgarb(b)
--- return {
---  b=b,
---  update=function(t)
---   if rnd(2000)>1995 then
---    add(t.b.gq,{3,1,g_tick})
---   end
---  end
--- }
---end
+function make_1playgarb(b)
+ return {
+  b=b,
+  update=function(t)
+   if (t.b.st~=0) return
+   --every two seconds
+   if g_tick%60==59 then
+    --increased odds by level
+    if rnd(100)>75-(g_lv[1]*7)
+      then
+     add(t.b.gq,{3,1,g_tick})
+    end
+   end
+  end
+ }
+end
 
 --todo, trim palette stuff
 --      to a sprite for tokens
