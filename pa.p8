@@ -1483,10 +1483,10 @@ function start_game(np)
  if np==2 then
   for i=1,2 do
    bs[i] = make_board(
-     4,30,i-1,5,lv[i].nt)
+     5,30,i-1,5,lv[i].nt)
    bs[i].r=lv[i].r
   end
-  bs[2].x=71
+  bs[2].x=70
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
 
