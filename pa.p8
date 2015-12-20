@@ -453,7 +453,9 @@ end
 
 function update_fall_gb(b,x,y)
  local t = b.t[y][x]
- if t.gm then
+ --xxx t.g should always be set
+ --    working around for now
+ if t.gm or not t.g then
   return
  end
  local should_fall = true
