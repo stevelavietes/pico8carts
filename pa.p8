@@ -938,7 +938,9 @@ function draw_board(b)
 
  if b.st<1 or b.st>2 then
   draw_curs(b.cx*9,b.cy*9,
-    b.s==nil and g_tick%30 < 15)
+    --6 tkns, no grow as swap
+    --b.s==nil and
+    g_tick%30 < 15)
  end
  
  draw_gobjs(b.go)
