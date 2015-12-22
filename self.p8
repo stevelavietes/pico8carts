@@ -15,6 +15,9 @@ function _update()
    frame=5
   else
    xpos-=1
+   if frame>4 then
+    xpos+=2
+   end
    if frame>3 then
     frame-=1
    else
@@ -26,6 +29,9 @@ function _update()
    direction=1
    frame=5
   else
+   if frame>4 then
+    xpos-=2
+   end
    xpos+=1
    if frame>3 then
     frame-=1
