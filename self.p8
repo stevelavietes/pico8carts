@@ -6,14 +6,20 @@ function _init()
  direction=0
  frame=0
  xpos=64
+ atrest=true
+ countdown=0
 end
 
 function _update()
  if btn(0) then
+  countdown=min(2,countdown+0.25)
   if direction == 1 then
    direction=0
-   frame=5
+   if not atrest then
+    frame=5
+   end
   else
+   countdown=2
    xpos-=1
    if frame>4 then
     xpos+=2
@@ -24,10 +30,15 @@ function _update()
     frame=(frame+0.5)%3
    end
   end
+  atrest=false
  elseif btn(1) then
+  countdown=min(2,countdown+0.25)
+
   if direction == 0 then
    direction=1
-   frame=5
+   if not atrest then
+    frame=5
+   end
   else
    if frame>4 then
     xpos-=2
@@ -39,8 +50,26 @@ function _update()
     frame=(frame+0.5)%3
    end
   end
+  atrest=false
  else
-  frame=0
+  if atrest==false then
+   --if countdown==2 then
+   --  frame=0
+   --end
+   frame=(frame+0.5)%3
+
+   if direction==1 then
+    xpos+=0.25
+   else
+    xpos-=0.25
+   end
+   countdown-=0.5
+   if countdown<=0 then
+    atrest=true
+   end
+  else
+   frame=0
+  end
  end
 end
 
