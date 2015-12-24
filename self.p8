@@ -96,6 +96,13 @@ function make_violet(p)
     t.speedy = 0
     t.y = t.groundy
    end
+
+   if t.x < -16 then
+    t.x = 128
+   elseif t.x > 128 then
+    t.x = -16
+   end
+
   end,
   ---
   draw=function(t)
