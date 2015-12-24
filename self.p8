@@ -75,12 +75,13 @@ function make_violet(p)
    if btn(5,p) then
     if t.y == t.groundy and
       t.speedy == 0 then
-     t.speedy = -3 - abs(t.speed)/2
+     t.speedy = -6 - abs(t.speed)
     end
    end
 
    if t.y < t.groundy then
-    t.speedy = min(3, t.speedy+0.25)
+    t.speedy = min(6,
+      t.speedy+1)
    end
 
    if adv then
