@@ -4,6 +4,9 @@ __lua__
 
 function _init()
  g_tick=0
+ g_ct=0    --controllers
+ g_ctl=0   --last controllers
+
  g_violets={
    make_violet(0),
    make_violet(1)
@@ -12,6 +15,10 @@ end
 
 function _update()
  g_tick = max(0,g_tick+1)
+ -- current/last controller
+ g_ctl = g_ct
+ g_ct = btn()
+
  for v in all(g_violets) do
   v:update()
  end
@@ -28,16 +35,27 @@ end
 function make_violet(p)
  return {
   x=64,
-  y=100,
+  y=110,
   direction=0,
   frame=0,
   speed=0,
   speedinc=0.25,
-  groundy=100,
+  groundy=110,
   speedy=0,
   ---
   update=function(t)
    local adv = false
+   local ground = t:getflr()
+   local spdadj=0
+   local frameadj=0.5
+
+   --run
+   if btn(4,p) then
+    spdadj=2
+    frameadj=1
+   end
+
+   --left
    if btn(0,p) then
     if t.direction == 1 then
      t.frame = 0
@@ -46,8 +64,9 @@ function make_violet(p)
     end
     t.direction = 0
     t.speed =
-      max(-2,t.speed-t.speedinc)
-
+      max(-2-spdadj,
+        t.speed-t.speedinc)
+   --right
    elseif btn(1,p) then
     if t.direction == 0 then
      t.frame = 0
@@ -56,7 +75,9 @@ function make_violet(p)
     end
     t.direction = 1
     t.speed =
-      min(2,t.speed+t.speedinc)
+      min(2+spdadj,
+        t.speed+t.speedinc)
+   --stop
    else
     if abs(t.speed) >=
       t.speedinc then
@@ -65,36 +86,37 @@ function make_violet(p)
      else
       t.speed-=t.speedinc
      end
-     t.frame=(t.frame+0.5)%3
+     --t.frame=(t.frame+0.5)%3
      t.x+=t.speed
     else
      t.frame = 0
     end
    end
    
-   if btn(5,p) then
-    if t.y == t.groundy and
+   --jump
+   if btnn(5,p) then
+    if t.y == ground and
       t.speedy == 0 then
      t.speedy = -6 - abs(t.speed)
     end
    end
 
-   if t.y < t.groundy then
+   if t.y < ground then
     t.speedy = min(6,
       t.speedy+1)
    end
 
-   if adv then
-    t.frame=(t.frame+0.5)%3
-    t.x+=t.speed
+   t.frame=(t.frame+frameadj)%3
     
+   if adv then
+    t.x+=t.speed
    end
    
    t.y+=t.speedy
    
-   if t.y >= t.groundy then
+   if t.y >= ground then
     t.speedy = 0
-    t.y = t.groundy
+    t.y = ground
    end
 
    if t.x < -16 then
@@ -109,6 +131,9 @@ function make_violet(p)
    local sflip =
      (t.direction == 1)
    local s = 4
+
+   local ground = t:getflr()
+
    if t.speed ~= 0 then
     if ((sflip and t.speed<0) or
       (not sflip and
@@ -124,7 +149,7 @@ function make_violet(p)
     pal(14,33)
    end
    
-   if t.y ~= t.groundy then
+   if t.y ~= ground then
     s=14
     if (g_tick%4)>2 then
      s = 36
@@ -133,10 +158,37 @@ function make_violet(p)
    
    spr(s,t.x,t.y,2,2,sflip)
    pal()
+  end,
+  --
+  getflr=function(t)
+   return t.groundy
   end
   ---
  }
 end
+
+
+--returns state,changed
+function btns(i,p)
+ i=shl(1,i)
+ if p==1 then
+  i=shl(i,8)
+ end
+ local c,cng =
+   band(i,g_ct),
+   band(i,g_ctl)
+ return c>0,c~=cng
+end
+
+--returns new press only
+function btnn(i,p)
+ if p==-1 then --either
+  return btnn(i,0) or btnn(i,1)
+ end
+ local pr,chg=btns(i,p)
+ return pr and chg
+end
+
 __gfx__
 dddddddddddddddddddddddddddddddd000000888110000000000088811000000000008881100000000000000000000000000011881100000000008881100000
 ddddd000000ddddddddddddddddddddd000001118811000000000111881100000000011188110000000000888110000000000111188100000ff0011188110000
