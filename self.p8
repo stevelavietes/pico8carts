@@ -25,6 +25,35 @@ function _update()
  for v in all(g_violets) do
   v:update()
  end
+ 
+ if not (g_violets[2].x >
+      g_violets[1].x+8 or
+    g_violets[2].x+8 <
+      g_violets[1].x or
+      
+    g_violets[2].y >
+      g_violets[1].y+16 or
+    
+    g_violets[2].y+16 <
+      g_violets[1].y  
+      
+      ) then
+  
+  local v1s = g_violets[1].speed
+  local v2s = g_violets[2].speed   
+  g_violets[1].speed*=-1
+  g_violets[1].x+=(g_violets[1].speed*2)
+  g_violets[2].speed*=-1
+  g_violets[2].x+=(g_violets[2].speed*2)
+  
+  if v2s == 0 then
+   g_violets[2].speed = v1s
+  end
+  if v1s == 0 then
+   g_violets[1].speed = v2s
+  end
+ end
+ 
 end
 
 function _draw()
@@ -85,9 +114,17 @@ function make_violet(p)
     if abs(t.speed) >=
       t.speedinc then
      if t.direction==0 then
-      t.speed+=t.speedinc
+      if t.speed < 0 then
+       t.speed+=t.speedinc
+      else
+       t.speed-=t.speedinc
+      end
      else
-      t.speed-=t.speedinc
+      if t.speed > 0 then
+       t.speed-=t.speedinc
+      else
+       t.speed+=t.speedinc
+      end
      end
      --t.frame=(t.frame+0.5)%3
      t.x+=t.speed
