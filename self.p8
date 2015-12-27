@@ -81,16 +81,9 @@ function _update()
  --sprites in maps by copying
  --sprite data around
  local src=119+flr((g_tick%12)/4)
- for i=0,7 do
-  memcpy(getspraddr(71)+64*i,
-     getspraddr(src)+64*i,4)
- end
- 
+ sprcpy(71,src)
  src=73+flr((g_tick%12)/4)
- for i=0,7 do
-  memcpy(getspraddr(72)+64*i,
-     getspraddr(src)+64*i,4)
- end
+ sprcpy(72,src)
 
 end
 
@@ -303,6 +296,14 @@ function getspraddr(n)
  return flr(n/16)*512+(n%16)*4
 end
 
+function sprcpy(dst,src,w,h)
+ w = w or 1
+ h = h or 1
+ for i=0,h*8-1 do
+  memcpy(getspraddr(dst)+64*i,
+     getspraddr(src)+64*i,4*w)
+ end
+end
 __gfx__
 dddddddddddddddddddddddddddddddd000000888110000000000088811000000000008881100000000000000000000000000011881100000000008881100000
 ddddd000000ddddddddddddddddddddd0000011188110000000001118811000000000111881100000000008881100000000001111881000009f0011188110000
