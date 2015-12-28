@@ -33,6 +33,9 @@ function _update()
  end
 
  for v in all(g_violets) do
+  if v.y > 128 then
+   v.y = -16
+  end
   v:update()
  end
  
@@ -263,15 +266,19 @@ function make_violet(p)
    local _,lmt = scrtomap(
      0,128)
 
+   local hit=false
    for i=my,lmt do
     local s=mget(mx,i)
     if fget(mget(mx,i))>0 or
       fget(mget(mx2,i))>0 then
+     hit=true
      break
     end
     my+=1
    end
-
+   if not hit then
+    return 256
+   end
    return my*8-16-g_scroffset
   end
   ---
