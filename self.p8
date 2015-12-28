@@ -35,6 +35,7 @@ function _update()
  for v in all(g_violets) do
   if v.y > 128 then
    v.y = -16
+   v.x = 60
   end
   v:update()
  end
