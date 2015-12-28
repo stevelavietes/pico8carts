@@ -26,10 +26,10 @@ function _update()
 
  --xxx test scrolling
  if btn(2) then
-  g_scroffset+=1
+  scrollby(1)
  end
  if btn(3) then
-  g_scroffset-=3
+  scrollby(-3)
  end
 
  for v in all(g_violets) do
@@ -290,6 +290,17 @@ function scrtomap(x,y)
 --todo, wraparound
  return flr(x/8),
    flr((y+g_scroffset)/8)
+end
+
+--sprites are currently
+--screenspace so we must
+--adjust them when we change
+--the scroll position
+function scrollby(n)
+ g_scroffset+=n
+ foreach(g_violets, function(v)
+  v.y-=n
+ end)
 end
 
 --returns state,changed
