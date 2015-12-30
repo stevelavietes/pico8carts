@@ -190,7 +190,7 @@ function make_violet(p)
     t.direction = 0
     t.speed =
       max(-2-spdadj,
-        t.speed-t.speedinc)
+        t.speed-2*t.speedinc)
    --right
    elseif btn(1,p) then
     if t.direction == 0 then
@@ -199,28 +199,13 @@ function make_violet(p)
     t.direction = 1
     t.speed =
       min(2+spdadj,
-        t.speed+t.speedinc)
+        t.speed+2*t.speedinc)
    --stop
    else
-    if abs(t.speed) >=
-      t.speedinc then
-     if t.direction==0 then
-      if t.speed < 0 then
-       t.speed+=t.speedinc
-      else
-       t.speed-=t.speedinc
-      end
-     else
-      if t.speed > 0 then
-       t.speed-=t.speedinc
-      else
-       t.speed+=t.speedinc
-      end
-     end
+    if abs(t.speed) < 
+     t.speedinc then
      --t.frame=(t.frame+0.5)%3
-    else
      t.frame = 0
-     t.speed = 0
     end
    end
    
@@ -275,6 +260,26 @@ end
 
 function update_phys(o)
  local ground=o:getflr()
+ 
+ if abs(o.speed) >=
+  o.speedinc then
+  if o.direction==0 then
+   if o.speed < 0 then
+    o.speed+=o.speedinc
+   else
+    o.speed-=o.speedinc
+   end
+  else
+   if o.speed > 0 then
+    o.speed-=o.speedinc
+   else
+    o.speed+=o.speedinc
+   end
+  end
+ else
+  o.speed=0
+ end
+
  if o.y < ground then
   o.speedy = min(6, o.speedy+1)
  end
