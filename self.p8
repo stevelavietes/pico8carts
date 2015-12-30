@@ -130,7 +130,7 @@ function init_phys(o)
   groundy=110,
   speedy=0,
   getrect=function(t)
-   return {t.x+4,t.y+4,t.x+12,t.y+16}
+   return {t.x+4,t.y+4,t.x+12,t.y+t.spry}
   end,
   --
   getflr=function(t)
