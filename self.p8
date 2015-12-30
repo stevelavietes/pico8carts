@@ -130,17 +130,22 @@ function init_phys(o)
   groundy=110,
   speedy=0,
   getrect=function(t)
-   return {t.x+4,t.y+4,t.x+12,t.y+t.spry}
+   return {
+     t.x+t.hbx0,
+     t.y+t.hby0,
+     t.x+t.hbx1,
+     t.y+t.hby1
+    }
   end,
   --
   getflr=function(t)
-   local mx = flr((t.x+4)/8)
+   local mx = flr((t.x+t.hbx0)/8)
    local mx2 =
      min(15,max(0,mx+1))
 
    --local my = flr((t.y+16)/8)
    local _,my = scrtomap(0,
-     t.y+t.spry)
+     t.y+t.hby1)
 
    local _,lmt = scrtomap(
      0,128)
@@ -158,7 +163,7 @@ function init_phys(o)
    if not hit then
     return 256
    end
-   return my*8-t.spry-g_scroffset
+   return my*8-t.hby1-g_scroffset
   end
  }
  for k,v in pairs(phys) do o[k] = v end
@@ -169,7 +174,10 @@ function make_violet(p)
   x=64,
   y=23,
   frame=0,
-  spry=16,
+  hbx0=4,
+  hbx1=12,
+  hby0=0,
+  hby1=16,
   ---
   update=function(t)
    local ground = t:getflr()
