@@ -19,6 +19,50 @@ function _init()
  g_violets[2].direction=0
 end
 
+function update_collision(o1,o2)
+ local o1s = o1.speed
+ local o2s = o2.speed
+ 
+ if o1.speedy <= 0 then
+  o1.speed*=-1
+  o1.x+=(o1.speed*2)
+ else
+  o1.speedy*=-1
+  o1.y+=o1.speedy
+  --straight down bounce
+  if o1s==0 then
+   if o1.direction==1 then
+    o1s=-2
+   else
+    o1s=2
+   end
+  end
+ end
+
+ if o2.speedy <= 0 then
+  o2.speed*=-1
+  o2.x+=(o2.speed*2)
+ else
+  o2.speedy*=-1
+  o2.y+=o2.speedy  
+  --straight down bounce
+  if o1s==0 then
+   if o1.direction==1 then
+    o1s=-2
+   else
+    o1s=2
+   end
+  end
+ end
+ 
+ if o1s == 0 then
+  o1.speed = o2s
+ end
+ if o2s == 0 then
+  o2.speed = o1s
+ end
+end
+
 function _update()
  g_tick = max(0,g_tick+1)
  -- current/last controller
@@ -42,56 +86,13 @@ function _update()
  end
  
  foreach(g_violets, update_phys)
- 
- local v1,v2 =
-   g_violets[1],
-   g_violets[2]
 
  if rectintersect(
    v1:getrect(), v2:getrect())
      then
-  local v1s = v1.speed
-  local v2s = v2.speed
-  
-  if v1.speedy <= 0 then
-   v1.speed*=-1
-   v1.x+=(v1.speed*2)
-  else
-   v1.speedy*=-1
-   v1.y+=v1.speedy
-   --straight down bounce
-   if v1s==0 then
-    if v1.direction==1 then
-     v1s=-2
-    else
-     v1s=2
-    end
-   end
-  end
-
-  if v2.speedy <= 0 then
-   v2.speed*=-1
-   v2.x+=(v2.speed*2)
-  else
-   v2.speedy*=-1
-   v2.y+=v2.speedy  
-   --straight down bounce
-   if v1s==0 then
-    if v1.direction==1 then
-     v1s=-2
-    else
-     v1s=2
-    end
-   end
-  end
-  
-  if v1s == 0 then
-   v1.speed = v2s
-  end
-  if v2s == 0 then
-   v2.speed = v1s
-  end
-  
+  update_collision(
+   g_violets[1],
+   g_violets[2])
  end
  
  --experiment with animating
