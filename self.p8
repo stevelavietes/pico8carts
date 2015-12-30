@@ -13,6 +13,7 @@ function _init()
    make_violet(0),
    make_violet(1)
  }
+ foreach(g_violets, init_phys)
  
  g_violets[2].x = 86
  g_violets[2].direction=0
@@ -40,7 +41,7 @@ function _update()
   v:update()
  end
  
- foreach(g_violets, update_physics)
+ foreach(g_violets, update_phys)
  
  local v1,v2 =
    g_violets[1],
@@ -120,12 +121,53 @@ function make_violet(p)
  return {
   x=64,
   y=23,
+function init_phys(o)
+ local phys={
   direction=1,
-  frame=0,
   speed=0,
   speedinc=0.25,
   groundy=110,
   speedy=0,
+  getrect=function(t)
+   return {t.x+4,t.y+4,t.x+12,t.y+16}
+  end,
+  --
+  getflr=function(t)
+   local mx = flr((t.x+4)/8)
+   local mx2 =
+     min(15,max(0,mx+1))
+
+   --local my = flr((t.y+16)/8)
+   local _,my = scrtomap(0,
+     t.y+16)
+
+   local _,lmt = scrtomap(
+     0,128)
+
+   local hit=false
+   for i=my,lmt do
+    local s=mget(mx,i)
+    if fget(mget(mx,i))>0 or
+      fget(mget(mx2,i))>0 then
+     hit=true
+     break
+    end
+    my+=1
+   end
+   if not hit then
+    return 256
+   end
+   return my*8-16-g_scroffset
+  end
+ }
+ for k,v in pairs(phys) do o[k] = v end
+end
+
+function make_violet(p)
+ return {
+  x=64,
+  y=23,
+  frame=0,
   ---
   update=function(t)
    local ground = t:getflr()
@@ -224,44 +266,12 @@ function make_violet(p)
    
    spr(s,t.x,t.y,2,2,sflip)
    pal()
-  end,
-  --
-  getrect=function(t)
-   return {t.x+4,t.y+4,t.x+12,t.y+16}
-  end,
-  --
-  getflr=function(t)
-   local mx = flr((t.x+4)/8)
-   local mx2 =
-     min(15,max(0,mx+1))
-
-   --local my = flr((t.y+16)/8)
-   local _,my = scrtomap(0,
-     t.y+16)
-
-   local _,lmt = scrtomap(
-     0,128)
-
-   local hit=false
-   for i=my,lmt do
-    local s=mget(mx,i)
-    if fget(mget(mx,i))>0 or
-      fget(mget(mx2,i))>0 then
-     hit=true
-     break
-    end
-    my+=1
-   end
-   if not hit then
-    return 256
-   end
-   return my*8-16-g_scroffset
   end
   ---
  }
 end
 
-function update_physics(o)
+function update_phys(o)
  local ground=o:getflr()
  if o.y < ground then
   o.speedy = min(6, o.speedy+1)
