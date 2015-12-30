@@ -15,6 +15,11 @@ function _init()
  }
  foreach(g_violets, init_phys)
  
+ g_blocks={
+  make_block(50,35)
+ }
+ foreach(g_blocks, init_phys)
+ 
  g_violets[2].x = 86
  g_violets[2].direction=0
 end
@@ -86,15 +91,19 @@ function _update()
  end
  
  foreach(g_violets, update_phys)
+ foreach(g_blocks, update_phys)
 
- if rectintersect(
-   v1:getrect(), v2:getrect())
-     then
-  update_collision(
-   g_violets[1],
-   g_violets[2])
+ collide(
+  g_violets[1],
+  g_violets[2])
+  
+ -- todo - accel structures?
+ for v in all(g_violets) do
+  for b in all(g_blocks) do
+   collide(v, b)
+  end
  end
- 
+
  --experiment with animating
  --sprites in maps by copying
  --sprite data around
@@ -105,23 +114,46 @@ function _update()
 
 end
 
+function collide(o1, o2)
+ if rectintersect(
+   o1:getrect(), o2:getrect())
+     then
+  update_collision(o1,o2)
+ end
+end
+
+function draw_thing(thing)
+ thing:draw()
+end
+
 function _draw()
  cls()
  --rectfill(0,0,127,127,12)
  map(0,0,0,-g_scroffset,16,32)
- for v in all(g_violets) do
-  v:draw()
- end
+
+ foreach(g_violets, draw_thing)
+ foreach(g_blocks, draw_thing)
  
  --pal(0,g_tick%15,1)
  --pal(9,flr(rnd(16)),1)
  
 end
 
-function make_violet(p)
+function make_block(x,y)
  return {
-  x=64,
-  y=23,
+  x=x,
+  y=y,
+  hbx0=0,
+  hbx1=8,
+  hby0=0,
+  hby1=8,
+  update=function(b) end,
+  draw=function(b)
+   spr(96,b.x,b.y)
+  end,
+ }
+end
+
 function init_phys(o)
  local phys={
   direction=1,
