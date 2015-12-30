@@ -40,6 +40,8 @@ function _update()
   v:update()
  end
  
+ foreach(g_violets, update_physics)
+ 
  local v1,v2 =
    g_violets[1],
    g_violets[2]
@@ -191,23 +193,12 @@ function make_violet(p)
     end
    end
 
-   if t.y < ground then
-    t.speedy = min(6,
-      t.speedy+1)
-   end
-
    t.frame=(t.frame+frameadj)%3
     
    if adv then
     t.x+=t.speed
    end
-   
-   t.y+=t.speedy
-   
-   if t.y >= ground then
-    t.speedy = 0
-    t.y = ground
-   end
+
 
    if t.x < -16 then
     t.x = 128
@@ -284,6 +275,20 @@ function make_violet(p)
   end
   ---
  }
+end
+
+function update_physics(o)
+ local ground=o:getflr()
+ if o.y < ground then
+  o.speedy = min(6, o.speedy+1)
+ end
+   
+ o.y+=o.speedy
+   
+ if o.y >= ground then
+  o.speedy = 0
+  o.y = ground
+ end
 end
 
 function rectintersect(a,b)
