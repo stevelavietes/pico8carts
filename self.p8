@@ -189,14 +189,6 @@ function make_violet(p)
    end
 
    t.frame=(t.frame+frameadj)%3
-    
-   t.x+=t.speed
-
-   if t.x < -16 then
-    t.x = 128
-   elseif t.x > 128 then
-    t.x = -16
-   end
 
   end,
   ---
@@ -280,6 +272,14 @@ function update_physics(o)
  if o.y >= ground then
   o.speedy = 0
   o.y = ground
+ end
+ 
+ o.x+=o.speed
+
+ if o.x < -16 then
+  o.x = 128
+ elseif o.x > 128 then
+  o.x = -16
  end
 end
 
