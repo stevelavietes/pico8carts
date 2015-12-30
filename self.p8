@@ -128,7 +128,6 @@ function make_violet(p)
   speedy=0,
   ---
   update=function(t)
-   local adv = false
    local ground = t:getflr()
    local spdadj=0
    local frameadj=0.5
@@ -143,8 +142,6 @@ function make_violet(p)
    if btn(0,p) then
     if t.direction == 1 then
      t.frame = 0
-    else
-     adv = true
     end
     t.direction = 0
     t.speed =
@@ -154,8 +151,6 @@ function make_violet(p)
    elseif btn(1,p) then
     if t.direction == 0 then
      t.frame = 0
-    else
-     adv = true
     end
     t.direction = 1
     t.speed =
@@ -179,9 +174,9 @@ function make_violet(p)
       end
      end
      --t.frame=(t.frame+0.5)%3
-     t.x+=t.speed
     else
      t.frame = 0
+     t.speed = 0
     end
    end
    
@@ -195,10 +190,7 @@ function make_violet(p)
 
    t.frame=(t.frame+frameadj)%3
     
-   if adv then
-    t.x+=t.speed
-   end
-
+   t.x+=t.speed
 
    if t.x < -16 then
     t.x = 128
