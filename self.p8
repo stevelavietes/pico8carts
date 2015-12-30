@@ -139,7 +139,7 @@ function init_phys(o)
 
    --local my = flr((t.y+16)/8)
    local _,my = scrtomap(0,
-     t.y+16)
+     t.y+t.spry)
 
    local _,lmt = scrtomap(
      0,128)
@@ -157,7 +157,7 @@ function init_phys(o)
    if not hit then
     return 256
    end
-   return my*8-16-g_scroffset
+   return my*8-t.spry-g_scroffset
   end
  }
  for k,v in pairs(phys) do o[k] = v end
@@ -168,6 +168,7 @@ function make_violet(p)
   x=64,
   y=23,
   frame=0,
+  spry=16,
   ---
   update=function(t)
    local ground = t:getflr()
