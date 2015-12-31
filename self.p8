@@ -138,18 +138,19 @@ function collide(o1, o2)
 end
 
 function update_held(obj)
+ local held=obj.holding
  if obj.will_hold then
-  if obj.holding then
+  if held then
    if obj.direction == 0 then
-    obj.holding.x=obj.x-0.5*obj.hbx1
+    held.x=obj.x-0.5*obj.hbx1
    else
-    obj.holding.x=obj.x+1.25*obj.hbx1
+    held.x=obj.x+1.25*obj.hbx1
    end
-   obj.holding.y=obj.y+obj.hby0+0.25*obj.hby1
+   held.y=obj.y+obj.hby0+0.25*obj.hby1
   end
  else
-  if obj.holding then
-   obj.holding.held_by=nil
+  if held then
+   held.held_by=nil
    obj.holding=nil
   end
  end
