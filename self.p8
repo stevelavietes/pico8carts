@@ -68,6 +68,15 @@ function update_collision(o1,o2)
  end
 end
 
+function is_holding(obj, held)
+ return (
+  obj.will_hold and 
+  held.is_holdable and
+   (held.held_by == nil or 
+    held.held_by == obj)
+ )
+end
+
 function _update()
  g_tick = max(0,g_tick+1)
  -- current/last controller
@@ -103,6 +112,8 @@ function _update()
    collide(v, b)
   end
  end
+ 
+ foreach(g_violets, update_held)
 
  --experiment with animating
  --sprites in maps by copying
@@ -118,8 +129,38 @@ function collide(o1, o2)
  if rectintersect(
    o1:getrect(), o2:getrect())
      then
-  update_collision(o1,o2)
+  if is_holding(o1, o2) then
+   update_holding(o1, o2)
+  else
+   update_collision(o1,o2)
+  end
  end
+end
+
+function update_held(obj)
+ if obj.will_hold then
+  if obj.holding then
+   if obj.direction == 0 then
+    obj.holding.x=obj.x-0.5*obj.hbx1
+   else
+    obj.holding.x=obj.x+1.25*obj.hbx1
+   end
+   obj.holding.y=obj.y+obj.hby0+0.25*obj.hby1
+  end
+ else
+  if obj.holding then
+   obj.holding.held_by=nil
+   obj.holding=nil
+  end
+ end
+end
+
+function update_holding(obj, held)
+ held.speed = obj.speed
+ held.speedy= obj.speedy
+ 
+ obj.holding=held
+ held.held_by=obj
 end
 
 function draw_thing(thing)
@@ -147,6 +188,7 @@ function make_block(x,y)
   hbx1=8,
   hby0=0,
   hby1=8,
+  is_holdable=true,
   update=function(b) end,
   draw=function(b)
    spr(96,b.x,b.y)
@@ -156,6 +198,7 @@ end
 
 function init_phys(o)
  local phys={
+  held_by=nil,
   direction=1,
   speed=0,
   speedinc=0.25,
@@ -210,6 +253,9 @@ function make_violet(p)
   hbx1=12,
   hby0=0,
   hby1=16,
+  holding=nil,
+  will_hold=false,
+  holdable=false,
   ---
   update=function(t)
    local ground = t:getflr()
@@ -220,6 +266,9 @@ function make_violet(p)
    if btn(4,p) then
     spdadj=1 --was 2
     frameadj=1
+    t.will_hold=true
+   else
+    t.will_hold=false
    end
 
    --left
