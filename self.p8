@@ -171,7 +171,24 @@ end
 function _draw()
  cls()
  --rectfill(0,0,127,127,12)
- map(0,0,0,-g_scroffset,16,32)
+
+ local top=flr(
+   (g_scroffset%256)/8)
+
+ local off=getlocaloff()
+ if top<16 then
+  local mh = 16-top
+  map(0,top,0,off,16,mh)
+  if mh<17 then
+   map(0,16,0,off+mh*8,16,17-mh)
+  end
+ else
+  local mh = 32-top
+  map(0,top,0,off,16,mh)
+  if mh<17 then
+   map(0,0,0,off+mh*8,16,17-mh)
+  end
+ end
 
  foreach(g_violets, draw_thing)
  foreach(g_blocks, draw_thing)
@@ -179,6 +196,36 @@ function _draw()
  --pal(0,g_tick%15,1)
  --pal(9,flr(rnd(16)),1)
  
+end
+
+function getlocaloff()
+ return 7-(g_scroffset%8)-7
+end
+
+function getscrmy()
+ result = {}
+ local top=flr(
+   (g_scroffset%256)/8)
+
+ if top<16 then
+  for i=top,15 do
+   add(result,i)
+  end
+  local rm=16-#result
+  for i=16,16+rm do
+   add(result,i)
+  end
+ else
+  for i=top,31 do
+   add(result,i)
+  end
+  local rm=16-#result
+  for i=0,rm do
+   add(result,i)
+  end
+ end
+
+ return result
 end
 
 function make_block(x,y)
@@ -219,27 +266,29 @@ function init_phys(o)
    local mx2 =
      min(15,max(0,mx+1))
 
-   --local my = flr((t.y+16)/8)
-   local _,my = scrtomap(0,
-     t.y+t.hby1)
-
-   local _,lmt = scrtomap(
-     0,128)
-
    local hit=false
-   for i=my,lmt do
-    local s=mget(mx,i)
-    if fget(mget(mx,i))>0 or
-      fget(mget(mx2,i))>0 then
+   local off=getlocaloff()
+   local mys=getscrmy()
+
+   local my=flr(
+     (t.y+t.hby1+off)/8)+1
+   for i=my,17 do
+    local m=mys[i]
+    local s=mget(mx,m)
+    if fget(mget(mx,m))>0 or
+      fget(mget(mx2,m))>0 then
      hit=true
      break
     end
     my+=1
    end
+
    if not hit then
-    return 256
+    return 128
    end
-   return my*8-t.hby1-g_scroffset
+
+   return (my-1)*8-t.hby1+off
+   --return my*8-t.hby1-g_scroffset
   end
  }
  for k,v in pairs(phys) do o[k] = v end
