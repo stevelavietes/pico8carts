@@ -8,6 +8,8 @@ function _init()
  g_ctl=0   --last controllers
 
  g_scroffset = 128 --scrolling
+ g_scrspeed = 0
+ g_scrline = 40
 
  g_violets={
    make_violet(0),
@@ -85,11 +87,21 @@ function _update()
 
  --xxx test scrolling
  if btn(2) then
-  scrollby(1)
+  g_scrline = max(8,g_scrline-1)
+  --scrollby(1)
  end
  if btn(3) then
-  scrollby(-3)
+  g_scrline = min(100,g_scrline+1)
+  --scrollby(-3)
  end
+
+ if shouldscroll() then
+  g_scrspeed = -4
+ else
+  g_scrspeed = min(
+    0,g_scrspeed+0.5)
+ end
+ scrollby(g_scrspeed)
 
  for v in all(g_violets) do
   if v.y > 128 then
@@ -196,6 +208,11 @@ function _draw()
    map(0,0,0,off+mh*8,16,17-mh)
   end
  end
+
+ line(9,g_scrline,
+  127,g_scrline,5)
+ print(g_scrline,0,g_scrline-2,
+  5)
 
  foreach(g_violets, draw_thing)
  foreach(g_blocks, draw_thing)
@@ -492,6 +509,7 @@ end
 --adjust them when we change
 --the scroll position
 function scrollby(n)
+ if (n==0) return
  g_scroffset+=n
  foreach(g_violets, function(v)
   v.y-=n
@@ -499,6 +517,25 @@ function scrollby(n)
  foreach(g_blocks, function(v)
   v.y-=n
  end)
+end
+
+function shouldscroll()
+
+ -- debug keeping all on screen
+ --for v in all(g_violets) do
+ -- if v.y > 100 then
+ --  return false
+ -- end
+ --end
+
+ for v in all(g_violets) do
+  if v.y < g_scrline and
+    v.speedy < 0 then
+   return true
+  end
+ end
+
+ return false
 end
 
 --returns state,changed
