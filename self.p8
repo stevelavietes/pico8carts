@@ -84,7 +84,7 @@ function _update()
  g_ct = btn()
 
  --xxx test scrolling
- if btn(2) then
+ if btnp(2) then
   scrollby(1)
  end
  if btn(3) then
@@ -196,6 +196,10 @@ function _draw()
  --pal(0,g_tick%15,1)
  --pal(9,flr(rnd(16)),1)
  
+ --debug offset and ground
+ --print(off,0,0,7)
+ --local f,smy,my=g_violets[1]:getflr()
+ --print(f..' '..smy..' '..my,0,8,7)
 end
 
 function getlocaloff()
@@ -250,7 +254,6 @@ function init_phys(o)
   direction=1,
   speed=0,
   speedinc=0.25,
-  groundy=110,
   speedy=0,
   getrect=function(t)
    return {
@@ -270,11 +273,14 @@ function init_phys(o)
    local off=getlocaloff()
    local mys=getscrmy()
 
-   local my=flr(
-     (t.y+t.hby1+off)/8)+1
+   local myp=
+     flr((t.y+t.hby1-off)/8)
+   local my=myp+1
+
+   local smy = my
    for i=my,17 do
     local m=mys[i]
-    local s=mget(mx,m)
+    --local s=mget(mx,m)
     if fget(mget(mx,m))>0 or
       fget(mget(mx2,m))>0 then
      hit=true
@@ -284,11 +290,14 @@ function init_phys(o)
    end
 
    if not hit then
-    return 128
+    return 128,0,0
    end
 
-   return (my-1)*8-t.hby1+off
+   local r = (my-1)*8-t.hby1+off
+   --return (my-1)*8-t.hby1--+off
    --return my*8-t.hby1-g_scroffset
+   return r,smy,my
+
   end
  }
  for k,v in pairs(phys) do o[k] = v end
@@ -296,7 +305,7 @@ end
 
 function make_violet(p)
  return {
-  x=64,
+  x=27,
   y=23,
   frame=0,
   hbx0=4,
@@ -390,6 +399,17 @@ function make_violet(p)
     end
    end
    
+   --debug ground detection
+   if false then
+   line(t.x, ground,
+     t.x+16, ground, 7)
+   line(t.x,t.y,t.x+16,t.y,8)
+   if t.gy then
+    line(t.x,t.gy,t.x+16,
+     t.gy,11)
+   end
+   end
+
    spr(s,t.x,t.y,2,2,sflip)
    pal()
   end
@@ -419,17 +439,24 @@ function update_phys(o)
   o.speed=0
  end
 
- if o.y < ground then
+
+ if o.y < ground or o.speedy<0 then
+  --o.gy=nil
   o.speedy = min(6, o.speedy+1)
  end
+
+
+ local off=getlocaloff()
+
+ if o.y >= ground
+   and o.speedy >= 0 then
    
- o.y+=o.speedy
-   
- if o.y >= ground then
+  o.gy = o.y
   o.speedy = 0
   o.y = ground
  end
  
+ o.y+=o.speedy
  o.x+=o.speed
 
  if o.x < -16 then
