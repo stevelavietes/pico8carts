@@ -13,9 +13,68 @@ function _init()
    make_violet(0),
    make_violet(1)
  }
+ foreach(g_violets, init_phys)
+ 
+ g_blocks={
+  make_block(50,35)
+ }
+ foreach(g_blocks, init_phys)
  
  g_violets[2].x = 86
  g_violets[2].direction=0
+end
+
+function update_collision(o1,o2)
+ local o1s = o1.speed
+ local o2s = o2.speed
+ 
+ if o1.speedy <= 0 then
+  o1.speed*=-1
+  o1.x+=(o1.speed*2)
+ else
+  o1.speedy*=-1
+  o1.y+=o1.speedy
+  --straight down bounce
+  if o1s==0 then
+   if o1.direction==1 then
+    o1s=-2
+   else
+    o1s=2
+   end
+  end
+ end
+
+ if o2.speedy <= 0 then
+  o2.speed*=-1
+  o2.x+=(o2.speed*2)
+ else
+  o2.speedy*=-1
+  o2.y+=o2.speedy  
+  --straight down bounce
+  if o1s==0 then
+   if o1.direction==1 then
+    o1s=-2
+   else
+    o1s=2
+   end
+  end
+ end
+ 
+ if o1s == 0 then
+  o1.speed = o2s
+ end
+ if o2s == 0 then
+  o2.speed = o1s
+ end
+end
+
+function is_holding(obj, held)
+ return (
+  obj.will_hold and 
+  held.is_holdable and
+   (held.held_by == nil or 
+    held.held_by == obj)
+ )
 end
 
 function _update()
@@ -40,57 +99,22 @@ function _update()
   v:update()
  end
  
- local v1,v2 =
-   g_violets[1],
-   g_violets[2]
+ foreach(g_violets, update_phys)
+ foreach(g_blocks, update_phys)
 
- if rectintersect(
-   v1:getrect(), v2:getrect())
-     then
-  local v1s = v1.speed
-  local v2s = v2.speed
+ collide(
+  g_violets[1],
+  g_violets[2])
   
-  if v1.speedy <= 0 then
-   v1.speed*=-1
-   v1.x+=(v1.speed*2)
-  else
-   v1.speedy*=-1
-   v1.y+=v1.speedy
-   --straight down bounce
-   if v1s==0 then
-    if v1.direction==1 then
-     v1s=-2
-    else
-     v1s=2
-    end
-   end
+ -- todo - accel structures?
+ for v in all(g_violets) do
+  for b in all(g_blocks) do
+   collide(v, b)
   end
-
-  if v2.speedy <= 0 then
-   v2.speed*=-1
-   v2.x+=(v2.speed*2)
-  else
-   v2.speedy*=-1
-   v2.y+=v2.speedy  
-   --straight down bounce
-   if v1s==0 then
-    if v1.direction==1 then
-     v1s=-2
-    else
-     v1s=2
-    end
-   end
-  end
-  
-  if v1s == 0 then
-   v1.speed = v2s
-  end
-  if v2s == 0 then
-   v2.speed = v1s
-  end
-  
  end
  
+ foreach(g_violets, update_held)
+
  --experiment with animating
  --sprites in maps by copying
  --sprite data around
@@ -101,32 +125,140 @@ function _update()
 
 end
 
+function collide(o1, o2)
+ if rectintersect(
+   o1:getrect(), o2:getrect())
+     then
+  if is_holding(o1, o2) then
+   update_holding(o1, o2)
+  else
+   update_collision(o1,o2)
+  end
+ end
+end
+
+function update_held(obj)
+ local held=obj.holding
+ if obj.will_hold then
+  if held then
+   if obj.direction == 0 then
+    held.x=obj.x-0.5*obj.hbx1
+   else
+    held.x=obj.x+1.25*obj.hbx1
+   end
+   held.y=obj.y+obj.hby0+0.25*obj.hby1
+  end
+ else
+  if held then
+   held.held_by=nil
+   obj.holding=nil
+  end
+ end
+end
+
+function update_holding(obj, held)
+ held.speed = obj.speed
+ held.speedy= obj.speedy
+ 
+ obj.holding=held
+ held.held_by=obj
+end
+
+function draw_thing(thing)
+ thing:draw()
+end
+
 function _draw()
  cls()
  --rectfill(0,0,127,127,12)
  map(0,0,0,-g_scroffset,16,32)
- for v in all(g_violets) do
-  v:draw()
- end
+
+ foreach(g_violets, draw_thing)
+ foreach(g_blocks, draw_thing)
  
  --pal(0,g_tick%15,1)
  --pal(9,flr(rnd(16)),1)
  
 end
 
-function make_violet(p)
+function make_block(x,y)
  return {
-  x=64,
-  y=23,
+  x=x,
+  y=y,
+  hbx0=0,
+  hbx1=8,
+  hby0=0,
+  hby1=8,
+  is_holdable=true,
+  update=function(b) end,
+  draw=function(b)
+   spr(96,b.x,b.y)
+  end,
+ }
+end
+
+function init_phys(o)
+ local phys={
+  held_by=nil,
   direction=1,
-  frame=0,
   speed=0,
   speedinc=0.25,
   groundy=110,
   speedy=0,
+  getrect=function(t)
+   return {
+     t.x+t.hbx0,
+     t.y+t.hby0,
+     t.x+t.hbx1,
+     t.y+t.hby1
+    }
+  end,
+  --
+  getflr=function(t)
+   local mx = flr((t.x+t.hbx0)/8)
+   local mx2 =
+     min(15,max(0,mx+1))
+
+   --local my = flr((t.y+16)/8)
+   local _,my = scrtomap(0,
+     t.y+t.hby1)
+
+   local _,lmt = scrtomap(
+     0,128)
+
+   local hit=false
+   for i=my,lmt do
+    local s=mget(mx,i)
+    if fget(mget(mx,i))>0 or
+      fget(mget(mx2,i))>0 then
+     hit=true
+     break
+    end
+    my+=1
+   end
+   if not hit then
+    return 256
+   end
+   return my*8-t.hby1-g_scroffset
+  end
+ }
+ for k,v in pairs(phys) do o[k] = v end
+end
+
+function make_violet(p)
+ return {
+  x=64,
+  y=23,
+  frame=0,
+  hbx0=4,
+  hbx1=12,
+  hby0=0,
+  hby1=16,
+  holding=nil,
+  will_hold=false,
+  holdable=false,
   ---
   update=function(t)
-   local adv = false
    local ground = t:getflr()
    local spdadj=0
    local frameadj=0.5
@@ -135,50 +267,34 @@ function make_violet(p)
    if btn(4,p) then
     spdadj=1 --was 2
     frameadj=1
+    t.will_hold=true
+   else
+    t.will_hold=false
    end
 
    --left
    if btn(0,p) then
     if t.direction == 1 then
      t.frame = 0
-    else
-     adv = true
     end
     t.direction = 0
     t.speed =
       max(-2-spdadj,
-        t.speed-t.speedinc)
+        t.speed-2*t.speedinc)
    --right
    elseif btn(1,p) then
     if t.direction == 0 then
      t.frame = 0
-    else
-     adv = true
     end
     t.direction = 1
     t.speed =
       min(2+spdadj,
-        t.speed+t.speedinc)
+        t.speed+2*t.speedinc)
    --stop
    else
-    if abs(t.speed) >=
-      t.speedinc then
-     if t.direction==0 then
-      if t.speed < 0 then
-       t.speed+=t.speedinc
-      else
-       t.speed-=t.speedinc
-      end
-     else
-      if t.speed > 0 then
-       t.speed-=t.speedinc
-      else
-       t.speed+=t.speedinc
-      end
-     end
+    if abs(t.speed) < 
+     t.speedinc then
      --t.frame=(t.frame+0.5)%3
-     t.x+=t.speed
-    else
      t.frame = 0
     end
    end
@@ -191,29 +307,7 @@ function make_violet(p)
     end
    end
 
-   if t.y < ground then
-    t.speedy = min(6,
-      t.speedy+1)
-   end
-
    t.frame=(t.frame+frameadj)%3
-    
-   if adv then
-    t.x+=t.speed
-   end
-   
-   t.y+=t.speedy
-   
-   if t.y >= ground then
-    t.speedy = 0
-    t.y = ground
-   end
-
-   if t.x < -16 then
-    t.x = 128
-   elseif t.x > 128 then
-    t.x = -16
-   end
 
   end,
   ---
@@ -249,41 +343,51 @@ function make_violet(p)
    
    spr(s,t.x,t.y,2,2,sflip)
    pal()
-  end,
-  --
-  getrect=function(t)
-   return {t.x+4,t.y+4,t.x+12,t.y+16}
-  end,
-  --
-  getflr=function(t)
-   local mx = flr((t.x+4)/8)
-   local mx2 =
-     min(15,max(0,mx+1))
-
-   --local my = flr((t.y+16)/8)
-   local _,my = scrtomap(0,
-     t.y+16)
-
-   local _,lmt = scrtomap(
-     0,128)
-
-   local hit=false
-   for i=my,lmt do
-    local s=mget(mx,i)
-    if fget(mget(mx,i))>0 or
-      fget(mget(mx2,i))>0 then
-     hit=true
-     break
-    end
-    my+=1
-   end
-   if not hit then
-    return 256
-   end
-   return my*8-16-g_scroffset
   end
   ---
  }
+end
+
+function update_phys(o)
+ local ground=o:getflr()
+ 
+ if abs(o.speed) >=
+  o.speedinc then
+  if o.direction==0 then
+   if o.speed < 0 then
+    o.speed+=o.speedinc
+   else
+    o.speed-=o.speedinc
+   end
+  else
+   if o.speed > 0 then
+    o.speed-=o.speedinc
+   else
+    o.speed+=o.speedinc
+   end
+  end
+ else
+  o.speed=0
+ end
+
+ if o.y < ground then
+  o.speedy = min(6, o.speedy+1)
+ end
+   
+ o.y+=o.speedy
+   
+ if o.y >= ground then
+  o.speedy = 0
+  o.y = ground
+ end
+ 
+ o.x+=o.speed
+
+ if o.x < -16 then
+  o.x = 128
+ elseif o.x > 128 then
+  o.x = -16
+ end
 end
 
 function rectintersect(a,b)
@@ -396,14 +500,14 @@ dbbbbbb33bb3bb3ddddddddddddddddd000000000eee004000000000000000000000000000000000
 0000888008880000c889abbbcbaa98cc000440000000004400000000000000000000000000000000000000000000000000000000000000000000000000000000
 0004440000444000899abcccccba98cc000444444440044000000000000000000000000000000000000000000000000000000000000000000000000000000000
 004444000044440099abc2222cba988c000444444444444400000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000444444444444444400000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000004aaaaaaaaaaaaaaa00000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000004a9999999999999900000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000004a9999999999999900000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000444444444444444400000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+77666677000000000000000000000000000000000000000000000000444444444444444400000000000000000000000000000000000000000000000000000000
+788288270000000000000000000000000000000000000000000000004aaaaaaaaaaaaaaa00000000000000000000000000000000000000000000000000000000
+878878820000000000000000000000000000000000000000000000004a9999999999999900000000000000000000000000000000000000000000000000000000
+888888820000000000000000000000000000000000000000000000004a9999999999999900000000000000000000000000000000000000000000000000000000
+68888826000000000000000000000000000000000000000000000000444444444444444400000000000000000000000000000000000000000000000000000000
+66888266000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+76682667000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+77666677000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000444444444444444444444444000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000499999994aaaaaaa49999999000000000000000000000000000000000000000000000000
 000000000000000000000000000000000000000000000000000000004aaaaaaa4999999949999999000000000000000000000000000000000000000000000000
