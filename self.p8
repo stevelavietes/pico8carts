@@ -101,7 +101,7 @@ function _update()
  
  for v in all(g_blocks) do
   if v.y > 128 then
-   v.y = -16
+   v.y = -8
    v.x = 20
   end
  end
@@ -469,7 +469,7 @@ function update_phys(o)
  if o.x < -16 then
   o.x = 128
  elseif o.x > 128 then
-  o.x = -16
+  o.x = -o.hby1
  end
 end
 
