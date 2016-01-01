@@ -84,7 +84,7 @@ function _update()
  g_ct = btn()
 
  --xxx test scrolling
- if btnp(2) then
+ if btn(2) then
   scrollby(1)
  end
  if btn(3) then
@@ -99,6 +99,13 @@ function _update()
   v:update()
  end
  
+ for v in all(g_blocks) do
+  if v.y > 128 then
+   v.y = -16
+   v.x = 20
+  end
+ end
+
  foreach(g_violets, update_phys)
  foreach(g_blocks, update_phys)
 
@@ -487,6 +494,9 @@ end
 function scrollby(n)
  g_scroffset+=n
  foreach(g_violets, function(v)
+  v.y-=n
+ end)
+ foreach(g_blocks, function(v)
   v.y-=n
  end)
 end
