@@ -24,6 +24,8 @@ function _init()
  
  g_violets[2].x = 86
  g_violets[2].direction=0
+
+ g_objs={}
 end
 
 function update_collision(o1,o2)
@@ -141,6 +143,12 @@ function _update()
  sprcpy(71,src)
  src=73+flr((g_tick%12)/4)
  sprcpy(72,src)
+ 
+ foreach(g_objs, function(t)
+  if t.update then
+   t:update(g_objs)
+  end
+ end)
 
 end
 
@@ -216,6 +224,13 @@ function _draw()
 
  foreach(g_violets, draw_thing)
  foreach(g_blocks, draw_thing)
+
+
+ foreach(g_objs, function(t)
+  if t.draw then
+   t:draw(g_objs)
+  end
+ end)
  
  --pal(0,g_tick%15,1)
  --pal(9,flr(rnd(16)),1)
@@ -469,6 +484,10 @@ function test_break(o)
     shl(1,1)) > 0 then
    mset(m,mys[my],0)  
    o.speedy=abs(o.speedy)
+   
+   
+   
+   add(g_objs,make_break(m*8,(my-1)*8+off))
    return
   end
  end
@@ -555,6 +574,9 @@ function scrollby(n)
  foreach(g_blocks, function(v)
   v.y-=n
  end)
+ foreach(g_objs, function(v)
+  v.y-=n
+ end)
 end
 
 function shouldscroll()
@@ -574,6 +596,33 @@ function shouldscroll()
  end
 
  return false
+end
+
+function make_break(x,y)
+ return {
+  f=0,
+  draw=function(t)
+   local yy=y+t.f*4
+   local yy2=y+t.f*3.5
+   
+   
+   local xx=(1-(1-t.f/20)^2)*30
+   local xx2=(1-(1-t.f/20)^2)*15
+   
+   sspr(64,32,4,4,x-xx,yy,4,4)
+   sspr(68,32,4,4,x+4+xx,yy,4,4)
+   sspr(64,36,4,4,x-xx2,yy2+4,4,4)
+   sspr(68,36,4,4,x+4+xx2,yy2+4,4,4)
+   
+   
+  end,
+  update=function(t,s)
+   t.f+=1
+   if t.f >20 then
+    del(s,t)
+   end
+  end
+ }
 end
 
 --returns state,changed
