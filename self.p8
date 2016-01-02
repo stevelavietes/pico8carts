@@ -615,6 +615,8 @@ end
 function make_break(x,y)
  return {
   f=0,
+  x=x,
+  y=y,
   draw=function(t)
    local yy=y+t.f*4
    local yy2=y+t.f*3.5
