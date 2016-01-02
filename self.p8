@@ -246,21 +246,19 @@ function _draw()
    t:draw(g_objs)
   end
  end)
- 
 
+ -- height/score display
  color(1)
- rectfill(
-  1,
-  120,
-  1+4*(8+numdigits(128-g_scroffset)),
-  126
- )
+ local scrl=128-g_scroffset
+ rectfill(1,120,
+  1+4*(8+numdigits(scrl)),126)
  if shouldscroll() then
   color(11)
  else
   color(3)
  end
- print("height: "..flr(128-g_scroffset),2,121)
+ print("height: "..flr(scrl),
+  2,121)
  color(5)
  
  --pal(0,g_tick%15,1)
