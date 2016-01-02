@@ -168,6 +168,7 @@ function update_held(obj)
  local held=obj.holding
  if obj.will_hold then
   if held then
+   update_holding(obj, held)
    if obj.direction == 0 then
     held.x=obj.x-0.5*obj.hbx1
    else
@@ -186,6 +187,9 @@ end
 function update_holding(obj, held)
  held.speed = obj.speed
  held.speedy= obj.speedy
+ held.direction=obj.direction
+ held.speedinc=obj.speedinc
+ 
  
  obj.holding=held
  held.held_by=obj
