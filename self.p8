@@ -197,6 +197,15 @@ function update_holding(obj, held)
  held.held_by=obj
 end
 
+function numdigits(n)
+ local d = 1
+ while ((n / 10) > 1) do
+  n/=10
+  d+=1
+ end
+ return d
+end
+
 function draw_thing(thing)
  thing:draw()
 end
@@ -237,6 +246,22 @@ function _draw()
    t:draw(g_objs)
   end
  end)
+ 
+
+ color(1)
+ rectfill(
+  1,
+  120,
+  1+4*(8+numdigits(128-g_scroffset)),
+  126
+ )
+ if shouldscroll() then
+  color(11)
+ else
+  color(3)
+ end
+ print("height: "..flr(128-g_scroffset),2,121)
+ color(5)
  
  --pal(0,g_tick%15,1)
  --pal(9,flr(rnd(16)),1)
