@@ -28,6 +28,14 @@ function _init()
  g_objs={}
  
  g_airdragmod=0.5
+
+ --init as random
+ if true then
+  for i=1,32 do
+   scrollby(-8)
+  end
+  g_scroffset = 128
+ end
 end
 
 function update_collision(o1,o2)
