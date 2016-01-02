@@ -637,7 +637,7 @@ function scrollby(n)
  
  while i<16 do
   
-  local len=flr(rnd(5))+i+2
+  local len=flr(rnd(5))+i+1
   
   local s = 0
   
