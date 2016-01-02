@@ -687,29 +687,31 @@ function shouldscroll()
 end
 
 function make_break(x,y) 
- for xspd in all({-1,-0.5,0.5,1}) do
-  local o = init_phys(
-  {
-  f=0,
-  x=x+1,
-  y=y-7,
-  hbx0=0,
-  hbx1=1,
-  hby0=0,
-  hby1=1,
-  draw=function(t)
-   sspr(64,32,4,4,t.x,t.y,4,4)
-  end,
-  update=function(t,s)
-   t.f+=1
-   if t.f >20 then
-    del(s,t)
+ for xspd in all(
+   {-3,-1.5,1.5,3}) do
+  local o = init_phys({
+   f=0,
+   x=x+1,
+   y=y-7,
+   hbx0=0,
+   hbx1=1,
+   hby0=0,
+   hby1=1,
+   draw=function(t)
+    sspr(64,32,4,4,t.x,t.y,4,4)
+   end,
+   update=function(t,s)
+    t.f+=1
+    if t.f >20 then
+     del(s,t)
+    end
    end
-  end
- }
+  }
  )
- o.speed = xspd*3+2*rnd()
- o.speedy= -3+2*rnd()
+ -- set the initial velocity
+ local rndoff=rnd()
+ o.speed = xspd+xspd*rndoff
+ o.speedy= -4*rndoff
  add(g_objs,o)
  end
  return 
