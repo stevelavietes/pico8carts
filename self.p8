@@ -26,6 +26,8 @@ function _init()
  g_violets[2].direction=0
 
  g_objs={}
+ 
+ g_airdragmod=0.5
 end
 
 function update_collision(o1,o2)
@@ -503,27 +505,31 @@ function update_phys(o)
  if o.held_by ~= nil then
   return
  end
+
  local ground=o:getflr()
+ local drag=o.speedinc
+ if o.y ~= ground then
+  drag*=g_airdragmod
+ end
  
- if abs(o.speed) >=
-  o.speedinc then
+ -- xdrag
+ if abs(o.speed) >= drag then
   if o.direction==0 then
    if o.speed < 0 then
-    o.speed+=o.speedinc
+    o.speed+=drag
    else
-    o.speed-=o.speedinc
+    o.speed-=drag
    end
   else
    if o.speed > 0 then
-    o.speed-=o.speedinc
+    o.speed-=drag
    else
-    o.speed+=o.speedinc
+    o.speed+=drag
    end
   end
  else
   o.speed=0
  end
-
 
  if o.y < ground or o.speedy<0 then
   --o.gy=nil
