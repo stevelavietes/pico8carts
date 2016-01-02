@@ -692,13 +692,13 @@ function make_break(x,y)
   local o = init_phys({
    f=0,
    x=x+1,
-   y=y-7,
+   y=y,
    hbx0=0,
    hbx1=1,
    hby0=0,
    hby1=1,
    draw=function(t)
-    sspr(64,32,4,4,t.x,t.y,4,4)
+    sspr(64,32,4,4,t.x,t.y-3,4,4)
    end,
    update=function(t,s)
     t.f+=1
