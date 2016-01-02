@@ -391,6 +391,7 @@ function make_violet(p)
    else
     if abs(t.speed) < 
      t.speedinc then
+     t.speed=0
      --t.frame=(t.frame+0.5)%3
      t.frame = 0
     end
