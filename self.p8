@@ -132,6 +132,7 @@ function _update()
 
  foreach(g_violets, update_phys)
  foreach(g_blocks, update_phys)
+ foreach(g_objs,update_phys)
 
  collide(
   g_violets[1],
@@ -377,6 +378,8 @@ function init_phys(o)
   end
  }
  for k,v in pairs(phys) do o[k] = v end
+ 
+ return o
 end
 
 function make_violet(p)
@@ -523,9 +526,8 @@ function test_break(o)
    mset(m,mys[my],0)  
    o.speedy=abs(o.speedy)
    
-   
-   
-   add(g_objs,make_break(m*8,(my-1)*8+off))
+   make_break(m*8,(my-1)*8+off)
+
    return
   end
  end
@@ -684,25 +686,19 @@ function shouldscroll()
  return false
 end
 
-function make_break(x,y)
- return {
+function make_break(x,y) 
+ for xspd in all({-1,-0.5,0.5,1}) do
+  local o = init_phys(
+  {
   f=0,
-  x=x,
-  y=y,
+  x=x+1,
+  y=y-7,
+  hbx0=0,
+  hbx1=1,
+  hby0=0,
+  hby1=1,
   draw=function(t)
-   local yy=y+t.f*4
-   local yy2=y+t.f*3.5
-   
-   
-   local xx=(1-(1-t.f/20)^2)*30
-   local xx2=(1-(1-t.f/20)^2)*15
-   
-   sspr(64,32,4,4,x-xx,yy,4,4)
-   sspr(68,32,4,4,x+4+xx,yy,4,4)
-   sspr(64,36,4,4,x-xx2,yy2+4,4,4)
-   sspr(68,36,4,4,x+4+xx2,yy2+4,4,4)
-   
-   
+   sspr(64,32,4,4,t.x,t.y,4,4)
   end,
   update=function(t,s)
    t.f+=1
@@ -711,6 +707,12 @@ function make_break(x,y)
    end
   end
  }
+ )
+ o.speed = xspd*3+2*rnd()
+ o.speedy= -3+2*rnd()
+ add(g_objs,o)
+ end
+ return 
 end
 
 --returns state,changed
