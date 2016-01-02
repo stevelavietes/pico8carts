@@ -26,6 +26,8 @@ function _init()
  g_violets[2].direction=0
 
  g_objs={}
+ 
+ g_airdragmod=0.5
 end
 
 function update_collision(o1,o2)
@@ -168,6 +170,7 @@ function update_held(obj)
  local held=obj.holding
  if obj.will_hold then
   if held then
+   update_holding(obj, held)
    if obj.direction == 0 then
     held.x=obj.x-0.5*obj.hbx1
    else
@@ -186,6 +189,9 @@ end
 function update_holding(obj, held)
  held.speed = obj.speed
  held.speedy= obj.speedy
+ held.direction=obj.direction
+ held.speedinc=obj.speedinc
+ 
  
  obj.holding=held
  held.held_by=obj
@@ -391,6 +397,7 @@ function make_violet(p)
    else
     if abs(t.speed) < 
      t.speedinc then
+     t.speed=0
      --t.frame=(t.frame+0.5)%3
      t.frame = 0
     end
@@ -495,27 +502,34 @@ function test_break(o)
 end
 
 function update_phys(o)
+ if o.held_by ~= nil then
+  return
+ end
+
  local ground=o:getflr()
+ local drag=o.speedinc
+ if o.y ~= ground then
+  drag*=g_airdragmod
+ end
  
- if abs(o.speed) >=
-  o.speedinc then
+ -- xdrag
+ if abs(o.speed) >= drag then
   if o.direction==0 then
    if o.speed < 0 then
-    o.speed+=o.speedinc
+    o.speed+=drag
    else
-    o.speed-=o.speedinc
+    o.speed-=drag
    end
   else
    if o.speed > 0 then
-    o.speed-=o.speedinc
+    o.speed-=drag
    else
-    o.speed+=o.speedinc
+    o.speed+=drag
    end
   end
  else
   o.speed=0
  end
-
 
  if o.y < ground or o.speedy<0 then
   --o.gy=nil
@@ -601,6 +615,8 @@ end
 function make_break(x,y)
  return {
   f=0,
+  x=x,
+  y=y,
   draw=function(t)
    local yy=y+t.f*4
    local yy2=y+t.f*3.5
