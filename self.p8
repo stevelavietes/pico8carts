@@ -500,6 +500,9 @@ function test_break(o)
 end
 
 function update_phys(o)
+ if o.held_by ~= nil then
+  return
+ end
  local ground=o:getflr()
  
  if abs(o.speed) >=
