@@ -393,7 +393,7 @@ function make_violet(p)
   hby1=16,
   holding=nil,
   will_hold=false,
-  holdable=false,
+  is_holdable=false,
   ---
   update=function(t)
    local ground = t:getflr()
@@ -697,6 +697,7 @@ function make_break(x,y)
    hbx1=1,
    hby0=0,
    hby1=1,
+   is_holdable=false,
    draw=function(t)
     sspr(64,32,4,4,t.x,t.y-3,4,4)
    end,
