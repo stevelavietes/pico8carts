@@ -654,6 +654,8 @@ function scrollby(n)
  
  local on = rnd(100)>50
  
+ local lasts = nil
+ 
  while i<16 do
   
   local len=flr(rnd(2))+i+2
@@ -673,13 +675,23 @@ function scrollby(n)
   
   on = not on
   
+  local start=i
   for j=i,len do
    if i > 15 then
     break
    end
-   mset(i,nexty,s)
+   if j==start
+     and i>0
+     and s==0
+     and lasts==71 then
+    mset(i,nexty,87)
+   else
+    mset(i,nexty,s)
+   end
    i+=1
   end
+  
+  lasts = s
   
  end
  
