@@ -35,6 +35,13 @@ function _init()
    scrollby(-8)
   end
   g_scroffset = 128
+  
+  foreach(g_violets, function(v)
+   v.y=41
+  end)
+  foreach(g_blocks, function(v)
+   v.y=41
+  end)
  end
 end
 
@@ -118,7 +125,7 @@ function _update()
  for v in all(g_violets) do
   if v.y > 128 then
    v.y = -16
-   v.x = 60
+   --v.x = 60
   end
   v:update()
  end
@@ -126,7 +133,7 @@ function _update()
  for v in all(g_blocks) do
   if v.y > 128 then
    v.y = -8
-   v.x = 20
+   --v.x = 20
   end
  end
 
@@ -385,7 +392,7 @@ end
 function make_violet(p)
  return {
   x=27,
-  y=23,
+  y=64,
   frame=0,
   hbx0=4,
   hbx1=12,
@@ -394,6 +401,7 @@ function make_violet(p)
   holding=nil,
   will_hold=false,
   is_holdable=false,
+  breaks_blocks=true,
   ---
   update=function(t)
    local ground = t:getflr()
@@ -498,6 +506,9 @@ function make_violet(p)
 end
 
 function test_break(o)
+ if not o.breaks_blocks then
+  return
+ end
  if o.speedy >= 0 then
   return
  end
@@ -629,23 +640,30 @@ function scrollby(n)
  local mys=getscrmy()
  local nexty = (mys[17]+1)%32
  local i=0
- local empty = nexty%3 > 0
+ local empty = nexty%4 > 0
  
- --if rnd(500)>490 then
- -- empty = not empty
- --end
  
- local on=rnd(100)>49
+ if nexty%4 == 1
+   and rnd(100) > 90 then
+   
+  for i = 0,15 do
+   mset(i,nexty,72)
+  end 
+  return
+ end
+ 
+ local on = rnd(100)>50
  
  while i<16 do
   
-  local len=flr(rnd(5))+i+1
+  local len=flr(rnd(2))+i+2
   
   local s = 0
   
+   
   if not empty then
    if on then
-    if rnd(100) > 65 then
+    if rnd(100) > 50 then
      s=72
     else
      s=71
