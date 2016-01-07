@@ -129,6 +129,7 @@ function _update()
    --v.x = 60
    v.speed=0
    v.speedy=0
+   v.will_hold=false
   end
   v:update()
  end
