@@ -175,6 +175,10 @@ function _update()
 end
 
 function collide(o1, o2)
+ if not o1 or not o2 then
+  return
+ end
+ 
  if o1.off or o2.off then
   return
  end
