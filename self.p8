@@ -406,6 +406,34 @@ function make_block(x,y)
  }
 end
 
+function make_apple(x,y)
+ local r = {
+  x=x,
+  y=y,
+  hbx0=0,
+  hbx1=8,
+  hby0=0,
+  hby1=8,
+  update=function(b,s)
+   if b.y > 127 then
+    del(s,b)
+   end
+   
+   if b.speed > 0 then
+    b.speed = 1
+   else
+    b.speed = -1
+   end
+   
+  end,
+  draw=function(b)
+   spr(64,b.x,b.y)
+  end
+ }
+ init_phys(r)
+ return r
+end
+
 function init_phys(o)
  local phys={
   held_by=nil,
@@ -722,6 +750,15 @@ function test_break(o)
       make_break(m*8,(my-1)*8+off)
      else
       mset(m,mys[my],88)
+      local a = make_apple(
+        m*8, (my-2)*8+off)
+      if o.direction == 0 then
+       a.speed = 1
+      else
+       a.speed = -1
+      end
+      add(g_objs, a)
+     
      end
    end
    
