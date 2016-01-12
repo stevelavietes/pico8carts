@@ -625,7 +625,8 @@ function make_violet(p)
    local s = 4
    
    --duck
-   if btn(3,p) then
+   if g_state == 1
+     and btn(3,p) then
     s = 14 
    end
 
@@ -649,7 +650,8 @@ function make_violet(p)
    
    if t.y ~= ground then
     s=0
-    if (g_tick%4)>2 then
+    if g_state == 1
+      and (g_tick%4)>2 then
      s = 2
     end
    end
