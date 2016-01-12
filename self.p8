@@ -156,6 +156,15 @@ function _update()
   for b in all(g_blocks) do
    collide(v, b)
   end
+  for o in all(g_objs) do
+   if rectintersect(
+     v:getrect(), 
+     o:getrect()) then
+    if o.pickup then
+     o:pickup(v)
+    end
+   end
+  end
  end
  
  foreach(g_violets, update_held)
@@ -443,6 +452,10 @@ function make_apple(x,y)
   hbx1=8,
   hby0=0,
   hby1=8,
+  pickup=function(a, o)
+   g_timer += 15
+   del(g_objs, a)
+  end,
   update=function(b,s)
    if b.y > 127 then
     del(s,b)
