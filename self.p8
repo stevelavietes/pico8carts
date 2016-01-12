@@ -8,42 +8,15 @@ function _init()
  g_ct=0    --controllers
  g_ctl=0   --last controllers
 
+ g_cs = {}   --camera stack
+
  g_scroffset = 128 --scrolling
  g_scrspeed = 0
  g_scrline = 40
-
- g_violets={
-   make_violet(0),
-   make_violet(1)
- }
- foreach(g_violets, init_phys)
- 
- g_blocks={
-  make_block(50,35)
- }
- foreach(g_blocks, init_phys)
- 
- g_violets[2].x = 86
- g_violets[2].direction=0
-
- g_objs={}
- 
  g_airdragmod=0.5
 
- --init as random
- if true then
-  for i=1,32 do
-   scrollby(-8)
-  end
-  g_scroffset = 128
-  
-  foreach(g_violets, function(v)
-   v.y=41
-  end)
-  foreach(g_blocks, function(v)
-   v.y=41
-  end)
- end
+ g_state = 0 --don't play
+
  
  game_start()
 end
@@ -102,32 +75,47 @@ function is_holding(obj, held)
 end
 
 function _update()
- if g_tick % 6 == 0 then
-  g_timer -= 1
- end
- 
- if (g_timer < 1) then
-  cls()
-  print("game over.")
-  print("height: "..128-g_scroffset)
-  stop()
- end
- 
  g_tick = max(0,g_tick+1)
  -- current/last controller
  g_ctl = g_ct
  g_ct = btn()
 
- --xxx test scrolling
- --if btn(2) then
- -- g_scrline = max(8,g_scrline-1)
- -- --scrollby(1)
- --end
- --if btn(3) then
- -- g_scrline = min(100,g_scrline+1)
- -- --scrollby(-3)
- --end
 
+ animate_tiles()
+ 
+ foreach(g_uiobjs, function(t)
+  if t.update then
+   t:update(g_uiobjs)
+  end
+ end)
+
+ if g_state == 0 then
+  return
+ end
+ 
+ if g_tick % 6 == 0 then
+  g_timer -= 1
+ end
+ 
+ if (g_timer < 1) then
+  g_state = 0
+  
+  add(g_uiobjs, make_menu(
+   {'retry', 'huh'},
+   function(t,s)
+    --del(s,t)
+    game_start()
+   end,
+   64,64
+  ))
+  
+  --cls()
+--  print("game over.")
+  --print("height: "..128-g_scroffset)
+  --stop()
+ end
+ 
+ 
  if shouldscroll() then
   g_scrspeed = -4
  else
@@ -172,6 +160,9 @@ function _update()
  
  foreach(g_violets, update_held)
 
+end
+
+function animate_tiles()
  --experiment with animating
  --sprites in maps by copying
  --sprite data around
@@ -187,6 +178,7 @@ function _update()
  end)
 
 end
+
 
 function collide(o1, o2)
  if not o1 or not o2 then
@@ -209,6 +201,41 @@ function collide(o1, o2)
 end
 
 function game_start()
+ g_state = 1 -- play!
+ g_objs={}
+ g_uiobjs={}
+ g_violets={}
+  
+	g_violets={
+   make_violet(0),
+   make_violet(1)
+ }
+ foreach(g_violets, init_phys)
+ 
+ g_blocks={
+  make_block(50,35)
+ }
+ foreach(g_blocks, init_phys)
+ 
+ g_violets[2].x = 86
+ g_violets[2].direction=0
+
+ 
+ --init as random
+ if true then
+  for i=1,32 do
+   scrollby(-8)
+  end
+  g_scroffset = 128
+  
+  foreach(g_violets, function(v)
+   v.y=41
+  end)
+  foreach(g_blocks, function(v)
+   v.y=41
+  end)
+ end
+ 
  g_scroffset = 128
  g_timer=99
 end
@@ -301,6 +328,8 @@ function _draw()
   end
  end)
 
+ draw_uiobjs(g_uiobjs)
+ 
  -- height/score display
  color(1)
  local scrl=128-g_scroffset
@@ -1040,7 +1069,122 @@ function sprcpy(dst,src,w,h)
  end
 end
 
+function pushc(x, y)
+ local l=g_cs[#g_cs] or {0,0}
+ local n={l[1]+x,l[2]+y}
+ add(g_cs, n)
+ camera(n[1], n[2])
+end
 
+function popc()
+ local len = #g_cs
+ g_cs[len] = nil
+ len -= 1
+ if len > 0 then
+  local xy=g_cs[len]
+  camera(xy[1],xy[2])
+ else
+  camera()
+ end
+end
+
+function draw_uiobjs(s)
+ foreach(s, function(t)
+  if t.draw then
+   pushc(-t.x,-t.y)
+   t:draw(g_uiobjs)
+   popc()
+  end
+ end)
+end
+
+function make_menu(
+ lbs, --menu lables
+ fnc, --chosen callback
+ x,y, --pos
+ omb, --omit backdrop
+ p,   --player
+ cfnc --cancel callback
+)
+ local m={
+  --lbs=lbs,
+  --f=fnc,
+  --fc=cfnc,
+  i=0, --item
+  s=g_tick,
+  e=5,
+  x=x or 64,
+  y=y or 80,
+  h=10*#lbs+4,
+  --omb=omb,
+  tw=0,--text width
+  p=p or -1,
+  draw=function(t)
+   local e=elapsed(t.s)
+   local w=t.tw*4+10
+   local x=min(1,e/t.e)*(w+9)/2
+   if not omb then
+    rectfill(-x,0,x,t.h,0)
+    rect(-x,0,x,t.h,1)
+   end
+   if e<t.e then
+    return
+   end
+   x=w/2+1
+   for i,l in pairs(lbs) do
+    if not t.off or i==t.i+1 then
+     local y=4+(i-1)*10
+     print(l,-x+9,y+1,0)
+     print(l,-x+9,y,7)
+    end
+   end
+   spr(64,-x,2+10*t.i)
+  end,
+  update=function(t,s)
+   if (t.off) return
+   if elapsed(t.s)<(t.e*2) then
+    return
+   end
+
+   if btnn(5,t.p) then
+    if fnc then
+     fnc(t,t.i,s)
+     sfx(2)
+    end
+   end
+
+   --cancel
+   if btnn(4,t.p) then
+    if cfnc then
+     cfnc(t,s)
+     sfx(2)
+    end
+   end
+
+   if btnn(2,t.p) and
+     t.i>0 then
+    t.i-=1
+    sfx(1)
+   end
+   if btnn(3,t.p) and
+     t.i<(#lbs-1) then
+    t.i+=1
+    sfx(1)
+   end
+  end
+ }
+ for l in all(lbs) do
+  m.tw=max(m.tw,#l)
+ end
+ return m
+end
+
+function elapsed(t)
+ if g_tick>=t then
+  return g_tick - t
+ end
+ return 32767-t+g_tick
+end
 
 __gfx__
 00000088811000000000001881000000000000888110000000000088811000000000008881100000000000000000000000000011881100000000000000000000
