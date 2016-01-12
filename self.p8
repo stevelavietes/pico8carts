@@ -157,9 +157,10 @@ function _update()
    collide(v, b)
   end
   for o in all(g_objs) do
-   if rectintersect(
-     v:getrect(), 
-     o:getrect()) then
+   if o.getrect and 
+     rectintersect(
+      v:getrect(), 
+      o:getrect()) then
     if o.pickup then
      o:pickup(v)
     end
