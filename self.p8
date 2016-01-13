@@ -16,9 +16,12 @@ function _init()
  g_airdragmod=0.5
 
  g_state = 0 --don't play
-
  
- game_start()
+ g_objs = {}
+ g_uiobjs = {} 
+ 
+ make_title()
+ --game_start()
 end
 
 function update_collision(o1,o2)
@@ -108,6 +111,7 @@ function _update()
    end,
    64,64
   ))
+  
   
   --cls()
 --  print("game over.")
@@ -248,7 +252,31 @@ function game_start()
  
  g_scroffset = 128
  g_timer=99
+
+ 
 end
+
+function make_title()
+ add(g_uiobjs,
+   make_drawon(d_climbing,
+     function(t,s)
+      add(s,
+        make_drawon(d_violets,
+          function(t,s)
+           
+           add(s, make_menu(
+            {'1 player',
+             '2 player'},
+             function()
+              game_start()
+             end
+           ))
+           
+           --game_start()
+          end))
+     end))
+end
+
 
 function update_held(obj)
  local held=obj.holding
@@ -308,7 +336,9 @@ function _draw()
  spr(128,(((g_tick%640)/4+0)%160)-32,
    ((88-g_scroffset/3)%144)-16,4,2)
  
-
+ 
+ 
+ if g_state == 1 then
  for i=0,15 do
   pal(i,1)
  end
@@ -330,7 +360,8 @@ function _draw()
 
  foreach(g_violets, draw_thing)
  foreach(g_blocks, draw_thing)
-
+ end
+ 
 
  foreach(g_objs, function(t)
   if t.draw then
@@ -340,6 +371,9 @@ function _draw()
 
  draw_uiobjs(g_uiobjs)
  
+ if g_state == 0 then
+  return
+ end
  -- height/score display
  color(1)
  local scrl=128-g_scroffset
@@ -1050,6 +1084,128 @@ function make_pop(x,y)
   end
  }
 end
+
+d_climbing = {
+  15,55, 16,54, 17,51, 16,49, 14,49, 11,51, 9,53, 7,57, 7,60, 8,63, 10,64, 13,63, 15,62, 18,59, 21,56, 23,53, 24,50, 23,49, 
+  21,51, 18,57, 17,62, 18,64, 20,63, 23,60, 25,56, 23,61, 23,63, 24,64, 26,63, 28,60, 30,57, 32,55, 34,55, 34,57, 33,59, 31,62, 30,64, 33,60, 35,57, 
+  37,55, 38,55, 38,57, 37,59, 36,61, 36,63, 37,64, 39,63, 41,60, 43,56, 47,49, 43,57, 46,55, 47,56, 47,59, 46,61, 45,63, 42,64, 41,63, 41,62, 45,64, 
+  48,63, 50,60, 52,56, 49,62, 50,64, 52,64, 55,59, 57,55, 56,58, 59,55, 61,55, 61,57, 59,60, 58,63, 59,64, 61,64, 67,63, 65,62, 64,59, 67,56, 69,55, 
+  70,57, 68,63, 65,69, 63,72, 61,71, 62,68, 64,66, 68,64, 71,63, 72,61
+}
+
+d_violets = {
+79,48,
+78,56,
+77,64,
+82,57,
+87,48,
+79,64,
+84,64,
+86,58,
+87,56,
+85,63,
+86,64,
+90,61,
+91,57,
+93,55,
+94,55,
+96,56,
+96,60,
+93,63,
+90,63,
+90,59,
+93,58,
+97,59,
+101,58,
+103,56,
+105,52,
+104,50,
+102,53,
+99,60,
+99,63,
+101,64,
+104,62,
+106,61,
+108,60,
+110,57,
+109,55,
+106,56,
+104,62,
+106,64,
+110,62,
+113,58,
+115,54,
+116,51,
+112,54,
+115,54,
+113,59,
+111,62,
+113,64,
+115,63,
+116,62,
+118,59,
+120,55,
+121,58,
+120,62,
+116,64,
+115,59,
+120,64,
+122,63,
+124,61
+}  
+  
+function make_drawon(d, fnc)
+ return {
+  x=0,
+  y=0,
+  e=g_tick,
+  d=d,
+  fnc=fnc,
+  update=function(t,s)
+   if not t.fnc then
+    return
+   end
+  
+   if elapsed(t.e) == #t.d/2
+     then
+    t.fnc(t,s)
+   end
+    
+  
+  end,
+  draw=function(t,s)
+   
+   
+   local x,y = t.d[1],t.d[2]
+   for i=1,(#t.d/2-1) do
+    
+    local o = 2*i+1
+    local nx,ny =
+      t.d[o],t.d[o+1]
+    
+    line(x+1,y+1,nx+1,ny+1,1)
+    
+    line(x,y,nx,ny,7)
+    x,y = nx,ny
+    
+    if i > elapsed(t.e) then
+     break
+    end
+    --if i > g_tick%(#t.d/2) then
+    -- break
+    --end
+    
+   end
+  
+  
+  end
+  
+ }
+
+
+
+end
+
 
 --returns state,changed
 function btns(i,p)
