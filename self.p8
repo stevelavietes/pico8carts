@@ -1165,7 +1165,17 @@ function make_drawon(d, fnc)
    if not t.fnc then
     return
    end
-  
+   
+   if t.skipped then
+    return
+   end
+   
+   if btnn(5, 0) then
+    t.skipped = true
+    t.fnc(t,s)
+    return
+   end
+   
    if elapsed(t.e) == #t.d/2
      then
     t.fnc(t,s)
