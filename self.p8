@@ -1187,20 +1187,27 @@ function make_drawon(d, fnc)
    
    
    local x,y = t.d[1],t.d[2]
+   
+   y += sin(g_tick/50+x/200)*6
+    
    for i=1,(#t.d/2-1) do
+    
+    if i > elapsed(t.e) then
+     break
+    end
     
     local o = 2*i+1
     local nx,ny =
       t.d[o],t.d[o+1]
+    
+    ny += sin(g_tick/50+nx/200)*6
     
     line(x+1,y+1,nx+1,ny+1,1)
     
     line(x,y,nx,ny,7)
     x,y = nx,ny
     
-    if i > elapsed(t.e) then
-     break
-    end
+    
     --if i > g_tick%(#t.d/2) then
     -- break
     --end
