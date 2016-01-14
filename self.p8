@@ -105,9 +105,14 @@ function _update()
   
   add(g_uiobjs, make_menu(
    {'retry', 'huh'},
-   function(t,s)
+   function(t,i,s)
     --del(s,t)
-    game_start()
+    
+    add(s, make_trans(
+     function()
+      game_start()
+     end))
+     
    end,
    64,64
   ))
@@ -268,7 +273,12 @@ function make_title()
             {'1 player',
              '2 player'},
              function()
-              game_start()
+              add(s, make_trans(
+     function()
+      game_start()
+     end))
+
+--              game_start()
              end
            ))
            
@@ -1192,7 +1202,7 @@ function make_drawon(d, fnc)
     
    for i=1,(#t.d/2-1) do
     
-    if i > elapsed(t.e) then
+    if i > elapsed(t.e)-1 then
      break
     end
     
@@ -1373,6 +1383,56 @@ function elapsed(t)
   return g_tick - t
  end
  return 32767-t+g_tick
+end
+
+function trans(s)
+ if (s<1) return
+ s=2^s
+ local b,m,o =
+   0x6000,
+   15,
+   s/2-1+(32*s)
+
+ for y=0,128-s,s do
+  for x=0,128-s,s do
+   local a=b+x/2
+   local c=band(peek(a+o),m)
+   c=bor(c,shl(c,4))
+   for i=1,s do
+    memset(a,c,s/2)
+    a+=64
+   end
+  end
+  b+=s*64
+ end
+end
+
+function make_trans(f,d,i)
+ return {
+  d=d,
+  e=g_tick,
+  f=f,
+  i=i,
+  x=0,
+  y=0,
+  update=function(t,s)
+   if elapsed(t.e)>10 then
+    if (t.f) t:f(s)
+    del(s,t)
+    if not t.i then
+     add(s,
+       make_trans(nil,nil,1))
+    end
+   end
+  end,
+  draw=function(t)
+   local x=flr(elapsed(t.e)/2)
+   if t.i then
+    x=5-x
+   end
+   trans(x)
+  end
+ }
 end
 
 __gfx__
