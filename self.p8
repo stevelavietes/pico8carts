@@ -1200,7 +1200,8 @@ function make_drawon(d, fnc)
     
    for i=1,(#t.d/2-1) do
     
-    if i > elapsed(t.e)-1 then
+    if not t.skipped and
+      i > elapsed(t.e)-1 then
      break
     end
     
