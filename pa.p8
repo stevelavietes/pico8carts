@@ -1433,8 +1433,14 @@ end
 
 function make_main()
  return make_menu(
-  {'1 player','2 player'},
+  {'1 player','2 player',
+   'exit'},
   function(t,i,s)
+   if i == 2 then
+    load('git/menu')
+    run()
+    return
+   end
    t.off=true
    make_lmenuc(t,i+1,s)
   end,

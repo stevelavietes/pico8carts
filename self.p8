@@ -271,8 +271,14 @@ function make_title()
            
            add(s, make_menu(
             {'1 player',
-             '2 player'},
-             function()
+             '2 player',
+             'exit',},
+             function(t, i)
+              if i == 2 then
+               load('git/menu')
+               run()
+               return
+              end
               add(s, make_trans(
      function()
       game_start()
