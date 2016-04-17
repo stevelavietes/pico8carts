@@ -152,13 +152,30 @@ function make_board()
 
  player = make_player(0)
  player.eyetrack=ball
+ 
+ player2 = make_player(1)
+ player2.eyetrack=ball
+ player2.blobs[2].x += 10
+ 
+ inertblob = make_player()
+ inertblob.blobs = {
+  {x=132,y=14,r=6},
+  {x=140,y=14,r=6},
+  {x=148,y=14,r=6},
+  {x=160,y=14,r=6},
+  {x=148,y=22,r=6},
+  
+ 
+ }
+ 
+ 
  ball.force = {12,12}
  goal_l = make_goal(false,ball)
  goal_r = make_goal(true,ball)
  return {
   x=0,
   y=0,
-  bobjs={ball,goal_l,goal_r,player},
+  bobjs={ball,goal_l,goal_r,player,player2,inertblob},
   ball=ball,
   update=function(t)
    updateobjs(t.bobjs)
@@ -439,12 +456,13 @@ function make_player(playnum)
  result = {
   x = 0,
   y = 0,
+  p = playnum,
   blobs = {
    {x=128, y=32, r=8},
    {x=121, y=40, r=8},
   },
   
-  vel = {x=0.5,y=1},
+  vel = {x=0,y=0},
 
   update=function(t,s)
    
@@ -454,29 +472,29 @@ function make_player(playnum)
    --local stvec = {x=0.0,y=0.25}
    
    local adjang = nil
-   if btn(0, playnum) then
+   if btn(0, t.p) then
     adjang = 270
-    if btn(2, playnum) then
+    if btn(2, t.p) then
      adjang -= 45
-    elseif btn(3, playnum) then
+    elseif btn(3, t.p) then
      adjang += 45
     end
-   elseif btn(1, playnum) then
+   elseif btn(1, t.p) then
     adjang = 90
-    if btn(2, playnum) then
+    if btn(2, t.p) then
      adjang += 45
-    elseif btn(3, playnum) then
+    elseif btn(3, t.p) then
      adjang -= 45
     end
-   elseif btn(2, playnum) then
+   elseif btn(2, t.p) then
     adjang = 180
-   elseif btn(3, playnum) then
+   elseif btn(3, t.p) then
     adjang = 0
    end
    
-   if adjang then
+   if t.p and adjang then
     t.vel = vecadd(t.vel,
-      vecrot({x=0,y=0.1}, adjang))
+      vecrot({x=0,y=0.25}, adjang))
    end
    
    foreach(t.blobs, function(b)
@@ -490,8 +508,16 @@ function make_player(playnum)
    
    for i = 1,#t.blobs do
     local pt = t.blobs[i]
+    
+    local col = 13
+    
+    if t.p == 0 then
+     col = 14
+    elseif t.p == 1 then
+     col = 12
+    end 
     circfill(pt.x, pt.y, pt.r,
-      14)
+      col)
    end
    
    -- eyes
@@ -516,6 +542,10 @@ function make_player(playnum)
    local p2 = hits[1]
    line(p1.x,p1.y,p2.x,p2.y,7)
  
+   if not t.p then
+    return
+   end
+   
    local eyept = wrap.center
    
    if wrap.hitvector then
@@ -1123,6 +1153,7 @@ function shrinkwrap(pts, divs,
    
    local roff =
       sin(g_tick/40 + i/15)*1
+   
    
      
    local hit = circlinesect(
