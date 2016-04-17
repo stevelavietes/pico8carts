@@ -139,25 +139,6 @@ function make_ball()
   spd=2,
   is_ball=true,
   update=function(t)
-   -- left
-   if btn(0) then
-    t.x-=t.spd
-   end
-   
-   -- right
-   if btn(1) then
-    t.x+=t.spd
-   end
-   
-   -- up
-   if btn(2) then
-    t.y-=t.spd
-   end
-   
-   -- down
-   if btn(3) then
-    t.y+=t.spd
-   end
   end,
   draw=function(t)
    circfill(-1,1,6,6)
@@ -177,7 +158,7 @@ function make_board()
  return {
   x=0,
   y=0,
-  bobjs={ball,goal_l,goal_r},
+  bobjs={ball,goal_l,goal_r,player},
   ball=ball,
   update=function(t)
    updateobjs(t.bobjs)
