@@ -301,6 +301,122 @@ function _draw()
  stddraw()
 end
 
+--[[
+
+function _update()
+ g_tick = max(0,g_tick+1)
+ 
+ local l = l2
+ 
+ if btn(4) then
+  l = l1
+ end
+ 
+ if btn(5) then
+  l = ctr
+ end
+  
+ if btn(0) then
+  l.x = l.x - 1
+ end
+ if btn(1) then
+  l.x = l.x + 1
+ end
+ if btn(2) then
+  l.y = l.y - 1
+ end
+ if btn(3) then
+  l.y = l.y + 1
+ end
+end
+
+function _draw()
+ cls()
+ color(7)
+ 
+ line(l1.x, l1.y, l2.x, l2.y)
+ 
+ local h =
+   circlinesect(l1, l2, ctr, r)
+ if h then
+  circfill(h.x, h.y, 3, 14) 
+  
+  local n =
+    vecscale(vecnorm(h.n), 10)
+  
+  line(h.x,h.y, h.x+n.x, h.y+n.y,
+    2)
+  
+  color(8)
+ end
+ 
+ circ(ctr.x, ctr.y, r)
+
+ circfill(l1.x, l1.y, 2, 7) 
+
+
+ local pts = {
+    {x=96,y=54},
+    {x=80,y=70},
+    {x=70,y=56},
+    l2,
+ }
+ 
+ foreach(pts, function(pt)
+  circfill(pt.x, pt.y, 16,14)
+ end)
+ 
+ 
+ local wrap =
+   shrinkwrap(pts, 36,
+     vecsub(l1,l2))
+ 
+ local hits = wrap.pts
+ for i=1,#hits-1 do
+  local p1 = hits[i]
+  local p2 = hits[i+1]
+  line(p1.x,p1.y,p2.x,p2.y,7)
+ end
+ local p1 = hits[#hits]
+ local p2 = hits[1]
+ line(p1.x,p1.y,p2.x,p2.y,7)
+
+ if wrap.hitvector then
+  
+  local iv = vecscale(vecnorm(
+    vecsub(wrap.hitvector,
+       wrap.center)), 9)
+
+  local lookdir = vecsub(
+    wrap.hitvector, l1)
+
+  local lookang =
+    atan2(lookdir.x, lookdir.y)
+
+  eyespr = 0
+  if lookang >= 0.75 then
+  elseif lookang >= 0.5 then
+   eyespr = 1
+  elseif lookang >= 0.25 then
+   eyespr = 17
+  else
+   eyespr = 16
+  end
+  
+  if g_tick % 72 < 4 then
+   eyespr = eyespr + 2
+  end
+ 
+  spr(eyespr, wrap.hitvector.x-4-iv.x,
+    wrap.hitvector.y-4-iv.y)
+  
+ end
+
+ print (stat(0))
+end
+
+--]]
+
 ------------------------------
 
 function stdinit()
@@ -590,6 +706,228 @@ function make_trans(f,d,i)
  }
 end
 
+function vecdot(a, b)
+ return a.x * b.x + a.y * b.y
+end
+
+function vecadd(a, b)
+ return {x=a.x+b.x, y=a.y+b.y}
+end
+
+function vecsub(a, b)
+ return {x=a.x-b.x, y=a.y-b.y}
+end
+
+function vecmult(a, b)
+ return {x=a.x*b.x, y=a.y*b.y}
+end
+
+function vecscale(v, m)
+ return {x=v.x*m, y=v.y*m}
+end
+
+function vecrot(v, a)
+ local s = sin(a/360)
+ local c = cos(a/360)
+ return {
+   x=v.x * c - v.y * s,
+   y=v.x * s + v.y * c,
+ }
+end
+
+function vecdistsq(a, b, sf)
+ if sf then
+  a = vecscale(a, sf)
+  b = vecscale(b, sf)
+ end
+ 
+ local distsq =
+   (b.x-a.x)^2 + (b.y-a.y)^2
+ 
+ if sf then
+  distsq = distsq/sf
+ end
+ 
+ return distsq
+end
+
+function vecnorm(v) 
+ local l =
+   sqrt(vecdistsq({x=0,y=0},v)) 
+ return {
+  x=v.x/l,
+  y=v.y/l,
+ }
+end
+
+
+function circlinesect(l1, l2, c, r)
+ local sf = 1/10
+ 
+ local origc = c
+ 
+ local o = vecscale(l1, sf) 
+ 
+ local dr = vecscale(
+  vecsub(l2,l1),sf)
+ 
+ local c = vecscale(c, sf)
+ local r = r*sf
+ 
+ local d = vecsub(o, c)
+ local a = vecdot(dr, dr)
+ local b = vecdot(d, dr)
+ local c = vecdot(d, d) - r^2
+ local disc = b * b - a * c
+ 
+ if disc < 0 then
+  return false
+ end
+
+ local sdisc = sqrt(disc)
+ 
+ local inva = 1/a
+ local t1 = (-b - sdisc) * inva
+ local t2 = (-b + sdisc) * inva
+ 
+ local invr = 1/r
+ 
+ if t2 < t1 then
+  local tmp = t1
+  t1 = t2
+  t2 = tmp
+ end
+ 
+ if t1 >= 0 and t1 <= 1 then
+  
+  local result = vecscale(
+    vecadd(o, vecscale(dr, t1)),
+      1/sf)
+ 
+  result.n = vecsub(result,
+    origc)
+       
+  return result
+ end
+ 
+ if t2 >= 0 and t2 <= 1 then
+  local result = vecscale(
+    vecadd(o, vecscale(dr, t2)),
+      1/sf)
+  
+  result.n = vecsub(result,
+    origc)
+
+  return result
+ end
+ 
+ return false
+end
+
+
+function shrinkwrap(pts, divs,
+  hitvector)
+ 
+ local result = {}
+ local result_pts = {}
+ 
+ result.pts = result_pts
+ 
+ -- find center of pts
+ local xmin = 9999
+ local xmax = -9999
+ local ymin = 9999
+ local ymax = -9999
+ 
+ foreach(pts, function(pt)
+  xmin = min(pt.x, xmin)
+  xmax = max(pt.x, xmax)
+  ymin = min(pt.y, ymin)
+  ymax = max(pt.y, ymax)
+ end)
+ 
+ local sx = (xmax-xmin)
+ local sy = (ymax-ymin)
+  
+ local cx = sx/2 + xmin 
+ local cy = sy/2 + ymin
+ local cv = {x=cx,y=cy}
+ 
+ result.center = cv
+ 
+ local rstep = 360/divs
+ local dv = {x=0, y=max(sx,sy)+20}
+ for i=0,divs-1 do
+  local rv =
+    vecadd(
+       vecrot(dv, i*rstep),
+        cv)
+  
+  local clhit = nil
+  local clhitdist = nil
+  
+  for j = 1, #pts do
+   local pt = pts[j]
+   
+   local roff =
+      sin(g_tick/40 + i/15)*1
+   
+     
+   local hit = circlinesect(
+     rv, cv, pt, (pt.r or 16)+roff)
+   
+   if hit then
+    hitdist = vecdistsq(rv, hit)   
+    if not clhit
+      or hitdist < clhitdist
+      then
+     clhit = hit
+     clhitdist = hitdist
+    end
+   end
+
+  end
+ 
+  if clhit then
+   add(result_pts, clhit)
+  end
+  
+ end
+ 
+ if hitvector then
+  local vd = vecadd(vecscale(
+    vecnorm(hitvector),
+      max(sx,sy)+20),cv)
+
+  local clhit = nil
+  local clhitdist = nil
+  
+  for i=1, #pts do
+   local pt = pts[i]
+    
+   local hit = circlinesect(
+     vd, cv, pt, (pt.r or 16))
+   
+   if hit then
+    hitdist = vecdistsq(vd, hit)   
+    if not clhit
+      or hitdist < clhitdist
+      then
+     clhit = hit
+     clhitdist = hitdist
+    end
+   end
+
+  end 
+  
+  if clhit then
+   result.hitvector = clhit
+  end
+ end 
+ 
+ return result 
+end
+
 __gfx__
 00b000000333330003b0000000bb30000333330000b333300b3000000e2000005555555515555555000000000000000000000000000000000000000000000000
 00bb0000530053000b3000000b333300530053000b355500b053bbb3e052eee25555555155555555000000000000000000000000000000000000000000000000
@@ -608,19 +946,19 @@ __gfx__
 000000000005b3300053300053333330533333305333333000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000053333000055000005555500055555005555500000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11701170711071100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11701170711071100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11701170711071101160116061106110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+77707770777077700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+66606660666066600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+66606660666066600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+77707770777077700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11701170711071101160116061106110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11701170711071100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+11701170711071100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
