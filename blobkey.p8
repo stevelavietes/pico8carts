@@ -41,8 +41,28 @@ function game_start()
  add(g_objs, b)
  -- board "state"
  b.st = 0 
+ g_points = {0,0}
  add(g_objs, make_clock(b,2,0,-1))
+ add(g_objs, make_vsscore())
 end
+
+function make_vsscore()
+ return {
+  draw=function()
+   for i=0,1 do
+    pushc(-111*i,0)
+    rectfill(1,1,15,7,6)
+    spr(72+i,1,1)
+    local v = g_points[i+1]
+    local pad=' '
+    if (v>9) pad=''
+    print(pad..v,8,2,0)
+    popc()
+   end
+  end
+ }
+end
+
 
 function make_timer(e,f,d)
  return {
