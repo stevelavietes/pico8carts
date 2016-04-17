@@ -8,12 +8,12 @@ function _init()
  l1 = {x=32, y=32}
  l2 = {x=64, y=64}
  
- tick = 0
+ g_tick = 0
  
 end
 
 function _update()
- tick = max(0,tick+1)
+ g_tick = max(0,g_tick+1)
  
  local l = l2
  
@@ -45,7 +45,8 @@ function _draw()
  
  line(l1.x, l1.y, l2.x, l2.y)
  
- local h = blub(l1, l2, ctr, r) 
+ local h =
+   circlinesect(l1, l2, ctr, r)
  if h then
   circfill(h.x, h.y, 3, 14) 
   
@@ -111,7 +112,7 @@ function _draw()
    eyespr = 16
   end
   
-  if tick % 72 < 4 then
+  if g_tick % 72 < 4 then
    eyespr = eyespr + 2
   end
  
@@ -124,7 +125,7 @@ function _draw()
 end
 
 
-function dot(a, b)
+function vecdot(a, b)
  return a.x * b.x + a.y * b.y
 end
 
@@ -179,7 +180,7 @@ function vecnorm(v)
 end
 
 
-function blub(l1, l2, c, r) 
+function circlinesect(l1, l2, c, r)
  local sf = 1/10
  
  local origc = c
@@ -193,9 +194,9 @@ function blub(l1, l2, c, r)
  local r = r*sf
  
  local d = vecsub(o, c)
- local a = dot(dr, dr)
- local b = dot(d, dr)
- local c = dot(d, d) - r^2
+ local a = vecdot(dr, dr)
+ local b = vecdot(d, dr)
+ local c = vecdot(d, d) - r^2
  local disc = b * b - a * c
  
  if disc < 0 then
@@ -244,7 +245,7 @@ end
 
 
 function shrinkwrap(pts, divs,
-	hitvector)
+  hitvector)
  
  local result = {}
  local result_pts = {}
@@ -288,10 +289,10 @@ function shrinkwrap(pts, divs,
    local pt = pts[j]
    
    local roff =
-      sin(tick/40 + i/15)*1
+      sin(g_tick/40 + i/15)*1
    
      
-   local hit = blub(
+   local hit = circlinesect(
      rv, cv, pt, (pt.r or 16)+roff)
    
    if hit then
@@ -323,7 +324,7 @@ function shrinkwrap(pts, divs,
   for i=1, #pts do
    local pt = pts[i]
     
-   local hit = blub(
+   local hit = circlinesect(
      vd, cv, pt, (pt.r or 16))
    
    if hit then
