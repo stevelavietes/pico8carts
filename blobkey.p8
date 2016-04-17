@@ -75,10 +75,13 @@ end
 
 function make_board()
  ball = make_ball()
+ 
+ player = make_player(0)
+ player.eyetrack=ball
  return {
   x=0,
   y=0,
-  bobjs={ball},
+  bobjs={ball, player,},
   ball=ball,
   update=function(t)
    updateobjs(t.bobjs)
@@ -299,6 +302,88 @@ end
 
 function _draw()
  stddraw()
+end
+
+function make_player(playnum)
+ result = {
+  x = 0,
+  y = 0,
+  blobs = {
+   {x=128, y=32, r=8},
+   {x=121, y=40, r=8},
+  },
+  
+  vel = {x=0,y=0},
+
+  update=function(t,s)
+  
+  end,
+
+  draw=function(t,s)
+   
+   for i = 1,#t.blobs do
+    local pt = t.blobs[i]
+    circfill(pt.x, pt.y, pt.r,
+      14)
+   end
+   
+   -- eyes
+   local eyed = t.vel
+   if eyed.x == 0
+     and eyed.y == 0 then
+    -- todo, find a center
+    eyed = nil
+   end
+   
+   local wrap =
+    shrinkwrap(t.blobs,
+      #t.blobs*10, eyed)
+   
+   local hits = wrap.pts
+   for i=1,#hits-1 do
+    local p1 = hits[i]
+    local p2 = hits[i+1]
+    line(p1.x,p1.y,p2.x,p2.y,7)
+   end
+   local p1 = hits[#hits]
+   local p2 = hits[1]
+   line(p1.x,p1.y,p2.x,p2.y,7)
+ 
+   local eyept = wrap.center
+   
+   if wrap.hitvector then
+    local iv = vecscale(vecnorm(
+      vecsub(wrap.hitvector,
+        wrap.center)), 9)
+    eyept = vecadd(
+      wrap.hitvector, iv)
+   end
+   
+   local eyespr = 32
+   if t.eyetrack then
+    local lookdir = vecsub(
+      eyept, t.eyetrack)
+    local lookang = atan2(
+      lookdir.x, lookdir.y)
+      
+    if lookang >= 0.75 then
+    elseif lookang >= 0.5 then
+     eyespr = 33
+    elseif lookang >= 0.25 then
+     eyespr = 49
+    else
+     eyespr = 48
+    end
+   end
+   
+   spr(eyespr,
+    eyept.x-4, eyept.y-4) 
+  
+  end,
+ 
+ }
+
+ return result
 end
 
 --[[
