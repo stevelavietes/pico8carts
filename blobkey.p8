@@ -37,34 +37,108 @@ end
 
 function game_start()
  g_objs = {}
- add(g_objs, make_board())
+ local b = make_board()
+ add(g_objs, b)
+ -- board "state"
+ b.st = 0 
+ g_points = {0,0}
+ add(g_objs, make_clock(b,2,0,-1))
+ add(g_objs, make_vsscore())
 end
+
+function make_vsscore()
+ return {
+  x=0,
+  y=0,
+  draw=function()
+   for i=0,1 do
+    pushc(-111*i,0)
+    rectfill(1,1,15,7,6)
+    spr(72+i,1,1)
+    local v = g_points[i+1]
+    local pad=' '
+    if (v>9) pad=''
+    print(pad..v,8,2,0)
+    popc()
+   end
+  end
+ }
+end
+
+
+function make_timer(e,f,d)
+ return {
+  --e=e,f=f,  --closure
+  d=d,  --data for callback
+  s=g_tick,
+  update=function(t,s)
+   if elapsed(t.s) > e then
+    del(s,t)
+    f(t,s)
+   end
+  end
+ }
+end
+
+function make_clock(
+  b, -- game board - need b.st
+  t_start_m,-- time to start (s)
+  t_start_s,
+  t_inc    -- time increment
+ )
+ 
+ return {
+  x=54,
+  y=2,
+  c=0,
+  b=b,
+  m=t_start_m,
+  s=t_start_s,
+  inc=t_inc,
+  draw=function(t)
+   rectfill(-1,-1,19,5,6)
+   local mp,sp = '',''
+   if (t.m<10) then 
+       mp=0
+   end
+   if (t.s<10) then 
+       sp=0
+   end
+   print(mp..t.m..':'..sp..t.s,
+     0,0,0)
+  end,
+  update=function(t)
+   if (t.b.st~=0) then
+    return
+   end
+   t.c+=1
+   --fixed-point math not
+   --accurate enough for
+   --division of seconds.
+   --do addition instead
+   if t.c>=30 then
+    t.c=0
+    t.s+=t.inc
+    if t.inc > 0 and t.s>=60 then
+     t.s=0
+     t.m+=t.inc
+    elseif t.inc < 0 and t.s <= 0 then
+     t.s=59
+     t.m+=t.inc
+    end
+   end
+  end
+ }
+end
+
 
 function make_ball()
  return make_physobj({
   x=124,
   y=64,
   spd=2,
+  is_ball=true,
   update=function(t)
-   -- left
-   if btn(0) then
-    t.x-=t.spd
-   end
-   
-   -- right
-   if btn(1) then
-    t.x+=t.spd
-   end
-   
-   -- up
-   if btn(2) then
-    t.y-=t.spd
-   end
-   
-   -- down
-   if btn(3) then
-    t.y+=t.spd
-   end
   end,
   draw=function(t)
    circfill(-1,1,6,6)
@@ -75,13 +149,16 @@ end
 
 function make_board()
  ball = make_ball()
- 
+
  player = make_player(0)
  player.eyetrack=ball
+ ball.force = {12,12}
+ goal_l = make_goal(false,ball)
+ goal_r = make_goal(true,ball)
  return {
   x=0,
   y=0,
-  bobjs={ball, player,},
+  bobjs={ball,goal_l,goal_r,player},
   ball=ball,
   update=function(t)
    updateobjs(t.bobjs)
@@ -93,8 +170,8 @@ function make_board()
   end,
   draw=function(t)
    rectfill(0,0,255,255,5)
-   rectfill(20,42,40,82,9)
-   rectfill(215,42,235,82,9)
+   
+   -- center stuff
    circ(124,64,20,11)
    line(124,0,124,127,11)
    
@@ -102,6 +179,58 @@ function make_board()
   end,
  }
 end
+
+function make_goal(should_flip,ball)
+ local x=20
+ if should_flip then
+  x=228
+ end
+ return {
+  x=x,
+  y=42,
+  ball=ball,
+  flipped=should_flip,
+  update=function(t) 
+   coll_wall = coll_rect(
+    t.x,
+    t.y+1,
+    8,
+    8*5-1,
+    t.ball
+   )
+   if coll_wall < 0 then
+    return
+   end
+  end,
+  draw=function(t)
+   -- color 0 opaque
+   palt(0,false)
+   palt(1,true)
+   spr(10,0,0,1,1,t.flipped)
+   for i=1,3 do
+    spr(26,0,8*i,1,1,t.flipped)
+   end
+   spr(11,0,32,1,1,t.flipped)
+   palt()
+  end
+ }
+end
+
+-- collide with a rectangle
+-- -1 is miss, lrud,0123
+function coll_rect(
+  min_x,
+  min_y,
+  size_x,
+  size_y,
+  obj)
+ for dim=1,2 do
+  -- todo: implementme
+ -- if obj.x+obj.radius < 
+ end
+ return -1 -- no hit
+end
+ 
 
 function make_title()
  return {
@@ -136,11 +265,12 @@ function make_physobj(p,mass)
  phys = {
   p=p,
   mass=mass,
-  force={12,12},
+  force={0,0},
   velocity={0,0},
   radius=5,
   c=6,
   is_phys=true,
+  is_static=false,
   collides=function(o, pos)
    local r_2 = o.radius*o.radius
    local x_d = pos[1] - o.x
@@ -263,31 +393,32 @@ function update_collision(o)
  for i, t in pairs(g_pobjs) do
   if t ~= o then
    if t:collides(pos) then
-    local o_v = o.velocity
-    local t_v = t.velocity
-    local o_m = o.mass
-    local t_m = t.mass
-    local t_pos = {t.x,t.y}
+    if not t.is_static then
+     local o_v = o.velocity
+     local t_v = t.velocity
+     local o_m = o.mass
+     local t_m = t.mass
+     local t_pos = {t.x,t.y}
+     
+     -- push the objects back
+     local r = o.radius + t.radius
+     local v = subv(pos,t_pos)
+     local ratio = r/magv(v)
+     local d = scalev(v, ratio*0.51)
+     local new_pos  = addv(d,t_pos)
     
-    -- push the objects back
-    local r = o.radius + t.radius
-    local v = subv(pos,t_pos)
-    local ratio = r/magv(v)
-    local d = scalev(v, ratio*0.51)
-    local new_pos  = addv(d,t_pos)
---    local o_new_pos=
-    
-    -- result
-    pos = new_pos
+     -- result
+     pos = new_pos
    
-    -- a.v = (a.u * (a.m - b.m) + (2 * b.m * b.u)) / (a.m + b.m)
-    -- b.v = (b.u * (b.m - a.m) + (2 * a.m * a.u)) / (a.m + b.m)
-    local o_v = o.velocity
-    local t_v = t.velocity
-    local o_m = o.mass
-    local t_m = t.mass
-    o.velocity = scalev(addv(scalev(o_v, (o_m-t_m)),(scalev(t_v,2*t_m))),(1/(o_m+t_m)))
-    t.velocity = scalev(addv(scalev(t_v, (t_m-o_m)),(scalev(o_v,2*o_m))),(1/(o_m+t_m)))
+     -- a.v = (a.u * (a.m - b.m) + (2 * b.m * b.u)) / (a.m + b.m)
+     -- b.v = (b.u * (b.m - a.m) + (2 * a.m * a.u)) / (a.m + b.m)
+     local o_v = o.velocity
+     local t_v = t.velocity
+     local o_m = o.mass
+     local t_m = t.mass
+     o.velocity = scalev(addv(scalev(o_v, (o_m-t_m)),(scalev(t_v,2*t_m))),(1/(o_m+t_m)))
+     t.velocity = scalev(addv(scalev(t_v, (t_m-o_m)),(scalev(o_v,2*o_m))),(1/(o_m+t_m)))
+    end
    end
   end
  end
@@ -1050,22 +1181,22 @@ function shrinkwrap(pts, divs,
 end
 
 __gfx__
-00b000000333330003b0000000bb30000333330000b333300b3000000e2000005555555515555555000000000000000000000000000000000000000000000000
-00bb0000530053000b3000000b333300530053000b355500b053bbb3e052eee25555555155555555000000000000000000000000000000000000000000000000
-00bbb000530bb3005330000053305300530bb3005330000030b3333020e222205555555515555555000000000000000000000000000000000000000000000000
-00bbbb0053b333305b3000005300030053b333305333333053353500522525005555555155555555000000000000000000000000000000000000000000000000
-00bbb30053330530533000005300b30053330530555550300505bb300005ee201155555515555511000000000000000000000000000000000000000000000000
-00bb300053000b30533bb3b05305b30053000b3000000b3000053300000522001155555115555511000000000000000000000000000000000000000000000000
-00b30000530bb33053333330533b3300530bb3300005b33000053000000520001155555115555511000000000000000000000000000000000000000000000000
-00300000533333005555500005333000533333000533330000055000000520001155555155555511000000000000000000000000000000000000000000000000
-0000000000b333300000000003bbbb3003bbbb3003b0000000000000000000001155555515555511000000000000000000000000000000000000000000000000
-000000000b3555003bbbbbb353333330533333300b30000000000000000000005555555155555555000000000000000000000000000000000000000000000000
-00000000533000003333333353355500533555005330000000000000000000005555555515555555000000000000000000000000000000000000000000000000
-000000005333333005533000533b3000533b30005b30000000000000000000005555555155555555000000000000000000000000000000000000000000000000
-00000000555550300053300053350000533500005330000000000000000000005555555515555555000000000000000000000000000000000000000000000000
-0000000000000b300053300053bbbb3053bbbb30533bb3b000000000000000005555555155555555000000000000000000000000000000000000000000000000
-000000000005b3300053300053333330533333305333333000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000053333000055000005555500055555005555500000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00b000000333330003b0000000bb30000333330000b333300b3000000e2000005555555515555555111111110676767b00000000000000000000000000000000
+00bb0000530053000b3000000b333300530053000b355500b053bbb3e052eee25555555155555555000000000767676b00000000000000000000000000000000
+00bbb000530bb3005330000053305300530bb3005330000030b3333020e2222055555555155555550676767b0676767b00000000000000000000000000000000
+00bbbb0053b333305b3000005300030053b3333053333330533535005225250055555551555555550767676b0767676b00000000000000000000000000000000
+00bbb30053330530533000005300b30053330530555550300505bb300005ee2011555555155555110676767b0676767b00000000000000000000000000000000
+00bb300053000b30533bb3b05305b30053000b3000000b30000533000005220011555551155555110767676b0767676b00000000000000000000000000000000
+00b30000530bb33053333330533b3300530bb3300005b330000530000005200011555551155555110676767b0676767b00000000000000000000000000000000
+003000005333330055555000053330005333330005333300000550000005200011555551555555110767676b0000000000000000000000000000000000000000
+0000000000b333300000000003bbbb3003bbbb3003b00000000000000000000011555555155555110676767b0000000000000000000000000000000000000000
+000000000b3555003bbbbbb353333330533333300b300000000000000000000055555551555555550767676b0000000000000000000000000000000000000000
+000000005330000033333333533555005335550053300000000000000000000055555555155555550676767b0000000000000000000000000000000000000000
+000000005333333005533000533b3000533b30005b300000000000000000000055555551555555550767676b0000000000000000000000000000000000000000
+000000005555503000533000533500005335000053300000000000000000000055555555155555550676767b0000000000000000000000000000000000000000
+0000000000000b300053300053bbbb3053bbbb30533bb3b0000000000000000055555551555555550767676b0000000000000000000000000000000000000000
+000000000005b33000533000533333305333333053333330000000000000000000000000000000000676767b0000000000000000000000000000000000000000
+000000000533330000550000055555000555550055555000000000000000000000000000000000000767676b0000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 11701170711071100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 11701170711071100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
