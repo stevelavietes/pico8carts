@@ -37,8 +37,78 @@ end
 
 function game_start()
  g_objs = {}
- add(g_objs, make_board())
+ local b = make_board()
+ add(g_objs, b)
+ -- board "state"
+ b.st = 0 
+ add(g_objs, make_clock(b,2,0,-1))
 end
+
+function make_timer(e,f,d)
+ return {
+  --e=e,f=f,  --closure
+  d=d,  --data for callback
+  s=g_tick,
+  update=function(t,s)
+   if elapsed(t.s) > e then
+    del(s,t)
+    f(t,s)
+   end
+  end
+ }
+end
+
+function make_clock(
+  b, -- game board - need b.st
+  t_start_m,-- time to start (s)
+  t_start_s,
+  t_inc    -- time increment
+ )
+ 
+ return {
+  x=54,
+  y=2,
+  c=0,
+  b=b,
+  m=t_start_m,
+  s=t_start_s,
+  inc=t_inc,
+  draw=function(t)
+   rectfill(-1,-1,19,5,6)
+   local mp,sp = '',''
+   if (t.m<10) then 
+       mp=0
+   end
+   if (t.s<10) then 
+       sp=0
+   end
+   print(mp..t.m..':'..sp..t.s,
+     0,0,0)
+  end,
+  update=function(t)
+   if (t.b.st~=0) then
+    return
+   end
+   t.c+=1
+   --fixed-point math not
+   --accurate enough for
+   --division of seconds.
+   --do addition instead
+   if t.c>=30 then
+    t.c=0
+    t.s+=t.inc
+    if t.inc > 0 and t.s>=60 then
+     t.s=0
+     t.m+=t.inc
+    elseif t.inc < 0 and t.s <= 0 then
+     t.s=59
+     t.m+=t.inc
+    end
+   end
+  end
+ }
+end
+
 
 function make_ball()
  return make_physobj({
