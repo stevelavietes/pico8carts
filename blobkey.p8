@@ -460,36 +460,63 @@ function make_player(playnum)
   blobs = {
    {x=128, y=32, r=8},
    {x=121, y=40, r=8},
+   {x=121, y=45, r=8},
+
   },
   
   vel = {x=0,y=0},
 
   update=function(t,s)
    
+   -- test ejection
+   if t.p and (t.vel.x ~= 0 or
+     t.vel.y ~= 0)
+     and btnn(4, t.p)
+     and #t.blobs > 1
+     then
+    
+    
+    
+    local blob = t.blobs[#t.blobs]
+    t.blobs[#t.blobs] = nil
+    
+    local n = make_player(t.p)
+    n.vel = vecscale(t.vel, 3)
+    n.blobs = {blob,}
+    blob.x += n.vel.x
+    blob.y += n.vel.y
+    t.p = nil
+    
+    add(s, n)
+    
+   end
+   
+   
    -- todo: base drag from size
    t.vel = vecscale(t.vel, 0.95)
    
-   --local stvec = {x=0.0,y=0.25}
-   
    local adjang = nil
-   if btn(0, t.p) then
-    adjang = 270
-    if btn(2, t.p) then
-     adjang -= 45
+   
+   if t.p then
+    if btn(0, t.p) then
+     adjang = 270
+     if btn(2, t.p) then
+      adjang -= 45
+     elseif btn(3, t.p) then
+      adjang += 45
+     end
+    elseif btn(1, t.p) then
+     adjang = 90
+     if btn(2, t.p) then
+      adjang += 45
+     elseif btn(3, t.p) then
+      adjang -= 45
+     end
+    elseif btn(2, t.p) then
+     adjang = 180
     elseif btn(3, t.p) then
-     adjang += 45
+     adjang = 0
     end
-   elseif btn(1, t.p) then
-    adjang = 90
-    if btn(2, t.p) then
-     adjang += 45
-    elseif btn(3, t.p) then
-     adjang -= 45
-    end
-   elseif btn(2, t.p) then
-    adjang = 180
-   elseif btn(3, t.p) then
-    adjang = 0
    end
    
    if t.p and adjang then
