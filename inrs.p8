@@ -86,7 +86,7 @@ function _draw()
   
   local iv = vecscale(vecnorm(
     vecsub(wrap.hitvector,
-       wrap.center)), 8)
+       wrap.center)), 9)
 
   local lookdir = vecsub(
     wrap.hitvector, l1)
