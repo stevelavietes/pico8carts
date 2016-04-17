@@ -137,6 +137,7 @@ function make_ball()
   x=124,
   y=64,
   spd=2,
+  is_ball=true,
   update=function(t)
    -- left
    if btn(0) then
@@ -171,8 +172,8 @@ function make_board()
  player = make_player(0)
  player.eyetrack=ball
  ball.force = {12,12}
- goal_l = make_goal(false)
- goal_r = make_goal(true)
+ goal_l = make_goal(false,ball)
+ goal_r = make_goal(true,ball)
  return {
   x=0,
   y=0,
@@ -198,7 +199,7 @@ function make_board()
  }
 end
 
-function make_goal(should_flip)
+function make_goal(should_flip,ball)
  local x=20
  if should_flip then
   x=228
@@ -206,20 +207,49 @@ function make_goal(should_flip)
  return {
   x=x,
   y=42,
-  update=function () end,
-  draw=function()
+  ball=ball,
+  flipped=should_flip,
+  update=function(t) 
+   coll_wall = coll_rect(
+    t.x,
+    t.y+1,
+    8,
+    8*5-1,
+    t.ball
+   )
+   if coll_wall < 0 then
+    return
+   end
+  end,
+  draw=function(t)
    -- color 0 opaque
    palt(0,false)
    palt(1,true)
-   spr(10,0,0,1,1,should_flip)
+   spr(10,0,0,1,1,t.flipped)
    for i=1,3 do
-    spr(26,0,8*i,1,1,should_flip)
+    spr(26,0,8*i,1,1,t.flipped)
    end
-   spr(11,0,32,1,1,should_flip)
+   spr(11,0,32,1,1,t.flipped)
    palt()
   end
  }
 end
+
+-- collide with a rectangle
+-- -1 is miss, lrud,0123
+function coll_rect(
+  min_x,
+  min_y,
+  size_x,
+  size_y,
+  obj)
+ for dim=1,2 do
+  -- todo: implementme
+ -- if obj.x+obj.radius < 
+ end
+ return -1 -- no hit
+end
+ 
 
 function make_title()
  return {
