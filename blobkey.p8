@@ -530,7 +530,7 @@ function make_player(playnum)
    
    local wrap =
     shrinkwrap(t.blobs,
-      #t.blobs*10, eyed)
+      #t.blobs*10, eyed, t.p)
    
    local hits = wrap.pts
    for i=1,#hits-1 do
@@ -1108,7 +1108,7 @@ end
 
 
 function shrinkwrap(pts, divs,
-  hitvector)
+  hitvector, addmotion)
  
  local result = {}
  local result_pts = {}
@@ -1151,9 +1151,12 @@ function shrinkwrap(pts, divs,
   for j = 1, #pts do
    local pt = pts[j]
    
-   local roff =
-      sin(g_tick/40 + i/15)*1
+   local roff = 0
    
+   if addmotion then
+    roff =
+      sin(g_tick/40 + i/15)*1
+   end
    
      
    local hit = circlinesect(
