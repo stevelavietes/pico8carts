@@ -48,6 +48,13 @@ function _draw()
  local h = blub(l1, l2, ctr, r) 
  if h then
   circfill(h.x, h.y, 3, 14) 
+  
+  local n =
+    vecscale(vecnorm(h.n), 10)
+  
+  line(h.x,h.y, h.x+n.x, h.y+n.y,
+    2)
+  
   color(8)
  end
  
@@ -113,6 +120,7 @@ function _draw()
   
  end
 
+ print (stat(0))
 end
 
 
@@ -174,6 +182,8 @@ end
 function blub(l1, l2, c, r) 
  local sf = 1/10
  
+ local origc = c
+ 
  local o = vecscale(l1, sf) 
  
  local dr = vecscale(
@@ -198,6 +208,8 @@ function blub(l1, l2, c, r)
  local t1 = (-b - sdisc) * inva
  local t2 = (-b + sdisc) * inva
  
+ local invr = 1/r
+ 
  if t2 < t1 then
   local tmp = t1
   t1 = t2
@@ -205,15 +217,27 @@ function blub(l1, l2, c, r)
  end
  
  if t1 >= 0 and t1 <= 1 then
-  return vecscale(
+  
+  local result = vecscale(
     vecadd(o, vecscale(dr, t1)),
       1/sf)
+ 
+  result.n = vecsub(result,
+    origc)
+       
+  return result
  end
  
  if t2 >= 0 and t2 <= 1 then
-  return vecscale(
+  local result = vecscale(
     vecadd(o, vecscale(dr, t2)),
-      1/sf) end
+      1/sf)
+  
+  result.n = vecsub(result,
+    origc)
+
+  return result
+ end
  
  return false
 end
