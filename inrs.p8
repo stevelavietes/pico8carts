@@ -63,7 +63,7 @@ function _draw()
  }
  
  foreach(pts, function(pt)
-  circ(pt.x, pt.y, 16, 5 )
+  circfill(pt.x, pt.y, 16,14)
  end)
  
  
