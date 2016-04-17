@@ -313,10 +313,46 @@ function make_player(playnum)
    {x=121, y=40, r=8},
   },
   
-  vel = {x=0,y=0},
+  vel = {x=0.5,y=1},
 
   update=function(t,s)
-  
+   
+   -- todo: base drag from size
+   t.vel = vecscale(t.vel, 0.95)
+   
+   --local stvec = {x=0.0,y=0.25}
+   
+   local adjang = nil
+   if btn(0, playnum) then
+    adjang = 270
+    if btn(2, playnum) then
+     adjang -= 45
+    elseif btn(3, playnum) then
+     adjang += 45
+    end
+   elseif btn(1, playnum) then
+    adjang = 90
+    if btn(2, playnum) then
+     adjang += 45
+    elseif btn(3, playnum) then
+     adjang -= 45
+    end
+   elseif btn(2, playnum) then
+    adjang = 180
+   elseif btn(3, playnum) then
+    adjang = 0
+   end
+   
+   if adjang then
+    t.vel = vecadd(t.vel,
+      vecrot({x=0,y=0.1}, adjang))
+   end
+   
+   foreach(t.blobs, function(b)
+    b.x += t.vel.x
+    b.y += t.vel.y
+   end)
+   
   end,
 
   draw=function(t,s)
@@ -354,8 +390,8 @@ function make_player(playnum)
    if wrap.hitvector then
     local iv = vecscale(vecnorm(
       vecsub(wrap.hitvector,
-        wrap.center)), 9)
-    eyept = vecadd(
+        wrap.center)), 8)
+    eyept = vecsub(
       wrap.hitvector, iv)
    end
    
