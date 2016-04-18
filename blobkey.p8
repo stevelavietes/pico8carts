@@ -1182,6 +1182,11 @@ end
 function circcircsect(
   c1, r1, c2, r2)
  
+ local c1 = vecscale(c1,0.1)
+ local c2 = vecscale(c2,0.1)
+ local r1 = r1*0.1
+ local r2 = r1*0.1
+ 
  return vecdistsq(c1,c2) <
    r1^2+r2^2
 end
