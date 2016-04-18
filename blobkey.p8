@@ -174,12 +174,12 @@ function make_ball()
 end
 
 function make_board()
- ball = make_ball()
+ local ball = make_ball()
 
- player = make_player(0)
+ local player = make_player(0)
  player.eyetrack=ball
  
- player2 = make_player(1)
+ local player2 = make_player(1)
  player2.eyetrack=ball
  player2.blobs[2].x += 10
  
@@ -220,9 +220,10 @@ function make_board()
    
    drawobjs(t.bobjs)
   end,
-  function faceoff(t)
+  faceoff=function(t)
    reset_ball(t.ball)
-   
+   player:reset()
+   player2:reset()
    g_brd.st=0
   end
  }
@@ -556,10 +557,15 @@ function _draw()
 end
 
 function make_player(playnum)
+ local startx = 64
+ if playnum == 2 then
+  startx = 196
+ end
  result = {
   x = 0,
   y = 0,
   p = playnum,
+  startx=startx,
   blobs = {
    {x=128, y=32, r=8},
    {x=121, y=40, r=8},
@@ -568,6 +574,20 @@ function make_player(playnum)
   },
   
   vel = {x=0,y=0},
+  reset=function(t)
+   local wrap =
+    shrinkwrap(t.blobs,
+      #t.blobs*10, eyed, t.p)
+   local disp = vecsub(
+    {x=t.startx,y=32},
+    wrap.center
+   )  
+   for i,b in pairs(t.blobs) do
+    t.blobs[i] = vecadd(b,disp)
+    t.blobs[i].r = b.r
+   end
+   t.vel={x=0,y=0}
+  end,
 
   update=function(t,s)
    
