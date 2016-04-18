@@ -188,7 +188,7 @@ function make_board()
  --inertblob = make_inertblob()
  
  
- ball.force = {0,0}
+ ball.force = {x=0,y=0}
  local goal_l = make_goal(false,ball)
  local goal_r = make_goal(true,ball)
  local result = {
@@ -309,7 +309,7 @@ function crc_rect_isect(
   ysize
  )
  local sf=0.1
- local center = {ball.x*sf, ball.y*sf}
+ local center = {x=ball.x*sf, y=ball.y*sf}
  local box = {
   {xmin*sf+xsize*sf/2, xsize*sf/2},
   {ymin*sf+ysize*sf/2, ysize*sf/2}
@@ -317,39 +317,28 @@ function crc_rect_isect(
  local radius = ball.radius*sf
  local c_dist = {}
  local co_dist_sq=0
- for dim=1,2 do
-  c_dist[dim] = abs(center[dim]-box[dim][1])
- end
- if c_dist[1] > box[1][2]+radius then
+ c_dist.x = abs(center.x-box[1][1])
+ c_dist.y = abs(center.y-box[2][1])
+ if c_dist.x > box[1][2]+radius then
   return false
- elseif c_dist[2] > box[2][2]+radius then
+ elseif c_dist.y > box[2][2]+radius then
   return false
  end
   
- for dim=1,2 do
-  if c_dist[dim] <= box[dim][2] then
+  if c_dist.x <= box[1][2] then
+   return true
+  end
+  if c_dist.y <= box[2][2] then
    return true
   end
  
-  co_dist_sq+=(c_dist[dim]-box[dim][2])^2  
- end
+ co_dist_sq+=(c_dist.x-box[1][2])^2  
+ co_dist_sq+=(c_dist.y-box[2][2])^2  
 
  return co_dist_sq <= radius^2
 end
 -- collide with a rectangle
 -- -1 is miss, lrud,0123
-function coll_rect(
-  min_x,
-  min_y,
-  size_x,
-  size_y,
-  obj)
- for dim=1,2 do
-  -- todo: implementme
- -- if obj.x+obj.radius < 
- end
- return -1 -- no hit
-end
  
 
 function make_title()
@@ -385,16 +374,16 @@ function make_physobj(p,mass)
  phys = {
   p=p,
   mass=mass,
-  force={0,0},
-  velocity={0,0},
+  force={x=0,y=0},
+  velocity={x=0,y=0},
   radius=5,
   c=6,
   is_phys=true,
   is_static=false,
   collides=function(o, pos)
    local r_2 = o.radius*o.radius
-   local x_d = pos[1] - o.x
-   local y_d = pos[2] - o.y
+   local x_d = pos.x - o.x
+   local y_d = pos.y - o.y
    return (x_d*x_d)+(y_d*y_d)<r_2
   end
  }
@@ -405,110 +394,83 @@ function make_physobj(p,mass)
 end
 
 function add_force(o, f)
- for dim=1,2 do
-  o.force[dim] += f[dim]
- end
+ o.force.x += f.x
+ o.force.y += f.y
 end
- 
-g_friction=0.01
-function update_phys(o)
- if not o.is_phys then 
-  return
- end
- -- in case we want to play
- -- with time, even though pico
- -- gives us a constant clock
- local dt = 1
- local pos = {o.x, o.y}
- 
- for dim=1,2 do
-  local new_pos = pos[dim]
-  local f = o.force[dim]
-  
+
+function compute_force_1d(pos, f, m, v, dt)
   local a=0
   if f ~= 0 then
-   a = f/o.mass
+   a = f/m
   end
   
-  local v = o.velocity[dim]
-  				
   -- update position half way
-  new_pos += 0.5 * dt * v
+  pos += 0.5 * dt * v
   
   -- update velocity (drag)
   v += dt * a
   
   -- update position other half
-  new_pos += 0.5 * dt * v
+  pos += 0.5 * dt * v
   
-  -- update object
-  pos[dim] = new_pos
-  --if v < 0.02 then
-  -- v = 0
-  --end
-  o.velocity[dim] = v
- end
+  return pos, v
+end
+
+ 
+g_friction=0.01
+function update_phys(o)
+ -- in case we want to play
+ -- with time, even though pico
+ -- gives us a constant clock
+ local dt = 1
+
+ 
+ o.x, o.velocity.x=compute_force_1d(
+  o.x,
+  o.force.x,
+  o.mass,
+  o.velocity.x,
+  dt
+ )
+ o.y, o.velocity.y=compute_force_1d(
+  o.y,
+  o.force.y,
+  o.mass,
+  o.velocity.y,
+  dt
+ )
  
  -- zero out the force
- o.force = {0,0}
+ o.force = {x=0,y=0}
   
- o.x = pos[1]
- o.y = pos[2]
- 
  -- drag
- for dim=1,2 do 
-  v = o.velocity[dim]
-  o.force[dim] -= g_friction*v 
- end
+ o.force.x -= g_friction*o.velocity.x
+ o.force.y -= g_friction*o.velocity.y
 end
 
--- vector utilities
-function magv(v)
- return sqrt(
- v[1]*v[1]
-  +v[2]*v[2]
- )
-end
-
-function addv(p1, p2)
- return {
-  p1[1]+p2[1],
-  p1[2]+p2[2]
- }
-end
-
-function subv(p1, p2)
- return {
-  p1[1]-p2[1], 
-  p1[2]-p2[2]
- }
-end
-
-function scalev(v, s)
- return {v[1]*s,v[2]*s}
+function collide_walls_1d(b,p,v,r)
+  local p_orig = p
+  p = max(p-r,b[1]+r)
+  p = min(p+r,b[2]-r)
+  
+  -- the position changed
+  if p ~= p_orig then
+   v = -v
+  end
+  return p,v
 end
 
 g_edges = {{-4,250},{-5,124}}
 function update_collision(o)
  -- (checking o, pos is new pos
  -- check boundaries first
- local pos = {o.x,o.y}
+ local pos = {x=o.x,y=o.y}
  local r = o.radius
 
- for dim=1,2 do
-  local b = g_edges[dim]
-  local p = pos[dim]
-  p = max(p-r,b[1]+r)
-  p = min(p+r,b[2]-r)
-  
-  -- the position changed
-  if p ~= pos[dim] then
-   pos[dim] = p
-   local v = o.velocity[dim]/10
-   o.velocity[dim] = (-v)*10
-  end
- end
- 
+ pos.x, o.velocity.x = collide_walls_1d(
+  g_edges[1],pos.x,o.velocity.x,o.radius)
+ pos.y, o.velocity.y = collide_walls_1d(
+  g_edges[2],pos.y,o.velocity.y,o.radius)
  
  for i, t in pairs(g_pobjs) do
   if t ~= o then
@@ -518,14 +480,14 @@ function update_collision(o)
      local t_v = t.velocity
      local o_m = o.mass
      local t_m = t.mass
-     local t_pos = {t.x,t.y}
+     local t_pos = {x=t.x,y=t.y}
      
      -- push the objects back
      local r = o.radius + t.radius
-     local v = subv(pos,t_pos)
-     local ratio = r/magv(v)
-     local d = scalev(v, ratio*0.51)
-     local new_pos  = addv(d,t_pos)
+     local v = vecsub(pos,t_pos)
+     local ratio = r/sqrt(vecdistsq(v))
+     local d = vecscale(v, ratio*0.51)
+     local new_pos  = vecadd(d,t_pos)
     
      -- result
      pos = new_pos
@@ -536,15 +498,15 @@ function update_collision(o)
      local t_v = t.velocity
      local o_m = o.mass
      local t_m = t.mass
-     o.velocity = scalev(addv(scalev(o_v, (o_m-t_m)),(scalev(t_v,2*t_m))),(1/(o_m+t_m)))
-     t.velocity = scalev(addv(scalev(t_v, (t_m-o_m)),(scalev(o_v,2*o_m))),(1/(o_m+t_m)))
+     o.velocity = vecscale(vecadd(vecscale(o_v, (o_m-t_m)),(vecscale(t_v,2*t_m))),(1/(o_m+t_m)))
+     t.velocity = vecscale(vecadd(vecscale(t_v, (t_m-o_m)),(vecscale(o_v,2*o_m))),(1/(o_m+t_m)))
     end
    end
   end
  end
  
- o.x = pos[1]
- o.y = pos[2]
+ o.x = pos.x
+ o.y = pos.y
 end
 
 function _update()
