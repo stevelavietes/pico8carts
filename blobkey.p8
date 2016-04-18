@@ -45,6 +45,7 @@ function game_start()
  g_points = {0,0}
  add(g_objs, make_clock(2,0,-1))
  add(g_objs, make_vsscore())
+ g_brd:faceoff()
 end
 
 function make_vsscore()
@@ -558,7 +559,7 @@ end
 
 function make_player(playnum)
  local startx = 64
- if playnum == 2 then
+ if playnum ~= 1 then
   startx = 196
  end
  result = {
@@ -579,7 +580,7 @@ function make_player(playnum)
     shrinkwrap(t.blobs,
       #t.blobs*10, eyed, t.p)
    local disp = vecsub(
-    {x=t.startx,y=32},
+    {x=t.startx,y=60},
     wrap.center
    )  
    for i,b in pairs(t.blobs) do
