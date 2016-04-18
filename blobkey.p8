@@ -184,7 +184,6 @@ function make_board()
  
  local player2 = make_player(1)
  player2.eyetrack=ball
- player2.blobs[2].x += 10
  
  --inertblob = make_inertblob()
  
@@ -580,9 +579,9 @@ function make_inertblob()
 end
 
 function make_player(playnum)
- local startx = 64
+ local startx = 84
  if playnum ~= 1 then
-  startx = 196
+  startx = 176
  end
  result = {
   x = 0,
@@ -591,9 +590,6 @@ function make_player(playnum)
   startx=startx,
   blobs = {
    {x=128, y=32, r=8},
-   {x=121, y=40, r=8},
-   {x=121, y=45, r=8},
-
   },
   
   vel = {x=0,y=0},
