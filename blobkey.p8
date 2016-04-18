@@ -37,12 +37,13 @@ end
 
 function game_start()
  g_objs = {}
- local b = make_board()
- add(g_objs, b)
+ -- global board
+ g_brd = make_board()
+ add(g_objs, g_brd)
  -- board "state"
- b.st = 0 
+ g_brd.st = 0 
  g_points = {0,0}
- add(g_objs, make_clock(b,2,0,-1))
+ add(g_objs, make_clock(2,0,-1))
  add(g_objs, make_vsscore())
 end
 
@@ -81,7 +82,6 @@ function make_timer(e,f,d)
 end
 
 function make_clock(
-  b, -- game board - need b.st
   t_start_m,-- time to start (s)
   t_start_s,
   t_inc    -- time increment
@@ -91,7 +91,7 @@ function make_clock(
   x=54,
   y=2,
   c=0,
-  b=b,
+  b=g_brd,
   m=t_start_m,
   s=t_start_s,
   inc=t_inc,
@@ -131,6 +131,10 @@ function make_clock(
  }
 end
 
+function reset_ball(ball)
+ ball.x=124
+ ball.y=64
+end
 
 function make_ball()
  return make_physobj({
@@ -139,6 +143,9 @@ function make_ball()
   spd=2,
   is_ball=true,
   update=function(t)
+   if g_brd.st ~= 0 then
+    return
+   end
      -- left
    if btn(0) then
     t.x-=t.spd
@@ -189,8 +196,8 @@ function make_board()
  
  
  ball.force = {0,0}
- goal_l = make_goal(false,ball)
- goal_r = make_goal(true,ball)
+ local goal_l = make_goal(false,ball)
+ local goal_r = make_goal(true,ball)
  return {
   x=0,
   y=0,
@@ -213,6 +220,11 @@ function make_board()
    
    drawobjs(t.bobjs)
   end,
+  function faceoff(t)
+   reset_ball(t.ball)
+   
+   g_brd.st=0
+  end
  }
 end
 
@@ -227,6 +239,7 @@ function make_goal(should_flip,ball)
   ball=ball,
   flipped=should_flip,
   is_hit=false,
+  first_hit=false,
   update=function(t) 
    --[[
    coll_wall = coll_rect(
@@ -243,6 +256,31 @@ function make_goal(should_flip,ball)
    t.is_hit = false
    if crc_rect_isect(ball, t.x, t.y+1,8,8*5-1) then
     t.is_hit=true
+    if t.first_hit == false then
+     g_brd.st = 1 -- not play
+     player = 2
+     if should_flip then
+      player = 1
+     end
+     g_points[player]+=1
+     
+     add(
+      g_objs,
+      make_menu(
+       {"goaaaallll"},
+       function(t_m,i,s)
+       
+       
+        del(s,t_m)
+        g_brd:faceoff()
+
+        t.first_hit = false
+
+       end
+      )
+     )
+     t.first_hit = true
+    end
    end
   end,
   draw=function(t)
