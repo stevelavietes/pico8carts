@@ -186,25 +186,16 @@ function make_board()
  player2.eyetrack=ball
  player2.blobs[2].x += 10
  
- inertblob = make_player()
- inertblob.blobs = {
-  {x=132,y=14,r=8},
-  {x=140,y=14,r=8},
-  {x=148,y=14,r=8},
-  {x=160,y=14,r=8},
-  {x=148,y=22,r=8},
-  
- 
- }
+ --inertblob = make_inertblob()
  
  
  ball.force = {0,0}
  local goal_l = make_goal(false,ball)
  local goal_r = make_goal(true,ball)
- return {
+ local result = {
   x=0,
   y=0,
-  bobjs={ball,goal_l,goal_r,player,player2,inertblob},
+  bobjs={ball,goal_l,goal_r,player,player2},
   ball=ball,
   update=function(t)
    updateobjs(t.bobjs)
@@ -230,6 +221,12 @@ function make_board()
    g_brd.st=0
   end
  }
+ 
+ for i = 1, 5 do
+  add(result.bobjs, make_inertblob())
+ end
+ 
+ return result
 end
 
 function make_goal(should_flip,ball)
@@ -559,6 +556,29 @@ function _draw()
  stddraw()
 end
 
+function make_inertblob()
+
+ local p = make_player()
+ p.blobs = {}
+ 
+ local x = rnd(128) + 64
+ local y = rnd(128)
+ 
+ 
+ local v = vecrot({x=0,y=5},
+ 		rnd(360))
+ 
+ for i = 1, flr(rnd(4))+1 do
+  x += v.x
+  y += v.y
+  add(p.blobs, {x=x,y=y,r=6})
+  v = vecrot(v, rnd(180))
+ end
+ 
+ return p
+ 
+end
+
 function make_player(playnum)
  local startx = 64
  if playnum ~= 1 then
@@ -717,6 +737,12 @@ function make_player(playnum)
     circfill(pt.x, pt.y, pt.r,
       col)
    end
+   
+   --[[
+   if not t.p then
+    return
+   end
+   --]]
    
    -- eyes
    local eyed = t.vel
