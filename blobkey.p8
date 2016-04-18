@@ -139,6 +139,25 @@ function make_ball()
   spd=2,
   is_ball=true,
   update=function(t)
+     -- left
+   if btn(0) then
+    t.x-=t.spd
+   end
+   
+   -- right
+   if btn(1) then
+    t.x+=t.spd
+   end
+   
+   -- up
+   if btn(2) then
+    t.y-=t.spd
+   end
+   
+   -- down
+   if btn(3) then
+    t.y+=t.spd
+   end
   end,
   draw=function(t)
    circfill(-1,1,6,6)
@@ -169,7 +188,7 @@ function make_board()
  }
  
  
- ball.force = {12,12}
+ ball.force = {0,0}
  goal_l = make_goal(false,ball)
  goal_r = make_goal(true,ball)
  return {
@@ -207,7 +226,9 @@ function make_goal(should_flip,ball)
   y=42,
   ball=ball,
   flipped=should_flip,
+  is_hit=false,
   update=function(t) 
+   --[[
    coll_wall = coll_rect(
     t.x,
     t.y+1,
@@ -217,6 +238,11 @@ function make_goal(should_flip,ball)
    )
    if coll_wall < 0 then
     return
+   end
+   --]]
+   t.is_hit = false
+   if crc_rect_isect(ball, t.x, t.y+1,8,8*5-1) then
+    t.is_hit=true
    end
   end,
   draw=function(t)
@@ -229,10 +255,49 @@ function make_goal(should_flip,ball)
    end
    spr(11,0,32,1,1,t.flipped)
    palt()
+   
+   if t.is_hit then
+    circfill(0,0,20,4)
+   end
   end
  }
 end
 
+function crc_rect_isect(
+  ball,
+  xmin,
+  ymin,
+  xsize,
+  ysize
+ )
+ local sf=0.1
+ local center = {ball.x*sf, ball.y*sf}
+ local box = {
+  {xmin*sf+xsize*sf/2, xsize*sf/2},
+  {ymin*sf+ysize*sf/2, ysize*sf/2}
+ }
+ local radius = ball.radius*sf
+ local c_dist = {}
+ local co_dist_sq=0
+ for dim=1,2 do
+  c_dist[dim] = abs(center[dim]-box[dim][1])
+ end
+ if c_dist[1] > box[1][2]+radius then
+  return false
+ elseif c_dist[2] > box[2][2]+radius then
+  return false
+ end
+  
+ for dim=1,2 do
+  if c_dist[dim] <= box[dim][2] then
+   return true
+  end
+ 
+  co_dist_sq+=(c_dist[dim]-box[dim][2])^2  
+ end
+
+ return co_dist_sq <= radius^2
+end
 -- collide with a rectangle
 -- -1 is miss, lrud,0123
 function coll_rect(
