@@ -144,6 +144,7 @@ function make_ball()
   spd=2,
   is_ball=true,
   update=function(t)
+   --[[
    if g_brd.st ~= 0 then
     return
    end
@@ -166,6 +167,7 @@ function make_ball()
    if btn(3) then
     t.y+=t.spd
    end
+   --]]
   end,
   draw=function(t)
    circfill(-1,1,6,6)
