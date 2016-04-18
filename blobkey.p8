@@ -178,11 +178,11 @@ function make_board()
  
  inertblob = make_player()
  inertblob.blobs = {
-  {x=132,y=14,r=6},
-  {x=140,y=14,r=6},
-  {x=148,y=14,r=6},
-  {x=160,y=14,r=6},
-  {x=148,y=22,r=6},
+  {x=132,y=14,r=8},
+  {x=140,y=14,r=8},
+  {x=148,y=14,r=8},
+  {x=160,y=14,r=8},
+  {x=148,y=22,r=8},
   
  
  }
@@ -533,6 +533,51 @@ function make_player(playnum)
 
   update=function(t,s)
    
+   if t.p then
+    for i=1, #s do
+     local t2 = s[i]
+     
+     if t ~= t2 
+       and t2
+       and t2.blobs
+       and not t2.p
+       and (not t2.lastsplit or
+          elapsed(t2.lastsplit) > 30)
+       then
+      
+      local hit = false
+      
+      for j=1,#t.blobs do
+       local b1 = t.blobs[j]
+       
+       for k=1,#t2.blobs do
+        local b2 = t2.blobs[k]
+        
+        if circcircsect(
+          b1, b1.r, b2, b2.r)
+          then
+         hit = true
+         break
+        end 
+        
+       end
+       
+       if hit then
+        break
+       end
+      end
+      
+      if hit then
+       del(s, t2)
+       for j=1,#t2.blobs do
+        add(t.blobs,t2.blobs[j])
+       end
+       t.vel = {x=0,y=0}
+      end
+     end
+    end
+   end
+   
    -- test ejection
    if t.p and (t.vel.x ~= 0 or
      t.vel.y ~= 0)
@@ -551,7 +596,7 @@ function make_player(playnum)
     blob.x += n.vel.x
     blob.y += n.vel.y
     t.p = nil
-    
+    n.lastsplit = g_tick
     add(s, n)
     
    end
@@ -1134,6 +1179,12 @@ function vecnorm(v)
  }
 end
 
+function circcircsect(
+  c1, r1, c2, r2)
+ 
+ return vecdistsq(c1,c2) <
+   r1^2+r2^2
+end
 
 function circlinesect(l1, l2, c, r)
  local sf = 1/10
