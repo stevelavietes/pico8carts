@@ -642,7 +642,7 @@ function make_player(playnum)
    -- test ejection
    if t.p and (t.vel.x ~= 0 or
      t.vel.y ~= 0)
-     and btnn(4, t.p)
+     and btn(4, t.p)
      and #t.blobs > 1
      then
     
