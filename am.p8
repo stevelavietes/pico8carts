@@ -49,18 +49,70 @@ function make_player_ship(pnum)
 end
 
 function make_bg_spawner()
+ local initial=5
  return {
   timer=initial,
   update=function(t)
-   initial -= 1
-   if initial <= 0 then
+   t.timer -= 1
+   if t.timer <= 0 then
     add(
-     g_brd.cobjs, 
+     g_brd.c_objs, 
      make_enemy()
     )
+    del(g_brd.c_objs, t)
    end
   end,
  } 
+end
+
+
+e_cyc_c={5,1,2,4}
+e_cyc_i={0,0,1,1,1,2,2,2,3,3,3}
+function make_enemy()
+ return {
+  x=10,
+  y=10,
+  c=0,
+  spd=2,
+  spd_counter=0,
+  update=function(t)
+   t.c += 1
+   if t.c > 10*2+1 then
+    t.c = 0
+   end
+   
+   if t.spd_counter > t.spd then
+    t.spd_counter = 0
+    if t.x < 0 then
+     t.x -= 1
+    else
+     t.x += 1
+    end
+    if t.y < 0 then
+     t.y -= 1
+    else
+     t.y += 1
+    end
+   end
+   t.spd_counter += 1
+  end,
+  draw=function(t)
+   for i, c in pairs(e_cyc_c) do
+    pal(c,11)
+   end
+   pal(e_cyc_i[t.c], 2)
+   pal(e_cyc_i[t.c+1], 8)
+   
+   spr(5, t.x, t.y)
+   
+   -- for reference, scaled draw
+   --sspr(40, 0, 8, 8, t.x, t.y, 8+t.c, 8+t.c)
+
+   for ind, c in pairs(e_cyc_c) do
+    pal(c,c)
+   end
+  end,
+ }
 end
 
 function make_board()
@@ -75,7 +127,7 @@ function make_board()
   py=0,
   ship=g_shp,
   spd=1,
-  c_objs={g_shp},
+  c_objs={g_shp,bg_spawner},
   update=function(t)
    updateobjs(t.c_objs)
    if not am_playing() then
@@ -396,7 +448,7 @@ __gfx__
 00600000000660000007700099999999001010200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00660000000660000007700099999999112011210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00666000006cc6000077770099999999212122320333333000000000000000000000000000000000000000000000000000000000000000000000000000000000
-006666000c6666c00777777099999999223132333301243300000000000000000000000000000000000000000000000000000000000000000000000000000000
+006666000c6666c00777777099999999223132333351243300000000000000000000000000000000000000000000000000000000000000000000000000000000
 00666500666666667777777799999999333233303bbbbbb300000000000000000000000000000000000000000000000000000000000000000000000000000000
 006650000cc66cc0077777709999999903030001333bb33300000000000000000000000000000000000000000000000000000000000000000000000000000000
 00650000000660000007700099999999101001120033330000000000000000000000000000000000000000000000000000000000000000000000000000000000
