@@ -60,6 +60,69 @@ function in_world_space(fnc)
   popc()
  end
 end
+
+function make_station(x,y)
+ return {
+  x=x,
+  y=y,
+  frame=0,
+  update=function(t)
+   t.frame+=1
+  end,
+  draw=in_world_space(function(t)
+   -- todo fix this transform
+
+   local ang = t.frame / 3200.0
+   local x=40*cos(ang)
+   local y=40*sin(ang)
+   for i=-1,1 do
+    line(-x+i,-y+i,x+i,y+i,5)
+    ang += 0.25
+    line(
+     -40*cos(ang)+i,
+     -40*sin(ang)+i,
+     40*cos(ang)+i,
+     40*sin(ang)+i,
+     5
+    )
+   end
+   circfill(
+    0,
+    0,
+    6,
+    5
+   )
+   circfill(
+    0,
+    0,
+    4,
+    6
+   )
+   circ(0,0,37,5)
+   circ(0,0,38,5)
+   circ(0,0,39,5)
+   circ(0,0,40,6)
+   circ(0,0,41,6)
+   circ(0,0,42,6)
+   circ(0,0,43,5)
+   circ(0,0,44,5)
+   circ(0,0,45,5)
+    local col=9
+    if (t.frame / 20) % 2 < 1 then
+     col=10
+    end
+   for mod_x=1,1 do
+    for mod_y=1,1 do
+     circfill(
+      mod_x*x+1,
+      mod_y*y+1,
+      3,
+      col
+     )
+    end   
+   end
+  end)
+ }
 end
 
 function am_playing()
