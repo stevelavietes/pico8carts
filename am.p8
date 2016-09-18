@@ -50,6 +50,16 @@ function make_coordsys()
    end
   }
 end
+function in_world_space(fnc)
+ return function(t)
+  pushc(
+   g_offset_x(), 
+   g_offset_y()
+  )
+  fnc(t)
+  popc()
+ end
+end
 end
 
 function am_playing()
@@ -100,7 +110,7 @@ function make_fire(
     del(g_brd.bg_objs, t)
    end
   end,
-  draw = function(t)
+  draw = in_world_space(function(t)
    local col = 8
    if t.frame > 1 then
     col = 2
@@ -361,14 +371,14 @@ function make_enemy()
    end
    t.spd_counter += 1
   end,
-  draw=function(t)
+  draw=in_world_space(function(t)
    for i, c in pairs(e_cyc_c) do
     pal(c,11)
    end
    pal(e_cyc_i[t.c], 2)
    pal(e_cyc_i[t.c+1], 8)
    
-   spr(5, t.x, t.y)
+   spr(5, 0, 0)
    
    -- for reference, scaled draw
    --sspr(40, 0, 8, 8, t.x, t.y, 8+t.c, 8+t.c)
@@ -376,7 +386,7 @@ function make_enemy()
    for ind, c in pairs(e_cyc_c) do
     pal(c,c)
    end
-  end,
+  end),
  }
 end
 
