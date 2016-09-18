@@ -25,6 +25,31 @@ function game_start()
  g_objs = {}
   g_brd = make_board()
  add(g_objs, g_brd)
+ add(g_objs, make_coordsys()
+ )
+function make_coordsys()
+ -- @todo: this should work
+ --        like the starfield
+ return {
+   x=0,
+   y=0,
+   update=function(t)
+   end,
+   draw=function(t)
+    for ix=-300,300,50 do
+     for iy=-300,300,50 do
+      print(
+       ""..ix..","..iy,
+       ix-g_offset_x(),
+       iy-g_offset_y(),
+       8
+      )
+
+     end
+    end
+   end
+  }
+end
 end
 
 function am_playing()
