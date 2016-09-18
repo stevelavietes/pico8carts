@@ -234,7 +234,7 @@ function lerp(
  local result=(
   (fin-beg)*amt + beg
  )
- if abs(fin - result) < clamp then
+ if clamp and abs(fin - result) < clamp then
   result = fin
  end
  return result
