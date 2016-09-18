@@ -21,12 +21,34 @@ function _init()
  ))
 end
 
+function g_offset_x()
+ return -56+g_shp.x + g_shp.cam_off_x
+end
+
+function g_offset_y()
+ return -56+g_shp.y + g_shp.cam_off_y
+end
+
 function game_start()
  g_objs = {}
   g_brd = make_board()
  add(g_objs, g_brd)
+ 
+
+  
+  --[[
+  make_message(
+   0,
+   128,
+   "hello hello hello hello hello",
+   8
+  )
+  ]]--
+ 
  add(g_objs, make_coordsys()
  )
+end
+
 function make_coordsys()
  -- @todo: this should work
  --        like the starfield
@@ -50,6 +72,7 @@ function make_coordsys()
    end
   }
 end
+
 function in_world_space(fnc)
  return function(t)
   pushc(
@@ -146,15 +169,9 @@ function make_fire(
   frame=0,
   update=function(t)
    t.frame+=1
-   if t.left then
-    t.x += t.left * 3
-   end
-   if t.down then
-    t.y -= t.down * 3
-   end
    
    if t.frame > 1 then
-    r_num = rnd(1)
+    r_num = (1)
     if r_num > 0.65 then
      t.x += 1
     elseif r_num < 0.35 then
@@ -184,14 +201,28 @@ function make_fire(
      col = 5
     end
    end
+   local minp=1
+   local maxp=6
    if t.frame > 8 then
-    rect(-3,-3,2,2,col)
+    rect(
+    minp,
+    minp,
+    maxp,
+    maxp,
+    col
+   )
     --circ(-3,-3,4,col)
    else
-    rectfill(-3,-3,2,2,col)
+    rectfill(
+     minp,
+     minp,
+     maxp,
+     maxp,
+     col
+    )
     --circfill(0,0,4,col)
    end
-  end
+  end)
  }
 end
 
@@ -224,6 +255,7 @@ function make_message(
   end
  }
 end
+
 -- simple lerp with clamp
 function lerp(
   beg, 
@@ -240,109 +272,7 @@ function lerp(
  return result
 end
 
-g_cam_offset = 32
-
-function make_player_ship(pnum)
- return {
-  x=56,
-  y=56,
-  p=pnum,
-  accel=1,
-  drag=1.5,
-  max_speed=10,
-  spd_x=0,
-  spd_y=0,
-  sprite=32,
-  flip_x=false,
-  flip_y=false,
-  -- camera stuff
-  cam_tgt_x=0,
-  cam_tgt_y=0,
-  cam_off_x=0,
-  cam_off_y=0,
-  x_dir=0,
-  y_dir=0,
-  update=function(t)
-   if not am_playing() then
-    return
-   end
-   
-   local horiz=0
-   local vert=0
-   
-   local btn_down = false
-   local last = t.sprite
-   t.sprite = nil
-   
-   local x_orig = 64
-   t.x_dir = 0
-   local y_orig = 64
-   t.y_dir = 0
- 
-   -- left
-   if (btn(0, t.p)) then
-    horiz=-1
-    t.sprite=34
-    t.flip_x=true
-    btn_down = true
-    x_orig = 68
-    t.x_dir = 1
-   end
-   
-   -- right
-   if (btn(1, t.p)) then
-    horiz=1
-    t.sprite=34
-    t.flip_x=false
-    btn_down = true
-    x_orig = 60
-    t.x_dir = -1
-   end
-   
-   -- up
-   if (btn(2, t.p)) then
-    vert=-1
-    if t.sprite then
-     t.sprite = 36
-    else
-     t.sprite = 32
-    end 
-    t.flip_y = false
-    btn_down = true
-    y_orig = 68
-    t.y_dir = -1
-   end
-   
-   -- down
-   if (btn(3, t.p)) then
-    vert=1
-    if t.sprite then
-     t.sprite = 36
-    else
-     t.sprite = 32
-    end
-    t.flip_y = true
-    btn_down = true
-    y_orig = 60
-    t.y_dir = 1
-   end
-   
-   if btn_down then
-    add(
-     g_brd.bg_objs, 
-     make_fire(
-      x_orig+t.cam_off_x, 
-      y_orig+t.cam_off_y,
-      t.x_dir,
-      t.y_dir
-     )
-    )
-    --sfx(2,0)
-   else
-    t.sprite = last
-    --sfx(1,0)
-   end
-
+function make_go(t,horiz,vert)
    t.spd_x = lerp(
     t.spd_x,
     horiz*t.max_speed,
@@ -357,6 +287,107 @@ function make_player_ship(pnum)
     0.05
    )
    t.y += t.spd_y
+end
+
+g_cam_offset = 32
+
+function make_player_ship(pnum)
+ return {
+  x=0,
+  y=0,
+  p=pnum,
+  drag=1.5,
+  max_speed=10,
+  spd_x=0,
+  spd_y=0,
+  sprite=32,
+  flip_x=false,
+  flip_y=false,
+  -- camera stuff
+  cam_tgt_x=0,
+  cam_tgt_y=0,
+  cam_off_x=0,
+  cam_off_y=0,
+  x_dir=0,
+  y_dir=0,
+  frame=0,
+  btn_down=false,
+  update=function(t)
+   if not am_playing() then
+    return
+   end
+   
+   t.frame += 1
+   if t.frame > 5 then
+    t.frame = 0
+   end
+   
+   local horiz=0
+   local vert=0
+   
+   local btn_down = false
+   local last = t.sprite
+   t.sprite = nil
+   
+   local x_orig = 0
+   t.x_dir = 0
+   local y_orig = 0
+   t.y_dir = 0
+ 
+   -- left
+   if (btn(0, t.p)) then
+    horiz=-1
+    t.sprite=34
+    t.flip_x=true
+    btn_down = true
+    x_orig = 4
+    t.x_dir = 1
+   end
+   
+   -- right
+   if (btn(1, t.p)) then
+    horiz=1
+    t.sprite=34
+    t.flip_x=false
+    btn_down = true
+    x_orig = -4
+    t.x_dir = -1
+   end
+   
+   -- up
+   if (btn(2, t.p)) then
+    vert=-1
+    if t.sprite then
+     t.sprite = 36
+    else
+     t.sprite = 32
+    end 
+    t.flip_y = false
+    btn_down = true
+    y_orig = 4
+    t.y_dir = -1
+   end
+   
+   -- down
+   if (btn(3, t.p)) then
+    vert=1
+    if t.sprite then
+     t.sprite = 36
+    else
+     t.sprite = 32
+    end
+    t.flip_y = true
+    btn_down = true
+    y_orig = -4
+    t.y_dir = 1
+   end
+   
+   make_go(
+    t,
+    horiz,
+   vert
+   )
+
 
 
    t.cam_tgt_x = lerp(
@@ -392,18 +423,35 @@ function make_player_ship(pnum)
     t.cam_off_y += lerp(4*(rnd(2)-1),0,mag_spd,0.1)
    end
    
+   if btn_down then
+    add(
+     g_brd.bg_objs, 
+     make_fire(
+      t.x+x_orig+2*t.cam_off_x, 
+      t.y+y_orig+2*t.cam_off_y,
+      t.x_dir,
+      t.y_dir
+     )
+    )
+    --sfx(2,0)
+   else
+    t.sprite = last
+    --sfx(1,0)
+   end
+   
+   t.btn_down = btn_down
+   
   end,
   draw=function(t)
    spr(
     t.sprite,
-    56-t.x + t.cam_off_x,
-    56-t.y + t.cam_off_y,
+    52-t.x+t.cam_off_x,
+    52-t.y+t.cam_off_y,
     2,
     2,
     t.flip_x,
     t.flip_y
-    )
-   --spr(32,-4,-4,2,2)
+   )
   end
  }
 end
@@ -415,11 +463,11 @@ function make_enemy_spawner()
   update=function(t)
    t.timer -= 1
    if t.timer <= 0 then
---[[    add(
+    enemy = make_enemy()
+    add(
      g_brd.c_objs, 
-     make_enemy()
+     enemy
     )
-    --]]
     del(g_brd.c_objs, t)
    end
   end,
@@ -442,19 +490,21 @@ function make_enemy()
     t.c = 0
    end
    
-   -- @todo: redo movement so
+   -- @todo: redo movement 
+   --        to follow player 
+   --        mechanics
    -- this can be smarter
    if t.spd_counter > t.spd then
     t.spd_counter = 0
-    if t.x < 0 then
-     t.x -= 1
-    else
+    if t.x < g_shp.x then
      t.x += 1
-    end
-    if t.y < 0 then
-     t.y -= 1
     else
+     t.x -= 1
+    end
+    if t.y < g_shp.y then
      t.y += 1
+    else
+     t.y -= 1
     end
    end
    t.spd_counter += 1
@@ -506,28 +556,51 @@ function make_bg()
    --map(0,0,0,0,16,16)
    
    for _,s in pairs(t.stars) do
-    local s_off_x=((-g_shp.x-g_shp.cam_off_x)/(s.z) + s.x) % 128
-    local s_off_y=((-g_shp.y-g_shp.cam_off_y)/(s.z) + s.y) % 128 
+    if s.z == 0 then
+     stop()
+    end
+    local s_off_x=(
+     (
+      -g_shp.x
+      -g_shp.cam_off_x
+     )
+     -- todo: depth based paralax
+     --[[/(
+      s.z
+     ) ]]--
+     + s.x
+    ) % 128
+    local s_off_y=(
+     (
+      -g_shp.y
+      -g_shp.cam_off_y
+     )
+     --[[/(
+      s.z
+     ) ]]--
+     + s.y
+    ) % 128 
     
     local size = 0
     local smear_x = 0
     local smear_y = 0
+    local smear_max = 20
     
     if s.z < 3 then
      size = 1
     end
      smear_x=lerp(
       0,
-      lerp(5,0,s.z/16,0.1),
+      smear_max,
       abs(g_shp.spd_x)/10,
       2
-     )
+     ) --* (1/s.z)
     smear_y=lerp(
       0,
-      lerp(5,0,s.z/16,0.1),
+      smear_max,
       abs(g_shp.spd_y)/10,
       0.1
-     )
+     ) --* (1/s.z)
     --end
     
     local x_dir = 0
@@ -577,11 +650,15 @@ function make_board()
   py=0,
   ship=g_shp,
   spd=1,
-  c_objs={g_shp,bg_spawner},
+  c_objs={
+   bg_spawner,
+   --make_station(0,0),
+   g_shp
+  },
   bg_objs={make_bg()},
   update=function(t)
-   updateobjs(t.c_objs)
    updateobjs(t.bg_objs)
+   updateobjs(t.c_objs)
   end,
   draw=function(t)
    drawobjs(t.bg_objs)
@@ -597,21 +674,40 @@ end
 function _draw()
  stddraw()
  if g_shp then
-  print(""..g_shp.x..", "..g_shp.y,0+g_shp.cam_off_x,0+g_shp.cam_off_y,8)
-  print(stat(1),0+g_shp.cam_off_x,10+g_shp.cam_off_y)
+  local shk_x = g_shp.cam_off_x
+  local shk_y = g_shp.cam_off_y
+  
+  shk_x = 0
+  shk_y = 0
+  local c_line=0
   print(
-   ""..g_shp.spd_x.." "..g_shp.spd_y,0+g_shp.cam_off_x,30+g_shp.cam_off_y)
-  if last_x ~= nil then
-   dx = g_brd.px - last_x
-   dy = g_brd.py - last_y
+   ""..g_shp.x..
+   ", "..g_shp.y,
+   0+shk_x,
+   c_line+shk_y,
+   8
+  )
+  c_line += 10
+  print(
+   ""..g_shp.cam_off_x..
+   ", "..g_shp.cam_off_y,
+   0+shk_x,
+   c_line+shk_y,
+   8
+  )
+  c_line += 10
+  print(
+   stat(1),0+shk_x,c_line+shk_y
+  )  
+  c_line+=10
+  if enemy then
    print(
-    sqrt(dx*dx + dy*dy),
-    0,
-    20
-   )   
+    ""..enemy.x.. " ".. enemy.y,
+    0+shk_x,
+    c_line+shk_y
+   )
+   c_line += 10
   end
-  last_x = g_brd.px
-  last_y = g_brd.py
  end
 end
 
@@ -652,6 +748,9 @@ function drawobjs(objs)
    pushc(-t.x,-t.y)
    t:draw(objs)
    popc()
+  end
+  if t.draw_world then
+   
   end
  end)
 end
@@ -864,18 +963,18 @@ __gfx__
 00000000000000000000000000000000936466699943399499411149000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000933533399999499999944499000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000999999999999999999999999000000000000000000000000000000000000000000000000000000000000000000000000
-00000006600000000000066000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000066660000000000666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000006666000000000006666000000000000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000c6666c000000000cc6666cc000000666666c666600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000c066cc660c0000000000666600000066666666666600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000c66cccc66c00000000cc66666c00000666666ccc6600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000666cccc66600000060066ccc6666000c00c6cccc6600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-006666cccc66660000666666cccc66660c00c06cccc6c00000000000000000000000000000000000000000000000000000000000000000000000000000000000
-066666666666666000666666cccc666600000666cc66600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-66660c6666c0666600060066ccc66660000606666666600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-666c0c0660c0c66600000cc66666c000000666660c666c0000000000000000000000000000000000000000000000000000000000000000000000000000000000
-060c00066000c060000000066660000000006600c066600000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000cc000000000000660000000000000000000000000003113000000000cc000000000566500005650000566767000000000000000000000000000000000
+000000666600000000006666000000000000000000000000002112000000005665000000005665005056c5000566767000000000000000000000000000000000
+0000006666000000000006666000000000000c0000000000032222300000005665000000056cc65065c666550056670000000000000000000000000000000000
+00000c6666c000000000cc6666cc000000666666c66660000433334000000c6666c000005c6666c556666c6600eeee0000000000000000000000000000000000
+000c066cc660c0000000000666600000066666666666600005244250000c05611650c0006666666656666c660433334000000000000000000000000000000000
+000c66cccc66c00000000cc66666c00000666666ccc6600005433450000c561cc165c00055c66c5065c666550444444000000000000000000000000000000000
+000666cccc66c00000060066ccc6666000c00c6cccc66000005555000006661cc166c000005665005056c5000555555000000000000000000000000000000000
+000666cccc66600000666666cccc66660c00c06cccc6c000000660000006661cc166600005655650005650000555555000000000000000000000000000000000
+006666666666660000666666cccc666600000666cc66600000000000006656666665660000000000000000000000000000000000000000000000000000000000
+06660c6666c0666000060066ccc6666000060666666660000000000006650c5665c0566000000000000000000000000000000000000000000000000000000000
+666c0c0660c0c66600000cc66666c000000666660c666c0000000000665c0c0000c0c56600000000000000000000000000000000000000000000000000000000
+060c00066000c060000000066660000000006600c066600000000000050c00000000c05000000000000000000000000000000000000000000000000000000000
 00000066660000000000cc6666cc0000000606600066600000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000006600000000000066660000000000000000c66600000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000066660000000000000000c006000000000000000000000000000000000000000000000000000000000000000000000000000000000000
