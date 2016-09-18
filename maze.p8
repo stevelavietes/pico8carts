@@ -14,7 +14,7 @@ function _init()
  --]]
  
  add(g_objs, make_bg())
-  --add(g_objs, make_wave())
+ --add(g_objs, make_wave())
  add(g_objs, make_player())
 end
 
@@ -118,6 +118,19 @@ function popc()
  else
   camera()
  end
+end
+
+function vecadd(a, b)
+ return {x=a.x+b.x, y=a.y+b.y}
+end
+
+function vecrot(v, a)
+ local s = sin(a/360)
+ local c = cos(a/360)
+ return {
+   x=v.x * c - v.y * s,
+   y=v.x * s + v.y * c,
+ }
 end
 
 
@@ -333,11 +346,126 @@ function make_bg()
    
    map(0,0,0,0,8,8) 
    pal()
+   
+   
+   local p1 = {x=-32,y=-32}
+   local p2 = {x=32,y=32}
+   local ang = g_tick % 60 * -6
+   
+   
+   local segs = getmapsegments(
+     0,0,8,8)
+   foreach(segs, function(s)
+      local v1 = vecadd({
+        x=s[1],y=s[2]}, p1)
+      local v2 = vecadd({
+        x=s[3],y=s[4]}, p1)
+      
+      v1 = vecadd(p2,
+        vecrot(v1, ang))
+      v2 = vecadd(p2,
+        vecrot(v2, ang))
+      
+      line(v1.x,v1.y,v2.x,v2.y)
+     end
+   )
+   
+   --vecrot(v,a)
+   
   end
+  
+  
+  
  }
 end
 
 -------------------------------
+
+function getmapsegments(
+  x,y,w,h)
+
+ local result = {}
+ local current = nil
+ 
+ --horz first
+ for yy = 0,h-1 do
+  current = nil
+  for xx = 0,w-1 do
+   local s = mget(x+xx,y+yy)
+   --left
+   if fget(s,3) then
+    if not current then
+     current={
+       xx*8,yy*8+4,
+       xx*8+4,yy*8+4}
+     add(result,current)
+    else
+     current[3] = xx*8+4
+    end
+   else
+    current = nil
+   end
+   
+   --right
+   if fget(s,1) then
+    if not current then
+     current={
+       xx*8+4,yy*8+4,
+       xx*8+8,yy*8+4}
+     add(result,current)
+    else
+     current[3] = xx*8+8
+    end
+   else
+    current = nil
+   end
+  end
+ 
+ end
+ --for i = x, x+w do
+ 
+ --vert next
+ for xx = 0,w-1 do
+  current = nil
+  for yy = 0,h-1 do
+   local s = mget(x+xx,y+yy)
+   
+   --top
+   if fget(s,0) then
+    if not current then
+     current={
+       xx*8+4,yy*8,
+       xx*8+4,yy*8+4}
+     add(result,current)
+    else
+     current[4] = yy*8+4
+    end
+   else
+    current = nil
+   end
+   
+   if fget(s,2) then
+    if not current then
+     current={
+       xx*8+4,yy*8+4,
+       xx*8+4,yy*8+8}
+     add(result,current)
+    else
+     current[4] = yy*8+8
+    end
+   else
+    current = nil
+   end
+   
+   
+  end
+ end
+ return result
+
+
+end
+
+
 
 function make_wave()
  return {
