@@ -22,11 +22,11 @@ function _init()
 end
 
 function g_offset_x()
- return -56+g_shp.x + g_shp.cam_off_x
+ return -56+g_shp.x - g_shp.cam_off_x
 end
 
 function g_offset_y()
- return -56+g_shp.y + g_shp.cam_off_y
+ return -56+g_shp.y - g_shp.cam_off_y
 end
 
 function game_start()
@@ -272,7 +272,11 @@ function lerp(
  return result
 end
 
-function make_go(t,horiz,vert)
+function make_go(
+ t,
+ horiz,
+ vert
+)
    t.spd_x = lerp(
     t.spd_x,
     horiz*t.max_speed,
@@ -382,11 +386,7 @@ function make_player_ship(pnum)
     t.y_dir = 1
    end
    
-   make_go(
-    t,
-    horiz,
-   vert
-   )
+   make_go(t, horiz, vert)
 
 
 
@@ -427,8 +427,8 @@ function make_player_ship(pnum)
     add(
      g_brd.bg_objs, 
      make_fire(
-      t.x+x_orig+2*t.cam_off_x, 
-      t.y+y_orig+2*t.cam_off_y,
+      t.x,--x_orig-2*t.cam_off_x, 
+      t.y,--y_orig-2*t.cam_off_y,
       t.x_dir,
       t.y_dir
      )
@@ -482,8 +482,9 @@ function make_enemy()
   x=10,
   y=10,
   c=0,
-  spd=2,
-  spd_counter=0,
+  spd_x=0,
+  spd_y=0,
+  max_speed=11,
   update=function(t)
    t.c += 1
    if t.c > 10*2+1 then
@@ -494,20 +495,18 @@ function make_enemy()
    --        to follow player 
    --        mechanics
    -- this can be smarter
-   if t.spd_counter > t.spd then
-    t.spd_counter = 0
-    if t.x < g_shp.x then
-     t.x += 1
-    else
-     t.x -= 1
-    end
-    if t.y < g_shp.y then
-     t.y += 1
-    else
-     t.y -= 1
-    end
+   local horiz=0
+   if t.x > g_shp.x then
+    horiz=-1
+   elseif t.x < g_shp.x then
+    horiz=1
    end
-   t.spd_counter += 1
+   if t.y > g_shp.y then
+    vert=-1
+   elseif t.y < g_shp.y then
+    vert=1
+   end
+   make_go(t, horiz, vert)
   end,
   draw=in_world_space(function(t)
    for i, c in pairs(e_cyc_c) do
@@ -561,8 +560,7 @@ function make_bg()
     end
     local s_off_x=(
      (
-      -g_shp.x
-      -g_shp.cam_off_x
+     	-g_offset_x()
      )
      -- todo: depth based paralax
      --[[/(
@@ -572,8 +570,7 @@ function make_bg()
     ) % 128
     local s_off_y=(
      (
-      -g_shp.y
-      -g_shp.cam_off_y
+      -g_offset_y()
      )
      --[[/(
       s.z
@@ -707,6 +704,11 @@ function _draw()
     c_line+shk_y
    )
    c_line += 10
+   print(
+    ""..enemy.x-g_shp.x.." "..enemy.y-g_shp.y,
+    0+shk_x,
+    c_line+shk_y
+   )
   end
  end
 end
