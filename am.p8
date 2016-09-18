@@ -199,6 +199,31 @@ function mag(x,y)
  return sqrt(x*x+y*y)
 end
 
+function make_message(
+ x,
+ y,
+ text,
+ col,
+ displaytime
+)
+ return {
+  x=x,
+  y=y,
+  text=text,
+  tleft=displaytime,
+  col=col,
+  update=function(t)
+  end,
+  draw=function(t)
+   print(
+    t.text,
+    -g_offset_x(),
+    -g_offset_y(),
+    t.col
+   )
+  end
+ }
+end
 -- simple lerp with clamp
 function lerp(
   beg, 
