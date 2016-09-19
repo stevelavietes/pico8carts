@@ -293,6 +293,25 @@ function make_go(
    t.y += t.spd_y
 end
 
+function remap(
+ val,
+ i_min, 
+ i_max,
+ o_min,
+ o_max
+)
+ return (
+  (
+   o_min 
+   + (
+    (val - i_min) 
+    * (o_max-o_min)
+    /(i_max-i_min)
+   )
+  )
+ )
+end
+
 g_cam_offset = 32
 
 function make_player_ship(pnum)
