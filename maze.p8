@@ -288,23 +288,54 @@ function make_player(maze)
  return {
   x=0,
   y=0,
+  mzx=0,
+  mzy=0,
+  dr=3,
   maze=maze,
   update=function(t,s)
    
-   local tx = t.x/8
-   local ty = t.y/8
-   local cx = flr(tx/8)
-   local cy = flr(ty/8)
-   local mxi = tx % 8
-   local myi = ty % 8
-   
-   if t.maze.state == 0 then
-    if btnn(1,1) then
-     t.x = t.x + 8
-    elseif btnn(0,1) then
-     t.x = t.x - 8
-    end
+   if t.maze.state ~= 0 then
+    return
    end
+   
+   if g_tick % 5 == 0 then
+    
+    local newdir = false
+    
+    if t.dr == 1 then
+     local s = getmazespr(
+       t.maze.b,t.mzx+1,t.mzy)
+     if s and not (
+       fget(s,2)
+         ) then
+      t.mzx = t.mzx + 1
+     else
+      newdir = true    
+     end
+    elseif t.dr == 3 then
+     local s = getmazespr(
+       t.maze.b,t.mzx,t.mzy)
+     if s and not (
+       fget(s,2)
+         ) then
+      t.mzx = t.mzx - 1
+     else
+      newdir = true    
+     end
+    end
+    
+    --todo, find available
+    --dirs and pick at random
+    if newdir then
+     if t.dr == 1 then
+      t.dr = 3
+     else
+      t.dr = 1
+     end
+    end
+    
+   end
+   
    
    
   end,
@@ -312,7 +343,7 @@ function make_player(maze)
    local s = flr(
        (g_tick % 8) / 2)
    
-   
+   pushc(-t.mzx*8, -t.mzy*8)
    for i = 0, 15 do
     pal(i,1) 
    end
@@ -320,10 +351,24 @@ function make_player(maze)
    spr(2+s,3,3)
    
    pal()
-   spr(2+s,4,4) 
+   spr(2+s,4,4)
+   popc()
+   
+   
+   print(getmazespr(
+       t.maze.b,t.mzx-1,t.mzy),0,0,7)
+   print(getmazespr(
+       t.maze.b,t.mzx,t.mzy), 0, 10,7)
+   print(getmazespr(
+       t.maze.b,t.mzx+1,t.mzy), 0, 20,7)
+   print(t.mzx, 0, 30,7)
+       
+   
   end
- 
+  
+  
  }
+ 
 end
 ------------------------------
 function make_maze()
@@ -708,6 +753,32 @@ end
 
 -------------------------------
 
+function getmazespr(b,x,y)
+ x = flr(x)
+ y = flr(y)
+ if (x < 0) return nil
+ if (x >= #b*8) return nil
+ if (y < 0) return nil
+ if (y >= #b*8) return nil
+ 
+ 
+ local cx = flr(x/8)
+ local cy = flr(y/8)
+ local ix = x % 8
+ local iy = y % 8
+ 
+ local row = b[cy+1]
+ if (not row) return nil
+ 
+ local tile = row[cx+1]
+ if (not tile) return nil
+ return mget(
+   tile.r*8 + ix,
+   tile.m*8 + iy) 
+end
+
+-------------------------------
+
 function getmapsegments(
   x,y,w,h)
 
@@ -790,6 +861,8 @@ function getmapsegments(
  return result
 
 end
+
+
 
 -------------------------------
 
