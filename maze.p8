@@ -285,53 +285,99 @@ end
 
 ------------------------------
 function make_player(maze)
- return {
+ local t = {
   x=0,
   y=0,
   mzx=0,
   mzy=0,
   dr=3,
+  lastdrs=0,
   maze=maze,
+  
+  
+  cango=function(t, dr)
+   local v = t.drdirs[dr]
+   local s = getmazespr(
+     t.maze.b,t.mzx+v[3],
+       t.mzy+v[4])
+   return s and not fget(s,v[5])
+   
+  end,
+  
+  candrs=function(t,omit)
+   result = {}
+   for i = 0,3 do
+    if omit ~= i
+      and t:cango(i) then
+     add(result, i)
+    end
+   end
+   return result
+  end,
+  
+  encdrs=function(drs)
+   local r = 0
+   for i in all(drs) do
+    r = bor(shl(1,i),r)
+   end
+   return r
+  end,
+  
   update=function(t,s)
    
    if t.maze.state ~= 0 then
     return
    end
    
-   if g_tick % 5 == 0 then
+   if g_tick % 3 == 0 then
     
     local newdir = false
     
-    if t.dr == 1 then
-     local s = getmazespr(
-       t.maze.b,t.mzx+1,t.mzy)
-     if s and not (
-       fget(s,2)
-         ) then
-      t.mzx = t.mzx + 1
-     else
-      newdir = true    
+    local drs = t:candrs()
+    local edrs = t.encdrs(drs)
+    
+    if edrs ~= t.lastdrs then
+     local n = bxor(
+       t.lastdrs, edrs)
+       
+     drs = {}
+     for i = 0, 3 do
+      if band(shl(1,i),n) > 0 then
+       add(drs, i)
+      end
      end
-    elseif t.dr == 3 then
-     local s = getmazespr(
-       t.maze.b,t.mzx,t.mzy)
-     if s and not (
-       fget(s,2)
-         ) then
-      t.mzx = t.mzx - 1
-     else
-      newdir = true    
+     
+     t.lastdrs = edrs
+     if rnd(100) < 20 then
+      
+      
+      --todo only pick among
+      --newly revealed locs
+      --drs = t:candrs(t.dr)
+      local idx = flr(rnd(
+       #drs)) + 1
+      t.dr = drs[idx]
      end
     end
     
-    --todo, find available
-    --dirs and pick at random
+    --todo, consolidate with
+    --above
+    if t:cango(t.dr) then
+     local v = t.drdirs[t.dr]
+     t.mzx = t.mzx + v[1]
+     t.mzy = t.mzy + v[2]
+    else
+     newdir = true
+    end
+    
+    
     if newdir then
-     if t.dr == 1 then
-      t.dr = 3
-     else
-      t.dr = 1
-     end
+     drs = t:candrs(t.dr)
+     local idx = flr(rnd(
+       #drs)) + 1
+     
+     t.dr = drs[idx]
+     
     end
     
    end
@@ -364,10 +410,30 @@ function make_player(maze)
    print(t.mzx, 0, 30,7)
        
    
+   print(t.lastdrs, 0, 50, 7)
+   local drs =
+     t:candrs(t.dr)
+   
+   for i in all(drs) do
+    print(#drs, 0, 60, 7)
+   end
+   
+   
   end
   
   
  }
+ 
+ -- x delta, y delta, testxy,flag
+ t.drdirs = {
+  [0]={0,-1, 0,0, 1},
+  [1]={1,0, 1, 0, 2},
+  [2]={0,1, 0,1, 1},
+  [3]={-1,0, 0,0,2},
+ }
+
+ 
+ return t
  
 end
 ------------------------------
