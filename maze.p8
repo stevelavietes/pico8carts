@@ -283,6 +283,12 @@ function make_trans(f,d,i)
  }
 end
 
+function round(v)
+ if v % 1 < 0.5 then
+  return flr(v)
+ end
+ return flr(v)+1
+end
 ------------------------------
 function make_player(maze)
  local t = {
@@ -329,12 +335,19 @@ function make_player(maze)
     return
    end
    
-   if g_tick % 3 == 0 then
+   
+   
+   
+   if t.mzx % 1 == 0
+     and t.mzy % 1 == 0 then
+   --if g_tick % 3 == 0 then
     
     local newdir = false
     
+    
     local drs = t:candrs()
     local edrs = t.encdrs(drs)
+    
     
     if edrs ~= t.lastdrs then
      local n = bxor(
@@ -355,17 +368,19 @@ function make_player(maze)
       --newly revealed locs
       --drs = t:candrs(t.dr)
       local idx = flr(rnd(
-       #drs)) + 1
+        #drs)) + 1
       t.dr = drs[idx]
+      
+      t.mzx = round(t.mzx)
+      t.mzy = round(t.mzy)
+      
      end
     end
     
     --todo, consolidate with
     --above
     if t:cango(t.dr) then
-     local v = t.drdirs[t.dr]
-     t.mzx = t.mzx + v[1]
-     t.mzy = t.mzy + v[2]
+     
     else
      newdir = true
     end
@@ -377,10 +392,15 @@ function make_player(maze)
        #drs)) + 1
      
      t.dr = drs[idx]
-     
+     t.mzx = round(t.mzx)
+     t.mzy = round(t.mzy)
     end
     
    end
+   
+   local v = t.drdirs[t.dr]
+   t.mzx = t.mzx + v[1]*0.25
+   t.mzy = t.mzy + v[2]*0.25
    
    
    
@@ -397,26 +417,32 @@ function make_player(maze)
    spr(2+s,3,3)
    
    pal()
+   
+   
+   
    spr(2+s,4,4)
    popc()
    
-   
+   --[[
    print(getmazespr(
        t.maze.b,t.mzx-1,t.mzy),0,0,7)
    print(getmazespr(
        t.maze.b,t.mzx,t.mzy), 0, 10,7)
    print(getmazespr(
        t.maze.b,t.mzx+1,t.mzy), 0, 20,7)
-   print(t.mzx, 0, 30,7)
+   print(t.mzx .. " " .. t.mzy, 0, 30,7)
        
    
    print(t.lastdrs, 0, 50, 7)
+   
+   
    local drs =
      t:candrs(t.dr)
    
    for i in all(drs) do
     print(#drs, 0, 60, 7)
    end
+   --]]
    
    
   end
@@ -728,6 +754,7 @@ function make_maze()
  return r
 end
 
+--[[
 function make_bg()
  return {
   x=0,
@@ -816,6 +843,8 @@ function make_bg()
   
  }
 end
+
+--]]
 
 -------------------------------
 
