@@ -340,7 +340,6 @@ function make_player(maze)
    
    if t.mzx % 1 == 0
      and t.mzy % 1 == 0 then
-   --if g_tick % 3 == 0 then
     
     local newdir = false
     
@@ -350,30 +349,37 @@ function make_player(maze)
     
     
     if edrs ~= t.lastdrs then
-     local n = bxor(
-       t.lastdrs, edrs)
-       
+     
      drs = {}
-     for i = 0, 3 do
-      if band(shl(1,i),n) > 0 then
-       add(drs, i)
+     
+     --vert
+     if t.dr % 2 == 0 then
+      
+      for i=1,3,2 do
+       local bit = shl(1,i)
+       if band(edrs, bit) > 0
+        and band(t.lastdrs)
+          == 0 then
+         add(drs,i)
+       end
+      end
+      
+     else
+      for i=0,2,2 do
+       local bit = shl(1,i)
+       if band(edrs, bit) > 0
+        and band(t.lastdrs)
+          == 0 then
+         add(drs,i)
+       end
       end
      end
      
-     t.lastdrs = edrs
-     if rnd(100) < 20 then
-      
-      
-      --todo only pick among
-      --newly revealed locs
-      --drs = t:candrs(t.dr)
+     if #drs > 0
+       and rnd(100) < 50 then
       local idx = flr(rnd(
         #drs)) + 1
       t.dr = drs[idx]
-      
-      t.mzx = round(t.mzx)
-      t.mzy = round(t.mzy)
-      
      end
     end
     
@@ -390,10 +396,7 @@ function make_player(maze)
      drs = t:candrs(t.dr)
      local idx = flr(rnd(
        #drs)) + 1
-     
      t.dr = drs[idx]
-     t.mzx = round(t.mzx)
-     t.mzy = round(t.mzy)
     end
     
    end
@@ -409,18 +412,20 @@ function make_player(maze)
    local s = flr(
        (g_tick % 8) / 2)
    
+   local fp = t.dr < 2
+   
    pushc(-t.mzx*8, -t.mzy*8)
    for i = 0, 15 do
     pal(i,1) 
    end
-   spr(2+s,5,5)
-   spr(2+s,3,3)
+   spr(2+s,5,5,1,1,fp,0)
+   spr(2+s,3,3,1,1,fp,0)
    
    pal()
    
    
    
-   spr(2+s,4,4)
+   spr(2+s,4,4,1,1,fp,0)
    popc()
    
    --[[
