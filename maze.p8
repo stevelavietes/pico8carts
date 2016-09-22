@@ -463,7 +463,27 @@ function make_player(maze)
   [3]={-1,0, 0,0,2},
  }
 
+ cell = t.maze.b[1][1]
  
+ -- starting point
+ if maze.cellhastop(cell)
+   then
+  t.mzx = 3 
+ elseif maze.cellhasleft(cell)
+   then
+  t.mzy = 3
+ elseif maze.cellhasbottom(
+   cell) then
+  t.mzx = 3
+  t.mzy = 7
+ elseif maze.cellhasright(cell)
+    then
+  t.mzx = 7
+  t.mzy = 3
+ end
+ 
+
+
  return t
  
 end
