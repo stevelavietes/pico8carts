@@ -492,7 +492,28 @@ function make_player(maze)
    
    local fp = t.dr < 2
    
-   pushc(-t.mzx*8, -t.mzy*8)
+   if t.maze.state ~= 0
+     and flr(t.mzx/8) ==
+       t.maze.cx
+     and flr(t.mzy/8) ==
+       t.maze.cy
+      then
+    
+    local px = t.maze.cx*64+32
+    local py = t.maze.cy*64+32
+    
+    local x = t.mzx*8 - px
+    local y = t.mzy*8 - py
+    
+    
+    local r =
+      vecrot({x=x,y=y},maze.ang)
+    
+    pushc(-(r.x + px),
+      -(r.y + py))
+   else
+    pushc(-t.mzx*8, -t.mzy*8)
+   end
    
    
    for i = 0, 15 do
