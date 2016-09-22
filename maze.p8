@@ -8,6 +8,8 @@ function _init()
  
  g_maxcells=4
  
+ g_rotsignalobjs = {}
+ 
  for i = 0,g_maxcells-1 do
   local y = i * 8
   for j = 0,2 do
@@ -22,11 +24,15 @@ function _init()
   }
  ))
  --]]
- maze = make_maze()
+ local maze = make_maze()
  add(g_objs, maze)
  --add(g_objs, make_wave())
- add(g_objs, make_player(
-   maze))
+ 
+ local player = make_player(
+   maze)
+ add(g_rotsignalobjs, player)
+ 
+ add(g_objs, player)
 end
 
 function _update()
@@ -301,12 +307,70 @@ function make_player(maze)
   maze=maze,
   
   
+  getcell=function(t,mzx,mzy)
+   if (not mzx) mzx = t.mzx
+   if (not mzy) mzy = t.mzy
+   local cx = flr(mzx/8)
+   local cy = flr(mzy/8)
+   local row = t.maze.b[cy+1]
+   if (not row) return nil
+   return row[cx+1]
+  end,
+  
   cango=function(t, dr)
    local v = t.drdirs[dr]
-   local s = getmazespr(
-     t.maze.b,t.mzx+v[3],
-       t.mzy+v[4])
-   return s and not fget(s,v[5])
+   local s, ix, iy, cx, cy =
+     getmazespr(
+       t.maze.b,t.mzx+v[3],
+         t.mzy+v[4])
+   
+   
+   if ix == 7 and dr == 1 then
+    if not cellhasdr(
+      t:getcell(),1) or
+      not cellhasdr(
+        t:getcell(t.mzx+8,
+          t.mzy) ,3)
+          then
+     return false
+    end
+   end
+   
+   if ix == 0 and dr == 3 then
+    if not cellhasdr(
+      t:getcell(),3) or
+      not cellhasdr(
+        t:getcell(t.mzx-8,
+          t.mzy) ,1)
+          then
+     return false
+    end
+   end
+   
+   if iy == 0 and dr == 0 then
+    if not cellhasdr(
+      t:getcell(),0) or
+      not cellhasdr(
+        t:getcell(t.mzx,
+          t.mzy-8) ,2)
+          then
+     return false
+    end
+   end
+   if iy == 7 and dr == 2 then
+    if not cellhasdr(
+      t:getcell(),2) or
+      not cellhasdr(
+        t:getcell(t.mzx,
+          t.mzy+8) ,0)
+          then
+     return false
+    end
+   end
+   
+
+   return s and
+     not fget(s,v[5])
    
   end,
   
@@ -327,6 +391,11 @@ function make_player(maze)
     r = bor(shl(1,i),r)
    end
    return r
+  end,
+  
+  rotdone=function(t,maze)
+  
+  
   end,
   
   update=function(t,s)
@@ -396,12 +465,21 @@ function make_player(maze)
      drs = t:candrs(t.dr)
      local idx = flr(rnd(
        #drs)) + 1
-     t.dr = drs[idx]
+       
+     local newdr = drs[idx]
+     if newdr then
+      t.dr = drs[idx]
+     end
     end
     
    end
    
    local v = t.drdirs[t.dr]
+   if not v then
+    cls()
+    print(t.dr)
+    stop()
+   end
    t.mzx = t.mzx + v[1]*0.25
    t.mzy = t.mzy + v[2]*0.25
    
@@ -415,6 +493,8 @@ function make_player(maze)
    local fp = t.dr < 2
    
    pushc(-t.mzx*8, -t.mzy*8)
+   
+   
    for i = 0, 15 do
     pal(i,1) 
    end
@@ -428,15 +508,10 @@ function make_player(maze)
    spr(2+s,4,4,1,1,fp,0)
    popc()
    
+   
+   
    --[[
-   print(getmazespr(
-       t.maze.b,t.mzx-1,t.mzy),0,0,7)
-   print(getmazespr(
-       t.maze.b,t.mzx,t.mzy), 0, 10,7)
-   print(getmazespr(
-       t.maze.b,t.mzx+1,t.mzy), 0, 20,7)
-   print(t.mzx .. " " .. t.mzy, 0, 30,7)
-       
+   
    
    print(t.lastdrs, 0, 50, 7)
    
@@ -466,18 +541,18 @@ function make_player(maze)
  cell = t.maze.b[1][1]
  
  -- starting point
- if maze.cellhastop(cell)
+ if cellhasdr(cell, 0)
    then
   t.mzx = 3 
- elseif maze.cellhasleft(cell)
+ elseif cellhasdr(cell, 3)
    then
   t.mzy = 3
- elseif maze.cellhasbottom(
-   cell) then
+ elseif cellhasdr(cell, 2)
+   then
   t.mzx = 3
   t.mzy = 7
- elseif maze.cellhasright(cell)
-    then
+ elseif cellhasdr(cell, 1)
+   then
   t.mzx = 7
   t.mzy = 3
  end
@@ -537,8 +612,22 @@ function make_maze()
      end
      cell.r = (cell.r + o) % 4
      
+     -- todo, signal to
+     -- the player that we need
+     -- to rotate
+     --g_rotsignalobjs
+     --[[
+     for obj in all(
+       g_rotsignalobjs) do
+      g_rotsignalobjs:rotdone(
+        t)
+     end
+     
+     --]]
      t.rt = nil
      t.state = 0
+     
+     
     end
    end
    
@@ -569,35 +658,35 @@ function make_maze()
         or t.state == 0 then
         --rect(sx, sy, sx+64, sy+64)
         
-        if t.cellhastop(cell)
+        if cellhasdr(cell,0)
            then
           local upcell = nil
           if y > 1 then
            upcell = t.b[y-1][x]
           end
           if not
-            t.cellhasbottom(
-              upcell) then
+            cellhasdr(
+              upcell,2) then
            spr((g_tick % 4)+16,
-             sx+28, sy-3)
+             sx+28, sy)
           end
         end
         
-        if t.cellhasbottom(cell)
+        if cellhasdr(cell,2)
           then
          local downcell = nil
          if y+1 <= t.sy then
            downcell =
              t.b[y+1][x]
          end
-         if not t.cellhastop(
-           downcell) then
+         if not cellhasdr(
+           downcell,0) then
           spr((g_tick % 4)+16,
-             sx+28, sy+59)
+             sx+28, sy+57)
          end
         end
         
-        if t.cellhasleft(cell)
+        if cellhasdr(cell,3)
           then
           local leftcell = nil
           if x > 1 then
@@ -605,24 +694,24 @@ function make_maze()
              t.b[y][x-1]
           end
           if not
-            t.cellhasright(
-              leftcell) then
+            cellhasdr(
+              leftcell,1) then
            spr((g_tick % 4)+20,
-             sx-3, sy+28)
+             sx, sy+28)
           end
         end
         
-        if t.cellhasright(cell)
+        if cellhasdr(cell,1)
           then
-         local leftcell = nil
+         local rightcell = nil
          if x < t.sx then
           rightcell =
             t.b[y][x+1]
          end
-         if not t.cellhasleft(
-           rightcell) then
+         if not cellhasdr(
+           rightcell,3) then
           spr((g_tick % 4)+20,
-            sx+59, sy+28)
+            sx+57, sy+28)
          end
         end
         
@@ -655,10 +744,11 @@ function make_maze()
         local ang =
           elapsed(t.rt) / 10 *
             90
-        
         if t.state == 2 then
          ang = ang * -1
         end
+        
+        t.ang = ang
         
         local lc = 2
         
@@ -701,62 +791,6 @@ function make_maze()
     pal(7,14)
     pal(13,8)
    end
-  end,
-  cellhastop=function(cell)
-   if not cell then
-    return false
-   end
-   local mx = cell.r*8
-   local my = cell.m*8
-   local m1 = mget(mx+3,my)
-   local m2 = mget(mx+4,my)
-   return (
-     m1 > 0
-     and m2 > 0
-     and fget(m1, 0)
-     and fget(m2, 0))
-  end,
-  cellhasbottom=function(cell)
-   if not cell then
-    return false
-   end
-   local mx = cell.r*8
-   local my = cell.m*8
-   local m1 = mget(mx+3,my+7)
-   local m2 = mget(mx+4,my+7)
-   return (
-     m1 > 0
-     and m2 > 0
-     and fget(m1, 2)
-     and fget(m2, 2))
-  end,
-  cellhasleft=function(cell)
-   if not cell then
-    return false
-   end
-   local mx = cell.r*8
-   local my = cell.m*8
-   local m1 = mget(mx,my+3)
-   local m2 = mget(mx,my+4)
-   return (
-     m1 > 0
-     and m2 > 0
-     and fget(m1, 3)
-     and fget(m2, 3))
-  end,
-  cellhasright=function(cell)
-   if not cell then
-    return false
-   end
-   local mx = cell.r*8
-   local my = cell.m*8
-   local m1 = mget(mx+7,my+3)
-   local m2 = mget(mx+7,my+4)
-   return (
-     m1 > 0
-     and m2 > 0
-     and fget(m1, 1)
-     and fget(m2, 1))
   end
   
   
@@ -777,6 +811,40 @@ function make_maze()
  end
  
  return r
+end
+
+function cellhasdr(cell, dr)
+ if not cell then
+  return false
+ end
+ 
+ local mx = cell.r*8
+ local my = cell.m*8
+ 
+ local m1,m2 = nil
+ --local m1 = mget(mx+3,my+7)
+ --local m2 = mget(mx+4,my+7)
+   
+ if dr == 0 then
+  m1 = mget(mx+3,my)
+  m2 = mget(mx+4,my)
+ elseif dr == 1 then
+  m1 = mget(mx+7,my+3)
+  m2 = mget(mx+7,my+4)
+ elseif dr == 2 then
+  m1 = mget(mx+3,my+7)
+  m2 = mget(mx+4,my+7)
+ elseif dr == 3 then
+  m1 = mget(mx,my+3)
+  m2 = mget(mx,my+4)
+ end
+ 
+ return (
+   m1 > 0
+   and m2 > 0
+   and fget(m1, dr)
+   and fget(m2, dr))
+   
 end
 
 --[[
@@ -892,9 +960,11 @@ function getmazespr(b,x,y)
  
  local tile = row[cx+1]
  if (not tile) return nil
+ 
+ 
  return mget(
    tile.r*8 + ix,
-   tile.m*8 + iy) 
+   tile.m*8 + iy), ix, iy, cx, cy
 end
 
 -------------------------------
