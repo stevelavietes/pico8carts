@@ -302,7 +302,7 @@ function make_player(maze)
   y=0,
   mzx=0,
   mzy=0,
-  dr=3,
+  dr=1,
   lastdrs=0,
   maze=maze,
   
@@ -394,8 +394,24 @@ function make_player(maze)
   end,
   
   rotdone=function(t,maze)
-  
-  
+   
+   local ox = flr(t.mzx/8)*8
+   local oy = flr(t.mzy/8)*8
+   local ix = t.mzx - ox
+   local iy = t.mzy - oy
+   
+   
+   if maze.state == 2 then
+    t.dr = (t.dr + 1) % 4
+    -- huh? 6?
+    t.mzx = (ox+6)-iy
+    t.mzy = oy + ix
+   else
+    t.dr = (t.dr - 1) % 4
+    t.mzx = ox + iy
+    t.mzy = (oy+6)-ix
+   end
+   
   end,
   
   update=function(t,s)
@@ -403,10 +419,75 @@ function make_player(maze)
    if t.maze.state ~= 0 then
     return
    end
+   ---
+   
+   local move = true
+   
+   if t.mzx % 1 == 0
+     and t.mzy % 1 == 0 then
+    
+    local dr = nil
+    if btn(0) then
+     dr = 3
+    elseif btn(1) then
+     dr = 1
+    elseif btn(2) then
+     dr = 0
+    elseif btn(3) then
+     dr = 2
+    end
+    
+    if dr and t:cango(dr) then
+     t.dr = dr
+    end
+    
+    if not t:cango(t.dr) then
+     move = false
+    end
+   
+   else
+    if t.dr == 1 then
+     if btn(0) then
+      t.dr = 3
+     end
+    elseif t.dr == 3 then
+     if btn(1) then
+      t.dr = 1
+     end
+    elseif t.dr == 2 then
+     if btn(2) then
+      t.dr = 0
+     end
+    elseif t.dr == 0 then
+     if btn(3) then
+      t.dr = 2
+     end
+    end
+    
+    
+   end
+   
+   
+   if move then
+    local v = t.drdirs[t.dr]
+    if not v then
+     cls()
+     print(t.dr)
+     stop()
+    end
+    t.mzx = t.mzx + v[1]*0.25
+    t.mzy = t.mzy + v[2]*0.25
+   end
+   
+   t.maze.cx = flr(t.mzx/8)
+   t.maze.cy = flr(t.mzy/8)
    
    
    
+   if (true) return
    
+   
+   ---
    if t.mzx % 1 == 0
      and t.mzy % 1 == 0 then
     
@@ -486,6 +567,7 @@ function make_player(maze)
    
    
   end,
+  
   draw=function(t)
    local s = flr(
        (g_tick % 8) / 2)
@@ -499,8 +581,8 @@ function make_player(maze)
        t.maze.cy
       then
     
-    local px = t.maze.cx*64+32
-    local py = t.maze.cy*64+32
+    local px = t.maze.cx*64+24
+    local py = t.maze.cy*64+24
     
     local x = t.mzx*8 - px
     local y = t.mzy*8 - py
@@ -595,13 +677,17 @@ function make_maze()
   state=0, --0, 1 cw, 2 ccw
   update=function(t,s)
    if t.state == 0 then
+    
+    
     if btnn(4) then
      t.state = 1
      t.rt = g_tick
     elseif btnn(5) then
      t.state = 2
      t.rt = g_tick
-    elseif btnn(0) then
+    end
+    --[[
+    if btnn(0) then
      if t.cx > 0 then
       t.cx = t.cx - 1
      end
@@ -618,6 +704,7 @@ function make_maze()
       t.cy = t.cy + 1
      end
     end
+    --]]
     
     
    else
@@ -637,11 +724,10 @@ function make_maze()
      -- the player that we need
      -- to rotate
      --g_rotsignalobjs
-     --[[
+     
      for obj in all(
        g_rotsignalobjs) do
-      g_rotsignalobjs:rotdone(
-        t)
+      obj:rotdone(t)
      end
      
      --]]
