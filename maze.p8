@@ -71,6 +71,7 @@ end
 
 function stddraw()
  cls()
+ --rectfill(0,0,127,127,5)
  drawobjs(g_objs)
 end
 
@@ -395,6 +396,16 @@ function make_player(maze)
   
   rotdone=function(t,maze)
    
+   if maze.cx ~=
+     flr(t.mzx/8) then
+    return
+   end
+   
+   if maze.cy ~=
+     flr(t.mzy/8) then
+    return
+   end
+    
    local ox = flr(t.mzx/8)*8
    local oy = flr(t.mzy/8)*8
    local ix = t.mzx - ox
@@ -482,7 +493,34 @@ function make_player(maze)
    t.maze.cx = flr(t.mzx/8)
    t.maze.cy = flr(t.mzy/8)
    
-   --todo, select edge over
+   --select edge over
+   
+   if t.dr == 1 then
+    if (t.mzx % 8) > 5.5 and
+      t.maze.cx < t.maze.sx
+        then
+     t.maze.cx = t.maze.cx + 1 
+    end
+   elseif t.dr == 2 then
+    if (t.mzy % 8) > 5.5 and
+      t.maze.cy < t.maze.sy
+        then
+     t.maze.cy = t.maze.cy + 1 
+    end
+   elseif t.dr == 0 then
+    if (t.mzy % 8) < 1.5 and
+      t.maze.cy > 0
+        then
+     t.maze.cy = t.maze.cy - 1 
+    end
+   elseif t.dr == 3 then
+    if (t.mzx % 8) < 1.5 and
+      t.maze.cx > 0
+        then
+     t.maze.cx = t.maze.cx - 1 
+    end
+   end
+   
    
    
    if (true) return
