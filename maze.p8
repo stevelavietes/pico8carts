@@ -688,6 +688,33 @@ function make_player(maze)
     
    end
    
+   --g_camx = -ox
+   --g_camy = -oy
+   
+   local rthr = 64
+   local lthr = 64
+   
+   if -ox - g_camx > rthr
+     and g_camx <
+       (t.maze.sx-2)*64
+       then
+    g_camx = g_camx + 1
+   elseif -ox - g_camx < lthr
+     and g_camx > 0 then
+    g_camx = g_camx - 1
+   end
+   
+   if -oy - g_camy > rthr
+     and g_camy <
+       (t.maze.sy-2)*64
+     then
+    g_camy = g_camy + 1
+   elseif -oy - g_camy < lthr
+     and g_camy > 0 then
+    g_camy = g_camy - 1 
+   end
+   
+   
    pal(9,1)
    for xy in all(t.trail) do
     pushc(xy[1], xy[2])
@@ -747,8 +774,8 @@ function make_maze()
   y=0,
   cx=0,
   cy=0,
-  sx=2,
-  sy=2,
+  sx=3,
+  sy=3,
   state=0, --0, 1 cw, 2 ccw
   update=function(t,s)
    if t.state == 0 then
