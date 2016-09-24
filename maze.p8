@@ -452,7 +452,11 @@ function make_player(maze)
      dr = 2
     end
     
-    if dr and t:cango(dr) then
+    if dr
+      and (t:cango(dr)
+        or not t:cango(t.dr))
+       then
+      
      t.dr = dr
     end
     
@@ -499,32 +503,57 @@ function make_player(maze)
    
    --select edge over
    
-   if t.dr == 1 then
-    if (t.mzx % 8) > 5.5 and
-      t.maze.cx < t.maze.sx - 1
+   cell = t:getcell()
+   
+   if cellhasdr(cell,t.dr)
+    then
+    if t.dr == 1 then
+     if (t.mzx % 8) > 5.5 and
+       t.maze.cx < t.maze.sx-1
+        
+        and not cellhasdr(
+         t:getcell(t.mzx+8,
+            t.mzy), 3) 
+    
         then
-     t.maze.cx = t.maze.cx + 1 
-    end
-   elseif t.dr == 2 then
-    if (t.mzy % 8) > 5.5 and
-      t.maze.cy < t.maze.sy - 1
+      t.maze.cx = t.maze.cx + 1 
+     end
+    elseif t.dr == 2 then
+     if (t.mzy % 8) > 5.5 and
+       t.maze.cy < t.maze.sy - 1
+        
+        and not cellhasdr(
+         t:getcell(t.mzx,
+            t.mzy+8), 0) 
+    
+       then
+      t.maze.cy = t.maze.cy + 1 
+     end
+    elseif t.dr == 0 then
+     if (t.mzy % 8) < 1.5 and
+       t.maze.cy > 0
+        
+        and not cellhasdr(
+         t:getcell(t.mzx,
+            t.mzy-8), 2) 
+    
+        
         then
-     t.maze.cy = t.maze.cy + 1 
-    end
-   elseif t.dr == 0 then
-    if (t.mzy % 8) < 1.5 and
-      t.maze.cy > 0
-        then
-     t.maze.cy = t.maze.cy - 1 
-    end
-   elseif t.dr == 3 then
-    if (t.mzx % 8) < 1.5 and
-      t.maze.cx > 0
-        then
-     t.maze.cx = t.maze.cx - 1 
+      t.maze.cy = t.maze.cy - 1 
+     end
+    elseif t.dr == 3 then
+     if (t.mzx % 8) < 1.5 and
+       t.maze.cx > 0
+       
+       and not cellhasdr(
+         t:getcell(t.mzx-8,
+            t.mzy), 1) 
+    
+         then
+      t.maze.cx = t.maze.cx - 1 
+     end
     end
    end
-   
    --g_camx = t.mzx * 8
    --g_camy = t.mzy * 8
    
