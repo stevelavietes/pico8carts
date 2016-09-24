@@ -522,10 +522,11 @@ function make_player(maze)
      if (t.mzy % 8) > 5.5 and
        t.maze.cy < t.maze.sy - 1
         
+        
         and not cellhasdr(
          t:getcell(t.mzx,
-            t.mzy+8), 0) 
-    
+            t.mzy+8), 0)
+        
        then
       t.maze.cy = t.maze.cy + 1 
      end
@@ -554,6 +555,17 @@ function make_player(maze)
      end
     end
    end
+   
+   --don't allow rotate
+   --during transition
+   if
+     (t.mzx % 8) >= 7
+     or (t.mzy % 8) >= 7 then
+    t.maze.cx = -10
+    t.maze.cy = -10
+    
+   end
+   
    --g_camx = t.mzx * 8
    --g_camy = t.mzy * 8
    
@@ -741,13 +753,15 @@ function make_maze()
   update=function(t,s)
    if t.state == 0 then
     
-    
-    if btnn(4) then
-     t.state = 1
-     t.rt = g_tick
-    elseif btnn(5) then
-     t.state = 2
-     t.rt = g_tick
+    if t.cx >= 0 and t.cy >= 0
+      then
+     if btnn(4) then
+      t.state = 1
+      t.rt = g_tick
+     elseif btnn(5) then
+      t.state = 2
+      t.rt = g_tick
+     end
     end
     --[[
     if btnn(0) then
