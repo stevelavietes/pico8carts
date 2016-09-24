@@ -7,7 +7,6 @@ function _init()
  stdinit()
  
  g_maxcells=5
- 
  g_rotsignalobjs = {}
  
  for i = 0,g_maxcells-1 do
@@ -51,6 +50,8 @@ function stdinit()
  g_ctl=0     --last controllers
  g_cs = {}   --camera stack 
  g_objs = {} --objects
+ g_camx = 0
+ g_camy = 0
 end
 
 function stdupdate()
@@ -72,7 +73,9 @@ end
 function stddraw()
  cls()
  --rectfill(0,0,127,127,5)
+ pushc(g_camx, g_camy)
  drawobjs(g_objs)
+ popc()
 end
 
 function drawobjs(objs)
@@ -358,6 +361,7 @@ function make_player(maze)
      return false
     end
    end
+
    if iy == 7 and dr == 2 then
     if not cellhasdr(
       t:getcell(),2) or
@@ -497,13 +501,13 @@ function make_player(maze)
    
    if t.dr == 1 then
     if (t.mzx % 8) > 5.5 and
-      t.maze.cx < t.maze.sx
+      t.maze.cx < t.maze.sx - 1
         then
      t.maze.cx = t.maze.cx + 1 
     end
    elseif t.dr == 2 then
     if (t.mzy % 8) > 5.5 and
-      t.maze.cy < t.maze.sy
+      t.maze.cy < t.maze.sy - 1
         then
      t.maze.cy = t.maze.cy + 1 
     end
@@ -520,6 +524,9 @@ function make_player(maze)
      t.maze.cx = t.maze.cx - 1 
     end
    end
+   
+   --g_camx = t.mzx * 8
+   --g_camy = t.mzy * 8
    
    
    
@@ -652,46 +659,18 @@ function make_player(maze)
     del(t.trail, t.trail[1])
    end
    
-   pushc(ox, oy)
-   
-   --[[
-   for i = 0, 15 do
-    pal(i,1) 
-   end
-   spr(2+s,5,5,1,1,fp,0)
-   spr(2+s,3,3,1,1,fp,0)
-   --]]
    pal()
-   
-   
-   
-   
+   pushc(ox, oy)
    spr(2+s,4,4,1,1,fp,0)
    popc()
-   
-   
-   
-   --[[
-   
-   
-   print(t.lastdrs, 0, 50, 7)
-   
-   
-   local drs =
-     t:candrs(t.dr)
-   
-   for i in all(drs) do
-    print(#drs, 0, 60, 7)
-   end
-   --]]
-   
-   
   end
-  
-  
  }
  
- -- x delta, y delta, testxy,flag
+ -- [1] x movement delta
+ -- [2] y movement delta
+ -- [3] x map test
+ -- [4] y map test
+ -- [5] direction flag
  t.drdirs = {
   [0]={0,-1, 0,0, 1},
   [1]={1,0, 1, 0, 2},
@@ -718,10 +697,7 @@ function make_player(maze)
   t.mzy = 3
  end
  
-
-
  return t
- 
 end
 ------------------------------
 function make_maze()
@@ -778,27 +754,21 @@ function make_maze()
      end
      cell.r = (cell.r + o) % 4
      
-     -- todo, signal to
-     -- the player that we need
-     -- to rotate
-     --g_rotsignalobjs
-     
+     -- signal that rotation
+     -- is done
      for obj in all(
        g_rotsignalobjs) do
       obj:rotdone(t)
      end
      
-     --]]
      t.rt = nil
      t.state = 0
-     
-     
     end
    end
    
   end,
+
   draw=function(t)
-   
    local flipcol = (
      g_tick % 30 > 14)
    
@@ -821,7 +791,6 @@ function make_maze()
       
       if not isactive
         or t.state == 0 then
-        --rect(sx, sy, sx+64, sy+64)
         
         if cellhasdr(cell,0)
            then
@@ -1216,8 +1185,6 @@ function getmapsegments(
  return result
 
 end
-
-
 
 -------------------------------
 
