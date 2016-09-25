@@ -17,7 +17,7 @@ function _init()
   end
  end
  
- make_game()
+ make_game(1)
  
 end
 
@@ -1460,6 +1460,7 @@ end
 function make_game(level)
  local t = {
   x=0,y=0,
+  l=level,
   marks={},
   update=function(t,s)
    local fx = t.flag.mzx
@@ -1469,14 +1470,15 @@ function make_game(level)
     if mark.mzx == fx
       and mark.mzy == fy then
      
-     local n = #t.marks
+     
      del(t.marks,mark)
      del(g_objs,mark)
      del(g_rotsignalobjs,mark)
      add(g_objs,
        make_scorebubble(
          mark.mzx*8,
-         mark.mzy*8,n))
+         mark.mzy*8,
+         #t.marks))
      -- x,y,n
     end 
    end
@@ -1485,7 +1487,7 @@ function make_game(level)
    
     add(g_objs,
       make_trans(function()
-         make_game(3,3)
+         make_game(3,3,t.l+1)
     				end))
    end
    
@@ -1497,8 +1499,12 @@ function make_game(level)
  g_objs = {t}
  g_rotsignalobjs = {}
  
+ local s=3
+ if t.l == 1 then
+  s=2
+ end
  
- local maze = make_maze(3,3)
+ local maze = make_maze(s,s)
  t.maze = maze
  add(g_objs, maze)
  
