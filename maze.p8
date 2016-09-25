@@ -353,7 +353,20 @@ function round(v)
  end
  return flr(v)+1
 end
+
+
 ------------------------------
+
+function getcell(t,mzx,mzy)
+ if (not mzx) mzx = t.mzx
+ if (not mzy) mzy = t.mzy
+ local cx = flr(mzx/8)
+ local cy = flr(mzy/8)
+ local row = t.maze.b[cy+1]
+ if (not row) return nil
+ return row[cx+1]
+end
+
 function make_player(maze)
  local t = {
   x=0,
@@ -365,16 +378,6 @@ function make_player(maze)
   maze=maze,
   trail={},
   
-  getcell=function(t,mzx,mzy)
-   if (not mzx) mzx = t.mzx
-   if (not mzy) mzy = t.mzy
-   local cx = flr(mzx/8)
-   local cy = flr(mzy/8)
-   local row = t.maze.b[cy+1]
-   if (not row) return nil
-   return row[cx+1]
-  end,
-  
   cango=function(t, dr)
    local v = t.drdirs[dr]
    local s, ix, iy, cx, cy =
@@ -385,9 +388,9 @@ function make_player(maze)
    
    if ix == 7 and dr == 1 then
     if not cellhasdr(
-      t:getcell(),1) or
+      getcell(t),1) or
       not cellhasdr(
-        t:getcell(t.mzx+8,
+        getcell(t, t.mzx+8,
           t.mzy) ,3)
           then
      return false
@@ -396,9 +399,9 @@ function make_player(maze)
    
    if ix == 0 and dr == 3 then
     if not cellhasdr(
-      t:getcell(),3) or
+      getcell(t),3) or
       not cellhasdr(
-        t:getcell(t.mzx-8,
+        getcell(t, t.mzx-8,
           t.mzy) ,1)
           then
      return false
@@ -407,9 +410,9 @@ function make_player(maze)
    
    if iy == 0 and dr == 0 then
     if not cellhasdr(
-      t:getcell(),0) or
+      getcell(t),0) or
       not cellhasdr(
-        t:getcell(t.mzx,
+        getcell(t, t.mzx,
           t.mzy-8) ,2)
           then
      return false
@@ -418,9 +421,9 @@ function make_player(maze)
 
    if iy == 7 and dr == 2 then
     if not cellhasdr(
-      t:getcell(),2) or
+      getcell(t),2) or
       not cellhasdr(
-        t:getcell(t.mzx,
+        getcell(t, t.mzx,
           t.mzy+8) ,0)
           then
      return false
@@ -557,7 +560,7 @@ function make_player(maze)
    
    --select edge over
    
-   cell = t:getcell()
+   cell = getcell(t)
    
    if cellhasdr(cell,t.dr)
     then
@@ -566,7 +569,7 @@ function make_player(maze)
        t.maze.cx < t.maze.sx-1
         
         and not cellhasdr(
-         t:getcell(t.mzx+8,
+         getcell(t, t.mzx+8,
             t.mzy), 3) 
     
         then
@@ -578,7 +581,7 @@ function make_player(maze)
         
         
         and not cellhasdr(
-         t:getcell(t.mzx,
+         getcell(t, t.mzx,
             t.mzy+8), 0)
         
        then
@@ -589,7 +592,7 @@ function make_player(maze)
        t.maze.cy > 0
         
         and not cellhasdr(
-         t:getcell(t.mzx,
+         getcell(t, t.mzx,
             t.mzy-8), 2) 
     
         
@@ -601,7 +604,7 @@ function make_player(maze)
        t.maze.cx > 0
        
        and not cellhasdr(
-         t:getcell(t.mzx-8,
+         getcell(t, t.mzx-8,
             t.mzy), 1) 
     
          then
