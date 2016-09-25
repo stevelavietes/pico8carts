@@ -1209,9 +1209,11 @@ end
 
 function draw_radararrow(
   sx,sy,c)
+ 
  local ang = vecang(
    {x=g_camx+63,y=g_camy+63},
    {x=sx,y=sy})
+
  local x1, y1, x2, y2 = 0,0,0,0
  if ang >= 45
    and ang < 135 then
@@ -1245,15 +1247,24 @@ function draw_radararrow(
    {x=-7,y=0}, ang+20)
  local a2 = vecrot(
    {x=-7,y=0}, ang-20)
-     
- if (c) color(c)
- line(i.x, i.y, i.x+a1.x,
-   i.y+a1.y)
- line(i.x, i.y, i.x+a2.x,
-   i.y+a2.y)
- line(i.x+a1.x, i.y+a1.y,
-   i.x+a2.x, i.y+a2.y)
- if (c) color()
+ 
+ local v = {
+  {-1,0,0},
+  {0,-1,0},
+  {0,0,c},
+ }
+ 
+ for _, e in pairs(v) do
+  pushc(e[1],e[2])
+  line(i.x, i.y, i.x+a1.x,
+    i.y+a1.y,e[3])
+  line(i.x, i.y, i.x+a2.x,
+    i.y+a2.y,e[3])
+  line(i.x+a1.x, i.y+a1.y,
+    i.x+a2.x, i.y+a2.y,e[3])
+  popc()
+ end
+ 
 end
 
 
