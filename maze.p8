@@ -32,6 +32,15 @@ function _init()
  add(g_rotsignalobjs, player)
  
  add(g_objs, player)
+ 
+ for i = 0,0 do
+  local thing = make_thing()
+  thing.mzx = 0
+  thing.mzy = i*2
+  add(g_objs, thing)
+ end
+ 
+
 end
 
 function _update()
@@ -145,6 +154,14 @@ function vecadd(a, b)
  return {x=a.x+b.x, y=a.y+b.y}
 end
 
+function vecsub(a, b)
+ return {x=a.x-b.x, y=a.y-b.y}
+end
+
+function vecscale(v, m)
+ return {x=v.x*m, y=v.y*m}
+end
+
 function vecrot(v, a)
  local s = sin(a/360)
  local c = cos(a/360)
@@ -154,6 +171,43 @@ function vecrot(v, a)
  }
 end
 
+
+function vecang(a, b)
+ local d = vecsub(b, a)
+ return atan2(d.x, d.y) * 360
+end
+
+
+function rectsect(
+  x1,y1,x2,y2,x3,y3,x4,y4)
+ return (
+       x1 <= x4
+   and x2 >= x3
+   and y1 <= y4
+   and y2 >= y3)
+end
+
+
+function linesect(
+   x1,y1,x2,y2,x3,y3,x4,y4)
+
+  local sx1 = x2 - x1
+  local sy1 = y2 - y1
+  local sx2 = x4 - x3
+  local sy2 = y4 - y3
+  local s = (-sy1 * (x1 - x3)
+     + sx1 * (y1 - y3)) /
+      (-sx2 * sy1 + sx1 * sy2)
+  local t = ( sx2 * (y1 - y3)
+     - sy2 * (x1 - x3)) /
+      (-sx2 * sy1 + sx1 * sy2)
+
+  return {
+   x = x1 + (t * sx1),
+   y = y1 + (t * sy1)
+  }
+ 
+end
 
 function make_menu(
  lbs, --menu lables
@@ -839,154 +893,186 @@ function make_maze()
   end,
 
   draw=function(t)
+
+   rect(0,0,t.sx*64-1,
+     t.sx*64-1,1)
    local flipcol = (
      g_tick % 30 > 14)
    
-   t.basepal(flipcol)
+   --t.basepal(flipcol)
    
    for y = 1, #t.b do
     local row = t.b[y]
     for x = 1, #row do
      local cell = row[x]
-      
-      local mx = cell.r*8
-      local my = cell.m*8
-      local sx = (x-1)*64
-      local sy = (y-1)*64
-      
-      local isactive = (
-        t.cx == x - 1
-        and t.cy == y - 1)
-      
-      
-      if not isactive
-        or t.state == 0 then
-        
-        if cellhasdr(cell,0)
-           then
-          local upcell = nil
-          if y > 1 then
-           upcell = t.b[y-1][x]
-          end
-          if not
-            cellhasdr(
-              upcell,2) then
-           spr((g_tick % 4)+16,
-             sx+28, sy)
-          end
-        end
-        
-        if cellhasdr(cell,2)
-          then
-         local downcell = nil
-         if y+1 <= t.sy then
-           downcell =
-             t.b[y+1][x]
-         end
-         if not cellhasdr(
-           downcell,0) then
-          spr((g_tick % 4)+16,
-             sx+28, sy+57)
-         end
-        end
-        
-        if cellhasdr(cell,3)
-          then
-          local leftcell = nil
-          if x > 1 then
-           leftcell =
-             t.b[y][x-1]
-          end
-          if not
-            cellhasdr(
-              leftcell,1) then
-           spr((g_tick % 4)+20,
-             sx, sy+28)
-          end
-        end
-        
-        if cellhasdr(cell,1)
-          then
-         local rightcell = nil
-         if x < t.sx then
-          rightcell =
-            t.b[y][x+1]
-         end
-         if not cellhasdr(
-           rightcell,3) then
-          spr((g_tick % 4)+20,
-            sx+57, sy+28)
-         end
-        end
-        
-        
-      end
-      
-      if isactive then
-       
-       if t.state == 0 then
-        pal(7, 6)
-        pal(13, 6) 
-       
-        for xy in all({
-          {-1,-1},
-          {1,1},
-          {-1,1},
-          {1,-1}}) do
-         map(mx,my,sx+xy[1],
-           sy+xy[2],8,8)
-        end
-       
-        t.basepal(flipcol)
-        map(mx,my,sx,sy,8,8)
-       else
-        local segs =
-          getmapsegments(
-            mx,my,8,8)
-        
-        
-        local ang =
-          elapsed(t.rt) / 10 *
-            90
-        if t.state == 2 then
-         ang = ang * -1
-        end
-        
-        t.ang = ang
-        
-        local lc = 2
-        
-        
-        pushc(-sx,-sy)
-        local p1 = {x=-32,y=-32}
-        local p2 = {x=32,y=32}
-        for s in all(segs) do
-         local v1 = vecadd({
-           x=s[1],y=s[2]}, p1)
-         local v2 = vecadd({
-           x=s[3],y=s[4]}, p1)
-         
-         v1 = vecadd(p2,
-           vecrot(v1, ang))
-         v2 = vecadd(p2,
-           vecrot(v2, ang))
-      
-         line(v1.x,v1.y,
-           v2.x,v2.y, lc)
-        end
-        popc()
-        
-       end
-      else
-       map(mx,my,sx,sy,8,8)
-      end
-      
-      
+      t:drawcell(cell,x,y,
+        flipcol)
     end
    end
    
    pal()   
   end,
+
+  drawcell=function(t,cell,
+    x,y,flipcol)
+      
+   local mx = cell.r*8
+   local my = cell.m*8
+   local sx = (x-1)*64
+   local sy = (y-1)*64
+   
+   --cull
+   if sx > g_camx + 128
+     then
+    return
+   end
+   
+   if sx < g_camx
+     and sx + 64 < g_camx
+     then
+    return
+   end
+   if sy > g_camy + 128
+     then
+    return
+   end
+   
+   if sy < g_camy
+     and sy + 64 < g_camy
+     then
+    return
+   end
+
+   local isactive = (
+     t.cx == x - 1
+     and t.cy == y - 1)
+   
+   
+   if not isactive
+     or t.state == 0 then
+     
+     if cellhasdr(cell,0)
+        then
+       local upcell = nil
+       if y > 1 then
+        upcell = t.b[y-1][x]
+       end
+       if not
+         cellhasdr(
+           upcell,2) then
+        spr((g_tick % 4)+16,
+          sx+28, sy)
+       end
+     end
+     
+     if cellhasdr(cell,2)
+       then
+      local downcell = nil
+      if y+1 <= t.sy then
+        downcell =
+          t.b[y+1][x]
+      end
+      if not cellhasdr(
+        downcell,0) then
+       spr((g_tick % 4)+16,
+          sx+28, sy+57)
+      end
+     end
+     
+     if cellhasdr(cell,3)
+       then
+       local leftcell = nil
+       if x > 1 then
+        leftcell =
+          t.b[y][x-1]
+       end
+       if not
+         cellhasdr(
+           leftcell,1) then
+        spr((g_tick % 4)+20,
+          sx, sy+28)
+       end
+     end
+     
+     if cellhasdr(cell,1)
+       then
+      local rightcell = nil
+      if x < t.sx then
+       rightcell =
+         t.b[y][x+1]
+      end
+      if not cellhasdr(
+        rightcell,3) then
+       spr((g_tick % 4)+20,
+         sx+57, sy+28)
+      end
+     end
+      
+      
+    end
+    
+    if isactive then
+     
+     if t.state == 0 then
+      pal(7, 6)
+      pal(13, 6) 
+     
+      for xy in all({
+        {-1,-1},
+        {1,1},
+        {-1,1},
+        {1,-1}}) do
+       map(mx,my,sx+xy[1],
+         sy+xy[2],8,8)
+      end
+     
+      t.basepal(flipcol)
+      map(mx,my,sx,sy,8,8)
+     else
+      local segs =
+        getmapsegments(
+          mx,my,8,8)
+      
+      
+      local ang =
+        elapsed(t.rt) / 10 *
+          90
+      if t.state == 2 then
+       ang = ang * -1
+      end
+      
+      t.ang = ang
+      
+      local lc = 2
+      
+      
+      pushc(-sx,-sy)
+      local p1 = {x=-32,y=-32}
+      local p2 = {x=32,y=32}
+      for s in all(segs) do
+       local v1 = vecadd({
+         x=s[1],y=s[2]}, p1)
+       local v2 = vecadd({
+         x=s[3],y=s[4]}, p1)
+       
+       v1 = vecadd(p2,
+         vecrot(v1, ang))
+       v2 = vecadd(p2,
+         vecrot(v2, ang))
+    
+       line(v1.x,v1.y,
+         v2.x,v2.y, lc)
+      end
+      popc()
+      
+     end
+    else
+     t.basepal(flipcol)
+     map(mx,my,sx,sy,8,8)
+    end
+  end,
+
+
   basepal=function(flipcol)
    if flipcol then
     pal(7,8)
@@ -1051,98 +1137,6 @@ function cellhasdr(cell, dr)
    
 end
 
---[[
-function make_bg()
- return {
-  x=0,
-  y=0,
-  update=function(t,s)
-  
-  
-  end,
-  draw=function(t)
-  
-   local phase = ((g_tick % 60)
-     / 60)
-   --[[
-   if phase < 0.2
-     or phase > 0.8 then
-    pal(7, 2)
-    map(0,0,-2,-2,8,8)
-    map(0,0,2,2,8,8)
-    map(0,0,-2,2,8,8)
-    map(0,0,2,-2,8,8)
-    map(0,0,0,2,8,8)
-    map(0,0,0,-2,8,8)
-    map(0,0,2,0,8,8)
-    map(0,0,-2,0,8,8)
-   end
-   --]]
-   --if phase < 0.4
-   --  or phase > 0.6 then
-    pal(7, 1)
-    pal(13, 1)
-    
-    for xy in all({
-      {-1,-1},
-      {1,1},
-      {-1,1},
-      {1,-1}}) do
-     map(0,0,xy[1],xy[2],8,8)
-    end
-    
-   
-   if g_tick % 30 > 14 then
-    pal(7,8)
-    pal(13,14)
-   else
-    pal(7,14)
-    pal(13,8)
-   end
-   
-   map(0,0,0,0,8,8)
-   
-   map(8,0,64,0,8,8)
-   map(16,8,0,64,8,8)
-   map(24,0,64,64,8,8)
-   
-   
-   pal()
-   
-   
-   local p1 = {x=-32,y=-32}
-   local p2 = {x=32,y=32}
-   local ang = g_tick % 60 * -6
-   
-   
-   local segs = getmapsegments(
-     0,0,8,8)
-   foreach(segs, function(s)
-      local v1 = vecadd({
-        x=s[1],y=s[2]}, p1)
-      local v2 = vecadd({
-        x=s[3],y=s[4]}, p1)
-      
-      v1 = vecadd(p2,
-        vecrot(v1, ang))
-      v2 = vecadd(p2,
-        vecrot(v2, ang))
-      
-      line(v1.x,v1.y,v2.x,v2.y)
-     end
-   )
-   
-   --vecrot(v,a)
-   
-  end
-  
-  
-  
- }
-end
-
---]]
-
 -------------------------------
 
 function getmazespr(b,x,y)
@@ -1170,6 +1164,98 @@ function getmazespr(b,x,y)
    tile.r*8 + ix,
    tile.m*8 + iy), ix, iy, cx, cy
 end
+
+-------------------------------
+
+function make_thing()
+ local t = {
+  x=0,
+  y=0,
+  mzx=0,
+  mzt=0,
+  dr=1,
+  update=function(t,s)
+   if t.dr == 1 then
+    t.mzx += 0.25
+    if t.mzx >= 32 then
+     t.dr = 3
+    end
+   else
+    t.mzx -= 0.25
+    if t.mzx <= 0 then
+     t.dr = 1
+    end
+   end
+  end,
+  draw=function(t)
+   local sx = t.mzx * 8
+   local sy = t.mzy * 8
+   if rectsect(
+     sx, sy, sx+4, sy+4,
+     g_camx, g_camy,
+     g_camx + 127, g_camy + 127)
+       then
+    rect(sx-2, sy-2, sx+2,
+      sy+2, 12)
+   else
+    draw_radararrow(sx,sy,12)
+   end
+  end
+ }
+ return t
+end
+
+-------------------------------
+
+function draw_radararrow(
+  sx,sy,c)
+ local ang = vecang(
+   {x=g_camx+63,y=g_camy+63},
+   {x=sx,y=sy})
+ local x1, y1, x2, y2 = 0,0,0,0
+ if ang >= 45
+   and ang < 135 then
+  x1 = -4
+  x2 = 131
+ elseif ang >= 135
+   and ang < 225 then
+  y1 = -4
+  y2 = 131
+ elseif ang >= 225
+   and ang < 315 then
+  x1 = -4
+  x2 = 131
+  y1 = 127
+  y2 = 127    
+ else
+ 	x1 = 127
+  x2 = 127
+  y1 = -4
+  y2 = 131
+ end
+ local i = 
+   linesect(x1, y1, x2, y2,  
+     63,63,
+     sx-g_camx, sy-g_camy)
+     
+ i.x = i.x + g_camx
+ i.y = i.y + g_camy
+     
+ local a1 = vecrot(
+   {x=-7,y=0}, ang+20)
+ local a2 = vecrot(
+   {x=-7,y=0}, ang-20)
+     
+ if (c) color(c)
+ line(i.x, i.y, i.x+a1.x,
+   i.y+a1.y)
+ line(i.x, i.y, i.x+a2.x,
+   i.y+a2.y)
+ line(i.x+a1.x, i.y+a1.y,
+   i.x+a2.x, i.y+a2.y)
+ if (c) color()
+end
+
 
 -------------------------------
 
@@ -1478,10 +1564,10 @@ __map__
 0000002020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000002020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 2121212a22000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-2121212922000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000002222000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000002222000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000002222000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+212121232a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0028290000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00222b2900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+002b212a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000002020282329000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0028212a222b2922000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 002228232a002222000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
