@@ -1493,7 +1493,7 @@ function make_game(level)
  g_rotsignalobjs = {}
  
  
- local maze = make_maze(2,2)
+ local maze = make_maze(3,3)
  t.maze = maze
  add(g_objs, maze)
  
