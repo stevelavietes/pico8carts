@@ -550,9 +550,9 @@ function make_mark(maze)
      
      local v = g_drdirs[dr]
      local x = t.mzx
-       + v[1]*0.125
+       + v[1]
      local y = t.mzy
-       + v[2]*0.125
+       + v[2]
      
      local dst = 
        vecdistsq({x=x,y=y},
