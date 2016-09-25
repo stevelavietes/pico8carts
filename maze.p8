@@ -367,6 +367,64 @@ function getcell(t,mzx,mzy)
  return row[cx+1]
 end
 
+------------------------------
+
+function cango(t, dr)
+ local v = t.drdirs[dr]
+ local s, ix, iy, cx, cy =
+   getmazespr(
+     t.maze.b,t.mzx+v[3],
+       t.mzy+v[4])
+ 
+ 
+ if ix == 7 and dr == 1 then
+  if not cellhasdr(
+    getcell(t),1) or
+    not cellhasdr(
+      getcell(t, t.mzx+8,
+        t.mzy) ,3)
+        then
+   return false
+  end
+ end
+ 
+ if ix == 0 and dr == 3 then
+  if not cellhasdr(
+    getcell(t),3) or
+    not cellhasdr(
+      getcell(t, t.mzx-8,
+        t.mzy) ,1)
+        then
+   return false
+  end
+ end
+ 
+ if iy == 0 and dr == 0 then
+  if not cellhasdr(
+    getcell(t),0) or
+    not cellhasdr(
+      getcell(t, t.mzx,
+        t.mzy-8) ,2)
+        then
+   return false
+  end
+ end
+
+ if iy == 7 and dr == 2 then
+  if not cellhasdr(
+    getcell(t),2) or
+    not cellhasdr(
+      getcell(t, t.mzx,
+        t.mzy+8) ,0)
+        then
+   return false
+  end
+ end
+ 
+ return s and
+   not fget(s,v[5])
+end
+
 function make_player(maze)
  local t = {
   x=0,
@@ -378,69 +436,11 @@ function make_player(maze)
   maze=maze,
   trail={},
   
-  cango=function(t, dr)
-   local v = t.drdirs[dr]
-   local s, ix, iy, cx, cy =
-     getmazespr(
-       t.maze.b,t.mzx+v[3],
-         t.mzy+v[4])
-   
-   
-   if ix == 7 and dr == 1 then
-    if not cellhasdr(
-      getcell(t),1) or
-      not cellhasdr(
-        getcell(t, t.mzx+8,
-          t.mzy) ,3)
-          then
-     return false
-    end
-   end
-   
-   if ix == 0 and dr == 3 then
-    if not cellhasdr(
-      getcell(t),3) or
-      not cellhasdr(
-        getcell(t, t.mzx-8,
-          t.mzy) ,1)
-          then
-     return false
-    end
-   end
-   
-   if iy == 0 and dr == 0 then
-    if not cellhasdr(
-      getcell(t),0) or
-      not cellhasdr(
-        getcell(t, t.mzx,
-          t.mzy-8) ,2)
-          then
-     return false
-    end
-   end
-
-   if iy == 7 and dr == 2 then
-    if not cellhasdr(
-      getcell(t),2) or
-      not cellhasdr(
-        getcell(t, t.mzx,
-          t.mzy+8) ,0)
-          then
-     return false
-    end
-   end
-   
-
-   return s and
-     not fget(s,v[5])
-   
-  end,
-  
   candrs=function(t,omit)
    result = {}
    for i = 0,3 do
     if omit ~= i
-      and t:cango(i) then
+      and cango(t, i) then
      add(result, i)
     end
    end
@@ -510,14 +510,14 @@ function make_player(maze)
     end
     
     if dr
-      and (t:cango(dr)
-        or not t:cango(t.dr))
+      and (cango(t, dr)
+        or not cango(t, t.dr))
        then
       
      t.dr = dr
     end
     
-    if not t:cango(t.dr) then
+    if not cango(t, t.dr) then
      move = false
     end
    
@@ -679,7 +679,7 @@ function make_player(maze)
     
     --todo, consolidate with
     --above
-    if t:cango(t.dr) then
+    if cango(t, t.dr) then
      
     else
      newdir = true
