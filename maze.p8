@@ -370,7 +370,7 @@ end
 ------------------------------
 
 function cango(t, dr)
- local v = t.drdirs[dr]
+ local v = g_drdirs[dr]
  local s, ix, iy, cx, cy =
    getmazespr(
      t.maze.b,t.mzx+v[3],
@@ -425,6 +425,67 @@ function cango(t, dr)
    not fget(s,v[5])
 end
 
+function candirs(t,omit)
+ result = {}
+ for i = 0,3 do
+  if omit ~= i
+    and cango(t, i) then
+   add(result, i)
+  end
+ end
+ return result
+end
+
+function encdrs(drs)
+ local r = 0
+ for i in all(drs) do
+  r = bor(shl(1,i),r)
+ end
+ return r
+end
+
+function char_rotdone(t,maze)
+ if maze.cx ~=
+   flr(t.mzx/8) then
+  return
+ end
+ 
+ if maze.cy ~=
+   flr(t.mzy/8) then
+  return
+ end
+  
+ local ox = flr(t.mzx/8)*8
+ local oy = flr(t.mzy/8)*8
+ local ix = t.mzx - ox
+ local iy = t.mzy - oy
+ 
+ 
+ if maze.state == 2 then
+  t.dr = (t.dr + 1) % 4
+  -- huh? 6?
+  t.mzx = (ox+6)-iy
+  t.mzy = oy + ix
+ else
+  t.dr = (t.dr - 1) % 4
+  t.mzx = ox + iy
+  t.mzy = (oy+6)-ix
+ end
+end
+
+-- [1] x movement delta
+-- [2] y movement delta
+-- [3] x map test
+-- [4] y map test
+-- [5] direction flag
+g_drdirs = {
+ [0]={0,-1, 0,0, 1},
+ [1]={1,0, 1, 0, 2},
+ [2]={0,1, 0,1, 1},
+ [3]={-1,0, 0,0,2},
+}
+
+
 function make_player(maze)
  local t = {
   x=0,
@@ -436,54 +497,8 @@ function make_player(maze)
   maze=maze,
   trail={},
   
-  candrs=function(t,omit)
-   result = {}
-   for i = 0,3 do
-    if omit ~= i
-      and cango(t, i) then
-     add(result, i)
-    end
-   end
-   return result
-  end,
-  
-  encdrs=function(drs)
-   local r = 0
-   for i in all(drs) do
-    r = bor(shl(1,i),r)
-   end
-   return r
-  end,
-  
   rotdone=function(t,maze)
-   
-   if maze.cx ~=
-     flr(t.mzx/8) then
-    return
-   end
-   
-   if maze.cy ~=
-     flr(t.mzy/8) then
-    return
-   end
-    
-   local ox = flr(t.mzx/8)*8
-   local oy = flr(t.mzy/8)*8
-   local ix = t.mzx - ox
-   local iy = t.mzy - oy
-   
-   
-   if maze.state == 2 then
-    t.dr = (t.dr + 1) % 4
-    -- huh? 6?
-    t.mzx = (ox+6)-iy
-    t.mzy = oy + ix
-   else
-    t.dr = (t.dr - 1) % 4
-    t.mzx = ox + iy
-    t.mzy = (oy+6)-ix
-   end
-   
+   char_rotdone(t,maze)
   end,
   
   update=function(t,s)
@@ -545,7 +560,7 @@ function make_player(maze)
    
    
    if move then
-    local v = t.drdirs[t.dr]
+    local v = g_drdirs[t.dr]
     if not v then
      cls()
      print(t.dr)
@@ -699,7 +714,7 @@ function make_player(maze)
     
    end
    
-   local v = t.drdirs[t.dr]
+   local v = g_drdirs[t.dr]
    if not v then
     cls()
     print(t.dr)
@@ -791,17 +806,7 @@ function make_player(maze)
   end
  }
  
- -- [1] x movement delta
- -- [2] y movement delta
- -- [3] x map test
- -- [4] y map test
- -- [5] direction flag
- t.drdirs = {
-  [0]={0,-1, 0,0, 1},
-  [1]={1,0, 1, 0, 2},
-  [2]={0,1, 0,1, 1},
-  [3]={-1,0, 0,0,2},
- }
+ 
 
  cell = t.maze.b[1][1]
  
