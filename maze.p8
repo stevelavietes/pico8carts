@@ -33,21 +33,14 @@ function _init()
  
  add(g_objs, player)
  
-
- local mark = make_mark(maze)
- mark.mzx = 10
- mark.mzy= 2
- add(g_objs, mark)
- add(g_rotsignalobjs, mark)
-
---[[
- for i = 0,0 do
-  local thing = make_thing()
-  thing.mzx = 0
-  thing.mzy = i*2
-  add(g_objs, thing)
+ for i = 1,5 do
+  local mark = make_mark(maze)
+  placechar(mark,flr(rnd(maze.sx)),
+   flr(rnd(maze.sy)),16)
+  add(g_objs, mark)
+  add(g_rotsignalobjs, mark)
  end
---]]
+
 
 end
 
@@ -850,28 +843,48 @@ function make_player(maze)
   end
  }
  
- 
-
- cell = t.maze.b[1][1]
- 
- -- starting point
- if cellhasdr(cell, 0)
-   then
-  t.mzx = 3 
- elseif cellhasdr(cell, 3)
-   then
-  t.mzy = 3
- elseif cellhasdr(cell, 2)
-   then
-  t.mzx = 3
-  t.mzy = 7
- elseif cellhasdr(cell, 1)
-   then
-  t.mzx = 7
-  t.mzy = 3
- end
+ placechar(t,0,0,0)
  
  return t
+end
+
+function placechar(t,cx,cy,
+ steps)
+ 
+ local ox, oy = cx*8, cy*8
+ local cell = getcell(t,ox,oy)
+ 
+ t.mzx = ox
+ t.mzy = oy
+ if cellhasdr(cell, 0)
+   then
+  t.mzx = ox+3
+  
+ elseif cellhasdr(cell, 3)
+   then
+  t.mzy = oy+3
+ elseif cellhasdr(cell, 2)
+   then
+  t.mzx = ox+3
+  t.mzy = oy+7
+ elseif cellhasdr(cell, 1)
+   then
+  t.mzx = ox+7
+  t.mzy = oy+3
+ end
+ 
+ for i = 1, steps do
+  local drs = candirs(t)
+  
+  local dr =
+    drs[flr(rnd(#drs))+1]
+  
+  local v = g_drdirs[dr]
+  t.mzx += v[1]
+  t.mzy += v[2]
+  
+ end
+
 end
 ------------------------------
 function make_maze()
@@ -1219,46 +1232,6 @@ end
 
 -------------------------------
 
-function make_thing()
- local t = {
-  x=0,
-  y=0,
-  mzx=0,
-  mzt=0,
-  dr=1,
-  update=function(t,s)
-   if t.dr == 1 then
-    t.mzx += 0.25
-    if t.mzx >= 32 then
-     t.dr = 3
-    end
-   else
-    t.mzx -= 0.25
-    if t.mzx <= 0 then
-     t.dr = 1
-    end
-   end
-  end,
-  draw=function(t)
-   local sx = t.mzx * 8
-   local sy = t.mzy * 8
-   if rectsect(
-     sx, sy, sx+4, sy+4,
-     g_camx, g_camy,
-     g_camx + 127, g_camy + 127)
-       then
-    rect(sx-2, sy-2, sx+2,
-      sy+2, 12)
-   else
-    draw_radararrow(sx,sy,12)
-   end
-  end
- }
- return t
-end
-
--------------------------------
-
 function draw_radararrow(
   sx,sy,c)
  
@@ -1296,9 +1269,9 @@ function draw_radararrow(
  i.y = i.y + g_camy
      
  local a1 = vecrot(
-   {x=-7,y=0}, ang+20)
+   {x=-6,y=0}, ang+20)
  local a2 = vecrot(
-   {x=-7,y=0}, ang-20)
+   {x=-6,y=0}, ang-20)
  
  local v = {
   {-1,0,0},
