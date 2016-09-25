@@ -437,14 +437,6 @@ function candirs(t,omit)
  return result
 end
 
-function encdrs(drs)
- local r = 0
- for i in all(drs) do
-  r = bor(shl(1,i),r)
- end
- return r
-end
-
 function char_rotdone(t,maze)
  if maze.cx ~=
    flr(t.mzx/8) then
@@ -741,86 +733,6 @@ function make_player(maze)
    --g_camy = t.mzy * 8
    
    
-   
-   if (true) return
-   
-   
-   ---
-   if t.mzx % 1 == 0
-     and t.mzy % 1 == 0 then
-    
-    local newdir = false
-    
-    
-    local drs = t:candrs()
-    local edrs = t.encdrs(drs)
-    
-    
-    if edrs ~= t.lastdrs then
-     
-     drs = {}
-     
-     --vert
-     if t.dr % 2 == 0 then
-      
-      for i=1,3,2 do
-       local bit = shl(1,i)
-       if band(edrs, bit) > 0
-        and band(t.lastdrs)
-          == 0 then
-         add(drs,i)
-       end
-      end
-      
-     else
-      for i=0,2,2 do
-       local bit = shl(1,i)
-       if band(edrs, bit) > 0
-        and band(t.lastdrs)
-          == 0 then
-         add(drs,i)
-       end
-      end
-     end
-     
-     if #drs > 0
-       and rnd(100) < 50 then
-      local idx = flr(rnd(
-        #drs)) + 1
-      t.dr = drs[idx]
-     end
-    end
-    
-    --todo, consolidate with
-    --above
-    if cango(t, t.dr) then
-     
-    else
-     newdir = true
-    end
-    
-    
-    if newdir then
-     drs = t:candrs(t.dr)
-     local idx = flr(rnd(
-       #drs)) + 1
-       
-     local newdr = drs[idx]
-     if newdr then
-      t.dr = drs[idx]
-     end
-    end
-    
-   end
-   
-   local v = g_drdirs[t.dr]
-   if not v then
-    cls()
-    print(t.dr)
-    stop()
-   end
-   t.mzx = t.mzx + v[1]*0.25
-   t.mzy = t.mzy + v[2]*0.25
    
    
    
