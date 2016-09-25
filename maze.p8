@@ -1468,9 +1468,16 @@ function make_game(level)
    for mark in all(t.marks) do
     if mark.mzx == fx
       and mark.mzy == fy then
-      del(t.marks,mark)
-      del(g_objs,mark)
-      del(g_rotsignalobjs,mark)
+     
+     local n = #t.marks
+     del(t.marks,mark)
+     del(g_objs,mark)
+     del(g_rotsignalobjs,mark)
+     add(g_objs,
+       make_scorebubble(
+         mark.mzx*8,
+         mark.mzy*8,n))
+     -- x,y,n
     end 
    end
    
@@ -1480,8 +1487,6 @@ function make_game(level)
       make_trans(function()
          make_game(3,3)
     				end))
-    
-    
    end
    
   end,
@@ -1522,6 +1527,33 @@ function make_game(level)
  
  return t
 end
+
+function make_scorebubble(
+  x,y,n)
+ return {
+  x=x,
+  y=y,
+  n=n,
+  st=g_tick,
+  update=function(t,s)
+   if elapsed(t.st) > 30 then
+    del(s,t)
+   end
+  end,
+  draw=function(t)
+   local e = -elapsed(t.st)
+   local xo = sin(g_tick/10)*4
+     * (e/-10)
+   pushc(xo,0)
+   circfill(5,e,5,10)
+   circfill(5,e,4,9)
+   print(t.n,4,e-2,0)
+   popc()
+  end
+ }
+ 
+end
+
 __gfx__
 00000000006000000900009009900000000990000000999000000000000000000000000000000000090000900990000000099000000099900000000011000000
 00000000006600009990099909900099009990009900999000000000000000000000000000000000999009990990009900999000990099900000000176100000
