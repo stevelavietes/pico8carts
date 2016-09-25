@@ -51,8 +51,7 @@ function game_start()
   )
   ]]--
  
- add(g_objs, make_coordsys()
- )
+ --add(g_objs, make_coordsys())
 end
 
 function make_coordsys()
@@ -480,7 +479,7 @@ function make_player_ship(pnum)
       t.y_dir
      )
     )
-    if t.frame % 60 == 0 then
+    if false and t.frame % 30 == 0 then
      add(
       g_brd.c_objs,
       make_ping(
@@ -488,7 +487,7 @@ function make_player_ship(pnum)
        t.y/2+3,
        11,
        400
-      )
+      	)
      )
     end
     t.frame += 1
@@ -505,7 +504,7 @@ function make_player_ship(pnum)
       smear_max,
       t.spd_x/10,
       2
-     ) --* (1/s.z)
+     ) 
     smear_y=lerp(
       0,
       smear_max,
@@ -528,13 +527,6 @@ function make_player_ship(pnum)
     t.flip_x,
     t.flip_y
    )
-      rect(
-    l_x + t.hb[1],
-    l_y + t.hb[2],
-    l_x + t.hb[3],
-    l_y + t.hb[4],
-    8
-   )
   end
  }
 end
@@ -545,7 +537,7 @@ function make_enemy_spawner()
   timer=initial,
   update=function(t)
    t.timer -= 1
-   if false and t.timer <= 0 then
+   if  t.timer <= 0 then
     enemy = make_enemy()
     add(
      g_brd.c_objs, 
@@ -603,6 +595,7 @@ function make_enemy()
   flip_y=false,
   -- hitbox
   hb={-2,-2,9,9},
+  frame=0,
   notice=function(t, other)
    return other ~= nil
   end,
@@ -650,6 +643,19 @@ function make_enemy()
    if hb_overlaps(t, g_shp) then
     g_shp:explode()
    end
+   
+   if t.frame % 15 == 0 then
+    add(
+     g_brd.c_objs,
+     make_ping(
+      t.x/2, 
+      t.y/2, 
+      8, 
+      1000
+     )
+    )
+   end
+   t.frame +=1 
   end,
   draw=in_world_space(function(t)
    
@@ -697,33 +703,58 @@ function make_bg()
   x=0,
   y=0,
   stars=stars,
+  warp_at=nil,
+  frame=0,
+  make_warp=function(t,x,y)
+   t.warp_at={x,y}
+  end,
   update=function(t)
+   if t.warp_at then
+    t.frame += 1
+    if t.frame > 25 then
+     add(
+      g_objs,
+      make_trans(nil)
+     )
+    end
+   end
   end,
   draw=function(t)
    local _g_off_x = -g_offset_x()
    local _g_off_y = -g_offset_y()
-    
+  
    for _,s in pairs(t.stars) do
     local s_off_x=(
-     	_g_off_x
-     -- todo: depth based paralax
-     --[[/(
-      s.z
-     ) ]]--
-     + s.x
+     _g_off_x --/s.z
+     + 
+     s.x
     ) % 128
     local s_off_y=(
-     (
-      _g_off_y
-     )
-     --[[/(
-      s.z
-     ) ]]--
-     + s.y
+     _g_off_y --/s.z
+     + 
+     s.y
     ) % 128 
     
- --* (1/s.z)
-    --end
+    local smear_x = smear_x
+    local smear_y = smear_y
+    if t.warp_at then
+     smear_x = lerp(
+      smear_x, 
+      (
+       s_off_x 
+       - (t.warp_at[1]%128)/2
+      ),
+      t.frame/30
+     )
+     smear_y = lerp(
+      smear_y,
+      (
+       s_off_y 
+       - (t.warp_at[2]%128)/2
+      ),
+      t.frame/30
+     )
+    end
     
     line(
      s_off_x,
@@ -737,7 +768,13 @@ function make_bg()
  }
 end
 
-function make_ping(x,y,c,max_r)
+function make_ping(
+  x,
+  y,
+  c,
+  max_r,
+  start_r
+ )
  return {
   x=x,
   y=y,
@@ -748,9 +785,9 @@ function make_ping(x,y,c,max_r)
   -- blink radius
   b_r=0.75*max_r,
   -- current radius
-  c_r=1,
+  c_r=start_r and start_r or 1,
   update=function(t)
-   t.c_r += 4
+   t.c_r += 10
    
    if t.c_r > t.m_r then
     del(g_brd.c_objs, t)
@@ -778,10 +815,77 @@ function make_ping(x,y,c,max_r)
  }
 end
 
+function make_exit_point()
+ local ep_c = {5,1,12}
+ return {
+  --x=5,
+  x=500,
+  --y=7,
+  y=750,
+  frame=0,
+  hb={-5,-10,5,10},
+  update=function(t)
+   if g_shp then  
+    if t.frame % 30 == 0 then
+     add(
+      g_brd.c_objs,
+      make_ping(
+       t.x/2, 
+       t.y/2, 
+       12, 
+       1000
+      )
+     )
+    end
+   end
+   
+   if hb_overlaps(g_shp, t) then
+    g_shp:explode()
+    add(
+     g_brd.c_objs,
+     bg_stars:make_warp(t.x,t.y)
+    )
+   end
+   t.frame += 1
+  end,
+  draw=in_world_space(function(t)
+   for i,n in pairs({5,4,3,2}) do
+    rectfill(
+     -n,
+     -n*2,
+     n,
+     n*2,
+     ep_c[(-t.frame+i)/2%5+1]
+    )
+   end
+   -- particulates
+   for i=0,30,1 do
+    local ang=(i/30)
+    local loop = (ang*50+t.frame)%50  
+    local r=24
+    if (loop > 15) then
+     local loop2 = (loop-5)/45
+     r=lerp(24,0,(loop2)*(loop2))
+    end
+    local ll=lerp(1,6,loop*loop/(60*60))
+    local sign=1
+    line(
+     sign*(ll+r)*cos(ang),
+     sign*(ll+r)*sin(ang),
+     sign*r*cos(ang),
+     sign*r*sin(ang),
+     12
+    )
+   end
+  end)
+ }
+end
+
 function make_board()
  g_shp = make_player_ship(0)
  bg_spawner = make_enemy_spawner()
  srand(2)
+ bg_stars = make_bg()
  return {
   st=0,
   x=0,
@@ -793,9 +897,12 @@ function make_board()
   c_objs={
    bg_spawner,
    --make_station(0,0),
-   g_shp
+   g_shp,
+   make_exit_point()
   },
-  bg_objs={make_bg()},
+  bg_objs={
+   bg_stars
+  },
   update=function(t)
    updateobjs(t.bg_objs)
    updateobjs(t.c_objs)
