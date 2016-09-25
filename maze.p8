@@ -9,43 +9,16 @@ function _init()
  g_maxcells=5
  g_rotsignalobjs = {}
  
+ -- init map cells
  for i = 0,g_maxcells-1 do
   local y = i * 8
   for j = 0,2 do
    rotmapcw(j*8,y,j*8+8,y,8)
   end
  end
-  
- --[[
- add(g_objs, make_menu(
-  {'starting',
-   'point'
-  }
- ))
- --]]
- local maze = make_maze()
- add(g_objs, maze)
- --add(g_objs, make_wave())
  
- local player = make_player(
-   maze)
- add(g_rotsignalobjs, player)
+ make_game()
  
- add(g_objs, player)
- 
- for i = 1,5 do
-  local mark = make_mark(maze)
-  placechar(mark,flr(rnd(maze.sx)),
-   flr(rnd(maze.sy)),16)
-  add(g_objs, mark)
-  add(g_rotsignalobjs, mark)
- end
- 
- local flag = make_flag(maze)
- placechar(flag,flr(rnd(maze.sx)),
-   flr(rnd(maze.sy)),32)
- add(g_rotsignalobjs, flag)
- add(g_objs, flag)
 end
 
 function _update()
@@ -641,7 +614,9 @@ function make_flag(maze)
    char_rotdone(t,maze)
   end,
   update=function(t,s)
-  
+   g_fx = t.mzx
+   g_fy = t.mzy
+   
   end,
   draw=function(t,s)
    local ox, oy =
@@ -923,14 +898,14 @@ function placechar(t,cx,cy,
 
 end
 ------------------------------
-function make_maze()
+function make_maze(sizex,sizey)
  local r = {
   x=0,
   y=0,
   cx=0,
   cy=0,
-  sx=3,
-  sy=3,
+  sx=sizex,
+  sy=sizey,
   state=0, --0, 1 cw, 2 ccw
   update=function(t,s)
    if t.state == 0 then
@@ -1482,7 +1457,71 @@ function make_wave()
 end
 
 
-
+function make_game(level)
+ local t = {
+  x=0,y=0,
+  marks={},
+  update=function(t,s)
+   local fx = t.flag.mzx
+   local fy = t.flag.mzy
+   
+   for mark in all(t.marks) do
+    if mark.mzx == fx
+      and mark.mzy == fy then
+      del(t.marks,mark)
+      del(g_objs,mark)
+      del(g_rotsignalobjs,mark)
+    end 
+   end
+   
+   if #t.marks == 0 then
+   
+    add(g_objs,
+      make_trans(function()
+         make_game(3,3)
+    				end))
+    
+    
+   end
+   
+  end,
+  draw=function(t)
+  end
+ }
+ 
+ g_objs = {t}
+ g_rotsignalobjs = {}
+ 
+ 
+ local maze = make_maze(2,2)
+ t.maze = maze
+ add(g_objs, maze)
+ 
+ local player = make_player(
+   maze)
+ add(g_rotsignalobjs, player)
+ t.player = player
+ add(g_objs, player)
+ 
+ for i = 1,5 do
+  local mark = make_mark(maze)
+  placechar(mark,flr(rnd(maze.sx)),
+   flr(rnd(maze.sy)),16)
+  add(g_objs, mark)
+  add(g_rotsignalobjs, mark)
+  add(t.marks, mark)
+ end
+ 
+ local flag = make_flag(maze)
+ placechar(flag,flr(rnd(maze.sx)),
+   flr(rnd(maze.sy)),32)
+ add(g_rotsignalobjs, flag)
+ add(g_objs, flag)
+ t.flag = flag
+ 
+ 
+ return t
+end
 __gfx__
 00000000006000000900009009900000000990000000999000000000000000000000000000000000090000900990000000099000000099900000000011000000
 00000000006600009990099909900099009990009900999000000000000000000000000000000000999009990990009900999000990099900000000176100000
