@@ -517,7 +517,7 @@ g_drdirs = {
 }
 
 function make_mark(maze)
- return {
+ local t = {
   x=0,
   y=0,
   mzx=0,
@@ -528,17 +528,50 @@ function make_mark(maze)
    char_rotdone(t,maze)
   end,
   update=function(t,s)
+   if (t.maze.state~=0) return
+   
+   local move = true
+   if t.mzx % 1 == 0
+     and t.mzy % 1 == 0 then
+    
+    
+    
+    if not cango(t, t.dr) then
+     --taco
+     local drs =
+       candirs(t, t.dr)
+     local idx = flr(rnd(
+       #drs)) + 1
+     t.dr = drs[idx]
+    else
+     local drs =
+       candirs(t, (t.dr+2)%4)
+     
+     local idx = flr(rnd(
+       #drs)) + 1
+     t.dr = drs[idx]
+     
+     
+    end
+    
+   else
+    --huh 
+   end
+   
+   local v = g_drdirs[t.dr]
+   
+   t.mzx = t.mzx + v[1]*0.125
+   t.mzy = t.mzy + v[2]*0.125
+   
   end,
   draw=function(t)
-   
-
-   local ox, oy = char_getpos(t)
-   
+   local ox, oy =
+     char_getpos(t)
    if rectsect(
-     -ox+4, -oy+4, -ox+12, -oy+12,
+     -ox+4,-oy+4,-ox+12,-oy+12,
      g_camx, g_camy,
      g_camx + 127, g_camy + 127)
-       then
+      then
     pushc(ox, oy)
     spr(14,4,4,1,1)
     popc()
@@ -548,6 +581,7 @@ function make_mark(maze)
   end
 
  }
+ return t
 end
 
 
