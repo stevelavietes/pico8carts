@@ -1498,7 +1498,8 @@ function make_game(level)
  
  g_objs = {t}
  g_rotsignalobjs = {}
- 
+ g_camx = 0
+ g_camy = 0
  local s=3
  if t.l == 1 then
   s=2
