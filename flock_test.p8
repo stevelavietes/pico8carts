@@ -25,7 +25,7 @@ function _init()
   )
 end
 
-num_blips=5
+num_blips=10
 function game_start()
  srand(5)
  g_objs = {}
@@ -54,6 +54,18 @@ function make_target(x,y)
   avoid=false,
   update=function(t)
    --todo add control
+   if btn(0, 0) then
+    t.x += -1
+   end
+   if btn(1, 0 ) then
+    t.x += 1
+   end
+   if btn(2, 0) then
+    t.y += -1
+   end
+   if btn(3, o) then
+    t.y += 1
+   end
   end,
   draw=function(t)
    circ(0,0,t.r, t.c)
@@ -97,38 +109,59 @@ function make_blip(x,y)
   c=8,
   spd_x=0,
   spd_y=0,
+  a_x=0,
+  a_y=0,
+  ah_x=0,
+  ah_y=0,
+  av_x=0,
+  av_y=0,
+  d_x=0,
+  d_y=0,
   avoid=true,
   update=function(t)
    -- move towards target
    local d_x = g_tgt.x - t.x
    local d_y = g_tgt.y - t.y
    nd_x, nd_y = normd(d_x, d_y)
-  
-   local a_x = 2*nd_x
-   local a_y = 2*nd_y
+   t.d_x = d_x
+   t.d_y = d_y
+   t.d_x = 10*nd_x
+   t.d_y = 10*nd_y
+   
+   
+   local ns_x, ns_y = 0
+   
+   if t.spd_x != 0 and t.spd_y != 0 then
+    ns_x, ns_y = normd(t.spd_x, t.spd_y)
+   end
+   
+   local a_x = 20*nd_x
+   local a_y = 20*nd_y
    local av_x=0
    local av_y=0
+   t.a_x = a_x
+   t.a_y = a_y
    
    for _,o in pairs(g_objs) do
     if o.avoid then
      if isc_ln_crc(t,a_x,a_y,o) then
+      --pause = true
       -- -t.x,y
-      av_x = a_x - o.x
-      av_y = a_y - o.y
+      av_x = a_x - o.x 
+      av_y = a_y - o.y 
       av_x, av_y = normd(av_x,av_y)
-      av_x*=3 
-      av_y*=3
+      av_x*=blip_accel
+      av_y*=blip_accel
      end
     end
    end
    t.spd_x += av_x
    t.spd_y += av_y
+   t.av_x = av_x
+   t.av_y = av_y
   
-   if abs(d_x) > 2 then
+   if mag(d_x,d_y) > 20 then
     t.spd_x += nd_x * blip_accel
-   end
-   
-   if abs(d_y) > 2 then
     t.spd_y += nd_y * blip_accel
    end
 
@@ -152,17 +185,30 @@ function make_blip(x,y)
    
    t.x += t.spd_x
    t.y += t.spd_y
-   
-   
   end,
   draw=function(t)
    circ(0,0,t.r,t.c)
+   line(0,0,t.d_x, t.d_y,t.c)
+   line(0,0,t.a_x, t.a_y,10)
+   line(0,0,t.av_x, t.av_y,12)
+   line(0,0,t.spd_x, t.spd_y,7)
   end
  }
 end
 
+pause_down = false
+pause = false
 function _update()
- stdupdate()
+ if btn(4) then
+  pause_down = true
+ elseif pause_down then
+  pause_down = false
+  pause = not pause
+ end
+  
+ if not pause then
+  stdupdate()
+ end
 end
 
 function _draw()
