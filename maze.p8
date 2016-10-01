@@ -869,6 +869,9 @@ function make_player(maze)
   
   update=function(t,s)
    
+   g_pmx = t.mzx
+   g_pmy = t.mzy
+   
    if t.maze.state ~= 0 then
     return
    end
@@ -1071,7 +1074,12 @@ function make_player(maze)
    
    pal()
    pushc(ox, oy)
+   if t.maze.state == -2 then
+    pal(9,8)
+   end
    spr(2+s,4,4,1,1,fp,false)
+   
+   pal()
    popc()
   end
  }
@@ -1710,6 +1718,7 @@ function make_game(level)
   x=0,y=0,
   l=level,
   marks={},
+  enemies={},
   update=function(t,s)
   
    if t.maze.state < 0 then
@@ -1750,6 +1759,37 @@ function make_game(level)
          make_game(t.l+1)
     				end))
    end
+   
+   
+   local pv = {
+    x=g_pmx,
+    y=g_pmy
+   }
+   
+   for enemy in all(t.enemies) do
+    
+    if enemy.w then
+     
+     
+     --local v = vecsub(pv,
+     --  enemy.w)
+     
+     --if abs(v.x) < 2
+     --  and abs(v.y) < 2 then
+     if vecdistsq(pv, enemy.w)
+       < 0.2 then
+     
+      add(g_objs,
+        make_hit(
+          t, g_camx,g_camy))
+        
+     end
+    end
+    --
+    
+   end
+   
+   
    
   end,
   draw=function(t)
@@ -1808,6 +1848,7 @@ function make_game(level)
   placechar(enemy,x,y,10)
  	add(g_rotsignalobjs, enemy)
  	add(g_objs, enemy)
+ 	add(t.enemies, enemy)
  end
  
  add(g_objs,make_levelbegin(t))
@@ -1922,6 +1963,26 @@ function make_levelbegin(game)
   end
  }
 end
+
+function make_hit(game,x,y)
+ game.maze.state=-2
+ return {
+  x=x,
+  y=y,
+  ts=g_tick,
+  update=function(t,s)
+   if elapsed(t.ts) > 45 then
+    del(s,t)
+    game.maze.state=0
+   end
+  end,
+  draw=function(t,s)
+   print('hit',0,0,7)
+  end
+ }
+ 
+end
+
 __gfx__
 00000000006000000f0000f00ff00000000ff0000000ff9000000000000000000000000000000000090000900990000000099000000099900000000011000000
 000000000066000099f00f99099000ff00f99000ff00f99000000000000000000000000000000000999009990990009900999000990099900000000176100000
