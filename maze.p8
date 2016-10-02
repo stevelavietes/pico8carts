@@ -485,6 +485,12 @@ function char_getpos(t)
  if t.step then
   --taco
   local v = g_drdirs[t.dr]
+  if not v then
+   cls()
+   print('bad dr ' .. t.dr,
+     0,0,7) 
+   stop()
+  end
   local r = t.step/t.rate
   ox += v[1]*r*8
   oy += v[2]*r*8
@@ -631,6 +637,7 @@ function moverandom(t, r)
      
    local idx = flr(rnd(
      #drs)) + 1
+   if (idx > #drs) idx = #drs
    t.dr = drs[idx]
   end
     
@@ -655,6 +662,7 @@ function moverandom2(t)
      candirs(t, t.dr)
    local idx = flr(rnd(
      #drs)) + 1
+   if (idx > #drs) idx = #dr
    t.dr = drs[idx]
   else
    local drs =
@@ -662,6 +670,7 @@ function moverandom2(t)
      
    local idx = flr(rnd(
      #drs)) + 1
+   if (idx > #drs) idx = #dr
    t.dr = drs[idx]
   end
     
@@ -712,8 +721,16 @@ function moveherdable(t)
   
   local idx = flr(rnd(
     #lngdrs)) + 1
+  
+  --xxx, why?
+  if idx > #lngdrs then
+   idx = #lngdrs
+  end
+  if idx <= #lngdrs  then
      
-  t.dr = lngdrs[idx]
+   t.dr = lngdrs[idx]
+  end
+  
  end
  
  local v = g_drdirs[t.dr]
@@ -763,7 +780,7 @@ function make_enemy2(maze)
     
    else
     draw_radararrow(
-     -ox+8,-oy+8,10)
+     -ox+8,-oy+8,8)
    end
   end
  }
