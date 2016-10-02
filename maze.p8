@@ -1355,9 +1355,9 @@ function placechar(t,cx,cy,
  local function go()
  
   local drs = candirs(t)
-  
   local dr =
-    drs[flr(rnd(#drs))+1]
+    drs[flr(rnd(#drs-0.01))+1]
+  
   
   local v = g_drdirs[dr]
   t.mzx += v[1]
@@ -1444,7 +1444,7 @@ function make_maze(sizex,sizey)
   draw=function(t)
 
    rect(0,0,t.sx*64-1,
-     t.sx*64-1,1)
+     t.sy*64-1,1)
    local flipcol = (
      g_tick % 30 > 14)
    
@@ -1712,9 +1712,11 @@ function getmazespr(b,x,y)
  x = flr(x)
  y = flr(y)
  if (x < 0) return nil
- if (x >= #b*8) return nil
  if (y < 0) return nil
- if (y >= #b*8) return nil
+ 
+ --if (y >= #b*8) return nil
+ --if (x >= #b*8) return nil
+ 
  
  
  local cx = flr(x/8)
@@ -2051,12 +2053,15 @@ function make_game(level)
  g_rotsignalobjs = {}
  g_camx = 0
  g_camy = 0
- local s=3
- if t.l == 1 then
-  s=2
+ local sx, sy = 2,2
+ if t.l > 1 then
+  
+  sx += flr(rnd(1.99))
+  sy += flr(rnd(1.99))
+  
  end
  
- local maze = make_maze(s,s)
+ local maze = make_maze(sx,sy)
  t.maze = maze
  add(g_objs, maze)
  
@@ -2069,8 +2074,9 @@ function make_game(level)
  
  for i = 1,5 do
   local mark = make_mark(maze)
-  placechar(mark,flr(rnd(maze.sx)),
-   flr(rnd(maze.sy)),16)
+  placechar(mark,
+   flr(rnd(maze.sx-0.01)),
+   flr(rnd(maze.sy-0.01)),16)
   add(g_objs, mark)
   add(g_rotsignalobjs, mark)
   add(t.marks, mark)
@@ -2078,7 +2084,7 @@ function make_game(level)
  
  local flag = make_flag(maze)
  placechar(flag,flr(rnd(maze.sx)),
-   flr(rnd(maze.sy)),32)
+   flr(rnd(maze.sy-0.01)),32)
  add(g_rotsignalobjs, flag)
  add(g_objs, flag)
  t.flag = flag
