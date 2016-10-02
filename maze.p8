@@ -538,7 +538,7 @@ function char_getpos(t)
   ox = -ox
   oy = -oy
  end
- return ox, oy
+ return ox, oy, {x=-ox,y=-oy}
 end
 
 
@@ -1997,27 +1997,30 @@ function make_game(level)
     y=g_pmy
    }
    
+   local _,_,pv =
+     char_getpos(g_player)
+  	
    for enemy in all(t.enemies) do
     
-    if enemy.w then
+    local _,_,ev =
+      char_getpos(enemy)
      
+    if vecdistsq(pv, ev) < 2
+      then
+      
+     --todo, make a better
+     --remove
+      
+     del(t.enemies, enemy)
+     del(g_objs,enemy)
+     del(g_rotsignalobjs,
+       enemy)
      
-     --local v = vecsub(pv,
-     --  enemy.w)
-     
-     --if abs(v.x) < 2
-     --  and abs(v.y) < 2 then
-     if vecdistsq(pv, enemy.w)
-       < 0.2 then
-     
-      add(g_objs,
-        make_hit(
-          t, g_camx,g_camy))
-        
-     end
-    end
-    --
-    
+     add(g_objs,
+       make_hit(
+         t, g_camx,g_camy))
+     return
+    end  
    end
    
    
@@ -2070,24 +2073,21 @@ function make_game(level)
  
  
  for i = 1,level*2 do
-  --local enemy = make_enemy(maze)
   
   local x =
     flr(rnd(maze.sx-1))+1
   local y =
     flr(rnd(maze.sy-1))+1
-  --[[
-  placechar(enemy,x,y,10)
- 	add(g_rotsignalobjs, enemy)
- 	add(g_objs, enemy)
- 	add(t.enemies, enemy)
- 	--]]
+  
  	
  	local e2 = make_enemy2(maze)
- 	--e2.rate = 4
  	add(g_objs, e2)
  	placechar(e2,x,y,10)
  	add(g_rotsignalobjs, e2)
+ 	add(t.enemies, e2)
+ 	
+ 	--todo, add to enemies list
+ 	--for hit detection
  end
  
  add(g_objs,make_levelbegin(t))
