@@ -477,7 +477,7 @@ function char_rotdone(t,maze)
   t.mzy = (oy+6)-ix
  end
  
- --todo, reverse direction
+ --reverse direction
  --if now cannot go
  
  revdrcheck(t)
@@ -862,13 +862,25 @@ function make_enemy2(maze)
   dr=0,
   step=0,
   rate=10,
+  mvmode=flr(rnd(2.99)),
   maze=maze,
   rotdone=function(t,maze)
    char_rotdone(t,maze)
   end,
   update=function(t,s)
    if t.maze.state == 0 then
-    moverandom2(t)
+    
+    if t.mvmode == 0 then
+     moverandom2(t)
+    elseif t.mvmode == 1 then
+     movetarget(t, g_player,true)
+    else
+     movetarget(t, g_player,false)
+    end
+    --test enemy towards
+    --movetarget(t, g_player,true)
+    
+    
    end
   end,
   draw=function(t)
@@ -2004,10 +2016,11 @@ function make_game(level)
     
     local _,_,ev =
       char_getpos(enemy)
-     
-    if vecdistsq(pv, ev) < 2
-      then
-      
+    
+    if abs(ev.x - pv.x) <= 2
+      and abs(ev.y - pv.y) <= 2
+        then
+    
      --todo, make a better
      --remove
       
