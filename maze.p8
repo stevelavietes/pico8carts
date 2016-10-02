@@ -445,16 +445,16 @@ function candirs(t,omit)
 end
 
 function char_rotdone(t,maze)
- if maze.cx ~=
-   flr(t.mzx/8) then
+ 
+ local iscur =
+   maze.cx == flr(t.mzx/8) and
+   maze.cy == flr(t.mzy/8)
+ 
+ if not iscur then
+  revdrcheck(t)
   return
  end
  
- if maze.cy ~=
-   flr(t.mzy/8) then
-  return
- end
-  
  local ox = flr(t.mzx/8)*8
  local oy = flr(t.mzy/8)*8
  local ix = t.mzx - ox
@@ -480,6 +480,12 @@ function char_rotdone(t,maze)
  --todo, reverse direction
  --if now cannot go
  
+ revdrcheck(t)
+ 
+ 
+end
+
+function revdrcheck(t)
  if t.dr then
   if not cango(t, t.dr) then
    t.dr = (t.dr + 2) % 4
@@ -488,8 +494,8 @@ function char_rotdone(t,maze)
    end
   end
  end
- 
 end
+
 
 function char_getpos(t)
  local ox, oy =
@@ -1036,6 +1042,7 @@ function make_player(maze)
     
     if not cango(t, t.dr) then
      move = false
+     t.stopped = true
     end
    
    else
