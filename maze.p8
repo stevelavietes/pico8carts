@@ -588,15 +588,16 @@ function make_mark(maze)
    
    t.dst = dst
    
-   if flagdst < 10 then
-    --move toward flag
-    movetarget(t, g_flag, true)
    
-   elseif dst < t.dstthr then
+   
+   if dst < t.dstthr then
     --moveherdable(t)
     --move away from player
     movetarget(t,
        {mzx=g_pmx,mzy=g_pmy})
+   elseif flagdst < 10 then
+    --move toward flag
+    movetarget(t, g_flag, true)
    else
     moverandom2(t)
    end
