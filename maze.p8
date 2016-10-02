@@ -2095,10 +2095,13 @@ function make_game(level)
  for i = 1,level*2 do
   
   local x =
-    flr(rnd(maze.sx-1))+1
+    flr(rnd(maze.sx-0.01))
   local y =
-    flr(rnd(maze.sy-1))+1
+    flr(rnd(maze.sy-0.01))
   
+  if x == 0 and y == 0 then
+   x += 1
+  end
  	
  	local e2 = make_enemy2(maze)
  	add(g_objs, e2)
