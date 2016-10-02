@@ -560,6 +560,8 @@ function make_mark(maze)
   y=0,
   mzx=0,
   mzy=0,
+  step=0,
+  rate=8,
   dr=1,
   dst=100,
   dstthr=16,
@@ -572,6 +574,13 @@ function make_mark(maze)
    if (t.maze.state~=0) return
    
    
+   
+   local flagdst = 
+     vecdistsq(
+       {x=t.mzx,y=t.mzy},
+       {x=g_flag.mzx,
+         y=g_flag.mzy})
+   
    local dst = 
      vecdistsq(
        {x=t.mzx,y=t.mzy},
@@ -579,10 +588,17 @@ function make_mark(maze)
    
    t.dst = dst
    
-   if dst < t.dstthr then
-    moveherdable(t)
+   if flagdst < 10 then
+    --move toward flag
+    movetarget(t, g_flag, true)
+   
+   elseif dst < t.dstthr then
+    --moveherdable(t)
+    --move away from player
+    movetarget(t,
+       {mzx=g_pmx,mzy=g_pmy})
    else
-    moverandom(t)
+    moverandom2(t)
    end
    
   end,
@@ -637,6 +653,7 @@ function make_mark(maze)
  return t
 end
 
+--[[
 function moverandom(t, r)
  if (not r) r = 0.125
  if t.mzx % 1 == 0
@@ -667,7 +684,7 @@ function moverandom(t, r)
  t.mzx = t.mzx + v[1]*r
  t.mzy = t.mzy + v[2]*r
 end
-
+--]]
 
 function moverandom2(t)
  
@@ -708,7 +725,7 @@ function moverandom2(t)
 end
 
 
-
+--[[
 function moveherdable(t)
  if t.mzx % 1 == 0
    and t.mzy % 1 == 0 then
@@ -758,6 +775,82 @@ function moveherdable(t)
  t.mzy = t.mzy + v[2]*0.125
    
 end
+--]]
+
+function movetarget(t,t2,
+  towards)
+ 
+ local checkdr = false
+ 
+ if t.step then
+  checkdr = t.step == 0
+ else
+  checkdr = t.mzx % 1 == 0
+    and t.mzy % 1 == 0
+ end
+ 
+ if checkdr then
+ 
+ 
+  local lngdrs = {}
+  local lngdst = 0
+  
+  local mult = 1
+  if towards then
+    mult = -1
+    lngdst = -20000
+  end
+   
+  for dr in all(
+    candirs(t)) do
+     
+   local v = g_drdirs[dr]
+   local x = t.mzx
+     + v[1]
+   local y = t.mzy
+     + v[2]
+     
+   local dst = 
+     vecdistsq({x=x,y=y},
+       {x=t2.mzx,y=t2.mzy})
+         *mult
+   if dst > lngdst then
+    lngdrs = {dr}
+    lngdst = dst
+   elseif dst == lngdst
+     then
+    add(lngdrs, dr)
+   end
+  end
+  
+  local idx = flr(rnd(
+    #lngdrs)) + 1
+  
+  --xxx, why?
+  if idx > #lngdrs then
+   idx = #lngdrs
+  end
+  if idx <= #lngdrs  then
+     
+   t.dr = lngdrs[idx]
+  end
+ end
+ 
+ local v = g_drdirs[t.dr]
+ 
+ if t.step then
+  t.step += 1
+  if t.step >= t.rate then
+   t.step = 0
+   t.mzx += v[1]
+   t.mzy += v[2]
+  end
+ else
+  t.mzx = t.mzx + v[1]*0.125
+  t.mzy = t.mzy + v[2]*0.125
+ end
+
+end
 
 
 function make_enemy2(maze)
@@ -806,6 +899,7 @@ function make_enemy2(maze)
 
 end
 
+--[[
 function make_enemy(maze)
  local t = {
   x=0,
@@ -924,6 +1018,7 @@ function make_enemy(maze)
  }
  return t
 end
+--]]
 
 function make_flag(maze)
  local t = {
@@ -1881,6 +1976,11 @@ function make_game(level)
     end 
    end
    
+   --last mark goes fast
+   if #t.marks == 1 then
+    t.marks[1].rate = 4
+   end
+   
    if #t.marks == 0
      and #t.flag.ups == 0
       then
@@ -1966,10 +2066,11 @@ function make_game(level)
  add(g_rotsignalobjs, flag)
  add(g_objs, flag)
  t.flag = flag
+ g_flag = flag
  
  
  for i = 1,level*2 do
-  local enemy = make_enemy(maze)
+  --local enemy = make_enemy(maze)
   
   local x =
     flr(rnd(maze.sx-1))+1
