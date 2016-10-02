@@ -476,6 +476,19 @@ function char_rotdone(t,maze)
   t.mzx = ox + iy
   t.mzy = (oy+6)-ix
  end
+ 
+ --todo, reverse direction
+ --if now cannot go
+ 
+ if t.dr then
+  if not cango(t, t.dr) then
+   t.dr = (t.dr + 2) % 4
+   if t.step then
+    t.step = t.rate - t.step
+   end
+  end
+ end
+ 
 end
 
 function char_getpos(t)
