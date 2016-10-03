@@ -505,7 +505,7 @@ function char_getpos(t)
    t.mzx*8, t.mzy*8
    
  if t.step then
-  --taco
+  
   local v = g_drdirs[t.dr]
   if not v then
    cls()
@@ -656,39 +656,6 @@ function make_mark(maze)
  }
  return t
 end
-
---[[
-function moverandom(t, r)
- if (not r) r = 0.125
- if t.mzx % 1 == 0
-   and t.mzy % 1 == 0 then
-  --random movement
-    
-  if not cango(t, t.dr) then
-   --taco
-   local drs =
-     candirs(t, t.dr)
-   local idx = flr(rnd(
-     #drs)) + 1
-   t.dr = drs[idx]
-  else
-   local drs =
-     candirs(t, (t.dr+2)%4)
-     
-   local idx = flr(rnd(
-     #drs)) + 1
-   if (idx > #drs) idx = #drs
-   t.dr = drs[idx]
-  end
-    
- end
-   
- local v = g_drdirs[t.dr]
-   
- t.mzx = t.mzx + v[1]*r
- t.mzy = t.mzy + v[2]*r
-end
---]]
 
 function moverandom2(t)
  
@@ -888,7 +855,7 @@ function make_enemy2(maze)
    end
   end,
   draw=function(t)
-  local ox, oy =
+   local ox, oy =
      char_getpos(t)
    if rectsect(
      -ox+4,-oy+4,-ox+12,-oy+12,
@@ -915,126 +882,6 @@ function make_enemy2(maze)
 
 end
 
---[[
-function make_enemy(maze)
- local t = {
-  x=0,
-  y=0,
-  mzx=0,
-  mzy=0,
-  dr=0,
-  maze=maze,
-  rotdone=function(t,maze)
-   char_rotdone(t,maze)
-  end,
-  update=function(t,s)
-  
-   local isrot =
-   	 t.maze.state>0
-   
-   --if t.maze.state~=0 then
-     
-   -- return
-   --end
-   
-   if not t.w then
-    t.w = {x=t.mzx + 2,
-    	 y=t.mzy + 2}
-   end
-   
-   if not isrot then
-    moverandom(t,0.125)
-   end
-   
-   local p = {x=t.mzx,
-     y=t.mzy}
-   
-   t.dst = vecdistsq(t.w,p)
-   
-   
-   
-    
-   local tgt = p
-   local speed = 0.1
-   if isrot then
-    
-    local pos = g_player.trail[
-       #g_player.trail]
-    
-    local x = -pos[1]
-    local y = -pos[2]
-    local pv = {x=x,y=y}
-    
-    if vecdistsq(t.w, pv) < 5
-      then
-    
-    
-     tgt = vecadd(t.w,
-       vecsub(t.w, pv))
-     speed = 0.2
-    end
-   elseif t.dst < 16 then
-    
-    
-    
-    tgt = vecadd(
-      vecrot({x=-3,y=0},
-        vecang(t.w,p) + 10), p)
-    
-    --tgt = vecadd(vecrot(
-    --  vecsub(t.w, p), 10), p)
-   end
-   
-   
-   t.w = vecadd(t.w,
-      vecrot({x=speed,y=0},
-       vecang(t.w,tgt)))
-   
-   
-   --taco2
-   
-   
-   
-  end,
-  draw=function(t)
-   --local ox, oy =
-   --  char_getpos(t)
-   ox = -t.w.x*8
-   oy = -t.w.y*8
-  
-   if rectsect(
-     -ox+4,-oy+4,-ox+12,-oy+12,
-     g_camx, g_camy,
-     g_camx + 127, g_camy + 127)
-      then
-    
-    if t.dst > 16 then
-     pal(12,8)
-    end
-    
-    pushc(ox, oy)
-    spr(64+g_tick%4,4,4)
-    
-    if g_tick % 2 == 0 then
-     local f= flr(
-       (g_tick%8)/2)
-     spr(84+f,1,4)
-     spr(84+f,7,4,1,1,true)
-    end
-    
-    popc()
-    
-    pal()
-   else
-    draw_radararrow(
-     -ox+8,-oy+8,8)
-   end
-   
-  end
- }
- return t
-end
---]]
 
 function make_flag(maze)
  local t = {
@@ -2030,11 +1877,12 @@ function make_game(level)
     
      --todo, make a better
      --remove
+     for e in all(t.enemies) do
       
-     del(t.enemies, enemy)
-     del(g_objs,enemy)
-     del(g_rotsignalobjs,
-       enemy)
+      del(t.enemies, e)
+      del(g_objs,e)
+      del(g_rotsignalobjs, e)
+     end
      
      g_lives -= 1
      
@@ -2098,7 +1946,7 @@ function make_game(level)
  t.flag = flag
  g_flag = flag
  
- 
+ --[[
  for i = 1,level*2 do
   
   local x =
@@ -2119,12 +1967,15 @@ function make_game(level)
  	--todo, add to enemies list
  	--for hit detection
  end
- 
+ --]]
  
  add(g_objs,make_levelbegin(t))
  
+ add(g_objs, make_spawn(t, 300))
+ 
  return t
 end
+
 
 function make_scorebubble(
   x,y,n)
@@ -2194,7 +2045,7 @@ function make_levelbegin(game)
   end,
   draw=function(t)
    
-   
+   pushc(-g_camx, -g_camy)
    local voff = 0
    
    local e = elapsed(t.ts)
@@ -2216,23 +2067,121 @@ function make_levelbegin(game)
      }) do
     
     pushc(xyc[1], xyc[2]) 
-    print(txt,
-      g_camx+50,
-      g_camy+50,
+    print(txt, 50, 50,
       xyc[3])
     
     pal(6, xyc[3])
     spr(33+flr(elapsed(t.ts)/20),
-     g_camx + 60, g_camy + 58)
+      60, 58)
     pal()
     popc()
    end
    
    popc()
    
+   
+   if e > 50 then
+    pushc(0, -(e - 50))
+   end
+   draw_stats()
+   if e > 50 then
+    popc()
+   end
+   
+   popc()
   end
  }
 end
+
+
+function make_spawn(game, dur)
+ local t = {
+ 	x=0,y=0,
+ 	mzx=0,mzy=0,
+ 	st=g_tick,
+ 	maze=game.maze,
+  dur=dur,
+  rotdone=char_rotdone,
+  update=function(t,s)
+   
+   local e = elapsed(t.st)
+   
+   if e >= dur then
+    del(s, t)
+    del(g_rotsignalobjs,t)
+    
+    
+    --g_rotsignalobjs
+    
+    --taco
+    local e =
+      make_enemy2(game.maze)
+    e.mzx = t.mzx
+    e.mzy = t.mzy
+    add(g_rotsignalobjs, e)
+    add(game.enemies, e)
+    add(g_objs, e)
+    
+    
+    add(g_objs, make_spawn(
+       game, dur))
+
+   end
+   
+  end,
+  draw=function(t)
+   local s = flr(
+     elapsed(t.st)/t.dur * 5)
+   
+   local ox, oy =
+     char_getpos(t)
+   
+   if s == 4 
+     and g_tick % 2 == 0
+     then
+    return
+   end
+   pushc(ox,oy)
+   
+   spr(101+s,4,4,1,1)
+    
+   popc()
+   
+  end
+ }
+
+ add(g_rotsignalobjs, t)
+ 
+ placechar(t,
+   flr(rnd(t.maze.sx-0.01)),
+   flr(rnd(t.maze.sy-0.01)),16)
+ 
+ 
+ 
+ 
+ return t
+ 
+
+
+end
+
+
+
+
+function draw_stats()
+ pushc(0, -119)
+ rectfill(0, 0, 128, 10, 13)
+ 
+ print('lives: ' .. g_lives,
+   2, 2, 7)
+ 
+ print('score: 0',
+   64, 2, 7)
+   
+ 
+ popc()
+end
+
 
 function make_hit(game,x,y)
  game.maze.state=-2
@@ -2253,15 +2202,25 @@ function make_hit(game,x,y)
    end
   end,
   draw=function(t,s)
-  
+   pushc(-g_camx, -g_camy)
    if g_lives < 1 then
     print('game over', 0,0,7)
     
    else
-    print('hit, lives: ' ..
-     g_lives, 0,0,7)
-   
+    
    end
+   
+   local e = elapsed(t.ts)
+   if e > 50 then
+    pushc(0, -(e - 50))
+   end
+   draw_stats()
+   if e > 50 then
+    popc()
+   end
+   
+   
+   popc()
   end
  }
  
@@ -2275,7 +2234,7 @@ function make_main()
   x=0,y=0,
   update=function(t,s)
    if btnn(5) or btnn(4) then
-    g_lives = 3
+    g_lives = 2
     make_game(1)
    end
   end,
@@ -2335,14 +2294,14 @@ aaaaaaaa006666000066660000006600000000000000000000000000000000000000000000000000
 057aa950057aa950057aa950057aa950000660000000600000066000067760000000000000000000000000000000000000000000000000000000000000000000
 05f9945005f9945005f9945005f99450000000000000000000000000006600000000000000000000000000000000000000000000000000000000000000000000
 00555500005555000055550000555500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00100100001001000010010000100100001001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00011000000110000001100000011000000110000010010000100100001001000010010000100100000000000000000000000000000000000000000000000000
+00100100001001000010010000100100001111000001100000011000000110000001100000011000000000000000000000000000000000000000000000000000
+01000010010000100100001001000010011111100010010000100100001001000011110000111100000000000000000000000000000000000000000000000000
+01000010010000100100001001111110011111100010010000100100001111000011110000111100000000000000000000000000000000000000000000000000
+01000010010000100111111001111110011111100010010000111100001111000011110000111100000000000000000000000000000000000000000000000000
+01000010011111100111111001111110011111100001100000011000000110000001100000011000000000000000000000000000000000000000000000000000
+00111100001111000011110000111100001111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 11111111000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000
 10000001011111100000000000000000000000000111111000000000000000000001000000101000000100000000000001110000000011100111110000111110
 10000001010000100011110000000000001111000100001000000000000100000010100001000100001010000001000001010110011010100100010000100010
