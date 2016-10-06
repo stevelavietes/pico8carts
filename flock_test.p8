@@ -1,10 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-
+st_menu=0
+st_play=1
+st_score=2
+g_state=st_menu
 function _init()
  stdinit()
- 
+ g_state=st_menu
  add(
   g_objs, 
   make_menu(
@@ -25,25 +28,85 @@ function _init()
   )
 end
 
+function add_blip(x,y)
+ local blp = make_blip(x,y)
+ add(
+  g_objs,
+  blp
+ )
+ return blp
+end
+
+function make_border()
+ return {
+  x=0,
+  y=0,
+  draw=function(t)
+   rect(0,0,127,127,7)
+  end
+ }
+end
+
+function make_enemy_spawner()
+ return {
+  x=0,
+  y=0,
+  frame=0,
+  blips=1,
+  update=function(t)
+   t.frame += 1
+   t.frame = t.frame%90
+   if t.frame == 0 then
+    t.blips+=1
+    for i=1,t.blips do
+     add_blip(rnd(128),rnd(128))
+    end
+   end
+  end
+ }
+end
+
 num_blips=10
+blips=false
+g_score=0
 function game_start()
+ g_state = st_play
+ g_score = 0
+ 
  srand(5)
  g_objs = {}
- for _=1,num_blips do
-  add(
-   g_objs, 
-   make_blip(rnd(128),rnd(128))
-  )
- end
  
- local tgt = make_target(rnd(128),rnd(128))
+ if blips then
+  for _=1,num_blips do
+   add_blip(rnd(128), rnd(128))
+  end
+ end
+ g_b = add_blip(12, 64)
+ 
+ local tgt = make_target(100, 64)
  add(
   g_objs,
   tgt
  )
  
+ add(g_objs, make_enemy_spawner())
+ 
  g_tgt = tgt
+ 
+ add(g_objs, make_border())
 end
+
+function mag(x,y)
+ return sqrt(x*x+y*y)
+end
+
+function norm(x,y)
+ imag = mag(x,y)
+ return {x/imag, y/imag}
+end
+
+pl_normal=0
+pl_dash=1
 
 function make_target(x,y)
  return {
@@ -51,21 +114,70 @@ function make_target(x,y)
   y=y,
   r=4,
   c=11,
+  state=pl_normal,
+  charge=0,
   avoid=false,
+  spd={0,0},
+  lastd={1,1},
+  solid=true,
   update=function(t)
+   local m_x=0
+   local m_y=0
+   
    --todo add control
    if btn(0, 0) then
-    t.x += -1
-   end
+    m_x =-1
+   end 
    if btn(1, 0 ) then
-    t.x += 1
+    m_x = 1
    end
    if btn(2, 0) then
-    t.y += -1
+    m_y = -1
    end
-   if btn(3, o) then
-    t.y += 1
+   if btn(3, 0) then
+    m_y = 1
    end
+   if m_x != 0 or m_y != 0 then
+    t.lastd = {m_x, m_y}
+   else
+    m_x = t.lastd[1]
+    m_y = t.lastd[2]
+   end
+   
+   
+   if (
+    btn(5, 0) and 
+    t.state == pl_normal
+   ) then
+    t.spd={7*m_x, 7*m_y}
+    t.charge=25
+    t.state = pl_dash
+   end
+   
+   if t.state == pl_dash then
+    t.charge -= 1
+    t.c = 14
+    if t.charge <= 0 then
+     t.state = pl_normal
+    end
+   else
+    t.c = 11
+   end
+   
+   local pos={
+    t.x+t.spd[1],
+    t.y+t.spd[2]
+   }
+   
+   local pos,spd=collides(
+    pos,
+    t.spd,
+    t.r
+   )
+   
+   t.x = pos[1]
+   t.y = pos[2]
+   t.spd = {0.9*spd[1],0.9*spd[2]}
   end,
   draw=function(t)
    circ(0,0,t.r, t.c)
@@ -74,7 +186,7 @@ function make_target(x,y)
 end
 
 blip_accel = 1
-b_max_spd = 5
+b_max_spd = 1
 
 function mag(x,y)
  return sqrt(x*x+y*y)
@@ -101,6 +213,72 @@ function isc_ln_crc(fst,ax,ay,snd)
  return false
 end
 
+function dot(ax,ay,bx,by)
+ return (ax*bx+ay*by)
+end
+
+en_chase=0
+en_chargeup=1
+en_attack=2
+
+function swap(vec)
+ return {vec[2], vec[1]}
+end
+
+function collides(pos, spd, r)
+ for dim=1,2 do
+  if (
+   pos[dim] > 127-r 
+   or pos[dim] < r+1
+  ) then
+   spd[dim] = -spd[dim]
+  end
+  pos[dim]=max(0,min(pos[dim],127))
+ end
+ return pos, spd
+end
+
+function overlap(o1, o2)
+ if not o1.solid or not o2.solid then
+  return false
+ end
+ return mag(o2.x-o1.x,o2.y-o1.y) < o1.r + o2.r
+end
+
+function make_explode(x,y,f)
+ return {
+  x=x,
+  y=y,
+  frame=0,
+  r=1,
+  solid=false,
+  f=f,
+  update=function(t)
+   t.frame+=1
+   t.r+=1
+   if t.frame > 30 then
+    del(g_objs,t)
+    if t.f then
+     t.f(t)
+    end
+   end
+  end,
+  draw=function(t)
+   circ(0,0,t.r,9)
+   circ(0,0,t.r-1,9)
+   coord=function()
+    return rnd(16) - 8
+   end
+   circ(
+    coord(),
+    coord(),
+    coord(),
+    9+flr(rnd(2))
+   )
+  end
+ }
+end
+
 function make_blip(x,y)
  return {
   x=x,
@@ -118,16 +296,52 @@ function make_blip(x,y)
   d_x=0,
   d_y=0,
   avoid=true,
+  state=0,
+  charge=0,
+  solid=true,
   update=function(t)
    -- move towards target
    local d_x = g_tgt.x - t.x
    local d_y = g_tgt.y - t.y
-   nd_x, nd_y = normd(d_x, d_y)
+   local nd_x, nd_y = normd(d_x, d_y)
+   
+   -- state machine
+   if t.state == en_chargeup then
+    t.c = 9
+    if t.charge > 90 then
+     t.state = en_attack
+     
+     t.spd_x = 7*nd_x
+     t.spd_y = 7*nd_y
+    end
+    t.charge += 3
+   end
+   
+   if t.state == en_chase then
+    local d=mag(d_x, d_y)
+    
+    if d<18 then
+     t.state = en_chargeup
+     t.charge=0
+    end
+    t.c = 8
+   end
+   
+   if t.state == en_attack then
+    t.c = 10
+    t.charge -= 1
+    
+    if t.charge == 0 then
+     t.state = en_chase
+     t.spd_x = 0
+     t.spd_y = 0
+    end
+   end
+   
    t.d_x = d_x
    t.d_y = d_y
    t.d_x = 10*nd_x
    t.d_y = 10*nd_y
-   
    
    local ns_x, ns_y = 0
    
@@ -143,7 +357,7 @@ function make_blip(x,y)
    t.a_y = a_y
    
    for _,o in pairs(g_objs) do
-    if o.avoid then
+    if false and o.avoid then
      if isc_ln_crc(t,a_x,a_y,o) then
       --pause = true
       -- -t.x,y
@@ -160,11 +374,11 @@ function make_blip(x,y)
    t.av_x = av_x
    t.av_y = av_y
   
-   if mag(d_x,d_y) > 20 then
+   if t.state == en_chase then
     t.spd_x += nd_x * blip_accel
     t.spd_y += nd_y * blip_accel
-   end
-
+   
+   
    t.spd_x = max(
 	    - b_max_spd,
     min(
@@ -179,27 +393,108 @@ function make_blip(x,y)
      t.spd_y
     )
    )
+   end
    
    t.spd_x *= 0.9
    t.spd_y *= 0.9
    
-   t.x += t.spd_x
-   t.y += t.spd_y
+   local n_x = t.x + t.spd_x
+   local n_y = t.y + t.spd_y
+   
+   local npos, nspd = collides(
+    {n_x, n_y},
+    {t.spd_x, t.spd_y} ,
+    t.r  
+   )
+   
+   t.x = npos[1]
+   t.y = npos[2]
+   t.spd_x = nspd[1]
+   t.spd_y = nspd[2]
   end,
   draw=function(t)
    circ(0,0,t.r,t.c)
+   --[[
    line(0,0,t.d_x, t.d_y,t.c)
    line(0,0,t.a_x, t.a_y,10)
    line(0,0,t.av_x, t.av_y,12)
    line(0,0,t.spd_x, t.spd_y,7)
+   ]]--
   end
  }
 end
 
+function make_message(txt,x,y,c)
+ return {
+  x=x,
+  y=y,
+  txt=txt,
+  c=c,
+  draw=function(t)
+   print(
+    t.txt, 
+    4*(-#t.txt)/2,
+    t.y,
+    t.c
+   )
+  end
+ }
+end
+
+function game_over()
+ g_state = st_score
+ g_objs = {}
+ add(
+  g_objs,
+  make_message(
+   "you died",
+   64,
+   10,
+   8
+  )
+ )
+ add(
+  g_objs,
+  make_message(
+   "score: "..g_score,
+   64,
+   20,
+   8
+  )
+ )
+ add(
+  g_objs,
+  make_menu(
+   {
+       "play again",
+   },
+   function (t, i, s)
+    add (
+     s, 
+     make_trans(
+      function()
+       game_start()
+      end
+     )
+    )
+    end
+   )
+ )
+   
+end
+
+function explode(t, func)   
+ add(
+  g_objs,
+  make_explode(t.x, t.y, func)
+ )
+ del(g_objs, t)
+end
+
 pause_down = false
 pause = false
-function _update()
- if btn(4) then
+function _update60()
+ if false and btn(4) then
   pause_down = true
  elseif pause_down then
   pause_down = false
@@ -209,10 +504,63 @@ function _update()
  if not pause then
   stdupdate()
  end
+ 
+ for _,e in pairs(g_objs) do
+  if g_tgt and e != g_tgt then
+   if e.r and overlap(g_tgt, e) then
+    if g_tgt.state == pl_dash then
+     explode(e)
+     g_score += 1
+    else
+     explode(
+      g_tgt,function()
+       add(g_objs,
+        make_trans(game_over)
+       )
+      end
+     )
+    end
+   end
+  end
+ end
 end
 
 function _draw()
  stddraw()
+ 
+ if g_b and g_state==st_play then
+  color(11)
+  local dx = g_b.x - g_tgt.x
+  local dy = g_b.y - g_tgt.y
+  local d = mag(dx, dy)
+  print("d: "..d)
+  local state="chase"
+  if g_tgt.state == en_chargeup then
+   state="charge"
+  elseif g_b.state == en_attack then
+   state="attack"
+  end
+  
+  print("e: "..state)
+  print(
+   "e.s: "..
+    g_b.spd_x.. 
+    " "..
+    g_b.spd_y
+  )
+  state = "normal"
+  if g_tgt.state == pl_dash then
+   state = "dash"
+  end
+  print("p: "..state)
+  print(
+   "p.s: "..
+   g_tgt.spd[1]..
+   " "..
+   g_tgt.spd[2]
+  )
+  print("p.c: "..g_tgt.charge)
+ end
 end
 
 ------------------------------
