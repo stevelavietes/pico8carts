@@ -1097,7 +1097,8 @@ function make_player(maze)
         and not cellhasdr(
          getcell(t, t.mzx+8,
             t.mzy), 3) 
-    
+        
+        and btn(1)
         then
       t.maze.cx = t.maze.cx + 1 
      end
@@ -1105,7 +1106,7 @@ function make_player(maze)
      if (t.mzy % 8) > 5.5 and
        t.maze.cy < t.maze.sy - 1
         
-        
+        and btn(3)
         and not cellhasdr(
          getcell(t, t.mzx,
             t.mzy+8), 0)
@@ -1121,7 +1122,7 @@ function make_player(maze)
          getcell(t, t.mzx,
             t.mzy-8), 2) 
     
-        
+        and btn(2)
         then
       t.maze.cy = t.maze.cy - 1 
      end
@@ -1132,7 +1133,7 @@ function make_player(maze)
        and not cellhasdr(
          getcell(t, t.mzx-8,
             t.mzy), 1) 
-    
+       and btn(0)
          then
       t.maze.cx = t.maze.cx - 1 
      end
