@@ -8,7 +8,17 @@ function _init()
  
  g_maxcells=7
  g_rotsignalobjs = {}
+
+ --taco
+ g_mazecols = {
+  {8,14},
+  {12,13},
+  {3,11},
+ }
  
+ g_mazecol = g_mazecols[1]
+ 
+  
  -- init map cells
  for i = 0,g_maxcells-1 do
   local y = (i%4) * 8
@@ -696,7 +706,6 @@ function moverandom2(t)
   --random movement
     
   if not cango(t, t.dr) then
-   --taco
    local drs =
      candirs(t, t.dr)
    local idx = flr(rnd(
@@ -1472,7 +1481,7 @@ function make_maze(sizex,sizey)
       
       t.ang = ang
       
-      local lc = 14
+      local lc = g_mazecol[2]
       
       
       pushc(-sx,-sy)
@@ -1569,6 +1578,18 @@ function make_maze(sizex,sizey)
    pal(5,0)--6)
    pal(6,0)--5)
    
+   local c1 = g_mazecol[1]
+   local c2 = g_mazecol[2]
+   
+   
+   if flipcol then
+    c2,c1 = c1,c2
+   end
+   
+   pal(7, c1)
+   pal(13, c2)
+   
+   --[[
    if flipcol then
     pal(7,8)
     pal(13,14)
@@ -1578,6 +1599,7 @@ function make_maze(sizex,sizey)
     pal(13,8)
     
    end
+   --]]
   end
   
   
@@ -2040,6 +2062,12 @@ function make_game(level)
  
  add(g_objs, make_spawn(t, 300))
  
+ 
+ g_mazecol = g_mazecols[
+   (level-1 % #g_mazecols)+1]
+ 
+ 
+ 
  add(g_objs,
    make_trans(nil,nil,1))
  
@@ -2196,9 +2224,6 @@ function make_spawn(game, dur)
     del(g_rotsignalobjs,t)
     
     
-    --g_rotsignalobjs
-    
-    --taco
     local e =
       make_enemy2(game.maze)
     e.mzx = t.mzx
