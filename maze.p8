@@ -8,6 +8,7 @@ function _init()
  
  g_maxcells=7
  g_rotsignalobjs = {}
+ g_score = 0
  
  --supports bg color
  g_mazecols = { 
@@ -1618,6 +1619,8 @@ function make_maze(sizex,sizey)
    add(row, cell)
    cell.m = flr(rnd(g_maxcells))
    cell.r = flr(rnd(4))
+   
+   --cell.m = 5
   end
  end
  
@@ -1917,7 +1920,11 @@ function make_game(level)
      
      add(t.flag.ups,
        make_markup(0,0))
-         
+     
+     
+     --local mult = t.mult or 1
+     
+     g_score += 100
      --only one per cycle
      break
      
@@ -2062,8 +2069,9 @@ function make_game(level)
  
  add(g_objs,make_levelbegin(t))
  
- add(g_objs, make_spawn(t, 300))
- 
+ for i = 1, flr(level/3)+1 do
+  add(g_objs, make_spawn(t, 300))
+ end
  
  g_mazecol = g_mazecols[
    (level-1 % #g_mazecols)+1]
@@ -2305,7 +2313,7 @@ function draw_stats()
  print('lives: ' .. g_lives,
    2, 2, 7)
  
- print('score: 0',
+ print('score: ' .. g_score,
    64, 2, 7)
    
  
@@ -2370,6 +2378,7 @@ function make_main()
  g_camx = 0
  g_camy = 0
  
+ 
  return {
   x=0,y=0,
   update=function(t,s)
@@ -2378,6 +2387,7 @@ function make_main()
     
     add(g_objs,
       make_trans(function()
+         g_score=0
          make_game(1)
          
     				end))
@@ -2385,7 +2395,14 @@ function make_main()
   end,
   draw=function(t)
    print('press to start',
-     36, 50, 7)
+     36, 120, 7)
+   
+   
+   rectfill(0,0,128,7,1)
+   line(0,7,127,7,5)
+   print('score: '.. g_score,
+     2, 1, 7)
+   
   end
  }
 end
