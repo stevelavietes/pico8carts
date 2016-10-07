@@ -8,7 +8,8 @@ function _init()
  
  g_maxcells=7
  g_rotsignalobjs = {}
-
+ 
+ --supports bg color
  g_mazecols = { 
   {8,14},
   {12,13},
@@ -85,10 +86,11 @@ function stddraw()
    flr((g_tick%(n*l))/n)
      ,1,1)
  
- --pal(1,4)
+ 
+ pal(1, g_mazecol[3] or 1)
  map(112,47,0,-(g_tick%48)/6,
    16,17)
- --pal()
+ pal()
 
  pushc(g_camx, g_camy)
  drawobjs(g_objs)
@@ -1975,7 +1977,7 @@ function make_game(level)
       del(g_rotsignalobjs, e)
      end
      
-     g_lives -= 1
+     --g_lives -= 1
      
      add(g_objs,
        make_hit(
@@ -2318,8 +2320,18 @@ function make_hit(game,x,y)
   x=x,
   y=y,
   ts=g_tick,
+  declife=true,
   update=function(t,s)
-   if elapsed(t.ts) > 60 then
+   
+   local e = elapsed(t.ts)
+   
+   if t.declife and e >= 30 then
+    g_lives -= 1
+    t.declife = nil
+    --todo, add anim
+   end
+   
+   if e > 60 then
     del(s,t)
     
     if g_lives < 1 then
