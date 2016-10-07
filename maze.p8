@@ -2060,12 +2060,12 @@ function make_game(level)
  
  add(g_objs,make_levelbegin(t))
  
- for i = 1, flr(level/3)+1 do
+ for i = 1, flr(level/4)+1 do
   add(g_objs, make_spawn(t, 300))
  end
  
  g_mazecol = g_mazecols[
-   (level-1 % #g_mazecols)+1]
+   ((level-1) % #g_mazecols)+1]
  
  
  
