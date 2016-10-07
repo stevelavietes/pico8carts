@@ -31,6 +31,8 @@ end
 
 function _draw()
  stddraw()
+ 
+ --draw_wave(3, 64, g_tick/10)
 end
 
 ------------------------------
@@ -357,27 +359,7 @@ function elapsed(t)
  return 32767-t+g_tick
 end
 
-function trans(s)
- if (s<1) return
- s=2^s
- local b,m,o =
-   0x6000,
-   15,
-   s/2-1+(32*s)
 
- for y=0,128-s,s do
-  for x=0,128-s,s do
-   local a=b+x/2
-   local c=band(peek(a+o),m)
-   c=bor(c,shl(c,4))
-   for i=1,s do
-    memset(a,c,s/2)
-    a+=64
-   end
-  end
-  b+=s*64
- end
-end
 
 function make_trans(f,d,i)
  return {
@@ -402,7 +384,8 @@ function make_trans(f,d,i)
    if t.i then
     x=5-x
    end
-   trans(x)
+   draw_wave(x*2, 64, g_tick/10)
+   
   end
  }
 end
@@ -1861,41 +1844,19 @@ function rotmapcw(
  
 end
 
-
-function make_wave()
- return {
-  x = 0,
-  y = 0,
-  update=function(t,s)
-  
-  
-  
-  end,
-  draw=function(t)
-   local b = 0x6000
+function draw_wave(a,yp,off)
+ local b = 0x6000
    
-   local a = 5--(sin(g_tick / 60)
-       --+ 1) * 3
-   --local a = 1.5
-   local yphase =64
-     --(sin(g_tick/200)+1) * 100
-   
-   for y = 0, 127 do
-    local o = flr(sin(
-        y/yphase +g_tick/100) * a)
-    
-    local len = 64
-    local src = b
-    local dst = b + o
-    
-    
-    memcpy(b, b + o, 64)
+ for y = 0, 127 do
+  
+  local o = flr(sin(
+    y/yp + off) * a)
+  
+  memcpy(b, b + o, 64)
     b = b + 64
    
-   end
-  
-  end
- }
+ end
+
 end
 
 
@@ -1952,6 +1913,7 @@ function make_game(level)
     add(g_objs,
       make_trans(function()
          make_game(t.l+1)
+    				
     				end))
    end
    
@@ -2009,8 +1971,6 @@ function make_game(level)
  
  g_objs = {}
  
- --add(g_objs,make_wave())
- 
  add(g_objs,t)
  g_rotsignalobjs = {}
  g_camx = 0
@@ -2047,7 +2007,7 @@ function make_game(level)
  local flag = make_flag(maze)
  placechar(flag,flr(rnd(maze.sx)),
    flr(rnd(maze.sy-0.01)),16)
- --wow2
+ 
  add(g_rotsignalobjs, flag)
  add(g_objs, flag)
  t.flag = flag
@@ -2079,6 +2039,9 @@ function make_game(level)
  add(g_objs,make_levelbegin(t))
  
  add(g_objs, make_spawn(t, 300))
+ 
+ add(g_objs,
+   make_trans(nil,nil,1))
  
  return t
 end
@@ -2371,8 +2334,13 @@ function make_main()
   x=0,y=0,
   update=function(t,s)
    if btnn(5) or btnn(4) then
-    g_lives = 2
-    make_game(1)
+    g_lives = 3
+    
+    add(g_objs,
+      make_trans(function()
+         make_game(1)
+         
+    				end))
    end
   end,
   draw=function(t)
