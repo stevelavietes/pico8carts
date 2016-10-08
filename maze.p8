@@ -33,8 +33,6 @@ function _init()
  
  add(g_objs, make_main())
  
- --make_game(1)
- 
 end
 
 function _update()
@@ -44,7 +42,13 @@ end
 function _draw()
  stddraw()
  
- --draw_wave(3, 64, g_tick/10)
+ --[[
+ sprblend(90, 88, 14,
+   g_tick%30 * 3, 100 - (g_tick%30 * 3), 2, 2)
+ rectfill(0,0,16,16,0)
+ spr(90, 0,0,2, 2)
+ --]]
+ 
 end
 
 ------------------------------
@@ -77,12 +81,11 @@ end
 
 function stddraw()
  cls()
- --rectfill(0,0,127,127,2)
  
+ -- to opt: not animating  
  local n = 8
  local s = 72
  local l = 1
-  
  sprcpy(32,s+
    flr((g_tick%(n*l))/n)
      ,1,1)
@@ -283,7 +286,47 @@ function sprstochcopy(
   
 end 
 
+--not currently using
+--[[
+function sprblend(dst, s1, s2,
+    ptop,pbot,w,h)
+ w = w or 1
+ h = h or 1
+ pbot = pbot or ptop
+ 
+ local sa1 = getspraddr(s1)
+ local sa2 = getspraddr(s2)
+ local d = getspraddr(dst)
+ local m1 = 15
+ local m2 = shl(m1, 4)
+ 
+ local ym = h*8-1
+ for y=0,ym do
+  local p = y/ym*(pbot-ptop)
+    + ptop
+  
+  for x=0,w*4-1 do
+   local v1 = peek(sa1+64*y+x)
+   local v2 = peek(sa2+64*y+x)
+   
+   local v3 = 0
+   
+   local v = v1
+   if (rnd(100) <= p) v = v2
+   v3 = band(v, m2)
+   
+   v = v1
+   if (rnd(100) <= p) v = v2
+   v3 = bor(band(v, m1), v3)
+   
+   poke(d+64*y+x, v3)
+  end 
+ end
+end
+--]]
 
+--not currently using
+--[[
 function make_menu(
  lbs, --menu lables
  fnc, --chosen callback
@@ -364,6 +407,7 @@ function make_menu(
  end
  return m
 end
+--]]
 
 function elapsed(t)
  if g_tick>=t then
@@ -991,14 +1035,11 @@ function make_player(maze)
   mzx=0,
   mzy=0,
   dr=1,
-  lastdrs=0,
+  --lastdrs=0,
   maze=maze,
   trail={},
   stopped=true,
-  rotdone=function(t,maze)
-   char_rotdone(t,maze)
-  end,
-  
+  rotdone=char_rotdone,
   update=function(t,s)
    
    g_pmx = t.mzx
@@ -1262,8 +1303,8 @@ end
 
 
 function basepal(flipcol)
- pal(5,0)--6)
- pal(6,0)--5)
+ pal(5,0)
+ pal(6,0)
    
  local c1 = g_mazecol[1]
  local c2 = g_mazecol[2]
@@ -1326,13 +1367,14 @@ function placechar(t,cx,cy,
   go()
  end
  
+ --[[
  if t.mzx > 6
    or t.mzy > 6
    or t.mzx < 1
    or t.mzy < 1 then
   go()
  end
-
+ --]]
 end
 ------------------------------
 function getcellxy(cell)
@@ -1461,9 +1503,7 @@ function make_maze(sizex,sizey)
    if isactive then
     flipcol = g_tick % 4 > 1
    end
-   --if not isactive then
-   -- flipcol = 0
-   --end
+   
 
     
     if isactive then
@@ -1612,6 +1652,7 @@ function make_maze(sizex,sizey)
    cell.m = flr(rnd(g_maxcells))
    cell.r = flr(rnd(4))
    
+   -- force cell for debug
    --cell.m = 5
   end
  end
@@ -2370,7 +2411,10 @@ function make_main()
  g_camx = 0
  g_camy = 0
  
- 
+ --[[
+ segs = getmapsegments(
+  0,58,40,8)
+ --]]
  return {
   x=0,y=0,
   update=function(t,s)
@@ -2394,14 +2438,25 @@ function make_main()
    
    basepal(g_tick%8 > 3)
    
-   map(0,58,-(g_tick%448)+128,
-    40,40,8)
+   pushc(-(-(g_tick%448)+128),
+     -40)
+   map(0,58,0,0,40,8)
    pal()
+   
+   --[[
+   for i = 1, #segs do
+    local s = segs[i]
+    line(s[1], s[2], s[3], s[4],7)
+   end
+   --]]
+   popc()
    
    rectfill(0,0,128,7,1)
    line(0,7,127,7,5)
    print('score: '.. g_score,
      2, 1, 7)
+   
+   
    
   end
  }
