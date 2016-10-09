@@ -240,7 +240,7 @@ end
 
 
 
-function sprstochcopy(
+function sprstochcpy(
   dst, src, prob, w, h)
  
  local s = getspraddr(src)
@@ -1217,22 +1217,25 @@ function make_player(maze)
       t.maze.hittime)
     
     local s = nil
+    local p = 100
     if e < 20 then
      s = flr(e/20*3)
-    
-    elseif e > 40 then
+     p = (20 - e)*5
+    elseif e >= 70 then
      if g_lives == 0 then
       return
      end
-     s = 3 - flr((e-40)/20*3)
-    
+     s = 3 - flr((e-70)/20*3)
+     p = (e-70) * 5
     else
      return
     end
     
     pushc(ox, oy)
-   
-    spr(6+s,4,4)
+    
+    sprcpy(48,0)
+    sprstochcpy(48,6+s,p)
+    spr(48,4,4)
    
     popc()
     
@@ -1274,7 +1277,7 @@ function make_player(maze)
     local p =
       (i-1)/#t.trail * 100
     
-    sprstochcopy(48, 10+xy[3],
+    sprstochcpy(48, 10+xy[3],
    	  p)
     
     pushc(xy[1], xy[2])
@@ -2040,7 +2043,7 @@ function make_game(level)
  g_camx = 0
  g_camy = 0
  local sx, sy = 2,2
- if t.l > 1 then
+ if t.l % 2 == 0 then
   --todo, figure out maze size
   sx = 3 --flr(rnd(1.99))
   sy = 3 --flr(rnd(1.99)) 
@@ -2144,7 +2147,7 @@ function make_scorebubble(
    if e < -10 then
     local p = 100 -
       (-e-10)/20 * 100
-    sprstochcopy(28,26,p,2,2)
+    sprstochcpy(28,26,p,2,2)
     spr(28,-3,e-8,2,2)
    else
     spr(26,-3,e-8,2,2)
@@ -2306,7 +2309,7 @@ function make_spawn(game, dur)
    end
    
    sprcpy(68, 0)
-   sprstochcopy(68,copyfrom,
+   sprstochcpy(68,copyfrom,
      en*90)
   
    pushc(ox,oy)
@@ -2357,6 +2360,8 @@ end
 function make_hit(game,x,y)
  game.maze.state=-2
  game.maze.hittime=g_tick
+ --todo, stop player?
+ --g_player.stopped = true
  return {
   x=x,
   y=y,
@@ -2372,7 +2377,7 @@ function make_hit(game,x,y)
     --todo, add anim
    end
    
-   if e > 60 then
+   if e > 90 then
     del(s,t)
     
     if g_lives < 1 then
