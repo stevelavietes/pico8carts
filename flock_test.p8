@@ -28,6 +28,76 @@ function _init()
   )
 end
 
+function add_wobbler(x,y)
+ local blp = {
+  x=x,
+  y=y,
+  spd_x=0,
+  spd_y=0,
+  r=4,
+  solid=true,
+  state=en_charge,
+  charge=rnd(15),
+  updown=1,
+  update=function(t)
+   if t.state == en_charge then
+    t.charge += 1
+    if t.charge >= 15 then
+     t.state = en_attack
+     t.updown=-1*t.updown
+     t.charge=0
+     local dx=t.x-g_tgt.x
+     local dy=t.y-g_tgt.y
+     local nd=norm(dx,dy)
+     
+     if mag(dx,dy) > 20 then
+      t.spd_x=-nd[1]-t.updown*nd[2]
+      t.spd_y=-nd[2]+t.updown*nd[1]
+      t.spd_x*=1
+      t.spd_y*=1
+     else
+      t.spd_x=-2*nd[1]
+      t.spd_y=-2*nd[2]
+     end
+    end
+   elseif t.state == en_attack then
+    t.charge += 1
+    --t.spd_x=
+    if t.charge >= 8 then
+     t.state = en_charge
+     t.charge = 0
+     t.spd_x=0
+     t.spd_y=0
+    end
+   end
+   t.x += t.spd_x
+   t.y += t.spd_y
+  end,
+  draw=function(t)
+   circfill(0,0,t.r,12)
+      
+   local dx=t.x-g_tgt.x
+   local dy=t.y-g_tgt.y
+   local nd=norm(dx,dy)
+   local sox=nd[2]
+   local soy=-nd[1]
+   
+   circfill(-sox,soy,t.r-1,1)
+   circfill(-2*sox,2*soy,t.r-2,0)
+
+   --[[
+   line(0,0,-30*nd[1],-30*nd[2],8)
+   line(0,0,-10*nd[1]-10*nd[2],-10*nd[2]+10*nd[1],9) 
+   ]]--
+  end
+ }
+ add(
+  g_objs,
+  blp
+ )
+ return blp
+end
+
 function add_blip(x,y)
  local blp = make_blip(x,y)
  add(
@@ -58,8 +128,24 @@ function make_enemy_spawner()
    t.frame = t.frame%90
    if t.frame == 0 then
     t.blips+=1
+    -- spawn enemies in opposite
+    -- quadrant
+    local qx=abs(flr(g_tgt.x/64)-1)
+    local qy=abs(flr(g_tgt.y/64)-1)
     for i=1,t.blips do
-     add_blip(rnd(128),rnd(128))
+     local dist=0
+     local cx=0
+     local cy=0
+     while dist < 30 do
+      cx=(qx*64+rnd(64))
+      cy=(qy*64+rnd(64))
+      dist=mag(cx-g_tgt.x,cy-g_tgt.y)
+     end
+     if rnd(1) < 0.5 then
+      add_blip(cx,cy)
+     else
+      add_wobbler(cx,cy)
+     end
     end
    end
   end
@@ -78,10 +164,11 @@ function game_start()
  
  if blips then
   for _=1,num_blips do
-   add_blip(rnd(128), rnd(128))
+   --add_blip(rnd(128), rnd(128))
+   add_wobbler(rnd(128), rnd(128))
   end
  end
- g_b = add_blip(12, 64)
+ g_b = add_wobbler(12, 64)
  
  local tgt = make_target(100, 64)
  add(
@@ -180,7 +267,11 @@ function make_target(x,y)
    t.spd = {0.9*spd[1],0.9*spd[2]}
   end,
   draw=function(t)
-   circ(0,0,t.r, t.c)
+   if t.state == pl_dash then
+    circfill(0,0,t.r, t.c)
+   else
+    circ(0,0,t.r, t.c)
+   end
   end
  }
 end
@@ -483,7 +574,7 @@ function game_over()
    
 end
 
-function explode(t, func)   
+function explode(t, func)  
  add(
   g_objs,
   make_explode(t.x, t.y, func)
@@ -513,8 +604,10 @@ function _update60()
      g_score += 1
     else
      explode(
-      g_tgt,function()
-       add(g_objs,
+      g_tgt,
+      function()
+       add(
+        g_objs,
         make_trans(game_over)
        )
       end
@@ -561,6 +654,8 @@ function _draw()
   )
   print("p.c: "..g_tgt.charge)
  end
+ color(7)
+ print("perf: "..stat(1))
 end
 
 ------------------------------
