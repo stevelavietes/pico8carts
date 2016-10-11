@@ -39,8 +39,10 @@ function game_start()
  g_objs = {}
   g_brd = make_board()
  add(g_objs, g_brd)
+ g_tgt = make_tgt(0,0)
+ add(g_objs,g_tgt)
  
- add(g_objs, make_coordsys())
+ --add(g_objs, make_coordsys())
 end
 
 function make_coordsys()
@@ -67,14 +69,35 @@ function make_coordsys()
   }
 end
 
-function in_world_space(fnc)
+function onscreen(t)
+ local xd =abs(t.x+g_offset_x())
+ local yd =(t.y+g_offset_y())
+ return xd < 64 and yd > 0 and yd < 128
+end
+
+function edgecoords(t)
+ local xd =t.x+g_offset_x()
+ local yd =t.y+g_offset_y()
+ xd=max(-64,min(64,xd))
+ yd=max(-64,min(64,yd))
+ return 64+xd,64+yd
+end
+
+function in_world_space(fon,foff)
  return function(t)
-  pushc(
-   g_offset_x(), 
-   g_offset_y()
-  )
-  fnc(t)
-  popc()
+  if true or not foff or onscreen(t) then
+   pushc(
+    g_offset_x(), 
+    g_offset_y()
+   ) 
+   fon(t)
+   popc()
+  else
+   local ecx, ecy=edgecoords(t)
+   pushc(ecx, ecy)
+   foff(t)
+   popc()
+  end
  end
 end
 
@@ -222,6 +245,10 @@ end
 
 function mag(x,y)
  return sqrt(x*x+y*y)
+end
+
+function magv(v)
+ return sqrt(v[1]*v[1]+v[2]*v[2])
 end
 
 function make_message(
@@ -646,7 +673,7 @@ function make_enemy(x,y)
     end
    end
    
-   if mag(
+   if g_shp and mag(
     t.x-g_shp.x,
     t.y-g_shp.y
    ) > 30 then
@@ -674,7 +701,7 @@ function make_enemy(x,y)
     if hb_overlaps(t, o) then
      local x_d = abs(t.x - o.x)
      local y_d = abs(t.y - o.y)
-     if x_d 
+--     if x_d 
     end
    end
    
@@ -710,7 +737,7 @@ function make_enemy(x,y)
    spr(
     t.sprite, 
     -- location
-    -4, -4,
+    t.x_offset, t.y_offset,
     -- size
     2,2,
     -- flip
@@ -724,6 +751,11 @@ function make_enemy(x,y)
 end
 
 g_num_stars=150
+
+function normv(v)
+ local mv=magv(v)
+ return {v[1]/mv, v[2]/mv}
+end
 
 function make_bg()
  local stars = {}
@@ -823,12 +855,13 @@ function make_bg()
     local c = s.c
     
     if t.glow_at then
-     r = mag(s_off_x - 56, s_off_y - 56) 
-     current_r = lerp(0,56,t.frame/30)
+     local r = mag(s_off_x - 56, s_off_y - 56) 
+     local current_r = lerp(0,56,t.frame/30)   
+     if abs(r-current_r) < 10 then
+      c = 8
+     end
      if abs(r-current_r) < 4 then
       c = 12
-     elseif abs(r-current_r) < 10 then
-      c = 8
      end
     end
     line(
@@ -901,7 +934,7 @@ function make_exit_point()
   hb={-5,-10,5,10},
   update=function(t)
    if g_shp then  
-    if t.frame % 30 == 0 then
+    if false and t.frame % 30 == 0 then
      add(
       g_brd.c_objs,
       make_ping(
@@ -956,11 +989,84 @@ function make_exit_point()
  }
 end
 
+function make_tgt(x,y)
+ return {
+  x=x,
+  y_orig=y,
+  y=y,
+  x_offset=-2,
+  y_offset=-2,
+  frame=0,
+  update=function(t)
+   t.frame+=1
+   t.y =t.y_orig+2*sin((t.frame%60)/60)
+  end,
+  draw=in_world_space(
+   function(t)
+    line(-1,-1,1,1,8)
+    if true then
+     return
+    end
+   
+    palt(3,true)
+    palt(0,false)
+    
+    local f=flr((t.frame%32)/4)
+    pal(12,5)
+    pal(15,5)
+    pal(13,7)
+    pal(14,7)
+    pal(8,5)
+    pal(7,6)
+   
+    if f==0 then
+     pal(12,10)
+     pal(13,9)
+    elseif f==1 or f==2 then
+     pal(13,10)
+     pal(14,10)
+     pal(8,9)
+     pal(7,9)
+     pal(12,9)
+     pal(15,9)
+    elseif f==3 then
+     pal(15,10)
+     pal(14,9)
+    end
+     
+    spr(
+     13,
+     t.x_offset,
+     t.y_offset
+    )
+    
+    palt(3,false)
+    palt(0,true)
+    for i=0,16 do
+     pal(i,i)
+    end
+    
+    circ(
+     -t.x_offset,
+     -t.y_offset,
+     10+sin((t.frame%15)/15),
+     11
+    )
+   end,
+   function(t)
+    circfill(0,0,5,11)
+   end
+  )
+ }
+end
+
 function make_board()
  g_shp = make_player_ship(0)
- bg_spawner = make_enemy_spawner()
+ --bg_spawner = make_enemy_spawner()
  --srand(2)
  bg_stars = make_bg()
+
+
  return {
   st=0,
   x=0,
@@ -1030,6 +1136,22 @@ function _draw()
     
   )
   c_line += 10
+  end
+  if g_tgt then
+   local ex, ey = edgecoords(g_tgt)
+   print(""..ex.. " "..ey,0,c_line)
+   c_line += 10
+   local s = "no"
+   if onscreen(g_tgt) then
+    s = "yes"
+   end
+   print("onscreen: "..s,0,c_line)
+   c_line+=10
+   local sx=abs(g_tgt.x+g_offset_x())
+   local sy=abs(g_tgt.y+g_offset_y())
+   print("onscreen c: "..sx.. " " .. sy, 0, c_line)
+   c_line+=10
+  
   end
   --[[
   print(
@@ -1305,14 +1427,14 @@ function make_trans(f,d,i)
 end
 
 __gfx__
-00600000000660000007700099999999001010200000000000000088333333333333333333333333333333333333333333333333000000000000000000000000
-00660000000660000007700099999999112011210000000000000008333333333333333333333333333333333333333333333333000000000000000000000000
-00666000006cc6000077770099999999212122320333333000000088330000033000003333000030000000333333333000003333000000000000000000000000
-006666000c6666c00777777099999999223132333351243300000008330888033088803333199000998880333333300088803333000000000000000000000000
-00666500666666667777777799999999333233303bbbbbb300000088330898033089803333199099a98980333333309989800033000000000000000000000000
-006650000cc66cc0077777709999999903030001333bb333000000083308880330888033330009a900888033333309a988888033000000000000000000000000
-00650000000660000007700099999999101001120033330000000088330990033009903333333a80000000333300999000898033000000000000000000000000
-005000000060060000700700999999992111122300000000000000083309a003300a90333319a9a0333333333319a90030888033000000000000000000000000
+00600000000660000007700099999999001010200000000000000088333333333333333333333333333333333333333333333333300000030000000000000000
+00660000000660000007700099999999112011210000000000000008333333333333333333333333333333333333333333333333305885030000000000000000
+00666000006cc600007777009999999921212232033333300000008833000003300000333300003000000033333333300000333330cdef030000000000000000
+006666000c6666c0077777709999999922313233335124330000000833088803308880333319900099888033333330008880333330cdef030000000000000000
+00666500666666667777777799999999333233303bbbbbb300000088330898033089803333199099a98980333333309989800033305775030000000000000000
+006650000cc66cc0077777709999999903030001333bb333000000083308880330888033330009a900888033333309a988888033305665030000000000000000
+00650000000660000007700099999999101001120033330000000088330990033009903333333a80000000333300999000898033305bb5030000000000000000
+005000000060060000700700999999992111122300000000000000083309a003300a90333319a9a0333333333319a90030888033300000030000000000000000
 0000000000000000000000000000000099999999999993999999999933009900009900333319a9a0333333333319980300990033000000000000000000000000
 0000000000000000000000000000000099944499993933939944444933309a8aa8a9033333330a80000000333300aaa009a90333000000000000000000000000
 00000000000000000000000000000000994444499339333394131114330009a99a900033330009a9008880333330a9a899900333000000000000000000000000
