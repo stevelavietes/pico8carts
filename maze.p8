@@ -9,6 +9,7 @@ function _init()
  g_maxcells=7
  g_rotsignalobjs = {}
  g_score = 0
+ g_hiscore = 0
  
  --supports bg color
  g_mazecols = {
@@ -2360,7 +2361,7 @@ function draw_stats(top)
    14, 2, 7)
  
  print('score: ' .. g_score,
-   64, 2, 7)
+   54, 2, 7)
    
  
  if (not top) popc()
@@ -2391,6 +2392,8 @@ function make_hit(game,x,y)
     del(s,t)
     
     if g_lives < 1 then
+     g_hiscore = max(g_score,
+       g_hiscore)
      g_objs = {make_main()}
     else
      game.maze.state=0
@@ -2485,6 +2488,8 @@ function make_main()
    print('score: '.. g_score,
      2, 1, 7)
    
+   print('high score: '..
+     g_hiscore, 54, 1, 7)
    
    
   end
