@@ -450,13 +450,14 @@ function make_trans(f,d,i)
  }
 end
 
+--[[
 function round(v)
  if v % 1 < 0.5 then
   return flr(v)
  end
  return flr(v)+1
 end
-
+--]]
 
 ------------------------------
 
@@ -584,7 +585,8 @@ function revdrcheck(t)
  if t.dr then
   if not cango(t, t.dr) then
    t.dr = (t.dr + 2) % 4
-   if t.step then
+   if t.step and t.step ~= 0
+     then
     t.step = t.rate - t.step
    end
   end
@@ -666,6 +668,11 @@ function make_mark(maze)
    char_rotdone(t,maze)
   end,
   update=function(t,s)
+   
+   -- debug
+   --if(true)return
+  
+   
    if (t.maze.state~=0) return
    
    
@@ -1241,7 +1248,7 @@ function make_player(maze)
     sprcpy(48,0)
     sprstochcpy(48,6+s,p)
     spr(48,4,4)
-   
+    
     popc()
     
     return
@@ -1299,6 +1306,13 @@ function make_player(maze)
    pushc(ox, oy)
    
    spr(2+s,4,4,1,1,fp,false)
+   
+   --[[
+   print(t.mzx .. ' ' ..
+     flr(t.mzx/8), 14, 0, 7)
+   print(t.mzy .. ' ' ..
+     flr(t.mzy/8), 14, 8, 7)
+   --]]
    
    popc()
   end
@@ -1662,7 +1676,7 @@ function make_maze(sizex,sizey)
    cell.r = flr(rnd(4))
    
    -- force cell for debug
-   --cell.m = 7
+   --cell.m = 5
   end
  end
  
