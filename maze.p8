@@ -2343,10 +2343,16 @@ end
 
 
 
-function draw_stats()
- pushc(0, -119)
+function draw_stats(top)
+ if (not top) pushc(0, -119)
+ 
  rectfill(0, 0, 128, 10, 1)
- line(0,-1,128,-1, 5)
+ 
+ if top then
+  line(0,10,128,10, 5)
+ else
+  line(0,-1,128,-1, 5)
+ end
  
  spr(2 + (g_tick % 8) / 2, 1,1)
  spr(36, 8,1)
@@ -2357,7 +2363,7 @@ function draw_stats()
    64, 2, 7)
    
  
- popc()
+ if (not top) popc()
 end
 
 
@@ -2399,15 +2405,30 @@ function make_hit(game,x,y)
     print('game over', 48,55,7)
    end
    
+   --todo, don't draw stats
+   --on top
+   local offset = 0
+   
+   local x,y =
+      char_getpos(g_player)
+   
+   local top = (-y) - g_camy
+     > 90
    
    local e = elapsed(t.ts)
    if e > 50 then
-    pushc(0, -(e - 50))
+    if top then
+     offset = e - 50
+     
+    else
+     offset = -(e - 50)
+    end
+    
    end
-   draw_stats()
-   if e > 50 then
-    popc()
-   end
+   
+   pushc(0, offset)
+   draw_stats(top)
+   popc()
    
    
    popc()
