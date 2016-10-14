@@ -4,12 +4,18 @@ __lua__
 
 
 function _init()
- stdinit()
+ g_dbgnohit = false
+ g_dbgforcecell = nil
+ g_dbgmove = false
  
- g_maxcells=7
+ g_rotbtnfnc = btn
+ 
+	g_maxcells = 7
  g_rotsignalobjs = {}
  g_score = 0
  g_hiscore = 0
+ 
+ stdinit()
  
  --supports bg color
  g_mazecols = {
@@ -526,7 +532,7 @@ function cango(t, dr)
   end
  end
  
- return s and
+ return s and s > 0 and
    not fget(s,v[5])
 end
 
@@ -543,17 +549,22 @@ end
 
 function char_rotdone(t,maze)
  
+ --[[
  local iscur =
    maze.cx == flr(t.mzx/8) and
    maze.cy == flr(t.mzy/8)
+ --]]
+ local iscur = shouldrot(t)
  
  if not iscur then
   revdrcheck(t)
   return
  end
  
- local ox = flr(t.mzx/8)*8
- local oy = flr(t.mzy/8)*8
+ 
+ local ox = t.maze.cx * 8
+ local oy = t.maze.cy * 8
+ 
  local ix = t.mzx - ox
  local iy = t.mzy - oy
  
@@ -563,6 +574,8 @@ function char_rotdone(t,maze)
   if t.dr then
    t.dr = (t.dr + 1) % 4
   end
+  
+  
   -- huh? 6?
   t.mzx = (ox+6)-iy
   t.mzy = oy + ix
@@ -570,8 +583,12 @@ function char_rotdone(t,maze)
   if t.dr then
    t.dr = (t.dr - 1) % 4
   end
+  
+  
   t.mzx = ox + iy
   t.mzy = (oy+6)-ix
+  
+  
  end
  
  --reverse direction
@@ -588,10 +605,93 @@ function revdrcheck(t)
    t.dr = (t.dr + 2) % 4
    if t.step and t.step ~= 0
      then
+    
+    --taco
     t.step = t.rate - t.step
+    
+    
+    v = g_drdirs[t.dr]
+    t.mzx -= v[1]
+    t.mzy -= v[2]
+  
+   
    end
   end
  end
+end
+
+function shouldrot(t)
+
+ local cx = flr(t.mzx/8)
+ local cy = flr(t.mzy/8)
+ local ix = flr(t.mzx)%8
+ local iy = flr(t.mzy)%8
+ 
+ local incell = cx == t.maze.cx
+   and cy == t.maze.cy
+ 
+ 
+ if not incell then
+  
+  
+  --todo, allow from left
+  if cx + 1 == t.maze.cx
+    and cy == t.maze.cy
+    and t.dr == 1
+    and ix == 7  
+      then
+   
+   --xxx need to update rotdone
+   return true
+   
+  --      and from top
+  elseif cy + 1 == t.maze.cy
+    and cx == t.maze.cx
+    and t.dr == 2
+    and iy == 7
+      then
+   
+   --xxx need to update rotdone
+   return true
+   
+  end
+  
+  return false
+   
+ end
+ 
+ 
+ 
+ if t.step then
+  
+ 
+  if (t.dr == 0 and iy == 0)
+    or (t.dr == 1 and ix == 7)
+    or (t.dr == 2 and iy == 7)
+    or (t.dr == 3 and ix == 0)
+      then
+   
+   --if t.step > t.rate / 2 then
+   -- return false
+   --end
+   --
+   if t.step > 0 then
+    
+    --todo: try testing against
+    --      whether the adjacent
+    --      cell has the new
+    --      dir
+  
+    
+    return false
+   end
+   
+      
+  end
+ end
+ 
+ 
+ return true
 end
 
 
@@ -614,10 +714,13 @@ function char_getpos(t)
  end
    
  if t.maze.state > 0
+   and shouldrot(t)
+   --[[
    and flr(t.mzx/8) ==
      t.maze.cx
    and flr(t.mzy/8) ==
      t.maze.cy
+   --]]
     then
   
   local px = t.maze.cx*64+24
@@ -672,7 +775,12 @@ function make_mark(maze)
    
    -- debug
    --if(true)return
-  
+   if g_dbgmove
+     and not btnn(0,1)
+     and t.maze.state == 0
+      then
+    return
+   end
    
    if (t.maze.state~=0) return
    
@@ -746,6 +854,20 @@ function make_mark(maze)
      spr(84+f,7,4,1,1,true)
     end
     
+    if g_dbgmove then
+     pushc(0,-8)
+     print(t.step, 10,0,7)
+     print(flr(t.mzx)%8, 10,7,7)
+     print(flr(t.mzy)%8, 10,14,7)
+     print(t.dr, 10,21,7)
+     print(shouldrot(t),
+       10,28,7)
+     
+     popc()
+     
+    
+    end
+    
     popc()
     --pal()
    else
@@ -768,16 +890,38 @@ function moverandom2(t)
      candirs(t, t.dr)
    local idx = flr(rnd(
      #drs)) + 1
-   if (idx > #drs) idx = #dr
-   t.dr = drs[idx]
+   if (idx > #drs) idx = #drs
+   
+   
+   --xxx
+   --[[
+   if #drs == 0 then
+    return
+   end
+   --]]
+   
+   if #drs > 0 then
+    t.dr = drs[idx]
+   end
   else
    local drs =
      candirs(t, (t.dr+2)%4)
      
    local idx = flr(rnd(
      #drs)) + 1
-   if (idx > #drs) idx = #dr
-   t.dr = drs[idx]
+   if (idx > #drs) idx = #drs
+   
+   --xxx
+   --[[
+   if #drs == 0 then
+    return
+   end
+   --]]
+   
+   if #drs > 0 then
+    t.dr = drs[idx]
+   end
+   
   end
     
  end
@@ -891,6 +1035,11 @@ function movetarget(t,t2,
      then
     add(lngdrs, dr)
    end
+  end
+  
+  --xxx
+  if #lngdrs == 0 then
+   return
   end
   
   local idx = flr(rnd(
@@ -1371,6 +1520,15 @@ function placechar(t,cx,cy,
   local dr =
     drs[flr(rnd(#drs-0.01))+1]
   
+  if #drs == 0 then
+   return
+   --[[
+   cls()
+   print('go no drs',0,0,7)
+   print(dr, 0,8,7)
+   stop()
+   --]]
+  end
   
   local v = g_drdirs[dr]
   t.mzx += v[1]
@@ -1428,10 +1586,10 @@ function make_maze(sizex,sizey)
     
     if t.cx >= 0 and t.cy >= 0
       then
-     if btnn(4) then
+     if g_rotbtnfnc(4) then
       t.state = 1
       t.rt = g_tick
-     elseif btnn(5) then
+     elseif g_rotbtnfnc(5) then
       t.state = 2
       t.rt = g_tick
      end
@@ -1593,7 +1751,7 @@ function make_maze(sizex,sizey)
     end
 
     if not isactive
-     or t.state == 0 then
+     or t.state <= 0 then
      
     if cellhasdr(cell,0)
        then
@@ -1677,7 +1835,10 @@ function make_maze(sizex,sizey)
    cell.r = flr(rnd(4))
    
    -- force cell for debug
-   --cell.m = 2
+   if g_dbgforcecell then
+    cell.m = g_dbgforcecell
+   end
+   
    
   end
  end
@@ -2016,6 +2177,9 @@ function make_game(level)
      char_getpos(g_player)
   	
    for enemy in all(t.enemies) do
+    --debug
+    if (g_dbgnohit) break
+    
     
     local _,_,ev =
       char_getpos(enemy)
