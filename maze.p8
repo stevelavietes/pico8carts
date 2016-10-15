@@ -2700,6 +2700,18 @@ function make_instructions()
     pushc(i*-width,0)
     print('guide the', 0,0,7)
     spr(80,38,-2)
+    
+    
+    if g_tick % 2 == 0 then
+     
+     local f= flr(
+       (g_tick%8)/2)
+     spr(84+f,35,-2)
+     spr(84+f,41,-2,1,1,true)
+     
+    end
+     
+    
     print('to the', 48,0,7)
     spr(14,72,-5,2,2)
     line(87,-2,87,6,5)
@@ -2707,7 +2719,33 @@ function make_instructions()
     spr(64,130,-2)
     line(141,-2,141,6,5)
     print('rotate the', 146,0,7)
-    spr(78,189,-2)
+    
+    local e = g_tick % 40
+    if e < 30 then
+     spr(78,189,-2)
+    else
+     --todo, bake to spr
+     --to get token budget
+     --back
+     local a = (e-30)*-9
+     local v1 = vecrot(
+       {x=0,y=-4},a)
+     local v2 = vecrot(
+       {x=0,y=4},a)
+     local v3 = vecrot(
+       {x=-4,y=0},a)
+     local v4 = vecrot(
+       {x=4,y=0},a)
+     pushc(-189 - 4, -2)
+     line(v1.x,v1.y,v2.x,v2.y,
+       14)
+     line(v3.x,v3.y,v4.x,v4.y,
+       14)
+     
+     popc()
+     
+    end
+    
     print('to escape', 200,0,7)
     line(240,-2,240,6,5)
     popc()
