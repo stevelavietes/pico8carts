@@ -2289,7 +2289,8 @@ function make_game(level)
  --with the level(s)
  for i = 1, flr((level-1)/4)+1
    do
-  add(g_objs, make_spawn(t, 300))
+  add(g_objs, make_spawn(t, 300,
+     level))
  end
  
  g_mazecol = g_mazecols[
@@ -2440,7 +2441,8 @@ function make_levelbegin(game)
 end
 
 
-function make_spawn(game, dur)
+function make_spawn(game, dur,
+  level)
  local t = {
  	x=0,y=0,
  	mzx=0,mzy=0,
@@ -2465,7 +2467,10 @@ function make_spawn(game, dur)
     add(game.enemies, e)
     add(g_objs, e)
     
-    
+    --freebie on the first
+    if level == 1 then
+     return
+    end
     add(g_objs, make_spawn(
        game, dur))
 
