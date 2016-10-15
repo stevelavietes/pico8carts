@@ -2670,7 +2670,6 @@ function make_main()
    print('high score: '..
      g_hiscore, 54, 1, 7)
    
-   
   end
  }
  
@@ -2680,7 +2679,7 @@ function make_instructions()
  local width = 246
  return {
   x=156,
-  y=90,
+  y=98,
   update=function(t,s)
    t.x-=1
    if t.x < -width then
@@ -2689,6 +2688,14 @@ function make_instructions()
   end,
   draw=function(t)
    -- todo, animate the sprs
+   
+   local x = -t.x
+   rectfill(
+     x,-6,-t.x+128,10,0)
+   rect(
+     x-1,-6,-t.x+129,10,5)
+   
+   
    for i = 0, 1 do
     pushc(i*-width,0)
     print('guide the', 0,0,7)
@@ -2698,7 +2705,7 @@ function make_instructions()
     line(87,-2,87,6,5)
     print('avoid the', 92,0,7)
     spr(64,130,-2)
-    line(140,-2,140,6,5)
+    line(141,-2,141,6,5)
     print('rotate the', 146,0,7)
     spr(78,189,-2)
     print('to escape', 200,0,7)
