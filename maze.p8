@@ -1709,7 +1709,7 @@ function make_maze(sizex,sizey)
       pal(13, 6) 
       
       clip(sx+1-g_camx,
-       sy+1-g_camy,62,62)
+        sy+1-g_camy,62,62)
       for xy in all({
         {-1,-1},
         {1,1},
@@ -2744,11 +2744,11 @@ function make_main()
    
    rectfill(0,0,128,7,1)
    line(0,7,127,7,5)
-   print('score: '.. g_score,
+   print('score:'.. g_score,
      2, 1, 7)
    
-   print('high score: '..
-     g_hiscore, 54, 1, 7)
+   print('high:'..
+     g_hiscore, 70, 1, 7)
    
   end
  }
