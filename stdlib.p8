@@ -1,16 +1,28 @@
 pico-8 cartridge // http://www.pico-8.com
-version 5
+version 8
 __lua__
 
 function _init()
  stdinit()
- 
- add(g_objs, make_menu(
-  {'starting',
-   'point'
-  }
- ))
 
+ add(
+  g_objs,
+   make_menu(
+   {
+    'go',
+   },
+   function (t, i, s)
+    add (
+     s,
+     make_trans(
+     function()
+      game_start()
+     end
+     )
+    )
+   end
+  )
+ )
 end
 
 function _update()
@@ -19,6 +31,117 @@ end
 
 function _draw()
  stddraw()
+end
+
+-- coordinate systems
+sp_world = 0
+sp_local = 1
+sp_screen_native = 2
+sp_screen_center = 3
+
+-- @{ built in diagnostic stuff
+function make_player(pnum)
+ return {
+  x=0,
+  y=0,
+  p=pnum,
+  space=sp_world,
+  c_objs={make_grid(sp_local, 64)},
+  update=function(t)
+   local m_x = 0
+   local m_y = 0
+   if btn(0, t.pnum) then
+    m_x =-1
+   end 
+   if btn(1, t.pnum) then
+    m_x = 1
+   end
+   if btn(2, t.pnum) then
+    m_y = -1
+   end
+   if btn(3, t.pnum) then
+    m_y = 1
+   end
+   t.x += m_x
+   t.y += m_y
+   updateobjs(t.c_objs)
+  end,
+  draw=function(t)
+   spr(2, -3, -3)
+   rect(-3,-3, 3,3, 8)
+   local str = "world: " .. t.x .. ", " .. t.y
+   print(str, -(#str)*2, 12, 8)
+   drawobjs(t.c_objs)
+  end
+ }
+end
+
+function make_grid(space, spacing)
+ return {
+  x=0,
+  y=0,
+  space=space,
+  spacing=spacing,
+  update=function(t) end,
+  draw=function(t) 
+   local space_label = "local"
+   if t.space == sp_world then
+    space_label = "world" 
+   elseif t.space == sp_screen_center then
+    space_label = "screen_center"
+   elseif t.space == sp_screen_native then
+    space_label = "screen_native"
+   end
+
+   for x=0,3 do
+    for y=0,3 do
+     local col = y*4+x
+     local xc =(x-1.5)*t.spacing 
+     local yc = (y-1.5)*t.spacing
+     rect(xc-1, yc-1,xc+1, yc+1, col)
+     circ(xc, yc, 7, col)
+     local str = space_label .. ": " .. xc .. ", ".. yc
+     print(str, xc-#str*2, yc+9, col)
+    end
+   end
+  end
+ }
+end
+
+function make_camera()
+ return {
+  x=0,
+  y=0,
+  space=sp_world,
+  update=function(t)
+   t.x=g_p1.x
+   t.y=g_p1.y
+  end,
+  draw=function(t)
+  end
+ }
+end
+-- @}
+
+function game_start()
+ g_objs = {
+ }
+
+ add(g_objs, make_grid(sp_world, 128))
+ add(g_objs, make_grid(sp_screen_center, 128))
+
+ g_cam= make_camera()
+
+ add(g_objs, g_cam)
+
+ g_p1 = make_player(pnum)
+ add(g_objs, g_p1)
+
+
+--  g_brd = make_board()
+--  add(g_objs, g_brd)
+--  g_tgt = make_tgt(0,0)
+--  add(g_objs,g_tgt)
 end
 
 ------------------------------
@@ -55,9 +178,31 @@ end
 function drawobjs(objs)
  foreach(objs, function(t)
   if t.draw then
-   pushc(-t.x,-t.y)
+   local cam_stack = 0
+
+   -- i think the idea here is that if you're only drawing local,
+   -- then you only need to push -t.x, -t.y
+   -- if you're drawing camera space, then the camera will manage the screen
+   -- center offset
+   -- if you're drawing screen center 
+   if t.space == sp_screen_center then
+    pushc(-64, -64)
+    cam_stack += 1
+   elseif t.space == sp_world and g_cam  then
+    pushc(g_cam.x - 64, g_cam.y - 64)
+    pushc(-t.x, -t.y)
+    cam_stack += 2
+   elseif not t.space or t.space == sp_local then
+    pushc(-t.x, -t.y)
+    cam_stack += 1
+   elseif t.space == sp_screen_native then
+   end
+
    t:draw(objs)
-   popc()
+
+   for i=cam_stack,0,-1 do
+    popc()
+   end
   end
  end)
 end
@@ -254,14 +399,14 @@ function make_trans(f,d,i)
 end
 
 __gfx__
-00600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00666000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00666500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00665000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00650000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00600000101221010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0066000000088000000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0066600010033001000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00666600283083820cc8cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0066650028380382000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0066500010033001000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00650000000880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00500000101221010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
