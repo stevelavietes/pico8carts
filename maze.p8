@@ -2545,9 +2545,11 @@ function draw_stats(top)
  print(g_lives,
    14, 2, 7)
  
- print('score: ' .. g_score,
-   54, 2, 7)
-   
+ local sstr = ''..g_score
+ local w = 4 * (#sstr + 6)
+ print('score:'..sstr,
+      126 - w, 2, 7)
+ 
  
  if (not top) popc()
 end
@@ -2747,8 +2749,12 @@ function make_main()
    print('score:'.. g_score,
      2, 1, 7)
    
-   print('high:'..
-     g_hiscore, 70, 1, 7)
+   local histr = ''.. g_hiscore
+   local w = 4 * (#histr + 5)
+   print('high:'..histr,
+      126 - w, 1, 7)
+   
+   
    
   end
  }
