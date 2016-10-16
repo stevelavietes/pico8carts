@@ -195,20 +195,24 @@ function make_debugmsg()
   end
  }
 end
+
 function game_start()
  g_objs = {
  }
 
  add(g_objs, make_grid(sp_world, 128))
- add(g_objs, make_grid(sp_screen_center, 128))
 
  g_cam= make_camera()
 
  add(g_objs, g_cam)
 
- g_p1 = make_player(pnum)
+ g_p1 = make_player(0)
  add(g_objs, g_p1)
 
+ g_p2 = make_player(1)
+ add(g_objs, g_p2)
+
+ add(g_objs, make_debugmsg())
 
 --  g_brd = make_board()
 --  add(g_objs, g_brd)
