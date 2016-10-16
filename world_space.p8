@@ -23,7 +23,11 @@ function _init()
    end
   )
  )
+ g_st = gst_menu
 end
+
+gst_menu = 0
+gst_playing = 1
 
 function _update()
  stdupdate()
@@ -39,6 +43,10 @@ sp_local = 1
 sp_screen_native = 2
 sp_screen_center = 3
 
+function am_playing()
+ return g_st == gst_playing
+end
+
 -- @{ built in diagnostic stuff
 function make_player(p)
  return {
@@ -48,7 +56,12 @@ function make_player(p)
   space=sp_world,
   c_objs={},
   vis_r=7,
+  sprite=32,
   update=function(t)
+   if not am_playing() then
+    return
+   end
+
    local m_x = 0
    local m_y = 0
    if btn(0, t.p) then
@@ -70,7 +83,7 @@ function make_player(p)
   draw=function(t)
    -- for a double size sprite
    pusht({{3, true}})
-   spr(32, -7, -7,2,2)
+   spr(t.sprite, -7, -7,2,2)
    --spr(3, -7, -7,2,2)
    rect(-3,-3, 3,3, 8)
    local str = "world: " .. t.x .. ", " .. t.y
@@ -88,12 +101,11 @@ function make_player(p)
  }
 end
 
-g_palstack={}
-
 g_tstack={}
 
 -- takes a list of tuples color, tval
 function pusht(tlist)
+ -- todo make push/pop work better
  add(g_tstack, tlist)
  for i, ttuple in pairs(tlist) do
   palt(ttuple[1], ttuple[2])
@@ -213,6 +225,8 @@ function game_start()
  add(g_objs, g_p2)
 
  add(g_objs, make_debugmsg())
+
+ g_st = gst_playing
 
 --  g_brd = make_board()
 --  add(g_objs, g_brd)
