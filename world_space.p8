@@ -176,6 +176,25 @@ function make_camera()
 end
 -- @}
 
+function make_debugmsg()
+ return {
+  x=0,
+  y=0,
+  space=sp_screen_native,
+  draw=function(t)
+   color(14)
+   print("",0,0)
+   print(stat(1))
+   local vis="false"
+   if g_cam:is_visible(g_p2) then
+    vis = "true"
+   end
+   print("p2 vis: ".. vis)
+   print(g_cam.x-64-g_p2.vis_r .. ", " ..g_cam.y-64-g_p2.vis_r)
+   print(g_p2.x .. ", " .. g_p2.y)
+  end
+ }
+end
 function game_start()
  g_objs = {
  }
