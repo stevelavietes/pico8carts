@@ -40,26 +40,26 @@ sp_screen_native = 2
 sp_screen_center = 3
 
 -- @{ built in diagnostic stuff
-function make_player(pnum)
+function make_player(p)
  return {
   x=0,
   y=0,
-  p=pnum,
+  p=p,
   space=sp_world,
   c_objs={make_grid(sp_local, 64)},
   update=function(t)
    local m_x = 0
    local m_y = 0
-   if btn(0, t.pnum) then
+   if btn(0, t.p) then
     m_x =-1
    end 
-   if btn(1, t.pnum) then
+   if btn(1, t.p) then
     m_x = 1
    end
-   if btn(2, t.pnum) then
+   if btn(2, t.p) then
     m_y = -1
    end
-   if btn(3, t.pnum) then
+   if btn(3, t.p) then
     m_y = 1
    end
    t.x += m_x
@@ -112,7 +112,6 @@ function make_camera()
  return {
   x=0,
   y=0,
-  space=sp_world,
   update=function(t)
    t.x=g_p1.x
    t.y=g_p1.y
@@ -134,7 +133,7 @@ function game_start()
 
  add(g_objs, g_cam)
 
- g_p1 = make_player(pnum)
+ g_p1 = make_player(0)
  add(g_objs, g_p1)
 
 
