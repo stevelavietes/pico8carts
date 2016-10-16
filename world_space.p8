@@ -141,11 +141,31 @@ function make_grid(space, spacing)
  }
 end
 
+-- assumed to be in world space
 function make_camera()
  return {
   x=0,
   y=0,
-  space=sp_world,
+  is_visible=function(t, o)
+   -- uses a circle based visibility check
+   if not o.vis_r or 
+    (
+     (
+      t.x - 64 - o.vis_r < o.x 
+      and t.x + 64 + o.vis_r > o.x
+     ) 
+     and 
+     (
+      t.y - 64 - o.vis_r < o.y 
+      and t.y + 64 + o.vis_r > o.y
+     )
+    ) 
+   then
+    return true
+   end
+
+   return false
+  end,
   update=function(t)
    t.x=g_p1.x
    t.y=g_p1.y
@@ -211,6 +231,9 @@ end
 function drawobjs(objs)
  foreach(objs, function(t)
   if t.draw then
+   if g_cam and not g_cam:is_visible(t) then
+    return
+   end
    local cam_stack = 0
 
    -- i think the idea here is that if you're only drawing local,
