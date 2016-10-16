@@ -69,14 +69,44 @@ function make_player(p)
   end,
   draw=function(t)
    -- for a double size sprite
+   pusht({{3, true}})
    spr(32, -7, -7,2,2)
    --spr(3, -7, -7,2,2)
    rect(-3,-3, 3,3, 8)
    local str = "world: " .. t.x .. ", " .. t.y
    print(str, -(#str)*2, 12, 8)
+
+   local col=3
+   if (g_cam:is_visible(t)) then
+    col=11
+   end
+   circ(0,0,t.vis_r,col)
+    
+   popt()
    drawobjs(t.c_objs)
   end
  }
+end
+
+g_palstack={}
+
+g_tstack={}
+
+-- takes a list of tuples color, tval
+function pusht(tlist)
+ add(g_tstack, tlist)
+ for i, ttuple in pairs(tlist) do
+  palt(ttuple[1], ttuple[2])
+ end
+end
+
+function popt(tlist)
+ local len = #g_tstack
+ local last = g_tstack[len]
+ for i, ttuple in pairs(last) do
+  palt(ttuple[1], not ttuple[2])
+ end
+ g_tstack[len] = nil
 end
 
 function make_grid(space, spacing)
