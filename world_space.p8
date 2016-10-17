@@ -48,58 +48,90 @@ function am_playing()
 end
 
 -- @{ built in diagnostic stuff
-function make_player(p)
- return {
-  x=0,
-  y=0,
-  p=p,
-  space=sp_world,
-  c_objs={},
-  vis_r=7,
-  sprite=32,
-  update=function(t)
-   if not am_playing() then
-    return
-   end
+function make_player(pnum)
+ return make_physobj(
+  {
+   x=0,
+   y=0,
+   pnum=pnum,
+   space=sp_world,
+   c_objs={},
+   vis_r=7,
+   sprite=32,
+   update=function(t)
+    if not am_playing() then
+     return
+    end
 
-   local m_x = 0
-   local m_y = 0
-   if btn(0, t.p) then
-    m_x =-1
-   end 
-   if btn(1, t.p) then
-    m_x = 1
-   end
-   if btn(2, t.p) then
-    m_y = -1
-   end
-   if btn(3, t.p) then
-    m_y = 1
-   end
-   t.x += m_x
-   t.y += m_y
-   updateobjs(t.c_objs)
-  end,
-  draw=function(t)
-   -- for a double size sprite
-   pusht({{3, true}})
-   spr(t.sprite, -7, -7,2,2)
-   --spr(3, -7, -7,2,2)
-   rect(-3,-3, 3,3, 8)
-   local str = "world: " .. t.x .. ", " .. t.y
-   print(str, -(#str)*2, 12, 8)
+    local m_x = 0
+    local m_y = 0
+    if btn(0, t.pnum) then
+     m_x =-1
+    end 
+    if btn(1, t.pnum) then
+     m_x = 1
+    end
+    if btn(2, t.pnum) then
+     m_y = -1
+    end
+    if btn(3, t.pnum) then
+     m_y = 1
+    end
+    t.x += m_x
+    t.y += m_y
+    updateobjs(t.c_objs)
+   end,
+   draw=function(t)
+    -- for a double size sprite
+    pusht({{3, true}})
+    spr(t.sprite, -7, -7,2,2)
+    --spr(3, -7, -7,2,2)
+    rect(-3,-3, 3,3, 8)
+    local str = "world: " .. t.x .. ", " .. t.y
+    print(str, -(#str)*2, 12, 8)
 
-   local col=3
-   if (g_cam:is_visible(t)) then
-    col=11
+    local col=3
+    if (g_cam:is_visible(t)) then
+     col=11
+    end
+    circ(0,0,t.vis_r,col)
+
+    popt()
+    drawobjs(t.c_objs)
    end
-   circ(0,0,t.vis_r,col)
-    
-   popt()
-   drawobjs(t.c_objs)
-  end
- }
+  },
+  5
+ )
 end
+
+function collides_circles(o1, o2)
+ local x_d = o1.x - o2.x
+ local y_d = o1.y - o2.y
+ local r_2 = o1.radius + o2.radius
+ r_2 = r_2 * r_2
+
+ return ((x_d*x_d)+(y_d*y_d)) < r_2
+end
+
+-- creates a physics object out
+-- of the parent object with a
+-- given mass
+function make_physobj(p,mass)
+ phys = {
+  p=p,
+  mass=mass,
+  force={x=0,y=0},
+  velocity={x=0,y=0},
+  radius=p.vis_r or 5,
+  is_phys=true,
+  is_static=false,
+ }
+ for k,v in pairs(phys) do
+   p[k] = v
+ end
+ return p
+end
+
 
 g_tstack={}
 
