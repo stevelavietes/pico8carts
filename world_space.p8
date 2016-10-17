@@ -77,7 +77,7 @@ function make_player(pnum)
     if btn(3, t.pnum) then
      m_y = 1
     end
-    add_force(t, makef(m_x, m_y))
+    add_force(t, makev(m_x, m_y))
     updateobjs(t.c_objs)
    end,
    draw=function(t)
@@ -103,7 +103,7 @@ function make_player(pnum)
  )
 end
 
-g_friction=0.01
+g_friction=0.1
 function update_phys(o)
  -- in case we want to play
  -- with time, even though pico
@@ -285,6 +285,45 @@ function popt(tlist)
  g_tstack[len] = nil
 end
 
+function make_infinite_grid()
+ return {
+  x=0,
+  y=0,
+  space=sp_screen_native,
+  draw=function(t)
+   local cpos = makev(g_cam.x, g_cam.y)
+   local soff = makev(64,64)
+   local smin = vecsub(cpos, soff)
+   local smax = vecadd(cpos, soff)
+
+   -- let say I'm at 100, 100
+   local spacing = 64
+
+   local g_o_x = 128 - g_cam.x % 128
+   local g_o_y = 128 - g_cam.y % 128
+
+   local smin = vecsub(makev(g_cam.x, g_cam.y), makev(64, 64))
+
+   for x=0,3 do
+    for y=0,3 do
+     -- screen coordinates
+     local xc = (x-1.5)*spacing + g_o_x
+
+     -- screen coordinates
+     local yc = (y-1.5)*spacing + g_o_y
+
+     local col=5
+
+     rect(xc-1, yc-1,xc+1, yc+1, col)
+     circ(xc, yc, 7, col)
+     local str = "w: " .. xc + smin.x .. ", ".. yc + smin.y
+     print(str, xc-#str*2, yc+9, col)
+    end
+   end
+  end
+ }
+end
+
 function make_grid(space, spacing)
  return {
   x=0,
@@ -376,7 +415,7 @@ function game_start()
  g_objs = {
  }
 
- add(g_objs, make_grid(sp_world, 128))
+ add(g_objs, make_infinite_grid())
 
  g_cam= make_camera()
 
@@ -417,7 +456,7 @@ function stdupdate()
  updateobjs(g_objs)
 end
 
-function makef(xf, yf)
+function makev(xf, yf)
  return {x=xf, y=yf}
 end
 
