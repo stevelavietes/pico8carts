@@ -77,6 +77,9 @@ function make_player(pnum)
     if btn(3, t.pnum) then
      m_y = 1
     end
+    if btn(4, t.pnum) then
+     t.velocity = vecscale(t.velocity, 0.8)
+    end
     add_force(t, makev(m_x, m_y))
     updateobjs(t.c_objs)
    end,
