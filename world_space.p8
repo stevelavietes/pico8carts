@@ -47,6 +47,10 @@ function am_playing()
  return g_st == gst_playing
 end
 
+function makev(xf, yf)
+ return {x=xf, y=yf}
+end
+
 -- @{ built in diagnostic stuff
 function make_player(pnum)
  return make_physobj(
@@ -130,7 +134,7 @@ function update_phys(o)
  )
  
  -- zero out the force
- o.force = {x=0,y=0}
+ o.force = makev(0,0)
   
  -- drag
  o.force.x -= g_friction*o.velocity.x
@@ -181,9 +185,11 @@ function vecdistsq(a, b, sf)
  return distsq
 end
 
+null_v = makev(0,0)
+
 function vecnorm(v) 
  local l =
-   sqrt(vecdistsq({x=0,y=0},v)) 
+   sqrt(vecdistsq(null_v,v)) 
  return {
   x=v.x/l,
   y=v.y/l,
@@ -194,8 +200,7 @@ end
 function update_collision(o)
  -- (checking o, pos is new pos
  -- check boundaries first
- local pos = {x=o.x,y=o.y}
- local r = o.radius
+ local pos = makev(o.x, o.y)
 
 --  pos.x, o.velocity.x = collide_walls_1d(
 --   g_edges[1],pos.x,o.velocity.x,o.radius)
@@ -206,11 +211,7 @@ function update_collision(o)
   if t.is_phys and t ~= o then
    if collides_circles(t, o) then
     if not t.is_static then
-     local o_v = o.velocity
-     local t_v = t.velocity
-     local o_m = o.mass
-     local t_m = t.mass
-     local t_pos = {x=t.x,y=t.y}
+     local t_pos = makev(t.x, t.y)
      
      -- push the objects back
      local r = o.radius + t.radius
@@ -255,8 +256,8 @@ function make_physobj(p,mass)
  phys = {
   p=p,
   mass=mass,
-  force={x=0,y=0},
-  velocity={x=0,y=0},
+  force=makev(0,0),
+  velocity=makev(0,0),
   radius=p.vis_r or 5,
   is_phys=true,
   is_static=false,
@@ -288,20 +289,13 @@ function popt(tlist)
  g_tstack[len] = nil
 end
 
+g_spacing = 64
 function make_infinite_grid()
  return {
   x=0,
   y=0,
   space=sp_screen_native,
   draw=function(t)
-   local cpos = makev(g_cam.x, g_cam.y)
-   local soff = makev(64,64)
-   local smin = vecsub(cpos, soff)
-   local smax = vecadd(cpos, soff)
-
-   -- let say I'm at 100, 100
-   local spacing = 64
-
    local g_o_x = 128 - g_cam.x % 128
    local g_o_y = 128 - g_cam.y % 128
 
@@ -310,49 +304,15 @@ function make_infinite_grid()
    for x=0,3 do
     for y=0,3 do
      -- screen coordinates
-     local xc = (x-1.5)*spacing + g_o_x
+     local xc = (x-1.5)*g_spacing + g_o_x
+     local yc = (y-1.5)*g_spacing + g_o_y
 
-     -- screen coordinates
-     local yc = (y-1.5)*spacing + g_o_y
+     rect(xc-1, yc-1,xc+1, yc+1, 5)
+     circ(xc, yc, 7, 5)
 
-     local col=5
-
-     rect(xc-1, yc-1,xc+1, yc+1, col)
-     circ(xc, yc, 7, col)
+     -- label
      local str = "w: " .. xc + smin.x .. ", ".. yc + smin.y
-     print(str, xc-#str*2, yc+9, col)
-    end
-   end
-  end
- }
-end
-
-function make_grid(space, spacing)
- return {
-  x=0,
-  y=0,
-  space=space,
-  spacing=spacing,
-  update=function(t) end,
-  draw=function(t) 
-   local space_label = "local"
-   if t.space == sp_world then
-    space_label = "world" 
-   elseif t.space == sp_screen_center then
-    space_label = "screen_center"
-   elseif t.space == sp_screen_native then
-    space_label = "screen_native"
-   end
-
-   for x=0,3 do
-    for y=0,3 do
-     local col = y*4+x
-     local xc =(x-1.5)*t.spacing 
-     local yc = (y-1.5)*t.spacing
-     rect(xc-1, yc-1,xc+1, yc+1, col)
-     circ(xc, yc, 7, col)
-     local str = space_label .. ": " .. xc .. ", ".. yc
-     print(str, xc-#str*2, yc+9, col)
+     print(str, xc-#str*2, yc+9, 5)
     end
    end
   end
@@ -457,10 +417,6 @@ function stdupdate()
  g_ctl = g_ct
  g_ct = btn()
  updateobjs(g_objs)
-end
-
-function makev(xf, yf)
- return {x=xf, y=yf}
 end
 
 function add_force(o, f)
