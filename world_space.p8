@@ -51,6 +51,24 @@ function makev(xf, yf)
  return {x=xf, y=yf}
 end
 
+function make_pushable(x,y)
+ return make_physobj(
+  {
+   x=x,
+   y=y,
+   space=sp_world,
+   vis_r=5,
+   draw=function(t)
+    circfill(0,0,5,6)
+    circfill(0,0,2,2)
+    circ(0,0,t.vis_r, 8)
+    circ(0,0,t.radius, 9)
+   end
+  },
+  10
+ )
+end
+
 -- @{ built in diagnostic stuff
 function make_player(pnum)
  return make_physobj(
@@ -101,6 +119,14 @@ function make_player(pnum)
      col=11
     end
     circ(0,0,t.vis_r,col)
+
+    for _, o in pairs(g_objs) do
+     if o.is_phys and not collided and collides_circles(t, o) then
+      col=col+1
+     end
+    end
+
+    circ(0,0,t.radius,col)
 
     popt()
     drawobjs(t.c_objs)
@@ -391,6 +417,23 @@ function game_start()
  g_p2.is_phys = false
  add(g_objs, g_p2)
 
+ -- add in pushable things
+ for i=0,10 do
+  local collides = true
+  local pushable = make_pushable(10, 10)
+  while collides==true do 
+   pushable.x = rnd(128) - 64
+   pushable.y = rnd(128) - 64
+   collides = false
+   for _, o in pairs(g_objs) do
+    if o.is_phys and not collides and collides_circles(o, pushable) then
+     collides = true
+    end
+   end
+  end
+  add(g_objs, pushable)
+ end
+
  add(g_objs, make_debugmsg())
 
  g_st = gst_playing
@@ -459,7 +502,7 @@ function updateobjs(objs)
 
  -- update physics code
  foreachp(objs, update_phys)
- foreachp(objs, update_collision)
+--  foreachp(objs, update_collision)
 end
 
 function stddraw()
