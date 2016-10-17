@@ -77,8 +77,7 @@ function make_player(pnum)
     if btn(3, t.pnum) then
      m_y = 1
     end
-    t.x += m_x
-    t.y += m_y
+    add_force(t, makef(m_x, m_y))
     updateobjs(t.c_objs)
    end,
    draw=function(t)
@@ -102,6 +101,139 @@ function make_player(pnum)
   },
   5
  )
+end
+
+g_friction=0.01
+function update_phys(o)
+ -- in case we want to play
+ -- with time, even though pico
+ -- gives us a constant clock
+ local dt = 1
+
+ 
+ o.x, o.velocity.x=compute_force_1d(
+  o.x,
+  o.force.x,
+  o.mass,
+  o.velocity.x,
+  dt
+ )
+ o.y, o.velocity.y=compute_force_1d(
+  o.y,
+  o.force.y,
+  o.mass,
+  o.velocity.y,
+  dt
+ )
+ 
+ -- zero out the force
+ o.force = {x=0,y=0}
+  
+ -- drag
+ o.force.x -= g_friction*o.velocity.x
+ o.force.y -= g_friction*o.velocity.y
+end
+
+function vecdot(a, b)
+ return a.x * b.x + a.y * b.y
+end
+
+function vecadd(a, b)
+ return {x=a.x+b.x, y=a.y+b.y}
+end
+
+function vecsub(a, b)
+ return {x=a.x-b.x, y=a.y-b.y}
+end
+
+function vecmult(a, b)
+ return {x=a.x*b.x, y=a.y*b.y}
+end
+
+function vecscale(v, m)
+ return {x=v.x*m, y=v.y*m}
+end
+
+function vecrot(v, a)
+ local s = sin(a/360)
+ local c = cos(a/360)
+ return {
+   x=v.x * c - v.y * s,
+   y=v.x * s + v.y * c,
+ }
+end
+
+function vecdistsq(a, b, sf)
+ if sf then
+  a = vecscale(a, sf)
+  b = vecscale(b, sf)
+ end
+ 
+ local distsq = (b.x-a.x)^2 + (b.y-a.y)^2
+ 
+ if sf then
+  distsq = distsq/sf
+ end
+ 
+ return distsq
+end
+
+function vecnorm(v) 
+ local l =
+   sqrt(vecdistsq({x=0,y=0},v)) 
+ return {
+  x=v.x/l,
+  y=v.y/l,
+ }
+end
+
+
+function update_collision(o)
+ -- (checking o, pos is new pos
+ -- check boundaries first
+ local pos = {x=o.x,y=o.y}
+ local r = o.radius
+
+--  pos.x, o.velocity.x = collide_walls_1d(
+--   g_edges[1],pos.x,o.velocity.x,o.radius)
+--  pos.y, o.velocity.y = collide_walls_1d(
+--   g_edges[2],pos.y,o.velocity.y,o.radius)
+ 
+ for i, t in pairs(g_objs) do
+  if t.is_phys and t ~= o then
+   if collides_circles(t, o) then
+    if not t.is_static then
+     local o_v = o.velocity
+     local t_v = t.velocity
+     local o_m = o.mass
+     local t_m = t.mass
+     local t_pos = {x=t.x,y=t.y}
+     
+     -- push the objects back
+     local r = o.radius + t.radius
+     local v = vecsub(pos,t_pos)
+     local ratio = r/sqrt(vecdistsq(pos,t_pos))
+     local d = vecscale(v, ratio*0.51)
+     local new_pos  = vecadd(d,t_pos)
+    
+     -- result
+     pos = new_pos
+   
+     -- a.v = (a.u * (a.m - b.m) + (2 * b.m * b.u)) / (a.m + b.m)
+     -- b.v = (b.u * (b.m - a.m) + (2 * a.m * a.u)) / (a.m + b.m)
+     local o_v = o.velocity
+     local t_v = t.velocity
+     local o_m = o.mass
+     local t_m = t.mass
+     o.velocity = vecscale(vecadd(vecscale(o_v, (o_m-t_m)),(vecscale(t_v,2*t_m))),(1/(o_m+t_m)))
+     t.velocity = vecscale(vecadd(vecscale(t_v, (t_m-o_m)),(vecscale(o_v,2*o_m))),(1/(o_m+t_m)))
+    end
+   end
+  end
+ end
+ 
+ o.x = pos.x
+ o.y = pos.y
 end
 
 function collides_circles(o1, o2)
@@ -254,6 +386,7 @@ function game_start()
  add(g_objs, g_p1)
 
  g_p2 = make_player(1)
+ g_p2.is_phys = false
  add(g_objs, g_p2)
 
  add(g_objs, make_debugmsg())
@@ -284,12 +417,51 @@ function stdupdate()
  updateobjs(g_objs)
 end
 
+function makef(xf, yf)
+ return {x=xf, y=yf}
+end
+
+function add_force(o, f)
+ o.force.x += f.x
+ o.force.y += f.y
+end
+
+function compute_force_1d(pos, f, m, v, dt)
+  local a=0
+  if f ~= 0 then
+   a = f/m
+  end
+  
+  -- update position half way
+  pos += 0.5 * dt * v
+  
+  -- update velocity (drag)
+  v += dt * a
+  
+  -- update position other half
+  pos += 0.5 * dt * v
+  
+  return pos, v
+end
+
+function foreachp(lst, fnc)
+ foreach(lst, function(t)
+  if t.is_phys then
+   fnc(t)
+  end
+ end)
+end
+
 function updateobjs(objs)
  foreach(objs, function(t)
   if t.update then
    t:update(objs)
   end
  end)
+
+ -- update physics code
+ foreachp(objs, update_phys)
+ foreachp(objs, update_collision)
 end
 
 function stddraw()
