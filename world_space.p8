@@ -56,6 +56,7 @@ function make_pushable(x,y)
   {
    x=x,
    y=y,
+   name="pushable_["..x..","..y.."]",
    space=sp_world,
    vis_r=5,
    draw=function(t)
@@ -65,7 +66,7 @@ function make_pushable(x,y)
     circ(0,0,t.radius, 9)
    end
   },
-  10
+ 100
  )
 end
 
@@ -76,6 +77,7 @@ function make_player(pnum)
    x=0,
    y=0,
    pnum=pnum,
+   name="player"..pnum,
    space=sp_world,
    c_objs={},
    vis_r=7,
@@ -120,10 +122,20 @@ function make_player(pnum)
     end
     circ(0,0,t.vis_r,col)
 
+    local col_list = {}
     for _, o in pairs(g_objs) do
-     if o.is_phys and not collided and collides_circles(t, o) then
+     if t ~= o and o.is_phys and not collided and collides_circles(t, o) then
       col=col+1
+      add(col_list, o)
      end
+    end
+
+    if #col_list > 0 then
+     local col_str = "colliding:"
+     for _, o in pairs(col_list) do
+      col_str = col_str .. " " .. o.name
+     end
+     print(col_str, -(#col_str)*2, 22, 8)
     end
 
     circ(0,0,t.radius,col)
@@ -167,6 +179,10 @@ function update_phys(o)
  o.force.y -= g_friction*o.velocity.y
 end
 
+function vecstr(v)
+ return ""..v.x..", "..v.y
+end
+
 function vecdot(a, b)
  return a.x * b.x + a.y * b.y
 end
@@ -185,6 +201,21 @@ end
 
 function vecscale(v, m)
  return {x=v.x*m, y=v.y*m}
+end
+
+function vecmagsq(v)
+ return v.x*v.x+v.y*v.y
+end
+
+function vecmag(v, sf)
+ if sf then
+  v = vecscale(v, sf)
+ end
+ local result=sqrt(vecmagsq(v))
+ if sf then
+  result=result/sf
+ end
+ return result
 end
 
 function vecrot(v, a)
@@ -223,7 +254,7 @@ function vecnorm(v)
 end
 
 
-function update_collision(o)
+function update_collision(o, o_num)
  -- (checking o, pos is new pos
  -- check boundaries first
  local pos = makev(o.x, o.y)
@@ -233,21 +264,24 @@ function update_collision(o)
 --  pos.y, o.velocity.y = collide_walls_1d(
 --   g_edges[2],pos.y,o.velocity.y,o.radius)
  
- for i, t in pairs(g_objs) do
+ for i=o_num,#g_objs do
+  local t = g_objs[i]
   if t.is_phys and t ~= o then
    if collides_circles(t, o) then
     if not t.is_static then
+
+     -- current displacement
      local t_pos = makev(t.x, t.y)
      
      -- push the objects back
      local r = o.radius + t.radius
      local v = vecsub(pos,t_pos)
-     local ratio = r/sqrt(vecdistsq(pos,t_pos))
-     local d = vecscale(v, ratio*0.51)
-     local new_pos  = vecadd(d,t_pos)
+     local v_n = vecnorm(v)
+     local new_pos  = vecadd(vecscale(v_n, r),t_pos)
     
      -- result
-     pos = new_pos
+     o.x = new_pos.x
+     o.y = new_pos.y
    
      -- a.v = (a.u * (a.m - b.m) + (2 * b.m * b.u)) / (a.m + b.m)
      -- b.v = (b.u * (b.m - a.m) + (2 * a.m * a.u)) / (a.m + b.m)
@@ -255,24 +289,28 @@ function update_collision(o)
      local t_v = t.velocity
      local o_m = o.mass
      local t_m = t.mass
-     o.velocity = vecscale(vecadd(vecscale(o_v, (o_m-t_m)),(vecscale(t_v,2*t_m))),(1/(o_m+t_m)))
+     o.velocity = vecscale(
+      vecadd(vecscale(o_v, (o_m-t_m)), vecscale(t_v,2*t_m)),
+      1/(o_m+t_m)
+     )
      t.velocity = vecscale(vecadd(vecscale(t_v, (t_m-o_m)),(vecscale(o_v,2*o_m))),(1/(o_m+t_m)))
     end
    end
   end
  end
- 
- o.x = pos.x
- o.y = pos.y
 end
 
 function collides_circles(o1, o2)
- local x_d = o1.x - o2.x
- local y_d = o1.y - o2.y
+ local x_d = abs(o1.x - o2.x)
+ local y_d = abs(o1.y - o2.y)
  local r_2 = o1.radius + o2.radius
- r_2 = r_2 * r_2
 
- return ((x_d*x_d)+(y_d*y_d)) < r_2
+ -- cheat to avoid huge squares
+ if x_d > r_2 or y_d > r_2 or x_d + y_d > r_2 then
+  return false
+ end
+
+ return ((x_d*x_d)+(y_d*y_d)) < r_2 * r_2
 end
 
 -- creates a physics object out
@@ -390,12 +428,15 @@ function make_debugmsg()
    print("",0,0)
    print(stat(1))
    local vis="false"
-   if g_cam:is_visible(g_p2) then
+   if g_p2 and g_cam:is_visible(g_p2) then
     vis = "true"
    end
-   print("p2 vis: ".. vis)
-   print(g_cam.x-64-g_p2.vis_r .. ", " ..g_cam.y-64-g_p2.vis_r)
-   print(g_p2.x .. ", " .. g_p2.y)
+   if g_p2 then
+    print("p2 vis: ".. vis)
+    print(g_cam.x-64-g_p2.vis_r .. ", " ..g_cam.y-64-g_p2.vis_r)
+    print("vel: ".. vecmag(g_p1.velocity))
+    print("p_vel: ".. vecmag(g_pushable.velocity))
+   end
   end
  }
 end
@@ -413,12 +454,8 @@ function game_start()
  g_p1 = make_player(0)
  add(g_objs, g_p1)
 
- g_p2 = make_player(1)
- g_p2.is_phys = false
- add(g_objs, g_p2)
-
  -- add in pushable things
- for i=0,10 do
+ for i=0,0 do
   local collides = true
   local pushable = make_pushable(10, 10)
   while collides==true do 
@@ -432,6 +469,7 @@ function game_start()
    end
   end
   add(g_objs, pushable)
+  g_pushable = pushable
  end
 
  add(g_objs, make_debugmsg())
@@ -486,11 +524,11 @@ function compute_force_1d(pos, f, m, v, dt)
 end
 
 function foreachp(lst, fnc)
- foreach(lst, function(t)
-  if t.is_phys then
-   fnc(t)
+ for i, o in pairs(lst) do
+  if o.is_phys then
+   fnc(o, i)
   end
- end)
+ end
 end
 
 function updateobjs(objs)
@@ -502,7 +540,7 @@ function updateobjs(objs)
 
  -- update physics code
  foreachp(objs, update_phys)
---  foreachp(objs, update_collision)
+ foreachp(objs, update_collision)
 end
 
 function stddraw()
