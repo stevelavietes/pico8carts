@@ -73,7 +73,9 @@ function makev(xf, yf)
 end
 
 -- rotate a sprite 
-function rotate(angle,tcolor)
+function rotate_sprite(
+ angle,tcolor,sspx,sspy
+)
  local cala = cal[angle]
  local sala = sal[angle]
 	for x=-7,6,1 do
@@ -88,12 +90,12 @@ function rotate(angle,tcolor)
 			-- the sprite sheet
 			local c = tcolor
 			if abs(xp) < 8 and abs(yp) < 8 then
-			 c = sget(xp+7,yp+16+7)
+			 c = sget(xp+sspx,yp+sspy)
 			end
 			
 			-- set a color in the sprite
 			-- sheet
-			sset(x+23,y+23,c)
+			sset(x+sspx+16,y+sspy,c)
 		end
 	end
 end
@@ -161,8 +163,8 @@ function make_player(pnum)
      t.velocity = vecscale(t.velocity, 0.8)
     end
     if abs(m_x) > 0 or abs(m_y) > 0 then
-     m_x = cos(1-t.theta/359+.25)
-     m_y = sin(1-t.theta/359+.25)
+     m_x = -cos(t.theta/359)
+     m_y = sin(t.theta/359)
     end
     add_force(t, makev(m_x, m_y))
     updateobjs(t.c_objs)
@@ -203,8 +205,8 @@ function make_player(pnum)
     circ(0,0,t.radius,col)
 
 				pusht({{3, true},{0,false}})
-				rotate(t.theta,3)
-    spr(t.sprite+2, -7, -7,2,2)
+				rotate_sprite(t.theta,3,23,23)
+    spr(t.sprite+4, -7, -7,2,2)
     popt()
     drawobjs(t.c_objs)
    end
