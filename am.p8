@@ -378,7 +378,6 @@ function make_player_ship(pnum)
    g_shp = nil
   end,
   update=function(t)
-
    if not am_playing() then
     return
    end

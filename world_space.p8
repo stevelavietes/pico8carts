@@ -76,17 +76,23 @@ end
 function rotate(angle,tcolor)
  local cala = cal[angle]
  local sala = sal[angle]
-	for x=-8,8,1 do
-		for y=-8,8,1 do
-			-- here goes the rotation!
+	for x=-7,6,1 do
+		for y=-7,6,1 do
+			-- 2d rotation about the origin
 			xp = (- cala[x]+sala[y])
 			yp = (  sala[x]+cala[y])
-			-- we're getting the pixel's
-			-- color from the spritesheet.
+		
+			-- if the pixel is over range,
+			-- use the transparent color
+			-- otherwise fetch the color from
+			-- the sprite sheet
 			local c = tcolor
 			if abs(xp) < 8 and abs(yp) < 8 then
-			 c = sget(xp+8,yp+16+8)
+			 c = sget(xp+7,yp+16+7)
 			end
+			
+			-- set a color in the sprite
+			-- sheet
 			sset(x+23,y+23,c)
 		end
 	end
@@ -153,6 +159,10 @@ function make_player(pnum)
     end
     if btn(4, t.pnum) then
      t.velocity = vecscale(t.velocity, 0.8)
+    end
+    if abs(m_x) > 0 or abs(m_y) > 0 then
+     m_x = cos(1-t.theta/359+.25)
+     m_y = sin(1-t.theta/359+.25)
     end
     add_force(t, makev(m_x, m_y))
     updateobjs(t.c_objs)
