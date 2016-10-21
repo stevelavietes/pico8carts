@@ -1,7 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-cal, sal = {}, {}
+-- [co]sine tables
+cal = {}
+sal = {}
 
 function compute_tables()
  for theta=0,359 do
