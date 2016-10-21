@@ -2176,14 +2176,19 @@ function make_game(level)
      del(g_objs,mark)
      del(g_rotsignalobjs,mark)
      
-     local pts = 100 * t.mult
+     local pts = 100
+     for i = 1,t.mult-1 do
+      pts *= 2
+     end
+     
+     
      add(g_objs,
        make_scorebubble(
          mark.mzx*8,
          mark.mzy*8,
          #t.marks,
          ''..pts,
-         sqrt(t.mult)))
+         t.mult))
      
      add(t.flag.ups,
        make_markup(0,0))
@@ -2195,7 +2200,7 @@ function make_game(level)
      
      g_score += pts
      
-     t.mult *= 2
+     t.mult += 1
      
      --only one per cycle
      break
@@ -2382,15 +2387,15 @@ function make_scorebubble(
    popc()
    
    pushc(t.x - g_camx +
-      (offset-1)*20,
+      (offset-1)*16,
      t.y - g_camy + e + 4)
     
-    local l = #pts*5
+    local l = #pts*4+3
     local x = 130-l
     rectfill(x-2,108,127,116,9)
     rect(x-2,108,127,116,10)
     
-    print(pts, 130-#pts*5,
+    print(pts, 130-l,
       110,0)
    popc()
   end
