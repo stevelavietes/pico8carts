@@ -203,12 +203,16 @@ function make_player(pnum)
     end
 
     circ(0,0,t.radius,col)
-
 				pusht({{3, true},{0,false}})
-				rotate_sprite(t.theta,3,23,23)
+				if t.rendered_rot != t.theta then
+				 rotate_sprite(t.theta,3,23,23)
+     t.rendered_rot = t.theta
+    end
     spr(t.sprite+4, -7, -7,2,2)
     popt()
     drawobjs(t.c_objs)
+    
+    circ(0,0,t.radius,col)
    end
   },
   5
