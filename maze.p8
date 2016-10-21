@@ -2182,7 +2182,8 @@ function make_game(level)
          mark.mzx*8,
          mark.mzy*8,
          #t.marks,
-         ''..pts))
+         ''..pts,
+         sqrt(t.mult)))
      
      add(t.flag.ups,
        make_markup(0,0))
@@ -2344,7 +2345,7 @@ end
 
 
 function make_scorebubble(
-  x,y,n,pts)
+  x,y,n,pts,offset)
  return {
   x=x,
   y=y,
@@ -2380,7 +2381,8 @@ function make_scorebubble(
    print(t.n,4,e-2,0)
    popc()
    
-   pushc(t.x - g_camx,
+   pushc(t.x - g_camx +
+      (offset-1)*20,
      t.y - g_camy + e + 4)
     
     local l = #pts*5
