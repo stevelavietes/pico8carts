@@ -140,32 +140,28 @@ function make_player(pnum)
 
     local m_x = 0
     local m_y = 0
+    local thrust = false
     if btn(0, t.pnum) then
-     m_x = 0
      t.theta -= 10
      if t.theta < 0 then
       t.theta += 360 
      end
     end 
     if btn(1, t.pnum) then
-     m_x = 0
      t.theta += 10
      if t.theta >= 360 then
       t.theta -= 360
      end
     end
     if btn(2, t.pnum) then
-     m_y = -1
+     thrust = true
     end
     if btn(3, t.pnum) then
-     m_y = 1
-    end
-    if btn(4, t.pnum) then
      t.velocity = vecscale(t.velocity, 0.8)
     end
-    if abs(m_x) > 0 or abs(m_y) > 0 then
-     m_x = -cos(t.theta/359)
-     m_y = sin(t.theta/359)
+    if thrust then
+     m_x = cal[t.theta][-1]
+     m_y = sal[t.theta][1]
     end
     add_force(t, makev(m_x, m_y))
     updateobjs(t.c_objs)
