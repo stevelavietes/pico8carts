@@ -132,6 +132,7 @@ function make_player(pnum)
    vis_r=7,
    sprite=32,
    theta = 0,
+   rendered_rot=nil,
    update=function(t)
     if not am_playing() then
      return
@@ -202,7 +203,6 @@ function make_player(pnum)
      print(col_str, -(#col_str)*2, 22, 8)
     end
 
-    circ(0,0,t.radius,col)
 				pusht({{3, true},{0,false}})
 				if t.rendered_rot != t.theta then
 				 rotate_sprite(t.theta,3,23,23)
