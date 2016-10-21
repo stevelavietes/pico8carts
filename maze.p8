@@ -1171,7 +1171,18 @@ function make_flag(maze)
      end
     end
     
+    
     spr(14,0,-4,2,2)
+    if t.multval and g_tick % 2 == 0 then
+     pal(1, 9)
+     clip(0, -oy-g_camy-4 +
+       16*(1-t.multval), 128,
+       16)
+     spr(14,0,-4,2,2)
+     clip()
+     pal()
+    end
+    
     
     for up in all(t.ups) do
      local x,y = up:getxy()
@@ -2125,11 +2136,13 @@ function draw_wave(a,yp,off)
 end
 
 
+k_multlen = 60
 function make_game(level)
  local t = {
   x=0,y=0,
   l=level,
   lives=2,
+  mult=1,
   marks={},
   enemies={},
   update=function(t,s)
@@ -2139,6 +2152,19 @@ function make_game(level)
    end
    local fx = t.flag.mzx
    local fy = t.flag.mzy
+   
+   if t.multtime then
+    t.multtime -= 1
+    
+    g_flag.multval =
+      t.multtime/k_multlen
+    
+    if t.multtime < 0 then
+     t.multtime = nil
+     t.mult = 1
+     g_flag.multval = nil
+    end
+   end
    
    for mark in all(t.marks) do
     
@@ -2150,19 +2176,26 @@ function make_game(level)
      del(g_objs,mark)
      del(g_rotsignalobjs,mark)
      
+     local pts = 100 * t.mult
      add(g_objs,
        make_scorebubble(
          mark.mzx*8,
          mark.mzy*8,
-         #t.marks))
+         #t.marks,
+         ''..pts))
      
      add(t.flag.ups,
        make_markup(0,0))
      
-     sfx(1)
-     --local mult = t.mult or 1
+     t.multtime = k_multlen
      
-     g_score += 100
+     sfx(1)
+     
+     
+     g_score += pts
+     
+     t.mult *= 2
+     
      --only one per cycle
      break
      
@@ -2311,7 +2344,7 @@ end
 
 
 function make_scorebubble(
-  x,y,n)
+  x,y,n,pts)
  return {
   x=x,
   y=y,
@@ -2345,6 +2378,18 @@ function make_scorebubble(
    
    
    print(t.n,4,e-2,0)
+   popc()
+   
+   pushc(t.x - g_camx,
+     t.y - g_camy + e + 4)
+    
+    local l = #pts*5
+    local x = 130-l
+    rectfill(x-2,108,127,116,9)
+    rect(x-2,108,127,116,10)
+    
+    print(pts, 130-#pts*5,
+      110,0)
    popc()
   end
  }
