@@ -493,7 +493,8 @@ function make_debugmsg()
   draw=function(t)
    color(14)
    print("",0,0)
-   print(stat(1))
+   print("cpu: ".. stat(1))
+   print("mem: ".. stat(2))
    local vis="false"
    if g_p2 and g_cam:is_visible(g_p2) then
     vis = "true"
