@@ -12,7 +12,7 @@ function _init()
  
  g_rotbtnfnc = btnn
  
-	g_maxcells = 10
+	g_maxcells = 8
  g_rotsignalobjs = {}
  g_score = 0
  g_hiscore = 0
@@ -1433,6 +1433,7 @@ function placechar(t,cx,cy,
   t.mzx += v[1]
   t.mzy += v[2]
   
+  --[[
   --xxx don't walk off
   if t.mzx % 8 == 7 then
    t.mxz = 6
@@ -1440,7 +1441,7 @@ function placechar(t,cx,cy,
   if t.mzy % 8 == 7 then
    t.mzy = 6
   end
-  
+  --]]
  end
  
  for i = 1, steps do
@@ -2114,7 +2115,7 @@ function make_game(level)
      and #t.flag.ups == 0
       then
     
-    --music(-1,300)
+    music(-1,300)
     add(g_objs,
       make_trans(function()
          make_game(t.l+1)
@@ -2345,6 +2346,7 @@ function make_levelbegin(game)
     del(s,t)
     game.maze.state=0
     sfx(3)
+    --if g.level == 1
     music(0)
    elseif e % 20 == 0 then
     sfx(2)
