@@ -25,6 +25,7 @@ end
 
 function compute_planet_noise()
  local sprites_wide = 4
+ local radius=2*8
  local xmin=0
  local xmax=sprites_wide*8
  local xcenter=(xmax-xmin)/2 + xmin
@@ -34,25 +35,35 @@ function compute_planet_noise()
  local ycenter=(ymax-ymin)/2 + ymin
 
  local copies_x = 3
- local copies_y = 0
+ local copies_y = 3
 
  -- lay down noise
  for x=xmin,xmax do
   for y=ymin,ymax do
    local c=flr(rnd(14))+1
-   for off_x=0,3 do
-    local new_x = ((x+2*off_x)%(xmax))+off_x*4*8
-    sset(new_x,y,c)
+   for off_x=0,copies_x do
+    for off_y=0,copies_y do
+     local b = abs(y-(radius+ymin))
+     local a = sqrt(radius*radius-b*b)
+     local rotation_scale = 4*cos(atan2(a, b))
+     local rotation_offset = ((x+rotation_scale*off_x)%(xmax))
+     local new_x = rotation_offset+off_x*4*8
+     local new_y = ((y+2*off_y)%(ymax))
+     sset(new_x,y,c)
+    end
    end
   end
  end
 
+ -- add poles and make round
  for x=xmin,xmax do
   for y=ymin,ymax do
    local xd=x-xcenter
    local yd=y-ycenter
    local c=1
+   -- crop out corners to make look round
    if xd*xd+yd*yd < 2*8*2*8 then
+    -- poles
     if ymax-y < 2 or y-ymin < 2 then
      c=7
     end
@@ -579,7 +590,7 @@ function make_planet(x,y)
     pal(i, 4)
    end
    pal(7,7)
-   spr(64+4*(flr(t.frame/64)%4),-2*8,-2*8,4,4)
+   spr(64+4*(flr(t.frame/16)%4),-2*8,-2*8,4,4)
    for i=0,15 do
     pal(i,i)
    end
@@ -588,7 +599,7 @@ function make_planet(x,y)
     palt(i,true)
    end
    pal(15,6)
-   spr(64+4*(flr((t.frame+8)/32)%4),-2*8,-2*8,4,4)
+   spr(64+4*(flr((t.frame+8)/4)%4),-2*8,-2*8,4,4)
    pal(15,15)
    for i=1,14 do
     palt(i,false)
