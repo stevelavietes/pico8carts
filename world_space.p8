@@ -24,13 +24,17 @@ function compute_tables()
 end
 
 function compute_planet_noise()
+ local sprites_wide = 4
  local xmin=0
- local xmax=4*8
+ local xmax=sprites_wide*8
  local xcenter=(xmax-xmin)/2 + xmin
 
  local ymin=4*8
- local ymax=8*8
+ local ymax=(4+sprites_wide)*8
  local ycenter=(ymax-ymin)/2 + ymin
+
+ local copies_x = 3
+ local copies_y = 0
 
  -- lay down noise
  for x=xmin,xmax do
