@@ -47,67 +47,156 @@ function compute_planet_noise()
    sset(x,y,7)
   end
  end
+ cls()
 
  function rnd_point()
   -- return {rnd(sprites_wide*8-8)+xmin+4, rnd(sprites_wide*8-8)+ymin+4}
-  return {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  local result={
+   rnd(xmax-xmin)+xmin,
+   rnd(ymax-ymin)+ymin
+  }
+  print("pt: ".. result[1]..", "..result[2])
+  return result
+ end
+
+ function rnd_line()
+  local result= {
+   startp=rnd_point(),
+   endp=rnd_point(),
+   hits=function(t, x, y)
+    local dist=abs(t:s_dist(x,y))
+    return dist < 0.6
+   end,
+   s_dist=function(t, x, y)
+    return t.yd*x-t.xd*(y)+t.fac
+   end
+  }
+
+  local xd1 = (result.endp[1] - result.startp[1])
+  local yd1 = (result.endp[2] - result.startp[2])
+  local mag1= sqrt(yd1*yd1+xd1*xd1)
+  local fac1=(result.endp[1]*result.startp[2]-result.endp[2]*result.startp[1])
+
+  result.xd=xd1/mag1
+  result.yd=yd1/mag1
+  result.fac=fac1/mag1
+
+  return result
+ end
+
+ local img = {}
+
+ for x=xmin,xmax do
+  img[x] = {}
+  for y=ymin,ymax do
+   img[x][y] = 2
+  end
  end
 
  -- generate lines and raise stuff between the lines, lower outside of the lines
  -- using scan convert
- for i=0,100 do
-  -- line 1
-  local start1 = rnd_point()
-  local end1   = rnd_point()
-  local yd1 = (end1[2] - start1[2])
-  local xd1 = (end1[1] - start1[1])
-  local mag1= sqrt(yd1*yd1+xd1*xd1)
-  local fac1= end1[1]*start1[2]-end1[2]*start1[1]
+ for i=0,0 do
+  l1 = rnd_line()
+  img[flr(l1.startp[1])][flr(l1.startp[2])] = 10
+  img[flr(l1.endp[1])][flr(l1.endp[2])] = 10
+  l2 = rnd_line()
+  img[flr(l2.startp[1])][flr(l2.startp[2])] = 12
+  img[flr(l2.endp[1])][flr(l2.endp[2])] = 12
 
-  -- line 2
-  local start2 = rnd_point()
-  local end2   = rnd_point()
-  local yd2 = (end2[2] - start2[2])
-  local xd2 = (end2[1] - start2[1])
-  local mag2= sqrt(yd2*yd2+xd2*xd2)
-  local fac2= end2[1]*start2[2]-end2[2]*start2[1]
-
-  for y=ymin,ymax do
+  local maxc=0
+  local up=0
+  local down=0
+  for x=xmin,xmax do
    local cross1 = false
    local cross2 = false
-   for x=xmin,xmax do
+
+   local d1 = l1:s_dist(x,ymin)
+   s1_positive = true
+   if d1 < 0 then
+    s1_positive = false
+   end
+
+   local d2 = l2:s_dist(x,ymin)
+   s2_positive = true
+   if d2 < 0 then
+    s2_positive = false
+   end
+
+   local ln=img[x]
+   local x_local=x-xmin
+   for y=ymin,ymax do
     local y_local = y-ymin
+
     if not cross1 then
-     local dist1 = abs(yd1*x-xd1*(y_local)+fac1)/mag1
-     if dist1 < 1 then
+     local d1 = l1:s_dist(x,y)
+     s1_positive_t = true
+     if d1 < 0 then
+      s1_positive_t = false
+     end
+     if s1_positive_t != s1_positive then
       cross1 = true
      end
     end
 
     if not cross2 then
-     local dist2 = abs(yd2*x-xd2*(y_local)+fac2)/mag2
-     if dist2 < 1 then
+     local d2 = l2:s_dist(x,y)
+     s2_positive_t = true
+     if d2 < 0 then
+      s2_positive_t = false
+     end
+     if s2_positive_t != s2_positive then
       cross2 = true
      end
     end
 
     if cross1 != cross2 then
-     sset(x,y,sget(x,y)+1)
+     -- sset(x,y,sget(x,y)+1)
      -- sset(x,y,min(sget(x,y)+1, 15))
+     ln[y] = min(ln[y]+1, 200)
+     up+=1 
     else
-     sset(x,y,sget(x,y)-1)
+     -- sset(x,y,sget(x,y)-1)
      -- sset(x,y,max(sget(x,y)-1, 0))
+     ln[y] = max(ln[y]-1, 0)
+     down+=1 
     end
+    maxc = max(ln[y], maxc)
    end
+   img[x] = ln
   end
+  -- print("maxc: "..maxc)
+  -- print("up: "..up)
+  -- print("down: "..down)
  end
 
+ local hist = {}
+ hist[0] = 0
+ hist[1] = 0
+ hist[2] = 0
+ hist[3] = 0
+ hist[4] = 0
  -- quantize
  for x=xmin,xmax do
+  local ln=img[x]
   for y=ymin,ymax do
-   sset(x,y,flr(sget(x,y)/4)+1)
+   local val = ln[y]
+   local c=val
+   -- if val < 50 then
+   --  c=1
+   -- elseif val < 100 then
+   --  c=2
+   -- elseif val < 150 then
+   --  c=3
+   -- end
+    
+   -- hist[c] +=1 
+   sset(x,y,c)
   end
  end
+--  for i=1,4 do
+--   print(i..": ".. hist[i])
+--  end
+--  stop()
 
  -- rotation
  for x=xmin,xmax do
@@ -118,7 +207,8 @@ function compute_planet_noise()
     for off_y=0,copies_y do
      local b = abs(y-(radius+ymin))
      local a = sqrt(radius*radius-b*b)
-     local rotation_scale = 4*cos(atan2(a, b))
+     -- local rotation_scale = 4*cos(atan2(a, b))
+     local rotation_scale = 0
      local rotation_offset = ((x+rotation_scale*(off_x-2))%(xmax))
      local new_x = rotation_offset+off_x*4*8
      local new_y = ((y+2*off_y)%(ymax))
@@ -126,6 +216,12 @@ function compute_planet_noise()
     end
    end
   end
+ end
+
+ if true then
+  spr(64,50,50,4,4)
+  stop()
+  return
  end
 
  -- add poles and make round
