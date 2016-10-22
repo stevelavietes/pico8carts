@@ -50,15 +50,7 @@ function _update()
 end
 
 function _draw()
- stddraw()
- 
- --[[
- sprblend(90, 88, 14,
-   g_tick%30 * 3, 100 - (g_tick%30 * 3), 2, 2)
- rectfill(0,0,16,16,0)
- spr(90, 0,0,2, 2)
- --]]
- 
+ stddraw() 
 end
 
 ------------------------------
@@ -337,87 +329,7 @@ end
 
 --not currently using
 --[[
-function make_menu(
- lbs, --menu lables
- fnc, --chosen callback
- x,y, --pos
- omb, --omit backdrop
- p,   --player
- cfnc --cancel callback
-)
- local m={
-  --lbs=lbs,
-  --f=fnc,
-  --fc=cfnc,
-  i=0, --item
-  s=g_tick,
-  e=5,
-  x=x or 64,
-  y=y or 80,
-  h=10*#lbs+4,
-  --omb=omb,
-  tw=0,--text width
-  p=p or -1,
-  draw=function(t)
-   local e=elapsed(t.s)
-   local w=t.tw*4+10
-   local x=min(1,e/t.e)*(w+9)/2
-   if not omb then
-    rectfill(-x,0,x,t.h,0)
-    rect(-x,0,x,t.h,1)
-   end
-   if e<t.e then
-    return
-   end
-   x=w/2+1
-   for i,l in pairs(lbs) do
-    if not t.off or i==t.i+1 then
-     local y=4+(i-1)*10
-     print(l,-x+9,y+1,0)
-     print(l,-x+9,y,7)
-    end
-   end
-   spr(1,-x,2+10*t.i)
-  end,
-  update=function(t,s)
-   if (t.off) return
-   if elapsed(t.s)<(t.e*2) then
-    return
-   end
 
-   if btnn(5,t.p) then
-    if fnc then
-     fnc(t,t.i,s)
-     --sfx(2)
-    end
-   end
-
-   --cancel
-   if btnn(4,t.p) then
-    if cfnc then
-     cfnc(t,s)
-     --sfx(2)
-    end
-   end
-
-   if btnn(2,t.p) and
-     t.i>0 then
-    t.i-=1
-    sfx(1)
-   end
-   if btnn(3,t.p) and
-     t.i<(#lbs-1) then
-    t.i+=1
-    sfx(1)
-   end
-  end
- }
- for l in all(lbs) do
-  m.tw=max(m.tw,#l)
- end
- return m
-end
---]]
 
 function elapsed(t)
  if g_tick>=t then
@@ -458,15 +370,6 @@ function make_trans(f,d,i)
   end
  }
 end
-
---[[
-function round(v)
- if v % 1 < 0.5 then
-  return flr(v)
- end
- return flr(v)+1
-end
---]]
 
 ------------------------------
 
@@ -704,12 +607,14 @@ function char_getpos(t)
  if t.step then
   
   local v = g_drdirs[t.dr]
-  if not v then
+  
+  --[[if not v then
    cls()
    print('bad dr ' .. t.dr,
      0,0,7) 
    stop()
   end
+  --]]
   local r = t.step/t.rate
   ox += v[1]*r*8
   oy += v[2]*r*8
@@ -941,57 +846,6 @@ function moverandom2(t)
 end
 
 
---[[
-function moveherdable(t)
- if t.mzx % 1 == 0
-   and t.mzy % 1 == 0 then
-    
-  --herdable movement
-  local lngdrs = {}
-  local lngdst = 0
-    
-  for dr in all(
-    candirs(t)) do
-     
-   local v = g_drdirs[dr]
-   local x = t.mzx
-     + v[1]
-   local y = t.mzy
-     + v[2]
-     
-   local dst = 
-     vecdistsq({x=x,y=y},
-       {x=g_pmx,y=g_pmy})
-   if dst > lngdst then
-    lngdrs = {dr}
-    lngdst = dst
-   elseif dst == lngdst
-     then
-    add(lngdrs, dr)
-   end
-  end
-  
-  local idx = flr(rnd(
-    #lngdrs)) + 1
-  
-  --xxx, why?
-  if idx > #lngdrs then
-   idx = #lngdrs
-  end
-  if idx <= #lngdrs  then
-     
-   t.dr = lngdrs[idx]
-  end
-  
- end
- 
- local v = g_drdirs[t.dr]
-   
- t.mzx = t.mzx + v[1]*0.125
- t.mzy = t.mzy + v[2]*0.125
-   
-end
---]]
 
 function movetarget(t,t2,
   towards)
@@ -1098,9 +952,6 @@ function make_enemy2(maze)
     else
      movetarget(t, g_player,false)
     end
-    --test enemy towards
-    --movetarget(t, g_player,true)
-    
     
    end
   end,
@@ -1293,11 +1144,13 @@ function make_player(maze)
    
    if move then
     local v = g_drdirs[t.dr]
+    --[[
     if not v then
      cls()
      print(t.dr)
      stop()
     end
+    --]]
     t.mzx = t.mzx + v[1]*0.25
     t.mzy = t.mzy + v[2]*0.25
    end
@@ -2177,7 +2030,7 @@ function make_game(level)
      del(g_objs,mark)
      del(g_rotsignalobjs,mark)
      
-     local pts = 100
+     local pts = 10
      for i = 1,t.mult-1 do
       pts *= 2
      end
@@ -2203,9 +2056,10 @@ function make_game(level)
      end
      
      g_score += pts
-     if g_score >= g_next1up
+     g_next1up -= pts
+     if g_next1up < 0
        then
-      g_next1up += 10000
+      g_next1up += 500
       
       g_lives += 1
       add(g_objs,make1up())
@@ -2318,7 +2172,8 @@ function make_game(level)
  t.player = player
  add(g_objs, player)
  
- local nummarks = level + 4
+ local nummarks =
+   min(10,level + 4)
  for i = 1,nummarks do
   local mark = make_mark(maze)
   placechar(mark,
@@ -2400,7 +2255,7 @@ function make_scorebubble(
    popc()
    
    pushc(t.x - g_camx +
-      (offset-1)*16,
+      (offset-1)*12,
      t.y - g_camy + e + 4)
     
     local l = #pts*4+3
@@ -2806,7 +2661,7 @@ function make_main()
     add(g_objs,
       make_trans(function()
         g_score=0
-        g_next1up=5000
+        g_next1up=500
         make_game(1)
         end))
    end
@@ -2818,23 +2673,12 @@ function make_main()
       36, 120, 7)
    end
    
-   --taco
-   
-   --basepal(g_tick%8 > 3)
    
    pushc(-(t.xoff+128),
      -30)
     
    drawobjs(titleobjs)
-   --map(0,58,0,0,40,8)
-   --pal()
    
-   --[[
-   for i = 1, #segs do
-    local s = segs[i]
-    line(s[1], s[2], s[3], s[4],7)
-   end
-   --]]
    popc()
    
    rectfill(0,0,128,7,1)
@@ -3130,8 +2974,8 @@ __map__
 0000003436000000000000000000000000000000000000000000000000000000000000343600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000003436000000000000000000000000000000000000000000000000000000000000343600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000034360000000000000000000000000000000000000000000000000000000000003b3a00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-3535353e36000000000000000000000000000000000000000000000000000000353539000038353500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-373737373a00000000000000000000000000000000000000000000000000000037373a00003b373700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+3535353e36000000000000000000000000000000000000000000000000000000353535393835353500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+373737373a0000000000000000000000000000000000000000000000000000003737373a3b37373700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000383900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000343600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000343600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
