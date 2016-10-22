@@ -2188,7 +2188,8 @@ function make_game(level)
  g_camx = 0
  g_camy = 0
  local sx, sy = 2,2
- if t.l % 2 == 0 then
+ if t.l > 2
+   and t.l % 2 == 0 then
   --todo, figure out maze size
   if t.l > 8 then
    sx += flr(rnd(2.99))
@@ -2197,8 +2198,13 @@ function make_game(level)
    sx = 3
    sy = 3
   end
+  
  end
  
+ if t.l == 3 then
+  sx = 3
+ end
+  
  local maze = make_maze(sx,sy)
  t.maze = maze
  add(g_objs, maze)
