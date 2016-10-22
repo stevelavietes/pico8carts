@@ -37,16 +37,80 @@ function compute_planet_noise()
  local copies_x = 3
  local copies_y = 3
 
- -- lay down noise
+ -- using the algorithm from star control 2, noted in the GDC retro game post
+ -- mortem - generate a bunch of lines and raise/lower the height map between
+ -- those regions, then quantize and map the colors
+
+ -- base height
  for x=xmin,xmax do
   for y=ymin,ymax do
-   local c=flr(rnd(14))+1
+   sset(x,y,8)
+  end
+ end
+
+ -- generate lines and raise stuff between the lines, lower outside of the lines
+ -- using scan convert
+ for i=0,25 do
+
+  -- line 1
+  start1 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  end1 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  local yd1 = (end1[2] - start1[2])
+  local xd1 = (end1[1] - start1[1])
+  local mag1= sqrt(yd1*yd1+xd1*xd1)
+  local fac1= end1[1]*start1[2]-end1[2]*start1[1]
+
+  -- line 2
+  start2 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  end2 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  local yd2 = (end2[2] - start2[2])
+  local xd2 = (end2[1] - start2[1])
+  local mag2= sqrt(yd2*yd2+xd2*xd2)
+  local fac2= end2[1]*start2[2]-end2[2]*start2[1]
+
+  for y=ymin,ymax do
+   local inside_line = false
+   local have_switched = false
+   for x=xmin,xmax do
+    local y_local = y-ymin
+    local dist1 = abs(yd1*x-xd1*(y_local)+fac1)/mag1
+    local dist2= abs(yd2*x-xd2*y+fac2)/mag2
+    if not have_switched and (dist1 < 1 or dist2 < 1) then
+     inside_line = not inside_line
+     have_switched = true
+    end
+
+    if have_switched and (dist1 > 2 and dist2 > 2) then
+     have_switched = false
+    end
+
+    if inside_line then
+     sset(x,y,sget(x,y)+1)
+    else
+     sset(x,y,sget(x,y)-1)
+    end
+   end
+  end
+ end
+
+ -- quantize
+ for x=xmin,xmax do
+  for y=ymin,ymax do
+   sset(x,y,flr(sget(x,y)/4)+1)
+  end
+ end
+
+ -- rotation
+ for x=xmin,xmax do
+  for y=ymin,ymax do
+   -- local c=flr(rnd(14))+1
+   local c=sget(x,y)
    for off_x=0,copies_x do
     for off_y=0,copies_y do
      local b = abs(y-(radius+ymin))
      local a = sqrt(radius*radius-b*b)
      local rotation_scale = 4*cos(atan2(a, b))
-     local rotation_offset = ((x+rotation_scale*off_x)%(xmax))
+     local rotation_offset = ((x+rotation_scale*(off_x-2))%(xmax))
      local new_x = rotation_offset+off_x*4*8
      local new_y = ((y+2*off_y)%(ymax))
      sset(new_x,y,c)
@@ -580,30 +644,34 @@ function make_planet(x,y)
    t.frame +=1 
   end,
   draw=function(t)
-   for i=1,9 do
-    pal(i,12)
-   end
-   for i=10,12 do
-    pal(i, 3)
-   end
-   for i=13,15 do
-    pal(i, 4)
-   end
-   pal(7,7)
+   -- for i=1,9 do
+   --  pal(i,12)
+   -- end
+   -- for i=10,12 do
+   --  pal(i, 3)
+   -- end
+   -- for i=13,15 do
+   --  pal(i, 4)
+   -- end
+   -- pal(7,7)
+   pal(1,12)
+   pal(2,3)
+   pal(3,4)
+   pal(4,7)
    spr(64+4*(flr(t.frame/16)%4),-2*8,-2*8,4,4)
    for i=0,15 do
     pal(i,i)
    end
 
-   for i=1,14 do
-    palt(i,true)
-   end
-   pal(15,6)
-   spr(64+4*(flr((t.frame+8)/4)%4),-2*8,-2*8,4,4)
-   pal(15,15)
-   for i=1,14 do
-    palt(i,false)
-   end
+   -- for i=1,14 do
+   --  palt(i,true)
+   -- end
+   -- pal(15,6)
+   -- spr(64+4*(flr((t.frame+8)/4)%4),-2*8,-2*8,4,4)
+   -- pal(15,15)
+   -- for i=1,14 do
+   --  palt(i,false)
+   -- end
   end
  }
 end
