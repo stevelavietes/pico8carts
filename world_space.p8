@@ -55,114 +55,119 @@ function compute_planet_noise()
    rnd(xmax-xmin)+xmin,
    rnd(ymax-ymin)+ymin
   }
-  print("pt: ".. result[1]..", "..result[2])
+  -- print("pt: ".. result[1]..", "..result[2])
   return result
  end
 
  function rnd_line()
   local result= {
+   -- startp={28,49},
    startp=rnd_point(),
+   -- endp={22, 39},
    endp=rnd_point(),
    hits=function(t, x, y)
     local dist=abs(t:s_dist(x,y))
     return dist < 0.6
    end,
    s_dist=function(t, x, y)
-    return t.yd*x-t.xd*(y)+t.fac
+    local result = ((x-t.startp[1])*t.yd - (y-t.startp[2])*t.xd)
+    if y == ymin then
+     -- print(result)
+    end
+    return result
    end
   }
 
   local xd1 = (result.endp[1] - result.startp[1])
   local yd1 = (result.endp[2] - result.startp[2])
-  local mag1= sqrt(yd1*yd1+xd1*xd1)
+  -- local mag1= sqrt(yd1*yd1+xd1*xd1)
   local fac1=(result.endp[1]*result.startp[2]-result.endp[2]*result.startp[1])
 
-  result.xd=xd1/mag1
-  result.yd=yd1/mag1
-  result.fac=fac1/mag1
+  -- result.xd=xd1/mag1
+  -- result.yd=yd1/mag1
+  -- result.fac=fac1/mag1
+
+  result.xd=xd1
+  result.yd=yd1
+  -- result.fac=fac1/mag1
 
   return result
  end
 
  local img = {}
 
+ local cmin = 0
+ local cmax = 50
+
  for x=xmin,xmax do
   img[x] = {}
   for y=ymin,ymax do
-   img[x][y] = 2
+   -- img[x][y] = 2
+   img[x][y] = flr(cmax/2)
   end
  end
 
  -- generate lines and raise stuff between the lines, lower outside of the lines
  -- using scan convert
- for i=0,0 do
+ for i=0,100 do
   l1 = rnd_line()
-  img[flr(l1.startp[1])][flr(l1.startp[2])] = 10
-  img[flr(l1.endp[1])][flr(l1.endp[2])] = 10
+  -- img[flr(l1.startp[1])][flr(l1.startp[2])] = 10
+  -- img[flr(l1.endp[1])][flr(l1.endp[2])] = 10
   l2 = rnd_line()
-  img[flr(l2.startp[1])][flr(l2.startp[2])] = 12
-  img[flr(l2.endp[1])][flr(l2.endp[2])] = 12
+  -- img[flr(l2.startp[1])][flr(l2.startp[2])] = 12
+  -- img[flr(l2.endp[1])][flr(l2.endp[2])] = 12
 
   local maxc=0
   local up=0
   local down=0
   for x=xmin,xmax do
-   local cross1 = false
-   local cross2 = false
-
-   local d1 = l1:s_dist(x,ymin)
-   s1_positive = true
-   if d1 < 0 then
-    s1_positive = false
-   end
-
-   local d2 = l2:s_dist(x,ymin)
-   s2_positive = true
-   if d2 < 0 then
-    s2_positive = false
-   end
-
+   -- local d2 = l2:s_dist(x,ymin)
+   -- s2_positive = true
+   -- if d2 < 0 then
+   --  s2_positive = false
+   -- end
+   --
    local ln=img[x]
-   local x_local=x-xmin
    for y=ymin,ymax do
-    local y_local = y-ymin
+    local d1 = l1:s_dist(x,y)
+    local cross1 = d1 < 0
+    local d2 = l2:s_dist(x,y)
+    local cross2 = d2 < 0
 
-    if not cross1 then
-     local d1 = l1:s_dist(x,y)
-     s1_positive_t = true
-     if d1 < 0 then
-      s1_positive_t = false
-     end
-     if s1_positive_t != s1_positive then
-      cross1 = true
-     end
-    end
-
-    if not cross2 then
-     local d2 = l2:s_dist(x,y)
-     s2_positive_t = true
-     if d2 < 0 then
-      s2_positive_t = false
-     end
-     if s2_positive_t != s2_positive then
-      cross2 = true
-     end
-    end
+    -- if not cross1 then
+    --  local d1 = l1:s_dist(x,y)
+    --  s1_positive_t = true
+    --  if d1 < 0 then
+    --   s1_positive_t = false
+    --  end
+    --  if s1_positive_t != s1_positive then
+    --   cross1 = true
+    --  end
+    -- end
+    --
+    -- if not cross2 then
+    --  local d2 = l2:s_dist(x,y)
+    --  s2_positive_t = true
+    --  if d2 < 0 then
+    --   s2_positive_t = false
+    --  end
+    --  if s2_positive_t != s2_positive then
+    --   cross2 = true
+    --  end
+    -- end
 
     if cross1 != cross2 then
      -- sset(x,y,sget(x,y)+1)
      -- sset(x,y,min(sget(x,y)+1, 15))
-     ln[y] = min(ln[y]+1, 200)
+     ln[y] = min(ln[y]+1, cmax)
      up+=1 
     else
      -- sset(x,y,sget(x,y)-1)
      -- sset(x,y,max(sget(x,y)-1, 0))
-     ln[y] = max(ln[y]-1, 0)
+     ln[y] = max(ln[y]-1, cmin)
      down+=1 
     end
-    maxc = max(ln[y], maxc)
    end
-   img[x] = ln
   end
   -- print("maxc: "..maxc)
   -- print("up: "..up)
@@ -180,22 +185,23 @@ function compute_planet_noise()
   local ln=img[x]
   for y=ymin,ymax do
    local val = ln[y]
-   local c=val
-   -- if val < 50 then
-   --  c=1
-   -- elseif val < 100 then
-   --  c=2
-   -- elseif val < 150 then
-   --  c=3
-   -- end
+   -- local c=val
+   local c=4
+   if val < cmax/4 + 0.1*cmax then
+    c=1
+   elseif val < cmax/2 then
+    c=2
+   elseif val < 3*cmax/4 - 0.1*cmax then
+    c=3
+   end
     
-   -- hist[c] +=1 
+   hist[c] +=1 
    sset(x,y,c)
   end
  end
---  for i=1,4 do
---   print(i..": ".. hist[i])
---  end
+ for i=1,4 do
+  print(i..": ".. hist[i])
+ end
 --  stop()
 
  -- rotation
