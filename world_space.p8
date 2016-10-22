@@ -44,50 +44,59 @@ function compute_planet_noise()
  -- base height
  for x=xmin,xmax do
   for y=ymin,ymax do
-   sset(x,y,8)
+   sset(x,y,7)
   end
+ end
+
+ function rnd_point()
+  -- return {rnd(sprites_wide*8-8)+xmin+4, rnd(sprites_wide*8-8)+ymin+4}
+  return {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
  end
 
  -- generate lines and raise stuff between the lines, lower outside of the lines
  -- using scan convert
- for i=0,25 do
-
+ for i=0,100 do
   -- line 1
-  start1 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
-  end1 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  local start1 = rnd_point()
+  local end1   = rnd_point()
   local yd1 = (end1[2] - start1[2])
   local xd1 = (end1[1] - start1[1])
   local mag1= sqrt(yd1*yd1+xd1*xd1)
   local fac1= end1[1]*start1[2]-end1[2]*start1[1]
 
   -- line 2
-  start2 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
-  end2 = {rnd(sprites_wide*8)+xmin, rnd(sprites_wide*8)+ymin}
+  local start2 = rnd_point()
+  local end2   = rnd_point()
   local yd2 = (end2[2] - start2[2])
   local xd2 = (end2[1] - start2[1])
   local mag2= sqrt(yd2*yd2+xd2*xd2)
   local fac2= end2[1]*start2[2]-end2[2]*start2[1]
 
   for y=ymin,ymax do
-   local inside_line = false
-   local have_switched = false
+   local cross1 = false
+   local cross2 = false
    for x=xmin,xmax do
     local y_local = y-ymin
-    local dist1 = abs(yd1*x-xd1*(y_local)+fac1)/mag1
-    local dist2= abs(yd2*x-xd2*y+fac2)/mag2
-    if not have_switched and (dist1 < 1 or dist2 < 1) then
-     inside_line = not inside_line
-     have_switched = true
+    if not cross1 then
+     local dist1 = abs(yd1*x-xd1*(y_local)+fac1)/mag1
+     if dist1 < 1 then
+      cross1 = true
+     end
     end
 
-    if have_switched and (dist1 > 2 and dist2 > 2) then
-     have_switched = false
+    if not cross2 then
+     local dist2 = abs(yd2*x-xd2*(y_local)+fac2)/mag2
+     if dist2 < 1 then
+      cross2 = true
+     end
     end
 
-    if inside_line then
+    if cross1 != cross2 then
      sset(x,y,sget(x,y)+1)
+     -- sset(x,y,min(sget(x,y)+1, 15))
     else
      sset(x,y,sget(x,y)-1)
+     -- sset(x,y,max(sget(x,y)-1, 0))
     end
    end
   end
