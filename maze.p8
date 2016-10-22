@@ -9,6 +9,7 @@ function _init()
  g_dbgforcecell = nil
  g_dbgmove = false
  --]]
+ g_dbgforcecell = 2
  
  g_rotbtnfnc = btnn
  
@@ -564,7 +565,10 @@ function shouldrot(t)
   end
   
   return false
-   
+ 
+ else
+  -- xxx, extends the dir
+  return true
  end
  
  
