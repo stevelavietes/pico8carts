@@ -2093,7 +2093,7 @@ function make_game(level)
      g_next1up -= pts
      if g_next1up <= 0
        then
-      g_next1up += 500
+      g_next1up += 1000
       
       g_lives += 1
       add(g_objs,make1up())
@@ -2606,12 +2606,12 @@ function make_hit(game,x,y)
      > 90
    
    local e = elapsed(t.ts)
-   if e > 50 then
+   if e > 70 then
     if top then
-     offset = e - 50
+     offset = e - 70
      
     else
-     offset = -(e - 50)
+     offset = -(e - 70)
     end
     
    end
