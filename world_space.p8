@@ -23,10 +23,16 @@ function compute_tables()
  end
 end
 
+function tprint(str)
+ local tcurrent = time()
+ print(str..": "..tcurrent-tlast)
+ tlast = tcurrent
+end
+
 function compute_planet_noise()
- local tstart = time()
- local sprites_wide = 4
- local radius=2*8
+ tlast = time()
+ sprites_wide = 4
+ radius=(sprites_wide/2)*8
  local xmin=0
  local xmax=sprites_wide*8
  local xcenter=(xmax-xmin)/2 + xmin
@@ -36,7 +42,7 @@ function compute_planet_noise()
  local ycenter=(ymax-ymin)/2 + ymin
 
  local copies_x = 3
- local copies_y = 3
+ local copies_y = 2
 
  -- using the algorithm from star control 2, noted in the GDC retro game post
  -- mortem - generate a bunch of lines and raise/lower the height map between
@@ -56,30 +62,6 @@ function compute_planet_noise()
    rnd(xmax-xmin)+xmin,
    rnd(ymax-ymin)+ymin
   }
-  -- print("pt: ".. result[1]..", "..result[2])
-  return result
- end
-
- function rnd_line()
-  local result= {
-   -- startp={28,49},
-   startp=rnd_point(),
-   -- endp={22, 39},
-   endp=rnd_point(),
-   hits=function(t, x, y)
-    local dist=abs(t:s_dist(x,y))
-    return dist < 0.6
-   end,
-   s_dist=function(t, x, y)
-    -- local result = (x*t.yd - y*t.xd + t.fac)
-    return (x*t.yd - y*t.xd + t.fac)
-   end
-  }
-
-  result.xd = result.endp[1] - result.startp[1]
-  result.yd = result.endp[2] - result.startp[2]
-  result.fac = result.startp[2]*result.xd-result.startp[1]*result.yd
-
   return result
  end
 
@@ -94,33 +76,48 @@ function compute_planet_noise()
    img[x][y] = flr(cmax/2)
   end
  end
+ tprint("setup")
 
- -- generate lines and raise stuff between the lines, lower outside of the lines
- -- using scan convert
- for i=0,100 do
-  l1 = rnd_line()
-  l2 = rnd_line()
+ function rnd_line()
+  local sp=rnd_point()
+  local ep=rnd_point()
+
+  local xd = ep[1] - sp[1]
+  local yd = ep[2] - sp[2]
+  local fac = sp[2]*xd-sp[1]*yd
+
+  return {
+   startp=sp,
+   endp=ep,
+   xd=xd,
+   yd=yd,
+   fac=fac,
+   s_dist=function(t, x, y)
+    return (x*t.yd - y*t.xd + t.fac)
+   end
+  }
+ end
+
+ -- generate lines and raise stuff where we are on opposite side of the lines
+ -- lower where we're on the same side
+ for i=0,cmax do
+  local l1 = rnd_line()
+  local l2 = rnd_line()
 
   for x=xmin,xmax do
    local ln=img[x]
-
    for y=ymin,ymax do
-    local d1 = l1:s_dist(x,y)
-    local cross1 = d1 < 0
-    local d2 = l2:s_dist(x,y)
-    local cross2 = d2 < 0
-
-    if cross1 != cross2 then
-     ln[y] = min(ln[y]+1, cmax)
+    if (l1:s_dist(x,y) < 0) != (l2:s_dist(x,y) < 0) then
+     ln[y] = ln[y]+1
     else
-     ln[y] = max(ln[y]-1, cmin)
+     ln[y] = ln[y]-1
     end
    end
   end
  end
+ tprint("noise")
 
  local hist = {}
- hist[0] = 0
  hist[1] = 0
  hist[2] = 0
  hist[3] = 0
@@ -132,11 +129,11 @@ function compute_planet_noise()
    local val = ln[y]
    -- local c=val
    local c=4
-   if val < cmax/4 + 0.1*cmax then
+   if val < cmax/4 + 0.2*cmax then
     c=1
-   elseif val < cmax/2 then
+   elseif val < cmax/2 + 0.1*cmax then
     c=2
-   elseif val < 3*cmax/4 - 0.1*cmax then
+   elseif val < 3*cmax/4 - 0.05*cmax then
     c=3
    end
     
@@ -147,44 +144,42 @@ function compute_planet_noise()
  for i=1,4 do
   print(i..": ".. hist[i])
  end
---  stop()
+ tprint("quantize")
 
  -- rotation
- for x=xmin,xmax do
-  for y=ymin,ymax do
-   -- local c=flr(rnd(14))+1
-   local c=sget(x,y)
-   for off_x=0,copies_x do
-    for off_y=0,copies_y do
-     local b = abs(y-(radius+ymin))
-     local a = sqrt(radius*radius-b*b)
-     -- local rotation_scale = 4*cos(atan2(a, b))
-     local rotation_scale = 0
-     local rotation_offset = ((x+rotation_scale*(off_x-2))%(xmax))
-     local new_x = rotation_offset+off_x*4*8
-     local new_y = ((y+2*off_y)%(ymax))
-     sset(new_x,y,c)
+ local ycenter = (radius+ymin)
+ local r2 = radius*radius
+ for y=ymin,ymax do
+  local b = abs(y-ycenter)
+  local a = sqrt(r2-b*b)
+  local rotation_scale = 4*cos(atan2(a, b))
+
+  for x=xmin,xmax do
+   local c = sget(x,y)
+
+   for off_y=0,copies_y do
+    local new_y = y+off_y*4*8
+    for off_x=0,copies_x do
+     if off_x > 0 or off_y > 0 then
+      local rotation_offset = (x+rotation_scale*((off_x-((copies_x+1)*(copies_y+1))/2)+(off_y)*(copies_x+1)))%(xmax)
+      local new_x = rotation_offset+off_x*(4*8)
+      sset(new_x,new_y,c)
+     end
     end
    end
   end
  end
-
- if true then
-  spr(64,50,50,4,4)
-  local tstop = time()
-  print(tstop-tstart)
-  stop()
-  return
- end
+ tprint("rotation")
 
  -- add poles and make round
  for x=xmin,xmax do
+  local xd=x-xcenter
+  local xd2=xd*xd
   for y=ymin,ymax do
-   local xd=x-xcenter
    local yd=y-ycenter
    local c=1
    -- crop out corners to make look round
-   if xd*xd+yd*yd < 2*8*2*8 then
+   if xd2+yd*yd < 2*8*2*8 then
     -- poles
     if ymax-y < 2 or y-ymin < 2 then
      c=7
@@ -192,14 +187,26 @@ function compute_planet_noise()
    else
     c=0
    end
-   for off_x=0,3 do
-    if c == 0 or c==7 then 
-     local new_x = x+off_x*4*8
-     sset(new_x,y,c)
+   for off_x=0,copies_x do
+    local new_x = x+off_x*4*8
+    for off_y=0,copies_y do
+     if c == 0 or c==7 then 
+      local new_y = y+off_y*4*8
+      sset(new_x,new_y,c)
+     end
     end
    end
   end
  end
+ tprint("poles")
+
+--  if true then
+--   spr(64,0,0,16,16)
+--   tprint("final")
+--   stop()
+--   return
+--  end
+
 end
 
 function _init()
@@ -381,9 +388,9 @@ function make_player(pnum)
      print(col_str, -(#col_str)*2, 22, 8)
     end
 
-                pusht({{3, true},{0,false}})
-                if t.rendered_rot != t.theta then
-                 rotate_sprite(t.theta,3,23,23)
+    pusht({{3, true},{0,false}})
+    if t.rendered_rot != t.theta then
+     rotate_sprite(t.theta,3,23,23)
      t.rendered_rot = t.theta
     end
     spr(t.sprite+4, -7, -7,2,2)
@@ -702,6 +709,12 @@ function make_planet(x,y)
    t.frame +=1 
   end,
   draw=function(t)
+   local f = flr((t.frame/16)) % 12
+   local fx = f % sprites_wide
+   -- local fx = flr(f / 3)
+   local fy = flr(f / sprites_wide)
+   -- local fy = f % 4
+
    -- for i=1,9 do
    --  pal(i,12)
    -- end
@@ -713,13 +726,14 @@ function make_planet(x,y)
    -- end
    -- pal(7,7)
    pal(1,12)
-   pal(2,3)
-   pal(3,4)
+   pal(2,4)
+   pal(3,3)
    pal(4,7)
-   spr(64+4*(flr(t.frame/16)%4),-2*8,-2*8,4,4)
+   spr(64+(fx+fy*sprites_wide*sprites_wide)*sprites_wide,-radius,-radius,sprites_wide,sprites_wide)
    for i=0,15 do
     pal(i,i)
    end
+   print(fx..", "..fy, -10, 20, 7)
 
    -- for i=1,14 do
    --  palt(i,true)
