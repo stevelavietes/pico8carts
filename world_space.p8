@@ -15,24 +15,46 @@ function compute_tables()
   sal[theta] = {}
 
   for x=-8,8 do
-   local y = x
-   cal[theta][x] = ca * y
-   sal[theta][x] = sa * y
+   cal[theta][x] = ca * x
+   sal[theta][x] = sa * x
   end
 
  end
 end
 
-function tprint(str)
- local tcurrent = time()
- print(str..": "..tcurrent-tlast)
- tlast = tcurrent
+-- function tprint(str)
+--  local tcurrent = time()
+--  print(str..": "..tcurrent-tlast)
+--  tlast = tcurrent
+-- end
+
+ep_c = {5,1,12}
+
+function make_warp_gate(x,y)
+ return {
+  x=x,
+  y=y,
+  space=sp_world,
+  tspawn=g_tick,
+  draw=function(t)
+   for i,n in pairs({5,4,3,2}) do
+    rectfill(
+     -n,
+     -n*2,
+     n,
+     n*2,
+     ep_c[(-elapsed(t.tspawn)+i)/2%5+1]
+    )
+   end
+  end
+ }
 end
 
 function compute_planet_noise()
- tlast = time()
+--  tlast = time()
  sprites_wide = 2
- radius=(sprites_wide/2)*8
+ -- radius=(sprites_wide/2)*8
+ radius=sprites_wide*4
  local xmin=0
  local xmax=sprites_wide*8
  local xcenter=(xmax-xmin)/2 + xmin
@@ -43,26 +65,20 @@ function compute_planet_noise()
 
  copies_x = 3
  copies_y = 3
+ copies_xy = copies_x*copies_y
 
  -- using the algorithm from star control 2, noted in the GDC retro game post
  -- mortem - generate a bunch of lines and raise/lower the height map between
  -- those regions, then quantize and map the colors
 
  -- base height
- for x=xmin,xmax do
-  for y=ymin,ymax do
-   sset(x,y,7)
-  end
- end
- cls()
+--  cls()
 
  function rnd_point()
-  -- return {rnd(sprites_wide*8-8)+xmin+4, rnd(sprites_wide*8-8)+ymin+4}
-  local result={
+  return {
    rnd(xmax-xmin)+xmin,
    rnd(ymax-ymin)+ymin
   }
-  return result
  end
 
  local img = {}
@@ -76,7 +92,7 @@ function compute_planet_noise()
    img[x][y] = flr(cmax/2)
   end
  end
- tprint("setup")
+--  tprint("setup")
 
  function rnd_line()
   local sp=rnd_point()
@@ -115,13 +131,13 @@ function compute_planet_noise()
    end
   end
  end
- tprint("noise")
+--  tprint("noise")
 
- local hist = {}
- hist[1] = 0
- hist[2] = 0
- hist[3] = 0
- hist[4] = 0
+--  local hist = {}
+--  hist[1] = 0
+--  hist[2] = 0
+--  hist[3] = 0
+--  hist[4] = 0
  -- quantize
  for x=xmin,xmax do
   local ln=img[x]
@@ -129,25 +145,25 @@ function compute_planet_noise()
    local val = ln[y]
    -- local c=val
    local c=4
-   if val < cmax/4 + 0.2*cmax then
+   if val < 0.45*cmax then
     c=1
-   elseif val < cmax/2 + 0.1*cmax then
+   elseif val < 0.6*cmax then
     c=2
-   elseif val < 3*cmax/4 - 0.05*cmax then
+   elseif val < 0.7*cmax then
     c=3
    end
     
-   hist[c] +=1 
-   img[x][y] = c
+   -- hist[c] +=1 
+   ln[y] = c
   end
  end
- for i=1,4 do
-  print(i..": ".. hist[i])
- end
- tprint("quantize")
+--  for i=1,4 do
+--   print(i..": ".. hist[i])
+--  end
+--  tprint("quantize")
 
  -- rotation
- local ycenter = (radius+ymin)
+ local ycenter = radius+ymin
  local r2 = radius*radius
  for y=ymin,ymax do
   local b = abs(y-ycenter)
@@ -160,14 +176,14 @@ function compute_planet_noise()
    for off_y=0,(copies_y-1) do
     local new_y = y+off_y*sprites_wide*8
     for off_x=0,copies_x-1 do
-     local rotation_offset = (x+rotation_scale*((off_x-((copies_x)*(copies_y))/2)+(off_y)*(copies_x)))%(xmax)
+     local rotation_offset = (x+rotation_scale*((off_x-copies_xy/2)+off_y*copies_x))%(xmax)
      local new_x = rotation_offset+off_x*(sprites_wide*8)
      sset(new_x,new_y,c)
     end
    end
   end
  end
- tprint("rotation")
+--  tprint("rotation")
 
  -- add poles and make round
  for x=xmin,xmax do
@@ -177,7 +193,7 @@ function compute_planet_noise()
    local yd=y-ycenter
    local c=1
    -- crop out corners to make look round
-   if xd2+yd*yd < radius*radius then
+   if xd2+yd*yd < r2 then
     -- poles
     if ymax-y < 2 or y-ymin < 2 then
      c=7
@@ -196,15 +212,14 @@ function compute_planet_noise()
    end
   end
  end
- tprint("poles")
+--  tprint("poles")
 
- if false then
-  spr(64,0,55,16,16)
-  tprint("final")
-  stop()
-  return
- end
-
+--  if false then
+--   spr(64,0,55,16,16)
+--   tprint("final")
+--   stop()
+--   return
+--  end
 end
 
 function _init()
@@ -260,9 +275,7 @@ function makev(xf, yf)
 end
 
 -- rotate a sprite 
-function rotate_sprite(
- angle,tcolor,sspx,sspy
- )
+function rotate_sprite(angle,tcolor,sspx,sspy)
  local cala = cal[angle]
  local sala = sal[angle]
  for x=-7,6,1 do
@@ -276,7 +289,7 @@ function rotate_sprite(
    -- otherwise fetch the color from
    -- the sprite sheet
    local c = tcolor
-   if abs(xp) < 8 and abs(yp) < 8 then
+   if abs(xp) < 7 and abs(yp) < 7 then
     c = sget(xp+sspx,yp+sspy)
    end
 
@@ -287,24 +300,24 @@ function rotate_sprite(
  end
 end
 
-function make_pushable(x,y)
- return make_physobj(
-  {
-   x=x,
-   y=y,
-   name="pushable_["..x..","..y.."]",
-   space=sp_world,
-   vis_r=5,
-   draw=function(t)
-    circfill(0,0,5,6)
-    circfill(0,0,2,2)
-    circ(0,0,t.vis_r, 8)
-    circ(0,0,t.radius, 9)
-   end
-  },
- 100
- )
-end
+-- function make_pushable(x,y)
+--  return make_physobj(
+--   {
+--    x=x,
+--    y=y,
+--    name="pushable_["..x..","..y.."]",
+--    space=sp_world,
+--    vis_r=5,
+--    draw=function(t)
+--     circfill(0,0,5,6)
+--     circfill(0,0,2,2)
+--     circ(0,0,t.vis_r, 8)
+--     circ(0,0,t.radius, 9)
+--    end
+--   },
+--  100
+--  )
+-- end
 
 -- @{ built in diagnostic stuff
 function make_player(pnum)
@@ -433,13 +446,13 @@ function update_phys(o)
  o.force.y -= g_friction*o.velocity.y
 end
 
-function vecstr(v)
- return ""..v.x..", "..v.y
-end
+-- function vecstr(v)
+--  return ""..v.x..", "..v.y
+-- end
 
-function vecdot(a, b)
- return a.x * b.x + a.y * b.y
-end
+-- function vecdot(a, b)
+--  return a.x * b.x + a.y * b.y
+-- end
 
 function vecadd(a, b)
  return {x=a.x+b.x, y=a.y+b.y}
@@ -449,9 +462,9 @@ function vecsub(a, b)
  return {x=a.x-b.x, y=a.y-b.y}
 end
 
-function vecmult(a, b)
- return {x=a.x*b.x, y=a.y*b.y}
-end
+-- function vecmult(a, b)
+--  return {x=a.x*b.x, y=a.y*b.y}
+-- end
 
 function vecscale(v, m)
  return {x=v.x*m, y=v.y*m}
@@ -472,14 +485,14 @@ function vecmag(v, sf)
  return result
 end
 
-function vecrot(v, a)
- local s = sin(a/360)
- local c = cos(a/360)
- return {
-   x=v.x * c - v.y * s,
-   y=v.x * s + v.y * c,
- }
-end
+-- function vecrot(v, a)
+--  local s = sin(a/360)
+--  local c = cos(a/360)
+--  return {
+--    x=v.x * c - v.y * s,
+--    y=v.x * s + v.y * c,
+--  }
+-- end
 
 function vecdistsq(a, b, sf)
  if sf then
@@ -682,50 +695,64 @@ function make_debugmsg()
    print("",0,0)
    print("cpu: ".. stat(1))
    print("mem: ".. stat(2))
-   local vis="false"
-   if g_p2 and g_cam:is_visible(g_p2) then
-    vis = "true"
-   end
-   if g_p2 then
-    print("p2 vis: ".. vis)
-    print(g_cam.x-64-g_p2.vis_r .. ", " ..g_cam.y-64-g_p2.vis_r)
-    print("vel: ".. vecmag(g_p1.velocity))
-    print("p_vel: ".. vecmag(g_pushable.velocity))
-   end
+   -- local vis="false"
+   -- if g_p2 and g_cam:is_visible(g_p2) then
+   --  vis = "true"
+   -- end
+   -- if g_p2 then
+   --  print("p2 vis: ".. vis)
+   --  print(g_cam.x-64-g_p2.vis_r .. ", " ..g_cam.y-64-g_p2.vis_r)
+   --  print("vel: ".. vecmag(g_p1.velocity))
+   --  print("p_vel: ".. vecmag(g_pushable.velocity))
+   -- end
   end
  }
 end
 
-sats = {}
-nsats= 20
-function make_satellites()
- for i=0,(nsats-1) do
+function make_satellites(nsats)
+ local sats = {}
+ for i=1,nsats do
   local a=15
   local b=15
-  reduced = rnd(15)
+  local reduced = rnd(15)
   if rnd(1) < 0.5 then
    a=reduced
   else
    b=reduced
   end
 
-  sign = 1
+  local spd =rnd(0.4) 
   if rnd(1) < 0.4 then
-   sign = -1
+   spd *= -1
   end
 
-  sats[i] = {
-   a=a,
-   b=b,
-   rot=rnd(1),
-   phase=rnd(64),
-   spd=sign*rnd(0.4),
-   size=rnd(2)
-   -- spd=rnd(3)
-  }
+  add(
+   sats,
+   {
+    a=a,
+    b=b,
+    rot=rnd(1),
+    phase=rnd(64),
+    spd=spd,
+    size=rnd(2)
+    -- spd=rnd(3)
+   }
+  )
+ end
+ return sats
+end
+
+function reset_palette()
+ for i=0,15 do
+  pal(i,i)
  end
 end
-make_satellites()
+
+function set_palette(palmap)
+ for _, pm in pairs(palmap) do
+  pal(pm[1], pm[2])
+ end
+end
 
 function make_planet(x,y)
  return {
@@ -734,14 +761,15 @@ function make_planet(x,y)
   name="planet_planetulon",
   space=sp_world,
   frame=0,
+  sats=make_satellites(20),
   update=function(t)
    t.frame +=1 
   end,
   draw=function(t)
-   local f = flr((t.frame/16)) % ((copies_x)*(copies_y))
-   local fx = f % (copies_x)
+   local f = flr(t.frame/64) % copies_xy
+   local fx = f % copies_x
    -- local fx = flr(f / 3)
-   local fy = flr(f / (copies_x))
+   local fy = flr(f / copies_x)
    -- local fy = f % 4
 
    -- for i=1,9 do
@@ -754,28 +782,21 @@ function make_planet(x,y)
    --  pal(i, 4)
    -- end
    -- pal(7,7)
-   pal(1,12)
-   pal(2,4)
-   pal(3,3)
-   pal(4,7)
+   set_palette({{1,12},{2,4},{3,3},{4,7}})
    local sprite_index = 64+(16*fy+fx)*sprites_wide
    spr(sprite_index,-radius,-radius,sprites_wide,sprites_wide)
-   for i=0,15 do
-    pal(i,i)
-   end
-   print(fx..", "..fy.." ["..sprite_index.."]", -10, 20, 7)
+   reset_palette()
+   -- print(fx..", "..fy.." ["..sprite_index.."]", -10, 20, 7)
 
    -- satellite
-   for i=0,(nsats-1) do
-    local s = sats[i]
-
+   for _, s in pairs(t.sats) do
     local sat_theta = (((s.spd*t.frame+s.phase)%64)/64)
-    local c_t = cos(sat_theta)
-    local s_t = sin(sat_theta)
-    local x0 = s.a*c_t
-    local y0 = s.b*s_t
-    local xr = x0*cos(s.rot)-y0*sin(s.rot)
-    local yr = y0*cos(s.rot)+x0*sin(s.rot)
+    local x0 = s.a*cos(sat_theta)
+    local y0 = s.b*sin(sat_theta)
+    local cr = cos(s.rot)
+    local sr = sin(s.rot)
+    local xr = x0*cr-y0*sr
+    local yr = y0*cr+x0*sr
     rectfill(xr,yr, xr+s.size,yr+s.size, 6)
    end
 
@@ -803,28 +824,29 @@ function game_start()
  add(g_objs, g_cam)
 
  add(g_objs, make_planet(32,32))
+ add(g_objs, make_warp_gate(32,-32))
 
  g_p1 = make_player(0)
  add(g_objs, g_p1)
 
  -- add in pushable things
 --  for i=0,0 do
- if false then
-  local collides = true
-  local pushable = make_pushable(10, 10)
-  while collides==true do 
-   pushable.x = rnd(128) - 64
-   pushable.y = rnd(128) - 64
-   collides = false
-   for _, o in pairs(g_objs) do
-    if o.is_phys and not collides and collides_circles(o, pushable) then
-     collides = true
-    end
-   end
-  end
-  add(g_objs, pushable)
-  g_pushable = pushable
- end
+--  if false then
+--   local collides = true
+--   local pushable = make_pushable(10, 10)
+--   while collides==true do 
+--    pushable.x = rnd(128) - 64
+--    pushable.y = rnd(128) - 64
+--    collides = false
+--    for _, o in pairs(g_objs) do
+--     if o.is_phys and not collides and collides_circles(o, pushable) then
+--      collides = true
+--     end
+--    end
+--   end
+--   add(g_objs, pushable)
+--   g_pushable = pushable
+--  end
 
  add(g_objs, make_debugmsg())
 
@@ -917,14 +939,14 @@ function drawobjs(objs)
    -- if you're drawing screen center 
    if t.space == sp_screen_center then
     pushc(-64, -64)
-    cam_stack += 1
+    cam_stack = 1
    elseif t.space == sp_world and g_cam  then
     pushc(g_cam.x - 64, g_cam.y - 64)
     pushc(-t.x, -t.y)
-    cam_stack += 2
+    cam_stack = 2
    elseif not t.space or t.space == sp_local then
     pushc(-t.x, -t.y)
-    cam_stack += 1
+    cam_stack = 1
    elseif t.space == sp_screen_native then
    end
 
