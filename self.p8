@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 5
+version 8
 __lua__
 time_colors={11,3,4,9,10,14,2,8}
 
@@ -876,7 +876,12 @@ function test_break(o)
       mset(m,mys[my],0) 
       make_break(m*8,(my-1)*8+off)
      else
-      mset(m,mys[my],88)
+      --mset(m,mys[my],88)
+      
+      mset(m,mys[my],0) 
+      make_break(m*8,(my-1)*8+off)
+      
+      
       local a = make_apple(
         m*8, (my-2)*8+off)
       if o.direction == 0 then
