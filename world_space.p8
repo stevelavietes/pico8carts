@@ -24,6 +24,7 @@ function compute_tables()
 end
 
 function compute_planet_noise()
+ local tstart = time()
  local sprites_wide = 4
  local radius=2*8
  local xmin=0
@@ -70,26 +71,14 @@ function compute_planet_noise()
     return dist < 0.6
    end,
    s_dist=function(t, x, y)
-    local result = ((x-t.startp[1])*t.yd - (y-t.startp[2])*t.xd)
-    if y == ymin then
-     -- print(result)
-    end
-    return result
+    -- local result = (x*t.yd - y*t.xd + t.fac)
+    return (x*t.yd - y*t.xd + t.fac)
    end
   }
 
-  local xd1 = (result.endp[1] - result.startp[1])
-  local yd1 = (result.endp[2] - result.startp[2])
-  -- local mag1= sqrt(yd1*yd1+xd1*xd1)
-  local fac1=(result.endp[1]*result.startp[2]-result.endp[2]*result.startp[1])
-
-  -- result.xd=xd1/mag1
-  -- result.yd=yd1/mag1
-  -- result.fac=fac1/mag1
-
-  result.xd=xd1
-  result.yd=yd1
-  -- result.fac=fac1/mag1
+  result.xd = result.endp[1] - result.startp[1]
+  result.yd = result.endp[2] - result.startp[2]
+  result.fac = result.startp[2]*result.xd-result.startp[1]*result.yd
 
   return result
  end
@@ -102,7 +91,6 @@ function compute_planet_noise()
  for x=xmin,xmax do
   img[x] = {}
   for y=ymin,ymax do
-   -- img[x][y] = 2
    img[x][y] = flr(cmax/2)
   end
  end
@@ -111,67 +99,24 @@ function compute_planet_noise()
  -- using scan convert
  for i=0,100 do
   l1 = rnd_line()
-  -- img[flr(l1.startp[1])][flr(l1.startp[2])] = 10
-  -- img[flr(l1.endp[1])][flr(l1.endp[2])] = 10
   l2 = rnd_line()
-  -- img[flr(l2.startp[1])][flr(l2.startp[2])] = 12
-  -- img[flr(l2.endp[1])][flr(l2.endp[2])] = 12
 
-  local maxc=0
-  local up=0
-  local down=0
   for x=xmin,xmax do
-   -- local d2 = l2:s_dist(x,ymin)
-   -- s2_positive = true
-   -- if d2 < 0 then
-   --  s2_positive = false
-   -- end
-   --
    local ln=img[x]
+
    for y=ymin,ymax do
     local d1 = l1:s_dist(x,y)
     local cross1 = d1 < 0
     local d2 = l2:s_dist(x,y)
     local cross2 = d2 < 0
 
-    -- if not cross1 then
-    --  local d1 = l1:s_dist(x,y)
-    --  s1_positive_t = true
-    --  if d1 < 0 then
-    --   s1_positive_t = false
-    --  end
-    --  if s1_positive_t != s1_positive then
-    --   cross1 = true
-    --  end
-    -- end
-    --
-    -- if not cross2 then
-    --  local d2 = l2:s_dist(x,y)
-    --  s2_positive_t = true
-    --  if d2 < 0 then
-    --   s2_positive_t = false
-    --  end
-    --  if s2_positive_t != s2_positive then
-    --   cross2 = true
-    --  end
-    -- end
-
     if cross1 != cross2 then
-     -- sset(x,y,sget(x,y)+1)
-     -- sset(x,y,min(sget(x,y)+1, 15))
      ln[y] = min(ln[y]+1, cmax)
-     up+=1 
     else
-     -- sset(x,y,sget(x,y)-1)
-     -- sset(x,y,max(sget(x,y)-1, 0))
      ln[y] = max(ln[y]-1, cmin)
-     down+=1 
     end
    end
   end
-  -- print("maxc: "..maxc)
-  -- print("up: "..up)
-  -- print("down: "..down)
  end
 
  local hist = {}
@@ -226,6 +171,8 @@ function compute_planet_noise()
 
  if true then
   spr(64,50,50,4,4)
+  local tstop = time()
+  print(tstop-tstart)
   stop()
   return
  end
