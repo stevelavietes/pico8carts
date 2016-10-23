@@ -567,7 +567,7 @@ function shouldrot(t)
  
  else
   -- xxx, extends the dir
-  return true
+  --return true
  end
  
  
@@ -1351,7 +1351,7 @@ function make_player(maze,mzy)
  }
  
  --player placechar
- placechar(t,0,0,5)
+ placechar(t,0,0,0)
  
  return t
 end
@@ -2114,16 +2114,17 @@ function make_game(level)
     t.marks[1].rate = 4
    end
    
-   if #t.marks == 0
-     and #t.flag.ups == 0
-      then
+   if #t.marks == 0 
     
-    music(-1,300)
-    add(g_objs,
-      make_trans(function()
-         make_game(t.l+1)
+    and #t.flag.ups == 0 then
+     music(-1,300)
+     add(g_objs,
+       make_trans(function()
+        make_game(t.l+1)
     				
     				end))
+   
+    
    end
    
    
