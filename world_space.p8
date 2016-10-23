@@ -31,7 +31,7 @@ end
 
 function compute_planet_noise()
  tlast = time()
- sprites_wide = 4
+ sprites_wide = 2
  radius=(sprites_wide/2)*8
  local xmin=0
  local xmax=sprites_wide*8
@@ -41,8 +41,8 @@ function compute_planet_noise()
  local ymax=(4+sprites_wide)*8
  local ycenter=(ymax-ymin)/2 + ymin
 
- local copies_x = 3
- local copies_y = 2
+ copies_x = 4
+ copies_y = 2
 
  -- using the algorithm from star control 2, noted in the GDC retro game post
  -- mortem - generate a bunch of lines and raise/lower the height map between
@@ -158,11 +158,11 @@ function compute_planet_noise()
    local c = sget(x,y)
 
    for off_y=0,copies_y do
-    local new_y = y+off_y*4*8
-    for off_x=0,copies_x do
+    local new_y = y+off_y*sprites_wide*8
+    for off_x=0,copies_x-1 do
      if off_x > 0 or off_y > 0 then
-      local rotation_offset = (x+rotation_scale*((off_x-((copies_x+1)*(copies_y+1))/2)+(off_y)*(copies_x+1)))%(xmax)
-      local new_x = rotation_offset+off_x*(4*8)
+      local rotation_offset = (x+rotation_scale*((off_x-((copies_x)*(copies_y))/2)+(off_y)*(copies_x)))%(xmax)
+      local new_x = rotation_offset+off_x*(sprites_wide*8)
       sset(new_x,new_y,c)
      end
     end
@@ -179,7 +179,7 @@ function compute_planet_noise()
    local yd=y-ycenter
    local c=1
    -- crop out corners to make look round
-   if xd2+yd*yd < 2*8*2*8 then
+   if xd2+yd*yd < radius*radius then
     -- poles
     if ymax-y < 2 or y-ymin < 2 then
      c=7
@@ -187,11 +187,11 @@ function compute_planet_noise()
    else
     c=0
    end
-   for off_x=0,copies_x do
-    local new_x = x+off_x*4*8
-    for off_y=0,copies_y do
+   for off_x=0,(copies_x-1) do
+    local new_x = x+off_x*sprites_wide*8
+    for off_y=0,(copies_y-1) do
      if c == 0 or c==7 then 
-      local new_y = y+off_y*4*8
+      local new_y = y+off_y*sprites_wide*8
       sset(new_x,new_y,c)
      end
     end
@@ -200,12 +200,12 @@ function compute_planet_noise()
  end
  tprint("poles")
 
---  if true then
---   spr(64,0,0,16,16)
---   tprint("final")
---   stop()
---   return
---  end
+ if false then
+  spr(64,0,55,16,16)
+  tprint("final")
+  stop()
+  return
+ end
 
 end
 
@@ -698,6 +698,37 @@ function make_debugmsg()
  }
 end
 
+sats = {}
+nsats= 20
+function make_satellites()
+ for i=0,(nsats-1) do
+  local a=15
+  local b=15
+  reduced = rnd(15)
+  if rnd(1) < 0.5 then
+   a=reduced
+  else
+   b=reduced
+  end
+
+  sign = 1
+  if rnd(1) < 0.4 then
+   sign = -1
+  end
+
+  sats[i] = {
+   a=a,
+   b=b,
+   rot=rnd(1),
+   phase=rnd(64),
+   spd=sign*rnd(0.4),
+   size=rnd(2)
+   -- spd=rnd(3)
+  }
+ end
+end
+make_satellites()
+
 function make_planet(x,y)
  return {
   x=x,
@@ -709,10 +740,10 @@ function make_planet(x,y)
    t.frame +=1 
   end,
   draw=function(t)
-   local f = flr((t.frame/16)) % 12
-   local fx = f % sprites_wide
+   local f = flr((t.frame/64)) % ((copies_x)*(copies_y))
+   local fx = f % (copies_x)
    -- local fx = flr(f / 3)
-   local fy = flr(f / sprites_wide)
+   local fy = flr(f / (copies_x))
    -- local fy = f % 4
 
    -- for i=1,9 do
@@ -729,11 +760,26 @@ function make_planet(x,y)
    pal(2,4)
    pal(3,3)
    pal(4,7)
-   spr(64+(fx+fy*sprites_wide*sprites_wide)*sprites_wide,-radius,-radius,sprites_wide,sprites_wide)
+   local sprite_index = 64+(fx+fy*(sprites_wide*copies_y)*(copies_x))*sprites_wide
+   spr(sprite_index,-radius,-radius,sprites_wide,sprites_wide)
    for i=0,15 do
     pal(i,i)
    end
    print(fx..", "..fy, -10, 20, 7)
+
+   -- satellite
+   for i=0,(nsats-1) do
+    local s = sats[i]
+
+    local sat_theta = (((s.spd*t.frame+s.phase)%64)/64)
+    local c_t = cos(sat_theta)
+    local s_t = sin(sat_theta)
+    local x0 = s.a*c_t
+    local y0 = s.b*s_t
+    local xr = x0*cos(s.rot)-y0*sin(s.rot)
+    local yr = y0*cos(s.rot)+x0*sin(s.rot)
+    rectfill(xr,yr, xr+s.size,yr+s.size, 6)
+   end
 
    -- for i=1,14 do
    --  palt(i,true)
