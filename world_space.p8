@@ -41,8 +41,8 @@ function compute_planet_noise()
  local ymax=(4+sprites_wide)*8
  local ycenter=(ymax-ymin)/2 + ymin
 
- copies_x = 4
- copies_y = 2
+ copies_x = 3
+ copies_y = 3
 
  -- using the algorithm from star control 2, noted in the GDC retro game post
  -- mortem - generate a bunch of lines and raise/lower the height map between
@@ -138,7 +138,7 @@ function compute_planet_noise()
    end
     
    hist[c] +=1 
-   sset(x,y,c)
+   img[x][y] = c
   end
  end
  for i=1,4 do
@@ -152,19 +152,17 @@ function compute_planet_noise()
  for y=ymin,ymax do
   local b = abs(y-ycenter)
   local a = sqrt(r2-b*b)
-  local rotation_scale = 4*cos(atan2(a, b))
+  local rotation_scale = 2*cos(atan2(a, b))
 
   for x=xmin,xmax do
-   local c = sget(x,y)
+   local c = img[x][y]
 
-   for off_y=0,copies_y do
+   for off_y=0,(copies_y-1) do
     local new_y = y+off_y*sprites_wide*8
     for off_x=0,copies_x-1 do
-     if off_x > 0 or off_y > 0 then
-      local rotation_offset = (x+rotation_scale*((off_x-((copies_x)*(copies_y))/2)+(off_y)*(copies_x)))%(xmax)
-      local new_x = rotation_offset+off_x*(sprites_wide*8)
-      sset(new_x,new_y,c)
-     end
+     local rotation_offset = (x+rotation_scale*((off_x-((copies_x)*(copies_y))/2)+(off_y)*(copies_x)))%(xmax)
+     local new_x = rotation_offset+off_x*(sprites_wide*8)
+     sset(new_x,new_y,c)
     end
    end
   end
@@ -264,29 +262,29 @@ end
 -- rotate a sprite 
 function rotate_sprite(
  angle,tcolor,sspx,sspy
-)
+ )
  local cala = cal[angle]
  local sala = sal[angle]
-    for x=-7,6,1 do
-        for y=-7,6,1 do
-            -- 2d rotation about the origin
-            xp = (- cala[x]+sala[y])
-            yp = (  sala[x]+cala[y])
-        
-            -- if the pixel is over range,
-            -- use the transparent color
-            -- otherwise fetch the color from
-            -- the sprite sheet
-            local c = tcolor
-            if abs(xp) < 8 and abs(yp) < 8 then
-             c = sget(xp+sspx,yp+sspy)
-            end
-            
-            -- set a color in the sprite
-            -- sheet
-            sset(x+sspx+16,y+sspy,c)
-        end
-    end
+ for x=-7,6,1 do
+  for y=-7,6,1 do
+   -- 2d rotation about the origin
+   xp = (- cala[x]+sala[y])
+   yp = (  sala[x]+cala[y])
+
+   -- if the pixel is over range,
+   -- use the transparent color
+   -- otherwise fetch the color from
+   -- the sprite sheet
+   local c = tcolor
+   if abs(xp) < 8 and abs(yp) < 8 then
+    c = sget(xp+sspx,yp+sspy)
+   end
+
+   -- set a color in the sprite
+   -- sheet
+   sset(x+sspx+16,y+sspy,c)
+  end
+ end
 end
 
 function make_pushable(x,y)
@@ -740,7 +738,7 @@ function make_planet(x,y)
    t.frame +=1 
   end,
   draw=function(t)
-   local f = flr((t.frame/64)) % ((copies_x)*(copies_y))
+   local f = flr((t.frame/16)) % ((copies_x)*(copies_y))
    local fx = f % (copies_x)
    -- local fx = flr(f / 3)
    local fy = flr(f / (copies_x))
@@ -760,12 +758,12 @@ function make_planet(x,y)
    pal(2,4)
    pal(3,3)
    pal(4,7)
-   local sprite_index = 64+(fx+fy*(sprites_wide*copies_y)*(copies_x))*sprites_wide
+   local sprite_index = 64+(16*fy+fx)*sprites_wide
    spr(sprite_index,-radius,-radius,sprites_wide,sprites_wide)
    for i=0,15 do
     pal(i,i)
    end
-   print(fx..", "..fy, -10, 20, 7)
+   print(fx..", "..fy.." ["..sprite_index.."]", -10, 20, 7)
 
    -- satellite
    for i=0,(nsats-1) do
@@ -810,7 +808,8 @@ function game_start()
  add(g_objs, g_p1)
 
  -- add in pushable things
- for i=0,0 do
+--  for i=0,0 do
+ if false then
   local collides = true
   local pushable = make_pushable(10, 10)
   while collides==true do 
