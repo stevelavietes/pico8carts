@@ -30,12 +30,14 @@ end
 
 ep_c = {5,1,12}
 
-function make_warp_gate(x,y)
+function make_warp_gate(x,y,target_system)
  return {
   x=x,
   y=y,
   space=sp_world,
   tspawn=g_tick,
+  target_system=target_system,
+  sats=make_satellites(30,3),
   draw=function(t)
    for i,n in pairs({5,4,3,2}) do
     rectfill(
@@ -45,6 +47,21 @@ function make_warp_gate(x,y)
      n*2,
      ep_c[(-elapsed(t.tspawn)+i)/2%5+1]
     )
+   end
+
+   for _, s in pairs(t.sats) do
+    local sat_theta = flr((((s.spd*elapsed(t.tspawn)+s.phase)%64)/64)*360)
+    local x0 = s.a*cal[sat_theta][1]
+    local y0 = s.b*sal[sat_theta][1]
+
+    -- derivatives
+    if (x0 < 0 and -y0 < 0) or (x0 > 0 and -y0 > 0) then
+     local cr = cal[s.rot][1]
+     local sr = sal[s.rot][1]
+     local xr = x0*cr-y0*sr
+     local yr = y0*cr+x0*sr
+     line(xr,yr, xr,yr, 12)
+    end
    end
   end
  }
@@ -168,7 +185,7 @@ function compute_planet_noise()
  for y=ymin,ymax do
   local b = abs(y-ycenter)
   local a = sqrt(r2-b*b)
-  local rotation_scale = 2*cos(atan2(a, b))
+  local rotation_scale = 2*cal[flr(atan2(a, b)*360)][1]
 
   for x=xmin,xmax do
    local c = img[x][y]
@@ -254,10 +271,12 @@ gst_playing = 1
 
 function _update()
  stdupdate()
+ updateobjs(g_sys_objs)
 end
 
 function _draw()
  stddraw()
+ drawobjs(g_sys_objs)
 end
 
 -- coordinate systems
@@ -709,7 +728,7 @@ function make_debugmsg()
  }
 end
 
-function make_satellites(nsats)
+function make_satellites(nsats,maxspd)
  local sats = {}
  for i=1,nsats do
   local a=15
@@ -721,7 +740,7 @@ function make_satellites(nsats)
    b=reduced
   end
 
-  local spd =rnd(0.4) 
+  local spd =rnd(maxspd) 
   if rnd(1) < 0.4 then
    spd *= -1
   end
@@ -731,7 +750,7 @@ function make_satellites(nsats)
    {
     a=a,
     b=b,
-    rot=rnd(1),
+    rot=flr(rnd(360)),
     phase=rnd(64),
     spd=spd,
     size=rnd(2)
@@ -749,19 +768,21 @@ function reset_palette()
 end
 
 function set_palette(palmap)
- for _, pm in pairs(palmap) do
-  pal(pm[1], pm[2])
+ for i, c in pairs(palmap) do
+  pal(i, c)
  end
 end
 
-function make_planet(x,y)
+function make_planet(name,x,y,sats,kind,palette)
  return {
   x=x,
   y=y,
-  name="planet_planetulon",
+  name=name,
   space=sp_world,
   frame=0,
-  sats=make_satellites(20),
+  sats=make_satellites(sats,0.4),
+  palette=palette,
+  kind=kind,
   update=function(t)
    t.frame +=1 
   end,
@@ -782,7 +803,7 @@ function make_planet(x,y)
    --  pal(i, 4)
    -- end
    -- pal(7,7)
-   set_palette({{1,12},{2,4},{3,3},{4,7}})
+   set_palette(t.palette)
    local sprite_index = 64+(16*fy+fx)*sprites_wide
    spr(sprite_index,-radius,-radius,sprites_wide,sprites_wide)
    reset_palette()
@@ -790,11 +811,11 @@ function make_planet(x,y)
 
    -- satellite
    for _, s in pairs(t.sats) do
-    local sat_theta = (((s.spd*t.frame+s.phase)%64)/64)
-    local x0 = s.a*cos(sat_theta)
-    local y0 = s.b*sin(sat_theta)
-    local cr = cos(s.rot)
-    local sr = sin(s.rot)
+    local sat_theta = flr((((s.spd*t.frame+s.phase)%64)/64)*360)
+    local x0 = s.a*cal[sat_theta][1]
+    local y0 = s.b*sal[sat_theta][1]
+    local cr = cal[s.rot][1]
+    local sr = sal[s.rot][1]
     local xr = x0*cr-y0*sr
     local yr = y0*cr+x0*sr
     rectfill(xr,yr, xr+s.size,yr+s.size, 6)
@@ -813,21 +834,59 @@ function make_planet(x,y)
  }
 end
 
-function game_start()
- g_objs = {
+function add_gobjs(thing)
+ add(g_objs, thing)
+ return thing
+end
+
+g_systems = {
+ starter = {
+  gates = {
+   {32, -32, "next"}
+  },
+  --         name     x  y   sats ptype    palette
+  planet = { "earth", 40,40, 40, "normal", {12, 4, 3, 7}},
+  -- @TODO: add other ships in the system
+  others = {}
+ }
+}
+
+-- lame that I need to implement this
+function unpack (t, i)
+ i = i or 1
+ if t[i] ~= nil then
+  return t[i], unpack(t, i + 1)
+ end
+end
+
+g_sys_objs = {}
+
+function make_system(name)
+ local sys =g_systems[name] 
+ g_sys_objs = {
+  make_planet(unpack(sys.planet))
  }
 
- add(g_objs, make_infinite_grid())
+ for _, wg in pairs(sys.gates) do
+  add(g_sys_objs, make_warp_gate(unpack(wg)))
+ end
+end
 
- g_cam= make_camera()
+function game_start()
+ g_objs = {}
 
- add(g_objs, g_cam)
+ add_gobjs(make_infinite_grid())
 
- add(g_objs, make_planet(32,32))
- add(g_objs, make_warp_gate(32,-32))
+ g_cam = add_gobjs(make_camera())
 
- g_p1 = make_player(0)
- add(g_objs, g_p1)
+ --todo add "make_system" whch takes a table and generates all the pieces of
+ -- the current system including generating a planet for the system from data
+
+--  add_gobjs(make_planet(32,32))
+--  add_gobjs(make_warp_gate(32,-32))
+
+ make_system("starter")
+ g_p1 = add_gobjs(make_player(0))
 
  -- add in pushable things
 --  for i=0,0 do
@@ -848,7 +907,7 @@ function game_start()
 --   g_pushable = pushable
 --  end
 
- add(g_objs, make_debugmsg())
+ add_gobjs(make_debugmsg())
 
  g_st = gst_playing
 
