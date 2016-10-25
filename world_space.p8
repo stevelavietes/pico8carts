@@ -30,6 +30,11 @@ end
 
 ep_c = {5,1,12}
 
+function print_label(str, off_y)
+ off_y = off_y or 0
+ print(str, -(#str)*2, 12+off_y, 8)
+end
+
 function make_warp_gate(x,y,target_system)
  return {
   x=x,
@@ -38,6 +43,13 @@ function make_warp_gate(x,y,target_system)
   tspawn=g_tick,
   target_system=target_system,
   sats=make_satellites(30,3),
+  radius=3,
+  update=function(t)
+   if collides_circles(t, g_p1) then
+    make_system(t.target_system) 
+    g_p1.x, g_p1.y, g_p1.velocity = 0,0,makev(0,0)
+   end
+  end,
   draw=function(t)
    for i,n in pairs({5,4,3,2}) do
     rectfill(
@@ -63,11 +75,14 @@ function make_warp_gate(x,y,target_system)
      line(xr,yr, xr,yr, 12)
     end
    end
+
+   print_label(t.target_system)
   end
  }
 end
 
-function compute_planet_noise()
+function compute_planet_noise(kind, seed)
+ srand(seed)
 --  tlast = time()
  sprites_wide = 2
  -- radius=(sprites_wide/2)*8
@@ -92,28 +107,33 @@ function compute_planet_noise()
 --  cls()
 
  function rnd_point()
-  return {
-   rnd(xmax-xmin)+xmin,
-   rnd(ymax-ymin)+ymin
-  }
+   return {
+    rnd(xmax-xmin)+xmin,
+    rnd(ymax-ymin)+ymin
+   }
  end
-
  local img = {}
 
  local cmin = 0
  local cmax = 50
+ local coff = 0
+ if kind == "gasgiant" then
+  coff = cmax/4
+ end
 
  for x=xmin,xmax do
   img[x] = {}
   for y=ymin,ymax do
-   img[x][y] = flr(cmax/2)
+   img[x][y] = flr(cmax/2 + coff)
   end
  end
 --  tprint("setup")
 
- function rnd_line()
-  local sp=rnd_point()
-  local ep=rnd_point()
+ function rnd_line(sp, ep)
+  sp=sp or (rnd_point())
+  ep=ep or (rnd_point())
+  -- print("sp: "..sp[1]..", "..sp[2])
+  -- print("ep: "..ep[1]..", "..ep[2])
 
   local xd = ep[1] - sp[1]
   local yd = ep[2] - sp[2]
@@ -131,11 +151,31 @@ function compute_planet_noise()
   }
  end
 
+ function line_gas_giant()
+   local sp = rnd_point()
+   sp[1] = xmin 
+   local ep = rnd_point()
+   ep[1] = xmax
+
+   while abs(ep[2]-sp[2]) > 3 do
+    ep =rnd_point()
+   end
+
+   return rnd_line(sp,ep)
+ end
+
  -- generate lines and raise stuff where we are on opposite side of the lines
  -- lower where we're on the same side
  for i=0,cmax do
-  local l1 = rnd_line()
-  local l2 = rnd_line()
+  local l1, l2 = nil, nil
+  if kind == "gasgiant" then
+   -- ep[2] = sp[2] 
+   l1 = line_gas_giant()
+   l2 = line_gas_giant()
+  elseif kind == "normal" then
+   l1 = rnd_line()
+   l2 = rnd_line()
+  end
 
   for x=xmin,xmax do
    local ln=img[x]
@@ -212,8 +252,8 @@ function compute_planet_noise()
    -- crop out corners to make look round
    if xd2+yd*yd < r2 then
     -- poles
-    if ymax-y < 2 or y-ymin < 2 then
-     c=7
+    if (ymax-y < 2 or y-ymin < 2)  and kind != "gasgiant" then
+      c=7
     end
    else
     c=0
@@ -229,11 +269,11 @@ function compute_planet_noise()
    end
   end
  end
---  tprint("poles")
+ --  tprint("poles")
 
---  if false then
+--  if true then
 --   spr(64,0,55,16,16)
---   tprint("final")
+--   -- tprint("final")
 --   stop()
 --   return
 --  end
@@ -243,7 +283,6 @@ function _init()
  stdinit()
  
  compute_tables()
- compute_planet_noise()
 
  add(
   g_objs,
@@ -391,10 +430,10 @@ function make_player(pnum)
     --spr(3, -7, -7,2,2)
     rect(-3,-3, 3,3, 8)
     local str = "world: " .. t.x .. ", " .. t.y
-    print(str, -(#str)*2, 12, 8)
+    print_label(str)
     
     str="theta: " .. t.theta
-    print(str, -(#str)*2, 18, 8)
+    print_label(str, 6)
 
     local col=3
     if (g_cam:is_visible(t)) then
@@ -415,7 +454,7 @@ function make_player(pnum)
      for _, o in pairs(col_list) do
       col_str = col_str .. " " .. o.name
      end
-     print(col_str, -(#col_str)*2, 22, 8)
+     print_label(col_str, 10)
     end
 
     pusht({{3, true},{0,false}})
@@ -773,7 +812,8 @@ function set_palette(palmap)
  end
 end
 
-function make_planet(name,x,y,sats,kind,palette)
+function make_planet(name,x,y,sats,kind,palette, seed)
+ compute_planet_noise(kind, seed)
  return {
   x=x,
   y=y,
@@ -821,6 +861,8 @@ function make_planet(name,x,y,sats,kind,palette)
     rectfill(xr,yr, xr+s.size,yr+s.size, 6)
    end
 
+   print_label(t.name)
+
    -- for i=1,14 do
    --  palt(i,true)
    -- end
@@ -840,15 +882,66 @@ function add_gobjs(thing)
 end
 
 g_systems = {
- starter = {
+ mercury = {
   gates = {
-   {32, -32, "next"}
+   {50, 0, "venus"}
   },
   --         name     x  y   sats ptype    palette
-  planet = { "earth", 40,40, 40, "normal", {12, 4, 3, 7}},
-  -- @TODO: add other ships in the system
+  planet = { "mercury", 40,40, 1, "normal", {5,6,7,15}, 2},
   others = {}
- }
+ },
+ venus = {
+  gates = {
+   {-50, 0, "mercury"},
+   {50, 0, "earth"}
+  },
+  --         name     x  y   sats ptype    palette
+  planet = { "venus", 40,40, 3, "normal", {7,9,10,15}, 8},
+  others = {}
+ },
+ earth = {
+  gates = {
+   {-50, 0, "venus"},
+   {50, 0, "mars"}
+  },
+  --         name     x  y   sats ptype    palette
+  planet = { "earth", 40,40, 40, "normal", {12, 4, 3, 7}, 2},
+  others = {}
+ },
+ mars = {
+  gates = {
+   {-50, 0, "earth"},
+   {50,  0, "jupiter"}
+  },
+  planet = { "mars", -40,-40, 10, "normal", {2, 4, 9, 7}, 1},
+ },
+ jupiter = {
+  gates = {
+   {-50, 0, "mars"},
+   {50,  0, "saturn"}
+  },
+  planet = { "jupiter", -40,-40, 2, "gasgiant", {2,4,8,4}, 1},
+ },
+ saturn = {
+  gates = {
+   {-50, 0, "jupiter"},
+   {50,  0, "uranus"}
+  },
+  planet = { "saturn", -40,-40, 2, "gasgiant", {2, 4, 9, 7}, 1},
+ },
+ uranus = {
+  gates = {
+   {-50, 0, "saturn"},
+   {50,  0, "neptune"}
+  },
+  planet = { "uranus", -40,-40, 2, "gasgiant", {2, 4, 9, 7}, 1},
+ },
+ neptune = {
+  gates = {
+   {-50, 0, "uranus"},
+  },
+  planet = { "neptune", -40,-40, 2, "gasgiant", {2, 4, 9, 7}, 1},
+ },
 }
 
 -- lame that I need to implement this
@@ -885,7 +978,7 @@ function game_start()
 --  add_gobjs(make_planet(32,32))
 --  add_gobjs(make_warp_gate(32,-32))
 
- make_system("starter")
+ make_system("earth")
  g_p1 = add_gobjs(make_player(0))
 
  -- add in pushable things
