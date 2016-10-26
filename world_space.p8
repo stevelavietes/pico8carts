@@ -44,6 +44,7 @@ function make_warp_gate(x,y,target_system)
   target_system=target_system,
   sats=make_satellites(30,3),
   radius=3,
+  minimap_obj_color=12,
   update=function(t)
    if collides_circles(t, g_p1) then
     make_system(t.target_system) 
@@ -386,7 +387,6 @@ function make_player(pnum)
    pnum=pnum,
    name="player"..pnum,
    space=sp_world,
-   c_objs={},
    vis_r=7,
    sprite=32,
    theta = 0,
@@ -422,7 +422,6 @@ function make_player(pnum)
      m_y = sal[t.theta][1]
     end
     add_force(t, makev(m_x, m_y))
-    updateobjs(t.c_objs)
    end,
    draw=function(t)
     -- for a double size sprite
@@ -464,7 +463,6 @@ function make_player(pnum)
     end
     spr(t.sprite+4, -7, -7,2,2)
     popt()
-    drawobjs(t.c_objs)
     
     circ(0,0,t.radius,col)
    end
@@ -681,8 +679,6 @@ end
 g_spacing = 64
 function make_infinite_grid()
  return {
-  x=0,
-  y=0,
   space=sp_screen_native,
   draw=function(t)
    local g_o_x = 128 - g_cam.x % 128
@@ -745,8 +741,6 @@ end
 
 function make_debugmsg()
  return {
-  x=0,
-  y=0,
   space=sp_screen_native,
   draw=function(t)
    color(14)
@@ -817,6 +811,7 @@ function make_planet(name,x,y,sats,kind,palette, seed)
  return {
   x=x,
   y=y,
+  minimap_obj_color=3,
   name=name,
   space=sp_world,
   frame=0,
@@ -881,6 +876,8 @@ function add_gobjs(thing)
  return thing
 end
 
+g_sys_size = 500
+one_over_g_sys_size_2 = 1/(2*g_sys_size)
 g_systems = {
  mercury = {
   gates = {
@@ -901,11 +898,11 @@ g_systems = {
  },
  earth = {
   gates = {
-   {-50, 0, "venus"},
-   {50, 0, "mars"}
+   {-250, 0, "venus"},
+   {150, 0, "mars"}
   },
   --         name     x  y   sats ptype    palette
-  planet = { "earth", 40,40, 40, "normal", {12, 4, 3, 7}, 2},
+  planet = { "earth", 140,140, 40, "normal", {12, 4, 3, 7}, 2},
   others = {}
  },
  mars = {
@@ -963,12 +960,81 @@ function make_system(name)
  for _, wg in pairs(sys.gates) do
   add(g_sys_objs, make_warp_gate(unpack(wg)))
  end
+
+ -- if the system has any NPCs in it
+ if sys.npcs then
+  for _, os in pairs(sys.npcs) do
+   add(g_sys_objs, make_npc(unpack(os)))
+  end
+ end
+end
+
+function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
+ return make_physobj{
+  x=start_x,
+  y=start_y,
+  space=sp_world,
+  name=name,
+  vis_r=vis_r,
+  sprite=sprite,
+  brain=brain_funcs[brain],
+  systems=systems,
+  -- for rotating the sprite
+  theta = 0,
+  rendered_rot=nil,
+  update=function(t)
+   t:brain()
+  end,
+  draw=function(t)
+   spr(t.sprite)
+  end
+ }
+end
+
+g_map_size=32
+map_size_times_sys_size=one_over_g_sys_size_2*g_map_size
+function map_coords(o)
+ return (o.x + g_sys_size) * map_size_times_sys_size + 2,
+ (o.y + g_sys_size) * map_size_times_sys_size + 2
+end
+function make_minimap()
+ return {
+  space=sp_screen_native,
+  draw=function(t)
+   -- bg
+   -- XXX: if tokens are needed, this can be reduced by 19 tokens by removing
+   -- the border and just drawing the background color
+   palt(0, false)
+   rectfill(0,0,g_map_size, g_map_size,0)
+   rect(0,0,g_map_size+1, g_map_size+1, 5)
+   palt(0, true)
+
+   -- ship
+   local px, py = map_coords(g_p1)
+   circfill(px,py,1,11)
+
+   -- visibility square
+   -- local minx, miny = map_coords(makev(g_p1.x-64, g_p1.y-64))
+   -- local maxx, maxy = map_coords(makev(g_p1.x+64,g_p1.y+64))
+   -- rect(minx, miny, maxx, maxy, 11)
+
+   -- gates
+   for _, o in pairs(g_sys_objs) do
+    c = o.minimap_obj_color
+    if c then
+     px, py = map_coords(o)
+     rectfill(px,py,px,py,c)
+    end
+   end
+  end
+ }
 end
 
 function game_start()
  g_objs = {}
 
  add_gobjs(make_infinite_grid())
+ g_map = add_gobjs(make_minimap())
 
  g_cam = add_gobjs(make_camera())
 
