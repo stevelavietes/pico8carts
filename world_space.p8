@@ -100,7 +100,7 @@ function compute_planet_noise(kind, seed)
  copies_y = 3
  copies_xy = copies_x*copies_y
 
- -- using the algorithm from star control 2, noted in the GDC retro game post
+ -- using the algorithm from star control 2, noted in the gdc retro game post
  -- mortem - generate a bunch of lines and raise/lower the height map between
  -- those regions, then quantize and map the colors
 
@@ -353,10 +353,11 @@ function rotate_sprite(angle,tcolor,sspx,sspy)
    end
 
    -- set a color in the sprite
-   -- sheet
+   -- sheet next to the currnet sprite
    sset(x+sspx+16,y+sspy,c)
   end
  end
+ return angle
 end
 
 -- function make_pushable(x,y)
@@ -388,7 +389,7 @@ function make_player(pnum)
    name="player"..pnum,
    space=sp_world,
    vis_r=7,
-   sprite=32,
+   sprite=36,
    theta = 0,
    rendered_rot=nil,
    update=function(t)
@@ -396,8 +397,6 @@ function make_player(pnum)
      return
     end
 
-    local m_x = 0
-    local m_y = 0
     local thrust = false
     if btn(0, t.pnum) then
      t.theta -= 10
@@ -418,53 +417,35 @@ function make_player(pnum)
      t.velocity = vecscale(t.velocity, 0.8)
     end
     if thrust then
-     m_x = cal[t.theta][-1]
-     m_y = sal[t.theta][1]
+     add_force(t, makev(cal[t.theta][-1], sal[t.theta][1]))
     end
-    add_force(t, makev(m_x, m_y))
    end,
    draw=function(t)
-    -- for a double size sprite
+    print_label("world: " .. t.x .. ", " .. t.y)
+    print_label("theta: " .. t.theta, 6)
 
-    --spr(3, -7, -7,2,2)
-    rect(-3,-3, 3,3, 8)
-    local str = "world: " .. t.x .. ", " .. t.y
-    print_label(str)
-    
-    str="theta: " .. t.theta
-    print_label(str, 6)
-
-    local col=3
-    if (g_cam:is_visible(t)) then
-     col=11
-    end
-    circ(0,0,t.vis_r,col)
-
-    local col_list = {}
-    for _, o in pairs(g_objs) do
-     if t ~= o and o.is_phys and not collided and collides_circles(t, o) then
-      col=col+1
-      add(col_list, o)
-     end
-    end
-
-    if #col_list > 0 then
-     local col_str = "colliding:"
-     for _, o in pairs(col_list) do
-      col_str = col_str .. " " .. o.name
-     end
-     print_label(col_str, 10)
-    end
+    -- local col_list = {}
+    -- for _, o in pairs(g_objs) do
+    --  if t ~= o and o.is_phys and not collided and collides_circles(t, o) then
+    --   col=col+1
+    --   add(col_list, o)
+    --  end
+    -- end
+    --
+    -- if #col_list > 0 then
+    --  local col_str = "colliding:"
+    --  for _, o in pairs(col_list) do
+    --   col_str = col_str .. " " .. o.name
+    --  end
+    --  print_label(col_str, 10)
+    -- end
 
     pusht({{3, true},{0,false}})
-    if t.rendered_rot != t.theta then
-     rotate_sprite(t.theta,3,23,23)
-     t.rendered_rot = t.theta
-    end
-    spr(t.sprite+4, -7, -7,2,2)
+    rotate_sprite_if_changed(t, 3, 23, 23)
+    spr(t.sprite, -7, -7,2,2)
     popt()
     
-    circ(0,0,t.radius,col)
+    circ(0,0,t.radius,11)
    end
   },
   5
@@ -477,7 +458,6 @@ function update_phys(o)
  -- with time, even though pico
  -- gives us a constant clock
  local dt = 1
-
  
  o.x, o.velocity.x=compute_force_1d(
   o.x,
@@ -684,8 +664,6 @@ function make_infinite_grid()
    local g_o_x = 128 - g_cam.x % 128
    local g_o_y = 128 - g_cam.y % 128
 
-   local smin = vecsub(makev(g_cam.x, g_cam.y), makev(64, 64))
-
    for x=0,3 do
     for y=0,3 do
      -- screen coordinates
@@ -696,6 +674,7 @@ function make_infinite_grid()
      circ(xc, yc, 7, 5)
 
      -- label
+     local smin = vecsub(g_cam, makev(64, 64))
      local str = "w: " .. xc + smin.x .. ", ".. yc + smin.y
      print(str, xc-#str*2, yc+9, 5)
     end
@@ -941,7 +920,7 @@ g_systems = {
  },
 }
 
--- lame that I need to implement this
+-- lame that i need to implement this
 function unpack (t, i)
  i = i or 1
  if t[i] ~= nil then
@@ -961,7 +940,7 @@ function make_system(name)
   add(g_sys_objs, make_warp_gate(unpack(wg)))
  end
 
- -- if the system has any NPCs in it
+ -- if the system has any npcs in it
  if sys.npcs then
   for _, os in pairs(sys.npcs) do
    add(g_sys_objs, make_npc(unpack(os)))
@@ -969,26 +948,52 @@ function make_system(name)
  end
 end
 
+brain_funcs = {
+ stand_still = function(t) end,
+ face_player = function(t) 
+  local dir_vec = vecnorm(vecsub(t, g_p1))
+  t.theta = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
+  -- t.theta += 1
+  -- if t.theta > 359 then
+  --  t.theta = 1
+  -- end
+ end,
+}
+
+function rotate_sprite_if_changed(t, t_c, spmin_x, spmin_y)
+ if t.rendered_rot != t.theta then
+  t.rendered_rot = rotate_sprite(t.theta,t_c,spmin_x,spmin_y)
+ end
+end
+
 function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
- return make_physobj{
-  x=start_x,
-  y=start_y,
-  space=sp_world,
-  name=name,
-  vis_r=vis_r,
-  sprite=sprite,
-  brain=brain_funcs[brain],
-  systems=systems,
-  -- for rotating the sprite
-  theta = 0,
-  rendered_rot=nil,
-  update=function(t)
-   t:brain()
-  end,
-  draw=function(t)
-   spr(t.sprite)
-  end
- }
+ return make_physobj(
+  {
+   x=start_x,
+   y=start_y,
+   space=sp_world,
+   name=name,
+   vis_r=vis_r,
+   sprite=sprite,
+   brain=brain_funcs[brain],
+   systems=systems,
+   -- for rotating the sprite
+   theta = 0,
+   rendered_rot=nil,
+   update=function(t)
+    t:brain()
+   end,
+   draw=function(t)
+    print_label("theta: "..t.theta)
+    pusht({{3,true},{0,false}})
+    rotate_sprite_if_changed(t, 3, 79, 7)
+    spr(t.sprite, -7, -7, 2, 2)
+    circ(0,0,t.radius,11)
+    popt()
+   end
+  },
+  5
+ )
 end
 
 g_map_size=32
@@ -1002,7 +1007,7 @@ function make_minimap()
   space=sp_screen_native,
   draw=function(t)
    -- bg
-   -- XXX: if tokens are needed, this can be reduced by 19 tokens by removing
+   -- xxx: if tokens are needed, this can be reduced by 19 tokens by removing
    -- the border and just drawing the background color
    palt(0, false)
    rectfill(0,0,g_map_size, g_map_size,0)
@@ -1046,6 +1051,9 @@ function game_start()
 
  make_system("earth")
  g_p1 = add_gobjs(make_player(0))
+ add_gobjs(make_npc(30,30,"test","face_player",{},11,6))
+--  add_gobjs(make_npc(40,30,"test","face_player",{},11,6))
+--  add_gobjs(make_npc(50,30,"test","face_player",{},11,6))
 
  -- add in pushable things
 --  for i=0,0 do
@@ -1370,19 +1378,19 @@ end
 
 __gfx__
 00600000000000000007700099999999001010200000000000000088333333333333333333333333333333333333333333333333300000030000000000000000
-00660000000000000007700099999999112011210000000000000008333333333333333333333333333333333333333333333333305885030000000000000000
-0066600000000000007777009999999921212232033333300000008833000003300000333300003000000033333333300000333330cdef030000000000000000
-0066660000000000077777709999999922313233335124330000000833088803308880333319900099888033333330008880333330cdef030000000000000000
-00666500000000007777777799999999333233303bbbbbb300000088330898033089803333199099a98980333333309989800033305775030000000000000000
-0066500000000000077777709999999903030001333bb333000000083308880330888033330009a900888033333309a988888033305665030000000000000000
-00650000000000000007700099999999101001120033330000000088330990033009903333333a80000000333300999000898033305bb5030000000000000000
-005000000000000000700700999999992111122300000000000000083309a003300a90333319a9a0333333333319a90030888033300000030000000000000000
-0000000000000000000000000000000099999999999993999999999933009900009900333319a9a0333333333319980300990033000000000000000000000000
-0000000000000000000000000000000099944499993933939944444933309a8aa8a9033333330a80000000333300aaa009a90333000000000000000000000000
-00000000000000000000000000000000994444499339333394131114330009a99a900033330009a9008880333330a9a899900333000000000000000000000000
-000000000000000000000000000000009966666999333393941113143309900aa009903333199099a989803333099aa9a9033333000000000000000000000000
-00000000000000000000000000000000936465699339343399311114330990399309903333199000998880333311900990333333000000000000000000000000
-00000000000000000000000000000000936466699943399499411149330110311301103333000030000000333311030110333333000000000000000000000000
+00660000000000000007700099999999112011210000000000000008333333333333333330000300000003333333333333333333305885030000000000000000
+0066600000000000007777009999999921212232033333300000008833000003300000333199000998880333333333300000333330cdef030000000000000000
+0066660000000000077777709999999922313233335124330000000833088803308880333199099a98980333333330008880333330cdef030000000000000000
+00666500000000007777777799999999333233303bbbbbb300000088330898033089803330009a90088803333333309989800033305775030000000000000000
+0066500000000000077777709999999903030001333bb3330000000833088803308880333333a80000000333333309a988888033305665030000000000000000
+006500000000000000077000999999991010011200333300000000883309900330099033319a9a03333333333300999000898033305bb5030000000000000000
+005000000000000000700700999999992111122300000000000000083309a003300a9033319a9a03333333333319a90030888033300000030000000000000000
+0000000000000000000000000000000099999999999993999999999933009900009900333330a800000003333319980300990033000000000000000000000000
+0000000000000000000000000000000099944499993933939944444933309a8aa8a9033330009a90088803333300aaa009a90333000000000000000000000000
+00000000000000000000000000000000994444499339333394131114330009a99a9000333199099a989803333330a9a899900333000000000000000000000000
+000000000000000000000000000000009966666999333393941113143309900aa0099033319900099888033333099aa9a9033333000000000000000000000000
+00000000000000000000000000000000936465699339343399311114330990399309903330000300000003333311900990333333000000000000000000000000
+00000000000000000000000000000000936466699943399499411149330110311301103333333333333333333311030110333333000000000000000000000000
 00000000000000000000000000000000933533399999499999944499333333333333333333333333333333333333333333333333000000000000000000000000
 00000000000000000000000000000000999999999999999999999999333333333333333333333333333333333333333333333333000000000000000000000000
 33333300033333333330000333333333333300033333333333333300003333330000000000000000000000000000000033333300003333330000000000000000
