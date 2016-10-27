@@ -340,8 +340,8 @@ function rotate_sprite(angle,tcolor,sspx,sspy)
  for x=-7,6,1 do
   for y=-7,6,1 do
    -- 2d rotation about the origin
-   xp = (- cala[x]+sala[y])
-   yp = (  sala[x]+cala[y])
+   local xp = (- cala[x]+sala[y])
+   local yp = (  sala[x]+cala[y])
 
    -- if the pixel is over range,
    -- use the transparent color
