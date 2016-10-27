@@ -417,12 +417,14 @@ function make_player(pnum)
      t.velocity = vecscale(t.velocity, 0.8)
     end
     if thrust then
-     add_force(t, makev(cal[t.theta][-1], sal[t.theta][1]))
+     accel_forward(t, 3, 5)
     end
    end,
    draw=function(t)
     print_label("world: " .. t.x .. ", " .. t.y)
     print_label("theta: " .. t.theta, 6)
+    print_label("v: " .. vecmag(t.velocity), 12)
+    print_label("vfact: " .. vecmag(t.velocity)/5, 18)
 
     -- local col_list = {}
     -- for _, o in pairs(g_objs) do
@@ -482,9 +484,9 @@ function update_phys(o)
  o.force.y -= g_friction*o.velocity.y
 end
 
--- function vecstr(v)
---  return ""..v.x..", "..v.y
--- end
+function vecstr(v)
+ return ""..v.x..", "..v.y
+end
 
 -- function vecdot(a, b)
 --  return a.x * b.x + a.y * b.y
@@ -948,16 +950,49 @@ function make_system(name)
  end
 end
 
+function look_at(t, p)
+ local dir_vec = vecnorm(vecsub(t, p))
+ t.theta = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
+end
+
+function clamp(val, minval, maxval)
+ return max(min(val, maxval), minval)
+end
+
+function smootherstep(edge0, edge1, x)
+  x= clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0);
+ return x*x*x*(x*(x*6 - 15) + 10);
+end
+
+function accel_forward(t, accel, max_speed)
+ accel *= smootherstep(1.0, 0.0, vecmag(t.velocity)/max_speed)
+ add_force(t, vecscale(makev(cal[t.theta][-1], sal[t.theta][1]), accel))
+end
+
 brain_funcs = {
- stand_still = function(t) end,
+--  stand_still = function(t) end,
+--  spin = function(t)
+--   t.theta += 1
+--   if t.theta > 359 then
+--    t.theta = 1
+--   end
+--  end,
  face_player = function(t) 
-  local dir_vec = vecnorm(vecsub(t, g_p1))
-  t.theta = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
-  -- t.theta += 1
-  -- if t.theta > 359 then
-  --  t.theta = 1
-  -- end
+  look_at(t, g_p1)
  end,
+ patrol = function(t)
+  if t.target_point then
+   local dirvec = vecsub(t, t.target_point)
+   local d = vecmag(dirvec)
+   if d < 9 then
+    t.target_point = makev(t.target_point.x,-1*t.target_point.y)
+   end
+   look_at(t, t.target_point)
+   accel_forward(t, 1, 3)
+  else
+   t.target_point = makev(-20,-20)
+  end
+ end
 }
 
 function rotate_sprite_if_changed(t, t_c, spmin_x, spmin_y)
@@ -977,6 +1012,7 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
    sprite=sprite,
    brain=brain_funcs[brain],
    systems=systems,
+   minimap_obj_color=8,
    -- for rotating the sprite
    theta = 0,
    rendered_rot=nil,
@@ -985,6 +1021,15 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
    end,
    draw=function(t)
     print_label("theta: "..t.theta)
+    if t.target_point then
+     print_label("target_point: "..vecstr(t.target_point), 6)
+     dirvec = vecsub(t, t.target_point)
+     d = vecmag(dirvec)
+     print_label("distance: "..d, 12)
+     local local_target_point = vecsub(t.target_point, t)
+     circfill(local_target_point.x, local_target_point.y, 3, 8)
+    end
+
     pusht({{3,true},{0,false}})
     rotate_sprite_if_changed(t, 3, 79, 7)
     spr(t.sprite, -7, -7, 2, 2)
@@ -1051,7 +1096,7 @@ function game_start()
 
  make_system("earth")
  g_p1 = add_gobjs(make_player(0))
- add_gobjs(make_npc(30,30,"test","face_player",{},11,6))
+ add(g_sys_objs,make_npc(30,30,"test","patrol",{},11,6))
 --  add_gobjs(make_npc(40,30,"test","face_player",{},11,6))
 --  add_gobjs(make_npc(50,30,"test","face_player",{},11,6))
 
