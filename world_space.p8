@@ -950,9 +950,18 @@ function make_system(name)
  end
 end
 
+function lerp(v1, v2, amount, clamp)
+ local result = (v2 -v1)*amount + v1
+ if clamp and abs(result - v2) < clamp then
+  result = v2
+ end
+ return result
+end
+
 function look_at(t, p)
  local dir_vec = vecnorm(vecsub(t, p))
- t.theta = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
+ local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360) + 360
+ t.theta = flr(lerp(t.theta + 360, tgt_angle, 0.3, 0.1)) - 360
 end
 
 function clamp(val, minval, maxval)
