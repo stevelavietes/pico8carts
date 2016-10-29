@@ -2075,7 +2075,7 @@ function make_game(level)
          mark.mzx*8,
          mark.mzy*8,
          #t.marks,
-         ''..pts,
+         ''..(pts*10),
          t.mult))
      
      add(t.flag.ups,
@@ -2262,6 +2262,10 @@ function make_game(level)
  return t
 end
 
+function getsstr(n)
+ if (n == 0) return '0'
+ return n..'0'
+end
 
 function make_scorebubble(
   x,y,n,pts,offset)
@@ -2301,7 +2305,7 @@ function make_scorebubble(
    popc()
    
    pushc(t.x - g_camx +
-      (offset-1)*12,
+      (offset-1)*16,
      t.y - g_camy + e + 4)
     
     local l = #pts*4+3
@@ -2529,7 +2533,7 @@ function draw_stats(top)
  print(max(0,g_lives-1),
    14, 2, 7)
  
- local sstr = ''..g_score
+ local sstr = getsstr(g_score)
  local w = 4 * (#sstr + 6)
  print('score:'..sstr,
       126 - w, 2, 7)
@@ -2740,10 +2744,15 @@ function make_main()
    
    rectfill(0,0,128,7,1)
    line(0,7,127,7,5)
-   print('score:'.. g_score,
+   
+   local sstr = getsstr(g_score)
+   
+   print('score:'..sstr,
      2, 1, 7)
    
-   local histr = ''.. g_hiscore
+   local histr =
+    getsstr(g_hiscore)
+   
    local w = 4 * (#histr + 5)
    print('high:'..histr,
       126 - w, 1, 7)
