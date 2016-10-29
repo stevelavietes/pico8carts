@@ -103,7 +103,14 @@ function _draw()
 
  -- batter
  local off_x=-26
+ -- example palette swap
+--  pal(12, 11)
+--  pal(1,3)
+--  pal(5,15)
  sspr(0,64,32,32,0+off_x,0,128+off_x,128)
+--  for i=0, 15 do
+--   pal(i,i)
+--  end
  
  local ball_radius = lerp(
   2, 
