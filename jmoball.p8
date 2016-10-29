@@ -28,7 +28,17 @@ b_y = 0
 function _update60()
  pitch_progress += pitch_speed
  f += 1
+
+ local sign = 0
+
+ -- sign
+ if btn(0, 0) then
+  sign = -1
+ elseif btn(1, 0) then
+  sign = 1
+ end
  
+ -- speed
  if btn(2, 0) then
   pitch_speed += 0.005
  elseif btn(3, 0) then
@@ -45,8 +55,14 @@ function _update60()
   pitch_progress = 0
   f = 0
  end
- 
- b_y = -32 + (2 - 0.1*(f/60) + 4.9 * (f*f/(60*60)))*32
+
+ b_x = sign * 32*(
+   3 * (pitch_progress*pitch_progress*pitch_progress) 
+   - 2*(pitch_progress*pitch_progress)
+  )  + 54
+
+ local t_inc = f/60
+ b_y = -32 + (2 - 0.1*(t_inc) + 4.9 * (t_inc*t_inc))*32
 end
 
 function lerp(minval, maxval, x)
@@ -65,10 +81,14 @@ function _draw()
   15, 
   pitch_progress
  )
- circfill(64,b_y,ball_radius,7)
+
+ circfill(b_x,b_y,ball_radius,7)
+
  --print(pitch_progress)
  print("speed (%/f): "..pitch_speed)
- 
+ print("b_x: "..b_x)
+
+ rect(40,40, 88, 88, 11)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
