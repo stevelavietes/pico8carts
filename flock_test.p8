@@ -1,1193 +1,661 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-
+st_menu=0
+st_play=1
+st_score=2
+g_state=st_menu
 function _init()
  stdinit()
- 
- g_brd = nil
- 
- add(g_objs, make_menu(
-  {'go',
- --  'point'
-  },
-  function (t, i, s)
-   add (s, make_trans(
-    function()
-     game_start()
+ g_state=st_menu
+ add(
+  g_objs, 
+  make_menu(
+   {
+    'go'
+   },
+   function (t, i, s)
+    add (
+     s, 
+     make_trans(
+      function()
+       game_start()
+      end
+     )
+    )
     end
-   ))
+   )
+  )
+end
+
+function add_wobbler(x,y)
+ local blp = {
+  x=x,
+  y=y,
+  spd_x=0,
+  spd_y=0,
+  r=4,
+  solid=true,
+  state=en_charge,
+  charge=rnd(15),
+  updown=1,
+  update=function(t)
+   if t.state == en_charge then
+    t.charge += 1
+    if t.charge >= 15 then
+     t.state = en_attack
+     t.updown=-1*t.updown
+     t.charge=0
+     local dx=t.x-g_tgt.x
+     local dy=t.y-g_tgt.y
+     local nd=norm(dx,dy)
+     
+     if mag(dx,dy) > 20 then
+      t.spd_x=-nd[1]-t.updown*nd[2]
+      t.spd_y=-nd[2]+t.updown*nd[1]
+      t.spd_x*=1
+      t.spd_y*=1
+     else
+      t.spd_x=-2*nd[1]
+      t.spd_y=-2*nd[2]
+     end
+    end
+   elseif t.state == en_attack then
+    t.charge += 1
+    --t.spd_x=
+    if t.charge >= 8 then
+     t.state = en_charge
+     t.charge = 0
+     t.spd_x=0
+     t.spd_y=0
+    end
    end
- ))
+   t.x += t.spd_x
+   t.y += t.spd_y
+  end,
+  draw=function(t)
+   circfill(0,0,t.r,12)
+      
+   local dx=t.x-g_tgt.x
+   local dy=t.y-g_tgt.y
+   local nd=norm(dx,dy)
+   local sox=nd[2]
+   local soy=-nd[1]
+   
+   circfill(-sox,soy,t.r-1,1)
+   circfill(-2*sox,2*soy,t.r-2,0)
+
+   --[[
+   line(0,0,-30*nd[1],-30*nd[2],8)
+   line(0,0,-10*nd[1]-10*nd[2],-10*nd[2]+10*nd[1],9) 
+   ]]--
+  end
+ }
+ add(
+  g_objs,
+  blp
+ )
+ return blp
 end
 
-smear_max = 10
-smear_x = 0
-smear_y = 0
-g_off_x = 0
-g_off_y = 0
-
-function g_offset_x()
- return g_off_x
+function add_blip(x,y)
+ local blp = make_blip(x,y)
+ add(
+  g_objs,
+  blp
+ )
+ return blp
 end
 
-function g_offset_y()
- return g_off_y
-end
-
-function game_start()
- g_objs = {}
-  g_brd = make_board()
- add(g_objs, g_brd)
- g_tgt = make_tgt(0,0)
- add(g_objs,g_tgt)
- 
- --add(g_objs, make_coordsys())
-end
-
-function make_coordsys()
- -- @todo: this should work
- --        like the starfield
+function make_border()
  return {
-   x=0,
-   y=0,
-   update=function(t)
-   end,
-   draw=function(t)
-    for ix=-40,40,40 do
-     for iy=-40,40,40 do
-      print(
-       ""..flr(ix-g_offset_x()%128)..","..flr(iy-g_offset_y()%128),
-       (ix-g_offset_x()) % 128,
-       (iy-g_offset_y()) % 128,
-       8
-      )
+  x=0,
+  y=0,
+  draw=function(t)
+   rect(0,0,127,127,7)
+  end
+ }
+end
 
+function make_enemy_spawner()
+ return {
+  x=0,
+  y=0,
+  frame=0,
+  blips=1,
+  update=function(t)
+   t.frame += 1
+   t.frame = t.frame%90
+   if t.frame == 0 then
+    t.blips+=1
+    -- spawn enemies in opposite
+    -- quadrant
+    local qx=abs(flr(g_tgt.x/64)-1)
+    local qy=abs(flr(g_tgt.y/64)-1)
+    for i=1,t.blips do
+     local dist=0
+     local cx=0
+     local cy=0
+     while dist < 30 do
+      cx=(qx*64+rnd(64))
+      cy=(qy*64+rnd(64))
+      dist=mag(cx-g_tgt.x,cy-g_tgt.y)
+     end
+     if rnd(1) < 0.5 then
+      add_blip(cx,cy)
+     else
+      add_wobbler(cx,cy)
      end
     end
    end
-  }
+  end
+ }
 end
 
-function onscreen(t)
- local xd =abs(t.x+g_offset_x())
- local yd =(t.y+g_offset_y())
- return xd < 64 and yd > 0 and yd < 128
-end
-
-function edgecoords(t)
- local xd =t.x+g_offset_x()
- local yd =t.y+g_offset_y()
- xd=max(-64,min(64,xd))
- yd=max(-64,min(64,yd))
- return 64+xd,64+yd
-end
-
-function in_world_space(fon,foff)
- return function(t)
-  if true or not foff or onscreen(t) then
-   pushc(
-    g_offset_x(), 
-    g_offset_y()
-   ) 
-   fon(t)
-   popc()
-  else
-   local ecx, ecy=edgecoords(t)
-   pushc(ecx, ecy)
-   foff(t)
-   popc()
+num_blips=10
+blips=false
+g_score=0
+function game_start()
+ g_state = st_play
+ g_score = 0
+ 
+ srand(5)
+ g_objs = {}
+ 
+ if blips then
+  for _=1,num_blips do
+   --add_blip(rnd(128), rnd(128))
+   add_wobbler(rnd(128), rnd(128))
   end
  end
-end
-
-function make_station(x,y)
- return {
-  x=x,
-  y=y,
-  frame=0,
-  update=function(t)
-   t.frame+=1
-  end,
-  draw=in_world_space(function(t)
-   -- todo fix this transform
-
-   local ang = t.frame / 3200.0
-   local x=40*cos(ang)
-   local y=40*sin(ang)
-   for i=-1,1 do
-    line(-x+i,-y+i,x+i,y+i,5)
-    ang += 0.25
-    line(
-     -40*cos(ang)+i,
-     -40*sin(ang)+i,
-     40*cos(ang)+i,
-     40*sin(ang)+i,
-     5
-    )
-   end
-   circfill(
-    0,
-    0,
-    6,
-    5
-   )
-   circfill(
-    0,
-    0,
-    4,
-    6
-   )
-   circ(0,0,37,5)
-   circ(0,0,38,5)
-   circ(0,0,39,5)
-   circ(0,0,40,6)
-   circ(0,0,41,6)
-   circ(0,0,42,6)
-   circ(0,0,43,5)
-   circ(0,0,44,5)
-   circ(0,0,45,5)
-    local col=9
-    if (t.frame / 20) % 2 < 1 then
-     col=10
-    end
-   for mod_x=1,1 do
-    for mod_y=1,1 do
-     circfill(
-      mod_x*x+1,
-      mod_y*y+1,
-      3,
-      col
-     )
-    end   
-   end
-  end)
- }
-end
-
-function am_playing()
- return (
-  g_brd ~= nil 
-  and g_brd.st == 0
+ g_b = add_wobbler(12, 64)
+ 
+ local tgt = make_target(100, 64)
+ add(
+  g_objs,
+  tgt
  )
-end
-
-function make_fire(
- x, 
- y, 
- left, 
- down
-)
- return {
-  x=x,
-  y=y,
-  left=left,
-  down=down,
-  frame=0,
-  update=function(t)
-   t.frame+=1
-   
-   if t.frame > 1 then
-    r_num = rnd(1)
-    if r_num > 0.65 then
-     t.x += 1
-    elseif r_num < 0.35 then
-     t.x -= 1
-    end
-    r_num = rnd(1)
-    if r_num > 0.65 then
-     t.y += 1
-    elseif r_num < 0.35 then
-     t.y -= 1
-    end
-     
-   end
-   
-   if t.frame==15 then
-    del(g_brd.bg_objs, t)
-   end
-  end,
-  draw = in_world_space(function(t)
-   local col = 8
-   if t.frame > 1 then
-    col = 2
-   end
-   if t.frame > 3 then
-    col = 6
-    if t.frame > 8 then
-     col = 5
-    end
-   end
-   local minp=1
-   local maxp=6
-   if t.frame > 8 then
-    rect(
-    minp,
-    minp,
-    maxp,
-    maxp,
-    col
-   )
-    --circ(-3,-3,4,col)
-   else
-    rectfill(
-     minp,
-     minp,
-     maxp,
-     maxp,
-     col
-    )
-    --circfill(0,0,4,col)
-   end
-  end)
- }
+ 
+ add(g_objs, make_enemy_spawner())
+ 
+ g_tgt = tgt
+ 
+ add(g_objs, make_border())
 end
 
 function mag(x,y)
  return sqrt(x*x+y*y)
 end
 
-function magv(v)
- return sqrt(v[1]*v[1]+v[2]*v[2])
+function norm(x,y)
+ imag = mag(x,y)
+ return {x/imag, y/imag}
 end
 
-function make_message(
- x,
- y,
- text,
- col,
- displaytime
-)
+pl_normal=0
+pl_dash=1
+
+function make_target(x,y)
  return {
   x=x,
   y=y,
-  text=text,
-  tleft=displaytime,
-  col=col,
+  r=4,
+  c=11,
+  state=pl_normal,
+  charge=0,
+  avoid=false,
+  spd={0,0},
+  lastd={1,1},
+  solid=true,
   update=function(t)
-  end,
-  draw=function(t)
-   print(
-    t.text,
-    -g_offset_x(),
-    -g_offset_y(),
-    t.col
-   )
-  end
- }
-end
-
--- simple lerp with clamp
-function lerp(
-  beg, 
-  fin, 
-  amt,
-  clamp
- )
- local result=(
-  (fin-beg)*amt + beg
- )
- if clamp and abs(fin - result) < clamp then
-  result = fin
- end
- return result
-end
-
-function make_go(
- t,
- horiz,
- vert
-)
-   t.spd_x = lerp(
-    t.spd_x,
-    horiz*t.max_speed,
-    0.03,
-    0.05
-   )
-   t.x += t.spd_x
-   t.spd_y = lerp(
-    t.spd_y,
-    vert*t.max_speed,
-    0.03,
-    0.05
-   )
-   t.y += t.spd_y
-end
-
-function remap(
- val,
- i_min, 
- i_max,
- o_min,
- o_max
-)
- return (
-  (
-   o_min 
-   + (
-    (val - i_min) 
-    * (o_max-o_min)
-    /(i_max-i_min)
-   )
-  )
- )
-end
-
-g_cam_offset = 32
-
-function make_player_ship(pnum)
- return {
-  x=0,
-  y=0,
-  p=pnum,
-  drag=1.5,
-  max_speed=8,
-  spd_x=0,
-  spd_y=0,
-  sprite=32,
-  flip_x=false,
-  flip_y=false,
-  -- camera stuff
-  cam_tgt_x=0,
-  cam_tgt_y=0,
-  cam_off_x=0,
-  cam_off_y=0,
-  x_dir=0,
-  y_dir=0,
-  frame=0,
-  btn_down=false,
-  hb={5,5,10,10},
-  explode=function(t)
-   for ix=-1,1 do
-    for iy=-1,1 do
-     for i=1,5 do
-     add(
-      g_brd.bg_objs,
-
-      make_fire(
-       t.x+ix*10*(rnd(1)), 
-       t.y+iy*10*(rnd(1)),
-       ix,
-       iy
-      )
-     )
-     end
-    end
+   local m_x=0
+   local m_y=0
+   
+   --todo add control
+   if btn(0, 0) then
+    m_x =-1
+   end 
+   if btn(1, 0 ) then
+    m_x = 1
    end
-   del(g_brd.c_objs, t)
-   g_shp = nil
-  end,
-  update=function(t)
-   if not am_playing() then
-    return
+   if btn(2, 0) then
+    m_y = -1
    end
-   
-   local horiz=0
-   local vert=0
-   
-   local btn_down = false
-   local last = t.sprite
-   t.sprite = nil
-   
-   local x_orig = 0
-   t.x_dir = 0
-   local y_orig = 0
-   t.y_dir = 0
-   
-   if (btn(4,t.p)) then
-    add(
-     g_brd.c_objs,
-     make_ping(t.x/2+2,t.y/2+3,11,400)
-    )
+   if btn(3, 0) then
+    m_y = 1
    end
- 
-   -- left
-   if (btn(0, t.p)) then
-    horiz=-1
-    t.sprite=34
-    t.flip_x=true
-    t.flip_y=false
-    btn_down = true
-    x_orig = 4
-    t.x_dir = 1
-   end
-   
-   -- right
-   if (btn(1, t.p)) then
-    horiz=1
-    t.flip_y=false
-    t.sprite=34
-    t.flip_x=false
-    btn_down = true
-    x_orig = -4
-    t.x_dir = -1
-   end
-   
-   -- up
-   if (btn(2, t.p)) then
-    vert=-1
-    if t.sprite then
-     t.sprite = 36
-    else
-     t.sprite = 32
-    end 
-    t.flip_y = false
-    btn_down = true
-    y_orig = 4
-    t.y_dir = -1
-   end
-   
-   -- down
-   if (btn(3, t.p)) then
-    vert=1
-    if t.sprite then
-     t.sprite = 36
-    else
-     t.sprite = 32
-    end
-    t.flip_y = true
-    btn_down = true
-    y_orig = -4
-    t.y_dir = 1
-   end
-   
-   make_go(t, horiz, vert)
-
-   t.cam_tgt_x = lerp(
-    t.cam_tgt_x, 
-    t.x_dir * g_cam_offset,
-    0.05,
-    0.1
-   )
-   t.cam_tgt_y = lerp(
-    t.cam_tgt_y,
-    -t.y_dir * g_cam_offset,
-    0.05,
-    0.1
-   )
-   
-   t.cam_off_x = lerp(
-    t.cam_off_x, 
-    t.cam_tgt_x, 
-    0.25,
-    0.98
-   )
-   t.cam_off_y = lerp(
-    t.cam_off_y, 
-    t.cam_tgt_y, 
-    0.25,
-    0.98
-   )
-   
-   -- camera shake
-   mag_spd =  mag(t.spd_x,t.spd_y)
-   if btn_down and mag_spd < 5 then
-    t.cam_off_x += lerp(4*(rnd(2)-1),0,mag_spd,0.1)
-    t.cam_off_y += lerp(4*(rnd(2)-1),0,mag_spd,0.1)
-   end
-  
-   if btn_down then
-    add(
-     g_brd.bg_objs, 
-     make_fire(
-      t.x,--x_orig-2*t.cam_off_x, 
-      t.y,--y_orig-2*t.cam_off_y,
-      t.x_dir,
-      t.y_dir
-     )
-    )
-    if false and t.frame % 30 == 0 then
-     add(
-      g_brd.c_objs,
-      make_ping(
-       t.x/2+2,
-       t.y/2+3,
-       11,
-       400
-      	)
-     )
-    end
-    t.frame += 1
-    --sfx(2,0)
+   if m_x != 0 or m_y != 0 then
+    t.lastd = {m_x, m_y}
    else
-    t.sprite = last
-    --sfx(1,0)
+    m_x = t.lastd[1]
+    m_y = t.lastd[2]
    end
    
-   t.btn_down = btn_down
    
-   smear_x=lerp(
-      0,
-      smear_max,
-      t.spd_x/10,
-      2
-     ) 
-    smear_y=lerp(
-      0,
-      smear_max,
-      t.spd_y/10,
-      0.1
-     )
-    g_off_x = -56+g_shp.x - g_shp.cam_off_x
-    g_off_y = -56+g_shp.y - g_shp.cam_off_y
-  end,
-  draw=function(t)
-   local l_x = 52-t.x+t.cam_off_x
-   local l_y = 52-t.y+t.cam_off_y
-
-   palt(3,true)
-   palt(0,false)
-   spr(
-    t.sprite,
-    l_x,
-    l_y,
-    2,
-    2,
-    t.flip_x,
-    t.flip_y
-   )
-   palt(3,false)
-   palt(0,true)
-  end
- }
-end
-
-function make_enemy_spawner()
- local initial=5
- return {
-  timer=initial,
-  update=function(t)
-   t.timer -= 1
-   if t.timer <= 0 then
-    g_en = make_enemy(10,10)
-    add(
-     g_brd.c_objs, 
-     g_en
-    )
-    g_en = make_enemy(20,-10)
-    add(
-     g_brd.c_objs, 
-     g_en
-    )
-    g_en = make_enemy(-10,10)
-    add(
-     g_brd.c_objs, 
-     g_en
-    )
-    del(g_brd.c_objs, t)
+   if (
+    btn(5, 0) and 
+    t.state == pl_normal
+   ) then
+    t.spd={7*m_x, 7*m_y}
+    t.charge=25
+    t.state = pl_dash
    end
-  end,
- } 
-end
-
-function hb_overlaps(fst,snd)
- if fst == snd then
-  return false
- end
- if not fst or not snd then
-  return false
- end
- if not fst.hb or not snd.hb then
-  return false
- end
- -- hb: x0, y0, x1, y1
- 
- local fst_pos = {fst.x, fst.y}
- local snd_pos = {snd.x, snd.y}
- for dim=1,2 do
-  fst_dim = {
-   fst.hb[dim] + fst_pos[dim],
-   fst.hb[dim+2] + fst_pos[dim]
-  }
-  snd_dim = {
-   snd.hb[dim]   + snd_pos[dim],
-   snd.hb[dim+2] + snd_pos[dim]
-  }
-  if (
-   (fst_dim[2] < snd_dim[1])
-   or
-   (fst_dim[1] > snd_dim[2])
-  ) then
-   return false
-  end 
- end
- 
- return true
-end
-
-function make_enemy(x,y)
- return {
-  x=x,
-  y=y,
-  x_offset=-4,
-  y_offset=-4,
-  accel=0.3,
-  spd_x=0,
-  spd_y=0,
-  max_speed=11,
-  sprite=7,
-  flip_x=false,
-  flip_y=false,
-  -- hitbox
-  hb={-2,-2,9,9},
-  frame=0,
-  notice=function(t, other)
-   return other ~= nil
-  end,
-  update=function(t) 
-   -- @todo: redo movement 
-   --        to follow player 
-   --        mechanics
-   -- this can be smarter
-   local horiz=0
-   local vert=0
-   t.sprite = nil
    
-   if t:notice(g_shp) then
-    if t.x > g_shp.x then
-     horiz=-1
-     t.flip_x = true
-     t.sprite = 7
-    elseif t.x < g_shp.x then
-     horiz=1
-     t.flip_x = false
-     t.sprite = 7
+   if t.state == pl_dash then
+    t.charge -= 1
+    t.c = 14
+    if t.charge <= 0 then
+     t.state = pl_normal
     end
-    if t.y > g_shp.y then
-     vert=-1
-     if t.sprite then
-      t.sprite = 11
-     else
-      t.sprite = 9
-     end
-     t.flip_y = false
-    elseif t.y < g_shp.y then
-     vert=1
-     if t.sprite then
-      t.sprite = 11
-     else
-      t.sprite = 9
-     end
-     t.flip_y = true
-    end
+   else
+    t.c = 11
    end
    
-   if g_shp and mag(
-    t.x-g_shp.x,
-    t.y-g_shp.y
-   ) > 30 then
-    -- accelerate towards player
-    t.spd_x += horiz*t.accel
-    t.spd_x = max(-t.max_speed,min(
-     t.max_speed, 
-     t.spd_x
-    ))
-    t.spd_y += vert *t.accel
-    t.spd_y = max(
-     -t.max_speed,
-     min(
-      t.max_speed,
-      t.spd_y
-     )
-    )
-   end
-
-   t.x += t.spd_x
-   t.y += t.spd_y
-   
-   -- todo push them apart
-   for _, o in pairs(g_brd.c_objs) do
-    if hb_overlaps(t, o) then
-     local x_d = abs(t.x - o.x)
-     local y_d = abs(t.y - o.y)
---     if x_d 
-    end
-   end
-   
-   -- drag
-   t.spd_x *= 0.95
-   t.spd_y *= 0.95
-   
-   if not t.sprite then
-    t.sprite = 7
-   end
-   
-   if hb_overlaps(t, g_shp) then
-    --g_shp:explode()
-   end
-   
-   if false and t.frame % 15 == 0 then
-    add(
-     g_brd.c_objs,
-     make_ping(
-      t.x/2, 
-      t.y/2, 
-      8, 
-      1000
-     )
-    )
-   end
-   t.frame +=1 
-  end,
-  draw=in_world_space(function(t)
-   
-   palt(3,true)
-   palt(0,false)
-   spr(
-    t.sprite, 
-    -- location
-    t.x_offset, t.y_offset,
-    -- size
-    2,2,
-    -- flip
-    t.flip_x, t.flip_y
-   )
-   palt(3,false)
-   palt(0,true)
-   
-  end),
- }
-end
-
-g_num_stars=150
-
-function normv(v)
- local mv=magv(v)
- return {v[1]/mv, v[2]/mv}
-end
-
-function make_bg()
- local stars = {}
- 
- srand=10
- for i=0,g_num_stars do
-  add(
-   stars, 
-   { 
-    x=rnd(128),
-    y=rnd(128),
-    z=8*rnd(2),
-    c=rnd(2)+5
+   local pos={
+    t.x+t.spd[1],
+    t.y+t.spd[2]
    }
-  )
- end
-
- return {
-  x=0,
-  y=0,
-  stars=stars,
-  warp_at=nil,
-  frame=0,
-  inc=1,
-  make_warp=function(t,x,y)
-   t.warp_at={x,y}
-  end,
-  update=function(t)
-   if t.warp_at then
-    t.frame += t.inc
-    if t.frame > 25 and t.inc > 0 then
-     t.inc = -1
-     add(
-      g_objs,
-      make_trans(
-       function()
-        g_shp = make_player_ship(0)
-        add(g_objs, g_shp)
-        _draw()
-        --game_start()
-       end
-      )
-     )
-    end
-    if t.frame == 0 and t.inc < 0 then
-     t.inc = 1
-     t.glow_at = t.warp_at
-     t.warp_at = nil
-    end
-   end
-   if t.glow_at then
-    t.frame += t.inc
-    if t.frame == 30 then
-     t.glow_at = nil
-     t.frame = 0
-    end
-   end
+   
+   local pos,spd=collides(
+    pos,
+    t.spd,
+    t.r
+   )
+   
+   t.x = pos[1]
+   t.y = pos[2]
+   t.spd = {0.9*spd[1],0.9*spd[2]}
   end,
   draw=function(t)
-   local _g_off_x = -g_offset_x()
-   local _g_off_y = -g_offset_y()
-  
-   for _,s in pairs(t.stars) do
-    local s_off_x=(
-     _g_off_x --/s.z
-     + 
-     s.x
-    ) % 128
-    local s_off_y=(
-     _g_off_y --/s.z
-     + 
-     s.y
-    ) % 128 
-    
-    local smear_x = smear_x
-    local smear_y = smear_y
-    if t.warp_at then
-     smear_x = lerp(
-      smear_x, 
-      (
-       s_off_x 
-       - (t.warp_at[1]%128)/2
-      ),
-      t.frame/30
-     )
-     smear_y = lerp(
-      smear_y,
-      (
-       s_off_y 
-       - (t.warp_at[2]%128)/2
-      ),
-      t.frame/30
-     )
-    end
-    
-  
-    local c = s.c
-    
-    if t.glow_at then
-     local r = mag(s_off_x - 56, s_off_y - 56) 
-     local current_r = lerp(0,56,t.frame/30)   
-     if abs(r-current_r) < 10 then
-      c = 8
-     end
-     if abs(r-current_r) < 4 then
-      c = 12
-     end
-    end
-    line(
-     s_off_x,
-     s_off_y,
-     s_off_x-smear_x,
-     s_off_y-smear_y,
-     c
-    )
+   if t.state == pl_dash then
+    circfill(0,0,t.r, t.c)
+   else
+    circ(0,0,t.r, t.c)
    end
   end
  }
 end
 
-function make_ping(
-  x,
-  y,
-  c,
-  max_r,
-  start_r
- )
+blip_accel = 1
+b_max_spd = 1
+
+function mag(x,y)
+ return sqrt(x*x+y*y)
+end
+
+function normd(x,y)
+ local vmag = mag(x,y)
+ return x/vmag, y/vmag
+end
+
+function isc_ln_crc(fst,ax,ay,snd)
+ local axh=ax/2
+ local ayh=ay/2
+ 
+ if mag(
+  fst.x+ax-snd.x,
+  fst.y+ay-snd.y
+ ) < snd.r or mag(
+  fst.x+axh-snd.x,
+  fst.y+ayh-snd.y
+ ) < snd.r then
+  return true
+ end
+ return false
+end
+
+function dot(ax,ay,bx,by)
+ return (ax*bx+ay*by)
+end
+
+en_chase=0
+en_chargeup=1
+en_attack=2
+
+function swap(vec)
+ return {vec[2], vec[1]}
+end
+
+function collides(pos, spd, r)
+ for dim=1,2 do
+  if (
+   pos[dim] > 127-r 
+   or pos[dim] < r+1
+  ) then
+   spd[dim] = -spd[dim]
+  end
+  pos[dim]=max(0,min(pos[dim],127))
+ end
+ return pos, spd
+end
+
+function overlap(o1, o2)
+ if not o1.solid or not o2.solid then
+  return false
+ end
+ return mag(o2.x-o1.x,o2.y-o1.y) < o1.r + o2.r
+end
+
+function make_explode(x,y,f)
  return {
   x=x,
   y=y,
-  -- color
-  c=c,
-  -- max radius
-  m_r=max_r,
-  -- blink radius
-  b_r=0.75*max_r,
-  -- current radius
-  c_r=start_r and start_r or 1,
-  update=function(t)
-   t.c_r += 10
-   
-   if t.c_r > t.m_r then
-    del(g_brd.c_objs, t)
-   end
-  end,
-  draw=in_world_space(
-   function(t)
-    local blink=0
-    if t.c_r > t.b_r then
-     blink = remap(
-      t.c_r,
-      t.b_r,
-      t.m_r,
-      5,
-      1
-     )
-    end
-    for o,i in pairs({2,0}) do
-     if blink == 0 or (t.c_r + o) % 8 > blink then
-      circ(t.x, t.y, t.c_r - i, t.c)
-     end
-    end
-   end
-  )
- }
-end
-
-function make_exit_point()
- local ep_c = {5,1,12}
- return {
-  --x=5,
-  x=500,
-  --y=7,
-  y=750,
   frame=0,
-  hb={-5,-10,5,10},
-  update=function(t)
-   if g_shp then  
-    if false and t.frame % 30 == 0 then
-     add(
-      g_brd.c_objs,
-      make_ping(
-       t.x/2, 
-       t.y/2, 
-       12, 
-       1000
-      )
-     )
-    end
-   end
-   
-   if hb_overlaps(g_shp, t) then
-    g_shp:explode()
-    add(
-     g_brd.c_objs,
-     bg_stars:make_warp(t.x,t.y)
-    )
-   end
-   t.frame += 1
-  end,
-  draw=in_world_space(function(t)
-   for i,n in pairs({5,4,3,2}) do
-    rectfill(
-     -n,
-     -n*2,
-     n,
-     n*2,
-     ep_c[(-t.frame+i)/2%5+1]
-    )
-   end
-   -- particulates
-   for i=0,30,1 do
-    local ang=(i/30)
-    local loop = (ang*50+t.frame)%50  
-    local r=24
-    if (loop > 15) then
-     local loop2 = (loop-5)/45
-     r=lerp(24,0,(loop2)*(loop2))
-    end
-    local ll=lerp(1,6,loop*loop/(60*60))
-    local sign=1
-    line(
-     sign*(ll+r)*cos(ang),
-     sign*(ll+r)*sin(ang),
-     sign*r*cos(ang),
-     sign*r*sin(ang),
-     12
-    )
-   end
-  end)
- }
-end
-
-function make_tgt(x,y)
- return {
-  x=x,
-  y_orig=y,
-  y=y,
-  x_offset=-2,
-  y_offset=-2,
-  frame=0,
+  r=1,
+  solid=false,
+  f=f,
   update=function(t)
    t.frame+=1
-   t.y =t.y_orig+2*sin((t.frame%60)/60)
-  end,
-  draw=in_world_space(
-   function(t)
-    line(-1,-1,1,1,8)
-    if true then
-     return
+   t.r+=1
+   if t.frame > 30 then
+    del(g_objs,t)
+    if t.f then
+     t.f(t)
     end
-   
-    palt(3,true)
-    palt(0,false)
-    
-    local f=flr((t.frame%32)/4)
-    pal(12,5)
-    pal(15,5)
-    pal(13,7)
-    pal(14,7)
-    pal(8,5)
-    pal(7,6)
-   
-    if f==0 then
-     pal(12,10)
-     pal(13,9)
-    elseif f==1 or f==2 then
-     pal(13,10)
-     pal(14,10)
-     pal(8,9)
-     pal(7,9)
-     pal(12,9)
-     pal(15,9)
-    elseif f==3 then
-     pal(15,10)
-     pal(14,9)
-    end
-     
-    spr(
-     13,
-     t.x_offset,
-     t.y_offset
-    )
-    
-    palt(3,false)
-    palt(0,true)
-    for i=0,16 do
-     pal(i,i)
-    end
-    
-    circ(
-     -t.x_offset,
-     -t.y_offset,
-     10+sin((t.frame%15)/15),
-     11
-    )
-   end,
-   function(t)
-    circfill(0,0,5,11)
    end
-  )
+  end,
+  draw=function(t)
+   circ(0,0,t.r,9)
+   circ(0,0,t.r-1,9)
+   coord=function()
+    return rnd(16) - 8
+   end
+   circ(
+    coord(),
+    coord(),
+    coord(),
+    9+flr(rnd(2))
+   )
+  end
  }
 end
 
-function make_board()
- g_shp = make_player_ship(0)
- --bg_spawner = make_enemy_spawner()
- --srand(2)
- bg_stars = make_bg()
-
-
+function make_blip(x,y)
  return {
-  st=0,
-  x=0,
-  y=0,
-  px=0,
-  py=0,
-  ship=g_shp,
-  spd=1,
-  c_objs={
-   bg_spawner,
-   --make_station(0,0),
-   g_shp,
-   make_exit_point()
-  },
-  bg_objs={
-   bg_stars
-  },
+  x=x,
+  y=y,
+  r=4,
+  c=8,
+  spd_x=0,
+  spd_y=0,
+  a_x=0,
+  a_y=0,
+  ah_x=0,
+  ah_y=0,
+  av_x=0,
+  av_y=0,
+  d_x=0,
+  d_y=0,
+  avoid=true,
+  state=0,
+  charge=0,
+  solid=true,
   update=function(t)
-   updateobjs(t.bg_objs)
-   updateobjs(t.c_objs)
+   -- move towards target
+   local d_x = g_tgt.x - t.x
+   local d_y = g_tgt.y - t.y
+   local nd_x, nd_y = normd(d_x, d_y)
+   
+   -- state machine
+   if t.state == en_chargeup then
+    t.c = 9
+    if t.charge > 90 then
+     t.state = en_attack
+     
+     t.spd_x = 7*nd_x
+     t.spd_y = 7*nd_y
+    end
+    t.charge += 3
+   end
+   
+   if t.state == en_chase then
+    local d=mag(d_x, d_y)
+    
+    if d<18 then
+     t.state = en_chargeup
+     t.charge=0
+    end
+    t.c = 8
+   end
+   
+   if t.state == en_attack then
+    t.c = 10
+    t.charge -= 1
+    
+    if t.charge == 0 then
+     t.state = en_chase
+     t.spd_x = 0
+     t.spd_y = 0
+    end
+   end
+   
+   t.d_x = d_x
+   t.d_y = d_y
+   t.d_x = 10*nd_x
+   t.d_y = 10*nd_y
+   
+   local ns_x, ns_y = 0
+   
+   if t.spd_x != 0 and t.spd_y != 0 then
+    ns_x, ns_y = normd(t.spd_x, t.spd_y)
+   end
+   
+   local a_x = 20*nd_x
+   local a_y = 20*nd_y
+   local av_x=0
+   local av_y=0
+   t.a_x = a_x
+   t.a_y = a_y
+   
+   for _,o in pairs(g_objs) do
+    if false and o.avoid then
+     if isc_ln_crc(t,a_x,a_y,o) then
+      --pause = true
+      -- -t.x,y
+      av_x = a_x - o.x 
+      av_y = a_y - o.y 
+      av_x, av_y = normd(av_x,av_y)
+      av_x*=blip_accel
+      av_y*=blip_accel
+     end
+    end
+   end
+   t.spd_x += av_x
+   t.spd_y += av_y
+   t.av_x = av_x
+   t.av_y = av_y
+  
+   if t.state == en_chase then
+    t.spd_x += nd_x * blip_accel
+    t.spd_y += nd_y * blip_accel
+   
+   
+   t.spd_x = max(
+	    - b_max_spd,
+    min(
+     b_max_spd,
+     t.spd_x
+    )
+   )
+   t.spd_y = max(
+    - b_max_spd,
+    min(
+     b_max_spd,
+     t.spd_y
+    )
+   )
+   end
+   
+   t.spd_x *= 0.9
+   t.spd_y *= 0.9
+   
+   local n_x = t.x + t.spd_x
+   local n_y = t.y + t.spd_y
+   
+   local npos, nspd = collides(
+    {n_x, n_y},
+    {t.spd_x, t.spd_y} ,
+    t.r  
+   )
+   
+   t.x = npos[1]
+   t.y = npos[2]
+   t.spd_x = nspd[1]
+   t.spd_y = nspd[2]
   end,
   draw=function(t)
-   drawobjs(t.bg_objs)
-   drawobjs(t.c_objs)
+   circ(0,0,t.r,t.c)
+   --[[
+   line(0,0,t.d_x, t.d_y,t.c)
+   line(0,0,t.a_x, t.a_y,10)
+   line(0,0,t.av_x, t.av_y,12)
+   line(0,0,t.spd_x, t.spd_y,7)
+   ]]--
   end
-  }
+ }
 end
 
-function _update()
- stdupdate()
+function make_message(txt,x,y,c)
+ return {
+  x=x,
+  y=y,
+  txt=txt,
+  c=c,
+  draw=function(t)
+   print(
+    t.txt, 
+    4*(-#t.txt)/2,
+    t.y,
+    t.c
+   )
+  end
+ }
+end
+
+function game_over()
+ g_state = st_score
+ g_objs = {}
+ add(
+  g_objs,
+  make_message(
+   "you died",
+   64,
+   10,
+   8
+  )
+ )
+ add(
+  g_objs,
+  make_message(
+   "score: "..g_score,
+   64,
+   20,
+   8
+  )
+ )
+ add(
+  g_objs,
+  make_menu(
+   {
+       "play again",
+   },
+   function (t, i, s)
+    add (
+     s, 
+     make_trans(
+      function()
+       game_start()
+      end
+     )
+    )
+    end
+   )
+ )
+   
+end
+
+function explode(t, func)  
+ add(
+  g_objs,
+  make_explode(t.x, t.y, func)
+ )
+ del(g_objs, t)
+end
+
+pause_down = false
+pause = false
+function _update60()
+ if false and btn(4) then
+  pause_down = true
+ elseif pause_down then
+  pause_down = false
+  pause = not pause
+ end
+  
+ if not pause then
+  stdupdate()
+ end
+ 
+ for _,e in pairs(g_objs) do
+  if g_tgt and e != g_tgt then
+   if e.r and overlap(g_tgt, e) then
+    if g_tgt.state == pl_dash then
+     explode(e)
+     g_score += 1
+    else
+     explode(
+      g_tgt,
+      function()
+       add(
+        g_objs,
+        make_trans(game_over)
+       )
+      end
+     )
+    end
+   end
+  end
+ end
 end
 
 function _draw()
  stddraw()
- if g_shp then
-  local shk_x = g_shp.cam_off_x
-  local shk_y = g_shp.cam_off_y
+ 
+ if g_b and g_state==st_play then
+  color(11)
+  local dx = g_b.x - g_tgt.x
+  local dy = g_b.y - g_tgt.y
+  local d = mag(dx, dy)
+  print("d: "..d)
+  local state="chase"
+  if g_tgt.state == en_chargeup then
+   state="charge"
+  elseif g_b.state == en_attack then
+   state="attack"
+  end
   
-  shk_x = 0
-  shk_y = 0
-  local c_line=0
+  print("e: "..state)
   print(
-   ""..g_shp.x..
-   ", "..g_shp.y,
-   0+shk_x,
-   c_line+shk_y,
-   8
+   "e.s: "..
+    g_b.spd_x.. 
+    " "..
+    g_b.spd_y
   )
-  c_line += 10
-  if g_en then
-  print("en_dist: "..mag(
-    g_en.x-g_shp.x,
-    g_en.y-g_shp.y
-   ),
-   0+shk_x,
-   c_line+shk_y,
-   8
-  )
-  c_line += 10
-    print(
-     "en_spd: "..
-     g_en.spd_x.. " "..
-     g_en.spd_y,
-     0+shk_x,
-     c_line+shk_y,
-     8
-    
-  )
-  c_line += 10
+  state = "normal"
+  if g_tgt.state == pl_dash then
+   state = "dash"
   end
-  if g_tgt then
-   local ex, ey = edgecoords(g_tgt)
-   print(""..ex.. " "..ey,0,c_line)
-   c_line += 10
-   local s = "no"
-   if onscreen(g_tgt) then
-    s = "yes"
-   end
-   print("onscreen: "..s,0,c_line)
-   c_line+=10
-   local sx=abs(g_tgt.x+g_offset_x())
-   local sy=abs(g_tgt.y+g_offset_y())
-   print("onscreen c: "..sx.. " " .. sy, 0, c_line)
-   c_line+=10
-  
-  end
-  --[[
+  print("p: "..state)
   print(
-   "spd: "..g_shp.spd_x..
-   ", "..g_shp.spd_y,
-   0+shk_x,
-   c_line+shk_y,
-   8
+   "p.s: "..
+   g_tgt.spd[1]..
+   " "..
+   g_tgt.spd[2]
   )
-  c_line += 10
-  print(
-   "smr: "..smear_x..
-   ", "..smear_y,
-   0+shk_x,
-   c_line+shk_y,
-   8
-  )
-  c_line += 10
-  ]]--
-  print(
-   stat(1),0+shk_x,c_line+shk_y
-  )  
-  c_line+=10
-  if enemy then
-   print(
-    "enemy: "..enemy.x.. " ".. enemy.y,
-    0+shk_x,
-    c_line+shk_y
-   )
-   c_line += 10
-   print(
-    ""..enemy.x-g_shp.x.." "..enemy.y-g_shp.y,
-    0+shk_x,
-    c_line+shk_y
-   )
-  end
+  print("p.c: "..g_tgt.charge)
  end
+ color(7)
+ print("perf: "..stat(1))
 end
 
 ------------------------------
@@ -1227,9 +695,6 @@ function drawobjs(objs)
    pushc(-t.x,-t.y)
    t:draw(objs)
    popc()
-  end
-  if t.draw_world then
-   
   end
  end)
 end
@@ -1426,38 +891,38 @@ function make_trans(f,d,i)
 end
 
 __gfx__
-00600000000660000007700099999999001010200000000000000088333333333333333333333333333333333333333333333333300000030000000000000000
-00660000000660000007700099999999112011210000000000000008333333333333333333333333333333333333333333333333305885030000000000000000
-00666000006cc600007777009999999921212232033333300000008833000003300000333300003000000033333333300000333330cdef030000000000000000
-006666000c6666c0077777709999999922313233335124330000000833088803308880333319900099888033333330008880333330cdef030000000000000000
-00666500666666667777777799999999333233303bbbbbb300000088330898033089803333199099a98980333333309989800033305775030000000000000000
-006650000cc66cc0077777709999999903030001333bb333000000083308880330888033330009a900888033333309a988888033305665030000000000000000
-00650000000660000007700099999999101001120033330000000088330990033009903333333a80000000333300999000898033305bb5030000000000000000
-005000000060060000700700999999992111122300000000000000083309a003300a90333319a9a0333333333319a90030888033300000030000000000000000
-0000000000000000000000000000000099999999999993999999999933009900009900333319a9a0333333333319980300990033000000000000000000000000
-0000000000000000000000000000000099944499993933939944444933309a8aa8a9033333330a80000000333300aaa009a90333000000000000000000000000
-00000000000000000000000000000000994444499339333394131114330009a99a900033330009a9008880333330a9a899900333000000000000000000000000
-000000000000000000000000000000009966666999333393941113143309900aa009903333199099a989803333099aa9a9033333000000000000000000000000
-00000000000000000000000000000000936465699339343399311114330990399309903333199000998880333311900990333333000000000000000000000000
-00000000000000000000000000000000936466699943399499411149330110311301103333000030000000333311030110333333000000000000000000000000
-00000000000000000000000000000000933533399999499999944499333333333333333333333333333333333333333333333333000000000000000000000000
-00000000000000000000000000000000999999999999999999999999333333333333333333333333333333333333333333333333000000000000000000000000
-33333300003333333330000333333333333333333333333333333300003333330000000000000000000000000000000033333300003333330000000000000000
-3333300cc0033333333055003333333333330003333333333333300cc0033333000066000000000000000000000000003333300cc00333330000000000000000
-3333305665033333330066500000333330000c00000000333333305665033333000066600000000000000c000000000033333056650333330000000000000000
-3333005665003333330cc665ccc0333300555555c55550333333006666003333000cc666ccc0000000666666c666600033330066660033330000000000000000
-33000c6666c000333300006655000333056666666666603333000c6666c000330000006666000000066666666666600033000c6666c000330000000000000000
-330c066cc660c0333000cc56665c000300666666ccc66033330c066cc660c0330000cc66666c000000666666ccc66000330c066cc660c0330000000000000000
-330c56cccc65c0330050056ccc65550000c00c6cccc66033330c66c7cc66c0330060066ccc66660000c00c6cccc66000330c66c7cc66c0330000000000000000
-330c66cccc66c0330666666cccc666c00c00c06ccc76c033330c66cccc66c0330666666cccc666c00c00c06cccc6c000330c66cccc66c0330000000000000000
-300666c7cc6660030666666cccc666c000000566cc666033300666cccc6660030666666cccc666c000000666cc666000300666cccc6660030000000000000000
-00565666666565000070066c7c666600330505666666600300665655556566000060066ccc666600000606666666600000665655556566000000000000000000
-05660c5666c066503000cc66666c0003330666660c566c0306660c6666c066600000cc66666c0000000666660c666c0006660c6666c066600000000000000000
-066c0c0660c0c660330000666600033333006600c0566003055c0c0660c0c550000000666600000000006600c0666000055c0c0660c0c5500000000000000000
-000c00066000c000330cc566ccc033333306066000567033000c00066000c000000cc666ccc000000006066000666000000c00066000c0000000000000000000
-33000066660000333300566000003333330000000c57603333000066660000330000666000000000000000000c66600033000066660000330000000000000000
-3333300660033333333066003333333333333330c00600333333300660033333000066000000000000000000c006000033333006600333330000000000000000
-33333300003333333330000333333333333333300000033333333300003333330000000000000000000000000000000033333300003333330000000000000000
+00600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00666000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00666500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00665000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00650000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1555,27 +1020,27 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __gff__
-0000000000000101010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
-0303030303030303030303030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303031503030303030303030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303031503030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303150303030303030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0303030303030303030303030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1591,9 +1056,9 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-0006011e250501d1501d230222401b2501c2601e2601f26021260202501d2501b2502f2502e2502c25025260202601d2601d260241601f260222602426026250282402b2502b2502a2502a2502c2502705022050
-0001000e01111011100111001110011100111001110011100111001110011100111001110011200215016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
-0001000e091200912009120091200a1200b1200d120111201712017120141200f1200a120081200915016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
+000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1656,7 +1121,7 @@ __sfx__
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
-00 00024344
+00 01424344
 00 41424344
 00 41424344
 00 41424344
