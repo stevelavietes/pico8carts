@@ -102,7 +102,7 @@ function _draw()
  map(112,47,0,-(g_tick%48)/6,
    16,17)
  --pal()
-
+ 
  pushc(g_camx, g_camy)
  drawobjs(g_objs)
  popc()
@@ -530,6 +530,7 @@ function revdrcheck(t)
  end
 end
 
+
 function shouldrot(t)
 
  local cx = flr(t.mzx/8)
@@ -543,12 +544,11 @@ function shouldrot(t)
  
  if not incell then
   
-  
   --todo, allow from left
   if cx + 1 == t.maze.cx
     and cy == t.maze.cy
     and t.dr == 1
-    and ix == 7  
+    and ix == 7
       then
    
    --xxx need to update rotdone
@@ -568,7 +568,7 @@ function shouldrot(t)
   
   return false
  
- else
+ --else
   -- xxx, extends the dir
   --return true
  end
@@ -578,24 +578,17 @@ function shouldrot(t)
  if t.step then
   
  
-  if (t.dr == 0 and iy == 0)
-    or (t.dr == 1 and ix == 7)
-    or (t.dr == 2 and iy == 7)
-    or (t.dr == 3 and ix == 0)
+  if
+    --(t.dr == 0 and iy == 0)
+    --or
+    (t.dr == 1 and ix == 7)
+    or
+    (t.dr == 2 and iy == 7)
+    --or
+    --(t.dr == 3 and ix == 0)
       then
    
-   --if t.step > t.rate / 2 then
-   -- return false
-   --end
-   --
    if t.step > 0 then
-    
-    --todo: try testing against
-    --      whether the adjacent
-    --      cell has the new
-    --      dir
-  
-    
     return false
    end
    
@@ -605,6 +598,7 @@ function shouldrot(t)
  
  
  return true
+ 
 end
 
 
@@ -2434,7 +2428,7 @@ function make_spawn(game, dur,
   dur=dur,
   rotdone=char_rotdone,
   hold=function(t)
-   t.st = max(0,t.st+1)
+   t.st = g_tick
   end,
   update=function(t,s)
    
