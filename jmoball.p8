@@ -30,7 +30,7 @@ function _init()
   )
  )
 
- for i=0,10 do
+ for i=0,40 do
   local x=64
   local y=64
   add_gobjs(make_falling_text(rnd(128)-x, rnd(128)-y))
