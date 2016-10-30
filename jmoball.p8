@@ -29,6 +29,29 @@ function _init()
    end
   )
  )
+
+ for i=0,10 do
+  local x=64
+  local y=64
+  add_gobjs(make_falling_text(rnd(128)-x, rnd(128)-y))
+ end
+end
+
+function make_falling_text(x,y)
+ return {
+  x=x,
+  y=y,
+  y_off=0,
+  space=st_world,
+  f=0,
+  update=function(t)
+   t.y_off-=1
+   t.f+=1
+  end,
+  draw=function(t)
+   print("jmoball",x,(t.y - t.y_off)%128 - 64,(t.f/6)%14+1)
+  end
+ }
 end
 
 function _update60()
