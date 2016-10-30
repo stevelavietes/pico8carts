@@ -4,6 +4,7 @@ __lua__
 
 st_waiting_to_pitch = 0
 st_pitching = 1
+st_pitch_menu = 2
 
 state = st_waiting_to_pitch
 
@@ -129,6 +130,7 @@ function make_ball()
   pitch_progress=0,
   sign=0,
   f=0,
+  next_pitch="fastball",
   update=function(t)
    if state == st_pitching then
     t.pitch_progress += t.pitch_speed
@@ -174,6 +176,22 @@ function make_ball()
     t.pitch_progress = 0
     t.f = 0
     g_last_pitch = add_gobjs(make_pitch_marker(t.x, t.y))
+    state = st_pitch_menu
+
+    local pitch_menu_labels={
+      "fastball",
+      "curveball",
+      "slider"
+     }
+    menu=add_gobjs(
+     make_menu(
+     pitch_menu_labels,
+     function(m_t, i, s)
+      del(g_objs, menu)
+      state=st_waiting_to_pitch
+      t.next_pitch=pitch_menu_labels[i+1]
+     end
+    ))
    end
 
    t.x = t.sign * 32*(
@@ -215,6 +233,7 @@ function make_debug_text()
 
    color(7)
    print("b_x: "..g_ball.x)
+   print("next pitch: "..g_ball.next_pitch)
   end
  }
 end
