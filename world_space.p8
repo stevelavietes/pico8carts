@@ -85,7 +85,7 @@ end
 
 function compute_planet_noise(kind, seed)
  srand(seed)
---  tlast = time()
+ --  tlast = time()
  sprites_wide = 2
  -- radius=(sprites_wide/2)*8
  radius=sprites_wide*4
@@ -106,7 +106,7 @@ function compute_planet_noise(kind, seed)
  -- those regions, then quantize and map the colors
 
  -- base height
---  cls()
+ --  cls()
 
  function rnd_point()
    return {
@@ -334,28 +334,50 @@ function makev(xf, yf)
  return {x=xf, y=yf}
 end
 
+-- @TODO: Collect all the rotation code into one place
+function vecfromrot(theta, mag)
+ theta = (359-theta)
+ mag = mag or 1
+ return vecscale(makev(cal[theta][1], sal[theta][1]), mag)
+end
+
+
+-- @TODO: Figure out the correct direction to turn, with a turning speed
+function look_at(this, p)
+ local dir_vec = vecnorm(vecsub(p, this))
+ local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
+
+ this.theta = flr(lerp(this.theta, tgt_angle, 0.3, 0.1))
+end
+
+
 -- rotate a sprite 
 function rotate_sprite(angle,tcolor,sspx,sspy)
  local cala = cal[angle]
  local sala = sal[angle]
+
  for x=-7,6,1 do
+  -- @TOKEN: dropping these look ups can save a few tokens (4)?
+  -- @{ 
+  local cal_x = cala[x]
+  local sal_x = sala[x]
+  local x_out = x+sspx+16
+  -- @}
+
   for y=-7,6,1 do
    -- 2d rotation about the origin
-   local xp = (- cala[x]+sala[y])
-   local yp = (  sala[x]+cala[y])
+   local xp = cal_x-sala[y]
+   local yp = sal_x+cala[y]
 
    -- if the pixel is over range,
    -- use the transparent color
    -- otherwise fetch the color from
    -- the sprite sheet
-   local c = tcolor
-   if abs(xp) < 7 and abs(yp) < 7 then
-    c = sget(xp+sspx,yp+sspy)
-   end
+   local c = abs(xp) < 7 and abs(yp) < 7 and sget(xp+sspx,yp+sspy) or tcolor 
 
    -- set a color in the sprite
    -- sheet next to the currnet sprite
-   sset(x+sspx+16,y+sspy,c)
+   sset(x_out,y+sspy,c)
   end
  end
  return angle
@@ -394,6 +416,7 @@ function make_player(pnum)
    theta = 0,
    rendered_rot=nil,
    update=function(t)
+    -- @TODO: factor this into a player "brain"
     if not am_playing() then
      return
     end
@@ -419,6 +442,11 @@ function make_player(pnum)
     end
     if thrust then
      accel_forward(t, 3, 5)
+    end
+
+    -- @TODO: shift this to an inventory system
+    if btnn(4, t.pnum) then
+     add_gobjs(make_projectile(t, t.theta))
     end
    end,
    draw=function(t)
@@ -449,6 +477,9 @@ function make_player(pnum)
     popt()
     
     circ(0,0,t.radius,11)
+
+    local v_loc = vecfromrot(t.theta, 10)
+    circfill(v_loc.x, v_loc.y, 3, 11)
    end
   },
   5
@@ -858,6 +889,7 @@ function add_gobjs(thing)
  return thing
 end
 
+-- @TODO: Rings & mmoons
 g_sys_size = 500
 one_over_g_sys_size_2 = 1/(2*g_sys_size)
 g_systems = {
@@ -952,17 +984,12 @@ function make_system(name)
 end
 
 function lerp(v1, v2, amount, clamp)
+ -- TOKENS: can compress this with ternary
  local result = (v2 -v1)*amount + v1
  if clamp and abs(result - v2) < clamp then
   result = v2
  end
  return result
-end
-
-function look_at(t, p)
- local dir_vec = vecnorm(vecsub(t, p))
- local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360) + 360
- t.theta = flr(lerp(t.theta + 360, tgt_angle, 0.3, 0.1)) - 360
 end
 
 function clamp(val, minval, maxval)
@@ -976,7 +1003,7 @@ end
 
 function accel_forward(t, accel, max_speed)
  accel *= smootherstep(1.0, 0.0, vecmag(t.velocity)/max_speed)
- add_force(t, vecscale(makev(cal[t.theta][-1], sal[t.theta][1]), accel))
+ add_force(t, vecscale(makev(cal[t.theta][1], sal[t.theta][-1]), accel))
 end
 
 brain_funcs = {
@@ -1040,11 +1067,14 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
      circfill(local_target_point.x, local_target_point.y, 3, 8)
     end
 
+    -- @TODO: Move spr call into rotate_sprite_if_changed
+    --        also move the pusht/popt in, why not
     pusht({{3,true},{0,false}})
     rotate_sprite_if_changed(t, 3, 79, 7)
     spr(t.sprite, -7, -7, 2, 2)
-    circ(0,0,t.radius,11)
     popt()
+
+    circ(0,0,t.radius,11)
    end
   },
   5
@@ -1090,13 +1120,44 @@ function make_minimap()
  }
 end
 
+--[[
+Ship structure @TODO:
+The way it should work:
+ships have a loadout and a brain
+the player has a "player controller" brain that reads input
+
+That way they can activate stuff on the loadout.
+
+make_ship becomes more generic
+]]--
+
 function make_rocket(x,y)
  return {
   x=x,
   y=y,
   space=sp_world,
   draw=function(t)
-   spr(x,y,1)
+
+   pusht({{3,true},{0,false}})
+   spr(1, -4,-4, 1,1)
+   popt()
+  end
+ }
+end
+
+function make_projectile(source_p,theta)
+ local offset = vecfromrot(theta, 2)
+ local initial_position = vecadd(source_p, vecscale(offset, 5))
+
+ return {
+  x=initial_position.x,
+  y=initial_position.y,
+  space=sp_world,
+  draw=function(t)
+   circfill(0, 0, 3, 2)
+   circfill(-offset.x, -offset.y, 2, 2)
+   circfill(0, 0, 2, 8)
+   circfill(-offset.x, -offset.y, 1, 8)
   end
  }
 end
