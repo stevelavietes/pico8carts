@@ -28,12 +28,13 @@ end
 --  tlast = tcurrent
 -- end
 
-ep_c = {5,1,12}
-
 function print_label(str, off_y)
  off_y = off_y or 0
  print(str, -(#str)*2, 12+off_y, 8)
 end
+
+-- warp gate colors
+ep_c = {5,1,12}
 
 function make_warp_gate(x,y,target_system)
  return {
