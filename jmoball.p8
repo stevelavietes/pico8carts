@@ -107,26 +107,30 @@ function make_batter()
   y=0,
   y_base=0,
   init=g_tick,
-  head_tick=0,
   space=sp_screen_native,
-  t_advance=false,
-  off=0,
+  animation_state={body=false,arms=false,head=false,wait=false},
   draw=function(t)
    local period = 90
    local amp = 4
    local e = elapsed(t.init)%period
-   --
-   -- if e == 0 then
-   --  t.t_advance = not t.t_advance
-   -- end
-   --
-   -- if not t.t_advance then
-   --  -- e = 0
-   --  amp=amp/2
-   -- end
 
    -- head
-   local off    = smoothstep(0, 1, sawtooth(e, period)) * amp - amp/2
+   local off = smoothstep(0,1,sawtooth(period, period))*amp - amp/2
+   if t.animation_state["arms"] and elapsed(t.animation_state["arms"]) > period/4 then
+    if not t.animation_state["head"] then
+     t.animation_state["head"] = g_tick
+    end
+   end
+
+   if t.animation_state["head"] != false then
+    e = elapsed(t.animation_state["head"])
+    off = smoothstep(0, 1, sawtooth(period-e, period)) * amp - amp/2
+   end
+
+   if e == period then
+    t.animation_state["head"] = false
+   end
+
    sspr(
     32,64,
     32,32,
@@ -137,7 +141,23 @@ function make_batter()
    )
 
    -- body
-   local off    = smoothstep(0,1,sawtooth(e+period/4, period))*amp - amp/2
+   off = smoothstep(0,1,sawtooth(period, period))*amp - amp/2
+   if t.animation_state["wait"] and elapsed(t.animation_state["wait"]) > 1 then
+    t.animation_state["wait"] = false
+    t.animation_state["body"] = g_tick
+   end
+   if t.animation_state["body"] != false then
+    e = elapsed(t.animation_state["body"])
+    off = smoothstep(0,1,sawtooth(period-e, period))*amp - amp/2
+   end
+   if e > period then
+    t.animation_state["body"] = false
+   end
+   if not t.animation_state["body"] and not t.animation_state["wait"] then
+    if not t.animation_state["arms"] and not t.animation_state["head"] then
+     t.animation_state["wait"] = g_tick
+    end
+   end
    sspr(
     0,64,
     32,32,
@@ -148,7 +168,20 @@ function make_batter()
    )
 
    --arms
-   local off    = smoothstep(0, 1, sawtooth(e+period/6, period)) * amp - amp/2
+   off = smoothstep(0,1,sawtooth(period, period))*amp - amp/2
+   if t.animation_state["body"] and elapsed(t.animation_state["body"]) > period/6 then
+    if not t.animation_state["arms"] then
+     t.animation_state["arms"] = g_tick
+    end
+   end
+   if t.animation_state["arms"] != false then
+    e = elapsed(t.animation_state["arms"])
+    off = smoothstep(0, 1, sawtooth(period-e, period)) * amp - amp/2
+   end
+   if e == period then
+    t.animation_state["arms"] = false
+   end
+
    sspr(
     64,64,
     32,32,
@@ -158,6 +191,10 @@ function make_batter()
     128
    )
 
+   print(t.animation_state["head"] and elapsed(t.animation_state["head"]) or "false")
+   print(t.animation_state["arms"] and elapsed(t.animation_state["arms"]) or "false")
+   print(t.animation_state["body"] and elapsed(t.animation_state["body"]) or "false")
+   print(t.animation_state["wait"] and elapsed(t.animation_state["wait"]) or "false")
 
   end
  }
