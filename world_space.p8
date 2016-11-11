@@ -342,12 +342,36 @@ function vecfromrot(theta, mag)
 end
 
 
--- @TODO: Figure out the correct direction to turn, with a turning speed
-function look_at(this, p)
+function look_at(this, p, turning_speed)
  local dir_vec = vecnorm(vecsub(p, this))
  local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
+ local delta = tgt_angle - this.theta
 
- this.theta = flr(lerp(this.theta, tgt_angle, 0.3, 0.1))
+ -- already at the correct angle
+ if abs(delta) < turning_speed then
+  this.theta = tgt_angle
+  return 0
+ end
+
+ if  delta >= 180 then
+  delta -= 360
+ elseif delta <= -180 then
+  delta += 360
+ end
+
+ if delta > 0 then
+  this.theta += turning_speed
+ else
+  this.theta -= turning_speed
+ end
+
+ if this.theta < 0 then
+  this.theta += 360
+ elseif this.theta > 359 then
+  this.theta -= 360
+ end
+
+ return delta
 end
 
 
@@ -1015,17 +1039,19 @@ brain_funcs = {
 --   end
 --  end,
  face_player = function(t) 
-  look_at(t, g_p1)
+  look_at(t, g_p1, 5)
  end,
  patrol = function(t)
   if t.target_point then
-   local dirvec = vecsub(t, t.target_point)
-   local d = vecmag(dirvec)
    if d < 9 then
     t.target_point = makev(t.target_point.x,-1*t.target_point.y)
    end
-   look_at(t, t.target_point)
-   accel_forward(t, 1, 3)
+   local dirvec = vecsub(t, t.target_point)
+   local d = vecmag(dirvec)
+   local theta_delta = look_at(t, t.target_point, 25)
+   if theta_delta == 0 then
+    accel_forward(t, 1, 3)
+   end
   else
    t.target_point = makev(-20,-20)
   end
@@ -1181,8 +1207,7 @@ function game_start()
  make_system("earth")
  g_p1 = add_gobjs(make_player(0))
  add(g_sys_objs,make_npc(30,30,"test","patrol",{},11,6))
---  add_gobjs(make_npc(40,30,"test","face_player",{},11,6))
---  add_gobjs(make_npc(50,30,"test","face_player",{},11,6))
+--  add(g_sys_objs,make_npc(-32,-32,"test","face_player",{},11,6))
 
  -- add in pushable things
 --  for i=0,0 do
