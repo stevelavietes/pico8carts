@@ -49,7 +49,7 @@ function make_warp_gate(x,y,target_system)
   update=function(t)
    if collides_circles(t, g_p1) then
     make_system(t.target_system) 
-    g_p1.x, g_p1.y, g_p1.velocity = 0,0,makev(0,0)
+    g_p1.x, g_p1.y, g_p1.velocity = 0,0,makev(0)
    end
   end,
   draw=function(t)
@@ -235,7 +235,9 @@ function compute_planet_noise(kind, seed)
    for off_y=0,(copies_y-1) do
     local new_y = y+off_y*sprites_wide*8
     for off_x=0,copies_x-1 do
-     local rotation_offset = (x+rotation_scale*((off_x-copies_xy/2)+off_y*copies_x))%(xmax)
+     local rotation_offset = (
+      x+rotation_scale*((off_x-copies_xy/2)+off_y*copies_x)
+     )%xmax
      local new_x = rotation_offset+off_x*(sprites_wide*8)
      sset(new_x,new_y,c)
     end
@@ -331,14 +333,13 @@ function am_playing()
 end
 
 function makev(xf, yf)
- return {x=xf, y=yf}
+ return {x=xf, y=(yf or xf)}
 end
 
 -- @TODO: Collect all the rotation code into one place
 function vecfromrot(theta, mag)
  theta = (359-theta)
- mag = mag or 1
- return vecscale(makev(cal[theta][1], sal[theta][1]), mag)
+ return vecscale(makev(cal[theta][1], sal[theta][1]), mag or 1)
 end
 
 
@@ -365,11 +366,7 @@ function look_at(this, p, turning_speed)
   this.theta -= turning_speed
  end
 
- if this.theta < 0 then
-  this.theta += 360
- elseif this.theta > 359 then
-  this.theta -= 360
- end
+ this.theta = wrap_angle(this.theta)
 
  return delta
 end
@@ -403,6 +400,15 @@ function rotate_sprite(angle,tcolor,sspx,sspy)
    -- sheet next to the currnet sprite
    sset(x_out,y+sspy,c)
   end
+ end
+ return angle
+end
+
+function wrap_angle(angle)
+ if angle > 359 then
+  angle -= 360
+ elseif angle < 0 then
+  angle += 360
  end
  return angle
 end
@@ -448,16 +454,11 @@ function make_player(pnum)
     local thrust = false
     if btn(0, t.pnum) then
      t.theta -= 10
-     if t.theta < 0 then
-      t.theta += 360 
-     end
     end 
     if btn(1, t.pnum) then
      t.theta += 10
-     if t.theta >= 360 then
-      t.theta -= 360
-     end
     end
+    t.theta = wrap_angle(t.theta)
     if btn(2, t.pnum) then
      thrust = true
     end
@@ -470,11 +471,11 @@ function make_player(pnum)
 
     -- @TODO: shift this to an inventory system
     if btnn(4, t.pnum) then
-     add(g_sys_objs, make_projectile(t, t.theta))
+     add_g_sys_objs( make_projectile(t, t.theta))
      -- recoil
      accel_forward(t, -10, 3)
      -- camera shake
-     vecset(g_cam, vecadd(g_cam,vecrand(8,true,8,true)))
+     vecset(g_cam, vecadd(g_cam,vecrand(4, true)))
     end
    end,
    draw=function(t)
@@ -536,12 +537,8 @@ function update_phys(o)
   dt
  )
  
- -- zero out the force
- o.force = makev(0,0)
-  
- -- drag
- o.force.x -= g_friction*o.velocity.x
- o.force.y -= g_friction*o.velocity.y
+ -- zero out the force & apply drag
+ vecset(o.force, vecsub(makev(0), vecscale(o.velocity, g_friction)))
 end
 
 function vecstr(v)
@@ -607,7 +604,7 @@ function vecdistsq(a, b, sf)
  return distsq
 end
 
-null_v = makev(0,0)
+null_v = makev(0)
 
 function vecnorm(v) 
  local l =
@@ -622,7 +619,6 @@ end
 function update_collision(o, o_num)
  -- (checking o, pos is new pos
  -- check boundaries first
- local pos = makev(o.x, o.y)
 
 --  pos.x, o.velocity.x = collide_walls_1d(
 --   g_edges[1],pos.x,o.velocity.x,o.radius)
@@ -634,19 +630,13 @@ function update_collision(o, o_num)
   if t.is_phys and t ~= o then
    if collides_circles(t, o) then
     if not t.is_static then
-
-     -- current displacement
-     local t_pos = makev(t.x, t.y)
-     
      -- push the objects back
      local r = o.radius + t.radius
-     local v = vecsub(pos,t_pos)
+     local v = vecsub(o,t)
      local v_n = vecnorm(v)
-     local new_pos  = vecadd(vecscale(v_n, r),t_pos)
     
      -- result
-     o.x = new_pos.x
-     o.y = new_pos.y
+     vecset(o, vecadd(vecscale(v_n, r),t))
    
      -- a.v = (a.u * (a.m - b.m) + (2 * b.m * b.u)) / (a.m + b.m)
      -- b.v = (b.u * (b.m - a.m) + (2 * a.m * a.u)) / (a.m + b.m)
@@ -666,16 +656,15 @@ function update_collision(o, o_num)
 end
 
 function collides_circles(o1, o2)
- local x_d = abs(o1.x - o2.x)
- local y_d = abs(o1.y - o2.y)
+ local d = vecsub(o1, o2)
  local r_2 = o1.radius + o2.radius
 
  -- cheat to avoid huge squares
- if x_d > r_2 or y_d > r_2 then
+ if abs(d.x) > r_2 or abs(d.y) > r_2 then
   return false
  end
 
- return ((x_d*x_d)+(y_d*y_d)) < r_2 * r_2
+ return vecmagsq(d) < r_2 * r_2
 end
 
 -- creates a physics object out
@@ -685,8 +674,8 @@ function make_physobj(p,mass)
  phys = {
   p=p,
   mass=mass,
-  force=makev(0,0),
-  velocity=makev(0,0),
+  force=makev(0),
+  velocity=makev(0),
   radius=p.vis_r or 5,
   is_phys=true,
   is_static=false,
@@ -736,7 +725,7 @@ function make_infinite_grid()
      circ(xc, yc, 7, 5)
 
      -- label
-     local smin = vecsub(g_cam, makev(64, 64))
+     local smin = vecsub(g_cam, makev(64))
      local str = "w: " .. xc + smin.x .. ", ".. yc + smin.y
      print(str, xc-#str*2, yc+9, 5)
     end
@@ -919,6 +908,11 @@ function add_gobjs(thing)
  return thing
 end
 
+function add_g_sys_objs(thing)
+ add(g_sys_objs, thing)
+ return thing
+end
+
 -- @TODO: Rings & mmoons
 g_sys_size = 500
 one_over_g_sys_size_2 = 1/(2*g_sys_size)
@@ -1002,13 +996,13 @@ function make_system(name)
  }
 
  for _, wg in pairs(sys.gates) do
-  add(g_sys_objs, make_warp_gate(unpack(wg)))
+  add_g_sys_objs(make_warp_gate(unpack(wg)))
  end
 
  -- if the system has any npcs in it
  if sys.npcs then
   for _, os in pairs(sys.npcs) do
-   add(g_sys_objs, make_npc(unpack(os)))
+   add_g_sys_objs(make_npc(unpack(os)))
   end
  end
 end
@@ -1030,12 +1024,19 @@ function veclerp(v1, v2, amount, clamp)
  end
  return result
 end
+--
+-- function vecrand(scale_x,center_x, scale_y, center_y)
+--  local off_x = center_x and - scale_x/2 or 0
+--  local off_y = center_y and - scale_y/2 or 0
+--  
+--  return makev(rnd(scale_x) + off_x, rnd(scale_y)+off_y)
+-- end
 
-function vecrand(scale_x,center_x, scale_y, center_y)
- local off_x = center_x and - scale_x/2 or 0
- local off_y = center_y and - scale_y/2 or 0
- 
- return makev(rnd(scale_x) + off_x, rnd(scale_y)+off_y)
+function vecrand(scale,center)
+ return vecsub(
+  vecscale(vecfromrot(flr(rnd(359))), scale),
+  center and makev(scale/2) or null_v
+ )
 end
 
 function vecset(target, source)
@@ -1080,7 +1081,7 @@ brain_funcs = {
     accel_forward(t, 1, 3)
    end
   else
-   t.target_point = makev(-20,-20)
+   t.target_point = makev(-20)
   end
  end
 }
@@ -1140,6 +1141,7 @@ function map_coords(o)
  return (o.x + g_sys_size) * map_size_times_sys_size + 2,
  (o.y + g_sys_size) * map_size_times_sys_size + 2
 end
+
 function make_minimap()
  return {
   space=sp_screen_native,
@@ -1215,21 +1217,17 @@ function make_projectile(source_p,theta)
   speed=5,
   tcreate=g_tick,
   update=function(t)
-   local new = vecadd(t, vecscale(t.dir, t.speed))
-   t.x = new.x
-   t.y = new.y
+   vecset(t, vecadd(t, vecscale(t.dir, t.speed)))
    if elapsed(t.tcreate) > 50 then
     del(g_sys_objs, t)
    end
   end,
   draw=function(t)
    if elapsed(t.tcreate) <= 1 then
-    local x_off = rnd(4) - 2
-    local y_off = rnd(4) - 2
-    circfill(x_off,y_off,8,8)
-    x_off = rnd(4) - 2
-    y_off = rnd(4) - 2
-    circfill(x_off,y_off,4,7)
+    local off = vecrand(2, true)
+    circfill(off.x,off.y,8,8)
+    off = vecrand(2, true)
+    circfill(off.x,off.y,4,7)
    else
     circfill(0, 0, 3, 2)
     circfill(-offset.x, -offset.y, 2, 2)
@@ -1258,7 +1256,7 @@ function game_start()
 
  make_system("earth")
  g_p1 = add_gobjs(make_player(0))
- add(g_sys_objs,make_npc(30,30,"test","patrol",{},11,6))
+ add_g_sys_objs(make_npc(30,30,"test","patrol",{},11,6))
 --  add(g_sys_objs,make_npc(-32,-32,"test","face_player",{},11,6))
 
  -- add in pushable things
@@ -1309,8 +1307,7 @@ function stdupdate()
 end
 
 function add_force(o, f)
- o.force.x += f.x
- o.force.y += f.y
+ vecset(o.force, vecadd(o.force,f))
 end
 
 function compute_force_1d(pos, f, m, v, dt)
