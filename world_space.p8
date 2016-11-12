@@ -470,8 +470,11 @@ function make_player(pnum)
 
     -- @TODO: shift this to an inventory system
     if btnn(4, t.pnum) then
-     add_gobjs(make_projectile(t, t.theta))
+     add(g_sys_objs, make_projectile(t, t.theta))
+     -- recoil
      accel_forward(t, -10, 3)
+     -- camera shake
+     vecset(g_cam, vecadd(g_cam,vecrand(8,true,8,true)))
     end
    end,
    draw=function(t)
@@ -768,8 +771,10 @@ function make_camera()
    return false
   end,
   update=function(t)
-   t.x=g_p1.x
-   t.y=g_p1.y
+   -- t.x=g_p1.x
+   -- t.y=g_p1.y
+   -- @TODO: make the target point lead the player
+   vecset(t,veclerp(t,g_p1,0.5,0.3))
   end,
   draw=function(t)
   end
@@ -1017,6 +1022,27 @@ function lerp(v1, v2, amount, clamp)
  return result
 end
 
+function veclerp(v1, v2, amount, clamp)
+ -- TOKENS: can compress this with ternary
+ local result = vecadd(vecscale(vecsub(v2,v1),amount),v1)
+ if clamp and vecmag((vecsub(result,v2))) < clamp then
+  result = v2
+ end
+ return result
+end
+
+function vecrand(scale_x,center_x, scale_y, center_y)
+ local off_x = center_x and - scale_x/2 or 0
+ local off_y = center_y and - scale_y/2 or 0
+ 
+ return makev(rnd(scale_x) + off_x, rnd(scale_y)+off_y)
+end
+
+function vecset(target, source)
+ target.x = source.x
+ target.y = source.y
+end
+
 function clamp(val, minval, maxval)
  return max(min(val, maxval), minval)
 end
@@ -1193,7 +1219,7 @@ function make_projectile(source_p,theta)
    t.x = new.x
    t.y = new.y
    if elapsed(t.tcreate) > 50 then
-    del(g_objs, t)
+    del(g_sys_objs, t)
    end
   end,
   draw=function(t)
