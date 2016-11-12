@@ -471,7 +471,7 @@ function make_player(pnum)
 
     -- @TODO: shift this to an inventory system
     if btnn(4, t.pnum) then
-     add_g_sys_objs( make_projectile(t, t.theta))
+     add_g_sys_objs(make_projectile(t, t.theta, t.velocity))
      -- recoil
      accel_forward(t, -10, 3)
      -- camera shake
@@ -507,8 +507,8 @@ function make_player(pnum)
     
     circ(0,0,t.radius,11)
 
-    local v_loc = vecfromrot(t.theta, 10)
-    circfill(v_loc.x, v_loc.y, 3, 11)
+    -- local v_loc = vecfromrot(t.theta, 10)
+    -- circfill(v_loc.x, v_loc.y, 3, 11)
    end
   },
   5
@@ -1204,10 +1204,40 @@ function make_rocket(x,y, dir)
  }
 end
 
-function make_projectile(source_p,theta)
+function make_smoke(source_p, theta, velocity)
+ return {
+  x=source_p.x,
+  y=source_p.y,
+  velocity=velocity,
+  space=sp_world,
+  tcreate=g_tick,
+  update=function(t)
+   if elapsed(t.tcreate) > 30 then
+    del(g_sys_objs, t)
+   end
+  end,
+  draw=function(t)
+   local r = 2*smootherstep(1,0,elapsed(t.tcreate)/32)
+   for ang_fact=-1,1,2 do
+    local start=null_v
+    for i=0,3 do
+     start=vecsub(null_v,vecscale(vecfromrot(wrap_angle(theta+45*ang_fact)), i*4))
+     if r*i > 1 then
+      circfill(start.x,start.y,r*i,6)
+     end
+    end
+   end
+  end
+ }
+end
+
+function make_projectile(source_p,theta,velocity)
  local offset = vecfromrot(theta, 2)
  local initial_position = vecadd(source_p, vecscale(offset, 2))
  sfx(3, -1)
+
+ -- smoke
+ add_g_sys_objs(make_smoke(initial_position, theta, velocity))
 
  return {
   x=initial_position.x,
@@ -1217,7 +1247,7 @@ function make_projectile(source_p,theta)
   speed=5,
   tcreate=g_tick,
   update=function(t)
-   vecset(t, vecadd(t, vecscale(t.dir, t.speed)))
+   vecset(t, vecadd(velocity, vecadd(t, vecscale(t.dir, t.speed))))
    if elapsed(t.tcreate) > 50 then
     del(g_sys_objs, t)
    end
