@@ -872,6 +872,7 @@ function make_planet(name,x,y,sats,kind,palette, seed)
    -- pal(7,7)
    set_palette(t.palette)
    local sprite_index = 64+(16*fy+fx)*sprites_wide
+   -- @TODO: switch this to sspr and make planets bigger.  They're cool!
    spr(sprite_index,-radius,-radius,sprites_wide,sprites_wide)
    reset_palette()
    -- print(fx..", "..fy.." ["..sprite_index.."]", -10, 20, 7)
@@ -1107,6 +1108,7 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
    -- for rotating the sprite
    theta = 0,
    rendered_rot=nil,
+   health=10,
    update=function(t)
     t:brain()
    end,
@@ -1117,6 +1119,7 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
      dirvec = vecsub(t, t.target_point)
      d = vecmag(dirvec)
      print_label("distance: "..d, 12)
+     print_label("health: "..t.health, 18)
      local local_target_point = vecsub(t.target_point, t)
      circfill(local_target_point.x, local_target_point.y, 3, 8)
     end
@@ -1217,11 +1220,18 @@ function make_smoke(source_p, theta, velocity)
    end
   end,
   draw=function(t)
-   local r = 2*smootherstep(1,0,elapsed(t.tcreate)/32)
+   -- smoke size.  Max smoke size will be 4*i
+   local r = 1*smootherstep(1,0,elapsed(t.tcreate)/32)
    for ang_fact=-1,1,2 do
     local start=null_v
     for i=0,3 do
-     start=vecsub(null_v,vecscale(vecfromrot(wrap_angle(theta+45*ang_fact)), i*4))
+     start=vecsub(
+      null_v,
+      vecscale(
+       vecfromrot(wrap_angle(theta+45*ang_fact+15*i*ang_fact)),
+       elapsed(t.tcreate)+i*4
+      )
+     )
      if r*i > 1 then
       circfill(start.x,start.y,r*i,6)
      end
@@ -1246,11 +1256,13 @@ function make_projectile(source_p,theta,velocity)
   dir=vecnorm(offset),
   speed=5,
   tcreate=g_tick,
+  vis_r=8,
   update=function(t)
    vecset(t, vecadd(velocity, vecadd(t, vecscale(t.dir, t.speed))))
    if elapsed(t.tcreate) > 50 then
     del(g_sys_objs, t)
    end
+   -- @TODO: detect hitting the enemy @NEXT
   end,
   draw=function(t)
    if elapsed(t.tcreate) <= 1 then
