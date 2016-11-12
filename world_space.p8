@@ -471,6 +471,7 @@ function make_player(pnum)
     -- @TODO: shift this to an inventory system
     if btnn(4, t.pnum) then
      add_gobjs(make_projectile(t, t.theta))
+     accel_forward(t, -10, 3)
     end
    end,
    draw=function(t)
@@ -1157,13 +1158,17 @@ That way they can activate stuff on the loadout.
 make_ship becomes more generic
 ]]--
 
-function make_rocket(x,y)
+function make_rocket(x,y, dir)
  return {
   x=x,
   y=y,
   space=sp_world,
+  dir=dir,
+  speed=1,
+  update=function(t)
+   vecadd(t, vecscale(t.dir, t.speed))
+  end,
   draw=function(t)
-
    pusht({{3,true},{0,false}})
    spr(1, -4,-4, 1,1)
    popt()
@@ -1173,17 +1178,38 @@ end
 
 function make_projectile(source_p,theta)
  local offset = vecfromrot(theta, 2)
- local initial_position = vecadd(source_p, vecscale(offset, 5))
+ local initial_position = vecadd(source_p, vecscale(offset, 2))
+ sfx(3, -1)
 
  return {
   x=initial_position.x,
   y=initial_position.y,
   space=sp_world,
+  dir=vecnorm(offset),
+  speed=5,
+  tcreate=g_tick,
+  update=function(t)
+   local new = vecadd(t, vecscale(t.dir, t.speed))
+   t.x = new.x
+   t.y = new.y
+   if elapsed(t.tcreate) > 50 then
+    del(g_objs, t)
+   end
+  end,
   draw=function(t)
-   circfill(0, 0, 3, 2)
-   circfill(-offset.x, -offset.y, 2, 2)
-   circfill(0, 0, 2, 8)
-   circfill(-offset.x, -offset.y, 1, 8)
+   if elapsed(t.tcreate) <= 1 then
+    local x_off = rnd(4) - 2
+    local y_off = rnd(4) - 2
+    circfill(x_off,y_off,8,8)
+    x_off = rnd(4) - 2
+    y_off = rnd(4) - 2
+    circfill(x_off,y_off,4,7)
+   else
+    circfill(0, 0, 3, 2)
+    circfill(-offset.x, -offset.y, 2, 2)
+    circfill(0, 0, 2, 8)
+    circfill(-offset.x, -offset.y, 1, 8)
+   end
   end
  }
 end
@@ -1194,7 +1220,7 @@ function game_start()
  add_gobjs(make_infinite_grid())
  g_map = add_gobjs(make_minimap())
 
- add_gobjs(make_rocket(32, -32))
+--  add_gobjs(make_rocket(32, -32))
 
  g_cam = add_gobjs(make_camera())
 
@@ -1699,7 +1725,7 @@ __sfx__
 0006011e250501d1501d230222401b2501c2601e2601f26021260202501d2501b2502f2502e2502c25025260202601d2601d260241601f260222602426026250282402b2502b2502a2502a2502c2502705022050
 0001000e01111011100111001110011100111001110011100111001110011100111001110011200215016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
 0001000e091200912009120091200a1200b1200d120111201712017120141200f1200a120081200915016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0002000006050060501e050060501e050060501e060260702607024070200600e0501b0501805014050090500d050080500705000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
