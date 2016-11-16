@@ -311,13 +311,51 @@ end
 
 gst_menu = 0
 gst_playing = 1
+g_sleep = 0
 
 function _update()
+ if g_sleep > 0 then
+  g_sleep -= 1
+  return
+ end
  stdupdate()
  updateobjs(g_sys_objs)
+ for i, o in pairs(g_sys_objs) do
+  for j=i,#g_sys_objs do
+   local t = g_sys_objs[j]
+   if t then
+    local source, target = t, o
+    local tag = o.tag
+    local collision_effect_map = t.collision_effect_map
+    if not tag or not collision_effect_map or not collision_effect_map[tag] then
+     tag = t.tag
+     collision_effect_map = o.collision_effect_map
+     source, target = o, t
+    end
+    if tag and collision_effect_map then
+     -- stop()
+    end
+    if collision_effect_map then
+     -- stop()
+    end
+    if tag and collision_effect_map then
+     -- stop()
+     if collision_effect_map[tag] then
+      if collides_circles(source, target) then
+       -- stop()
+       collision_effect_map[tag](source, target)
+      end
+     end
+    end
+   end
+  end
+ end
 end
 
 function _draw()
+ if g_sleep > 0 then
+  return
+ end
  stddraw()
  drawobjs(g_sys_objs)
 end
@@ -342,7 +380,6 @@ function vecfromrot(theta, mag)
  return vecscale(makev(cal[theta][1], sal[theta][1]), mag or 1)
 end
 
-
 function look_at(this, p, turning_speed)
  local dir_vec = vecnorm(vecsub(p, this))
  local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
@@ -354,7 +391,7 @@ function look_at(this, p, turning_speed)
   return 0
  end
 
- if  delta >= 180 then
+ if delta >= 180 then
   delta -= 360
  elseif delta <= -180 then
   delta += 360
@@ -515,7 +552,7 @@ function make_player(pnum)
  )
 end
 
-g_friction=0.1
+g_friction=0.2
 function update_phys(o)
  -- in case we want to play
  -- with time, even though pico
@@ -604,15 +641,11 @@ function vecdistsq(a, b, sf)
  return distsq
 end
 
+-- global null vector
 null_v = makev(0)
 
 function vecnorm(v) 
- local l =
-   sqrt(vecdistsq(null_v,v)) 
- return {
-  x=v.x/l,
-  y=v.y/l,
- }
+ return vecscale(v, 1/sqrt(vecdistsq(null_v,v)) )
 end
 
 
@@ -624,7 +657,7 @@ function update_collision(o, o_num)
 --   g_edges[1],pos.x,o.velocity.x,o.radius)
 --  pos.y, o.velocity.y = collide_walls_1d(
 --   g_edges[2],pos.y,o.velocity.y,o.radius)
- 
+
  for i=o_num,#g_objs do
   local t = g_objs[i]
   if t.is_phys and t ~= o then
@@ -1033,6 +1066,7 @@ end
 --  return makev(rnd(scale_x) + off_x, rnd(scale_y)+off_y)
 -- end
 
+-- flip the center boolean to the other case to save tokens
 function vecrand(scale,center)
  return vecsub(
   vecscale(vecfromrot(flr(rnd(359))), scale),
@@ -1109,8 +1143,16 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
    theta = 0,
    rendered_rot=nil,
    health=10,
+   tag="enemy",
    update=function(t)
     t:brain()
+   end,
+   hit=function(t, damage)
+    t.am_hit = true
+    t.health -= damage
+    if t.health <= 0 then
+     del(g_sys_objs, t)
+    end
    end,
    draw=function(t)
     print_label("theta: "..t.theta)
@@ -1126,12 +1168,22 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
 
     -- @TODO: Move spr call into rotate_sprite_if_changed
     --        also move the pusht/popt in, why not
+
     pusht({{3,true},{0,false}})
+    if t.am_hit then
+     for i=0,15 do
+      pal(i,7)
+     end
+     t.am_hit = false
+     g_sleep = 1
+    end
     rotate_sprite_if_changed(t, 3, 79, 7)
+
     spr(t.sprite, -7, -7, 2, 2)
     popt()
 
     circ(0,0,t.radius,11)
+    reset_palette()
    end
   },
   5
@@ -1208,6 +1260,7 @@ function make_rocket(x,y, dir)
 end
 
 function make_smoke(source_p, theta, velocity)
+ source_p = vecadd(vecrand(2, true), source_p)
  return {
   x=source_p.x,
   y=source_p.y,
@@ -1247,16 +1300,26 @@ function make_projectile(source_p,theta,velocity)
  sfx(3, -1)
 
  -- smoke
- add_g_sys_objs(make_smoke(initial_position, theta, velocity))
+--  add_g_sys_objs(make_smoke(initial_position, theta, velocity))
 
- return {
+ return make_physobj(
+ {
   x=initial_position.x,
   y=initial_position.y,
   space=sp_world,
   dir=vecnorm(offset),
   speed=5,
   tcreate=g_tick,
-  vis_r=8,
+  vis_r=3,
+  tag="projectile",
+  collision_effect_map={
+   enemy = function(t, other)
+    add_g_sys_objs(make_smoke(t, theta, velocity))
+    other:hit(1)
+    sfx(4,-1)
+    del(g_sys_objs, t)
+   end,
+  },
   update=function(t)
    vecset(t, vecadd(velocity, vecadd(t, vecscale(t.dir, t.speed))))
    if elapsed(t.tcreate) > 50 then
@@ -1265,9 +1328,13 @@ function make_projectile(source_p,theta,velocity)
    -- @TODO: detect hitting the enemy @NEXT
   end,
   draw=function(t)
+   circfill(0,0,t.radius, 11)
+   circfill(0,0,t.vis_r, 11)
    if elapsed(t.tcreate) <= 1 then
-    local off = vecrand(2, true)
+    local off = vecscale(t.dir, 2)
     circfill(off.x,off.y,8,8)
+    local off = vecscale(t.dir, -1)
+    circfill(off.x,off.y,6,0)
     off = vecrand(2, true)
     circfill(off.x,off.y,4,7)
    else
@@ -1277,7 +1344,9 @@ function make_projectile(source_p,theta,velocity)
     circfill(-offset.x, -offset.y, 1, 8)
    end
   end
- }
+ },
+ 2
+ )
 end
 
 function game_start()
@@ -1298,7 +1367,7 @@ function game_start()
 
  make_system("earth")
  g_p1 = add_gobjs(make_player(0))
- add_g_sys_objs(make_npc(30,30,"test","patrol",{},11,6))
+ add_g_sys_objs(make_npc(30,30,"test","face_player",{},11,6))
 --  add(g_sys_objs,make_npc(-32,-32,"test","face_player",{},11,6))
 
  -- add in pushable things
@@ -1791,7 +1860,7 @@ __sfx__
 0001000e01111011100111001110011100111001110011100111001110011100111001110011200215016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
 0001000e091200912009120091200a1200b1200d120111201712017120141200f1200a120081200915016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
 0002000006050060501e050060501e050060501e060260702607024070200600e0501b0501805014050090500d050080500705000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000100001e3502135006350103502f3501935031350213502d35026350223501c3502c350113502e3502e3502d3500c3502935024350000000000018350143500d35009350053500335001350000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
