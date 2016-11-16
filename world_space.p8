@@ -83,6 +83,10 @@ function make_warp_gate(x,y,target_system)
  }
 end
 
+function vecatan(v)
+ return flr(atan2(v.x, v.y)*360)
+end
+
 function compute_planet_noise(kind, seed)
  srand(seed)
  --  tlast = time()
@@ -227,7 +231,8 @@ function compute_planet_noise(kind, seed)
  for y=ymin,ymax do
   local b = abs(y-ycenter)
   local a = sqrt(r2-b*b)
-  local rotation_scale = 2*cal[flr(atan2(a, b)*360)][1]
+  local v = makev(a,b)
+  local rotation_scale = 2*cal[vecatan(v)][1]
 
   for x=xmin,xmax do
    local c = img[x][y]
@@ -336,16 +341,8 @@ function _update()
      source, target = o, t
     end
     if tag and collision_effect_map then
-     -- stop()
-    end
-    if collision_effect_map then
-     -- stop()
-    end
-    if tag and collision_effect_map then
-     -- stop()
      if collision_effect_map[tag] then
       if collides_circles(source, target) then
-       -- stop()
        collision_effect_map[tag](source, target)
       end
      end
@@ -497,10 +494,14 @@ function make_player(pnum)
     if btn(1, t.pnum) then
      t.theta += 10
     end
-    t.theta = wrap_angle(t.theta)
     if btn(2, t.pnum) then
      thrust = true
     end
+    if g_mouse_ptr.button_down[1] then
+     thrust = true
+     t.theta = 360-vecatan(vecsub(vecxform(g_mouse_ptr, sp_world),g_p1))
+    end
+    t.theta = wrap_angle(t.theta)
     if btn(3, t.pnum) then
      t.velocity = vecscale(t.velocity, 0.8)
     end
@@ -816,9 +817,11 @@ function make_debugmsg()
    print("mem: ".. stat(2))
    if g_mouse_ptr then
     print(vecstr(g_mouse_ptr))
-    print(g_mouse_ptr.button_down[1])
-    print(g_mouse_ptr.button_down[2])
-    print(g_mouse_ptr.button_down[3])
+    for _, o in pairs(g_mouse_ptr.button_down) do
+     print(print(o))
+    end
+    print(vecstr(vecxform(g_mouse_ptr, sp_world)))
+    print(360-vecatan(vecnorm(vecsub(vecxform(g_mouse_ptr, sp_world),g_p1))))
    end
    -- local vis="false"
    -- if g_p2 and g_cam:is_visible(g_p2) then
@@ -1372,7 +1375,7 @@ function make_mouse_ptr()
   end,
   draw=function(t)
    -- @TODO: do something more juicey, maybe line based?
-   spr(17, t.x, t.y)
+   spr(17, t.x-3, t.y-3)
   end
  }
 end
@@ -1495,6 +1498,18 @@ function stddraw()
  drawobjs(g_bg_objs)
  drawobjs(g_sys_objs)
  drawobjs(g_objs)
+end
+
+function vecxform(obj, to_space)
+ if obj.space == to_space then
+  return obj
+ end
+
+ if obj.space == sp_screen_native then
+  if to_space == sp_world then
+   return vecsub(vecadd(makev(obj.x,obj.y),g_cam), makev(64, 64))
+  end
+ end
 end
 
 function drawobjs(objs)
