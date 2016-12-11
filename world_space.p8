@@ -28,12 +28,13 @@ end
 --  tlast = tcurrent
 -- end
 
-ep_c = {5,1,12}
-
 function print_label(str, off_y)
  off_y = off_y or 0
  print(str, -(#str)*2, 12+off_y, 8)
 end
+
+-- warp gate colors
+ep_c = {5,1,12}
 
 function make_warp_gate(x,y,target_system)
  return {
@@ -48,7 +49,7 @@ function make_warp_gate(x,y,target_system)
   update=function(t)
    if collides_circles(t, g_p1) then
     make_system(t.target_system) 
-    g_p1.x, g_p1.y, g_p1.velocity = 0,0,makev(0,0)
+    g_p1.x, g_p1.y, g_p1.velocity = 0,0,makev(0)
    end
   end,
   draw=function(t)
@@ -82,9 +83,13 @@ function make_warp_gate(x,y,target_system)
  }
 end
 
+function vecatan(v)
+ return flr(atan2(v.x, v.y)*360)
+end
+
 function compute_planet_noise(kind, seed)
  srand(seed)
---  tlast = time()
+ --  tlast = time()
  sprites_wide = 2
  -- radius=(sprites_wide/2)*8
  radius=sprites_wide*4
@@ -105,7 +110,7 @@ function compute_planet_noise(kind, seed)
  -- those regions, then quantize and map the colors
 
  -- base height
---  cls()
+ --  cls()
 
  function rnd_point()
    return {
@@ -226,7 +231,8 @@ function compute_planet_noise(kind, seed)
  for y=ymin,ymax do
   local b = abs(y-ycenter)
   local a = sqrt(r2-b*b)
-  local rotation_scale = 2*cal[flr(atan2(a, b)*360)][1]
+  local v = makev(a,b)
+  local rotation_scale = 2*cal[vecatan(v)][1]
 
   for x=xmin,xmax do
    local c = img[x][y]
@@ -234,7 +240,9 @@ function compute_planet_noise(kind, seed)
    for off_y=0,(copies_y-1) do
     local new_y = y+off_y*sprites_wide*8
     for off_x=0,copies_x-1 do
-     local rotation_offset = (x+rotation_scale*((off_x-copies_xy/2)+off_y*copies_x))%(xmax)
+     local rotation_offset = (
+      x+rotation_scale*((off_x-copies_xy/2)+off_y*copies_x)
+     )%xmax
      local new_x = rotation_offset+off_x*(sprites_wide*8)
      sset(new_x,new_y,c)
     end
@@ -280,6 +288,9 @@ function compute_planet_noise(kind, seed)
 --  end
 end
 
+-- mouse support
+poke(0x5F2D, 1)
+
 function _init()
  stdinit()
  
@@ -308,15 +319,44 @@ end
 
 gst_menu = 0
 gst_playing = 1
+g_sleep = 0
 
 function _update()
+ if g_sleep > 0 then
+  g_sleep -= 1
+  return
+ end
  stdupdate()
  updateobjs(g_sys_objs)
+ for i, o in pairs(g_sys_objs) do
+  for j=i,#g_sys_objs do
+   local t = g_sys_objs[j]
+   if t then
+    local source, target = t, o
+    local tag = o.tag
+    local collision_effect_map = t.collision_effect_map
+    if not tag or not collision_effect_map or not collision_effect_map[tag] then
+     tag = t.tag
+     collision_effect_map = o.collision_effect_map
+     source, target = o, t
+    end
+    if tag and collision_effect_map then
+     if collision_effect_map[tag] then
+      if collides_circles(source, target) then
+       collision_effect_map[tag](source, target)
+      end
+     end
+    end
+   end
+  end
+ end
 end
 
 function _draw()
+ if g_sleep > 0 then
+  return
+ end
  stddraw()
- drawobjs(g_sys_objs)
 end
 
 -- coordinate systems
@@ -330,32 +370,81 @@ function am_playing()
 end
 
 function makev(xf, yf)
- return {x=xf, y=yf}
+ return {x=xf, y=(yf or xf)}
 end
+
+-- @TODO: Collect all the rotation code into one place
+function vecfromrot(theta, mag)
+ theta = (359-theta)
+ return vecscale(makev(cal[theta][1], sal[theta][1]), mag or 1)
+end
+
+function look_at(this, p, turning_speed)
+ local dir_vec = vecnorm(vecsub(p, this))
+ local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360)
+ local delta = tgt_angle - this.theta
+
+ -- already at the correct angle
+ if abs(delta) < turning_speed then
+  this.theta = tgt_angle
+  return 0
+ end
+
+ if delta >= 180 then
+  delta -= 360
+ elseif delta <= -180 then
+  delta += 360
+ end
+
+ if delta > 0 then
+  this.theta += turning_speed
+ else
+  this.theta -= turning_speed
+ end
+
+ this.theta = wrap_angle(this.theta)
+
+ return delta
+end
+
 
 -- rotate a sprite 
 function rotate_sprite(angle,tcolor,sspx,sspy)
  local cala = cal[angle]
  local sala = sal[angle]
+
  for x=-7,6,1 do
+  -- @TOKEN: dropping these look ups can save a few tokens (4)?
+  -- @{ 
+  local cal_x = cala[x]
+  local sal_x = sala[x]
+  local x_out = x+sspx+16
+  -- @}
+
   for y=-7,6,1 do
    -- 2d rotation about the origin
-   local xp = (- cala[x]+sala[y])
-   local yp = (  sala[x]+cala[y])
+   local xp = cal_x-sala[y]
+   local yp = sal_x+cala[y]
 
    -- if the pixel is over range,
    -- use the transparent color
    -- otherwise fetch the color from
    -- the sprite sheet
-   local c = tcolor
-   if abs(xp) < 7 and abs(yp) < 7 then
-    c = sget(xp+sspx,yp+sspy)
-   end
+   local c = abs(xp) < 7 and abs(yp) < 7 and sget(xp+sspx,yp+sspy) or tcolor 
 
    -- set a color in the sprite
    -- sheet next to the currnet sprite
-   sset(x+sspx+16,y+sspy,c)
+   sset(x_out,y+sspy,c)
   end
+ end
+ return angle
+end
+
+function wrap_angle(angle)
+ if angle > 359 then
+  angle -= 360
+ elseif angle < 0 then
+  angle += 360
  end
  return angle
 end
@@ -393,6 +482,7 @@ function make_player(pnum)
    theta = 0,
    rendered_rot=nil,
    update=function(t)
+    -- @TODO: factor this into a player "brain"
     if not am_playing() then
      return
     end
@@ -400,24 +490,32 @@ function make_player(pnum)
     local thrust = false
     if btn(0, t.pnum) then
      t.theta -= 10
-     if t.theta < 0 then
-      t.theta += 360 
-     end
     end 
     if btn(1, t.pnum) then
      t.theta += 10
-     if t.theta >= 360 then
-      t.theta -= 360
-     end
     end
     if btn(2, t.pnum) then
      thrust = true
     end
+    if g_mouse_ptr.button_down[1] then
+     thrust = true
+     t.theta = 360-vecatan(vecsub(vecxform(g_mouse_ptr, sp_world),g_p1))
+    end
+    t.theta = wrap_angle(t.theta)
     if btn(3, t.pnum) then
      t.velocity = vecscale(t.velocity, 0.8)
     end
     if thrust then
      accel_forward(t, 3, 5)
+    end
+
+    -- @TODO: shift this to an inventory system
+    if btnn(4, t.pnum) then
+     add_g_sys_objs(make_projectile(t, t.theta, t.velocity))
+     -- recoil
+     accel_forward(t, -10, 3)
+     -- camera shake
+     vecset(g_cam, vecadd(g_cam,vecrand(4, true)))
     end
    end,
    draw=function(t)
@@ -448,13 +546,16 @@ function make_player(pnum)
     popt()
     
     circ(0,0,t.radius,11)
+
+    -- local v_loc = vecfromrot(t.theta, 10)
+    -- circfill(v_loc.x, v_loc.y, 3, 11)
    end
   },
   5
  )
 end
 
-g_friction=0.1
+g_friction=0.2
 function update_phys(o)
  -- in case we want to play
  -- with time, even though pico
@@ -476,12 +577,8 @@ function update_phys(o)
   dt
  )
  
- -- zero out the force
- o.force = makev(0,0)
-  
- -- drag
- o.force.x -= g_friction*o.velocity.x
- o.force.y -= g_friction*o.velocity.y
+ -- zero out the force & apply drag
+ vecset(o.force, vecsub(makev(0), vecscale(o.velocity, g_friction)))
 end
 
 function vecstr(v)
@@ -547,46 +644,35 @@ function vecdistsq(a, b, sf)
  return distsq
 end
 
-null_v = makev(0,0)
+-- global null vector
+null_v = makev(0)
 
 function vecnorm(v) 
- local l =
-   sqrt(vecdistsq(null_v,v)) 
- return {
-  x=v.x/l,
-  y=v.y/l,
- }
+ return vecscale(v, 1/sqrt(vecdistsq(null_v,v)) )
 end
 
 
 function update_collision(o, o_num)
  -- (checking o, pos is new pos
  -- check boundaries first
- local pos = makev(o.x, o.y)
 
 --  pos.x, o.velocity.x = collide_walls_1d(
 --   g_edges[1],pos.x,o.velocity.x,o.radius)
 --  pos.y, o.velocity.y = collide_walls_1d(
 --   g_edges[2],pos.y,o.velocity.y,o.radius)
- 
+
  for i=o_num,#g_objs do
   local t = g_objs[i]
   if t.is_phys and t ~= o then
    if collides_circles(t, o) then
     if not t.is_static then
-
-     -- current displacement
-     local t_pos = makev(t.x, t.y)
-     
      -- push the objects back
      local r = o.radius + t.radius
-     local v = vecsub(pos,t_pos)
+     local v = vecsub(o,t)
      local v_n = vecnorm(v)
-     local new_pos  = vecadd(vecscale(v_n, r),t_pos)
     
      -- result
-     o.x = new_pos.x
-     o.y = new_pos.y
+     vecset(o, vecadd(vecscale(v_n, r),t))
    
      -- a.v = (a.u * (a.m - b.m) + (2 * b.m * b.u)) / (a.m + b.m)
      -- b.v = (b.u * (b.m - a.m) + (2 * a.m * a.u)) / (a.m + b.m)
@@ -606,16 +692,15 @@ function update_collision(o, o_num)
 end
 
 function collides_circles(o1, o2)
- local x_d = abs(o1.x - o2.x)
- local y_d = abs(o1.y - o2.y)
+ local d = vecsub(o1, o2)
  local r_2 = o1.radius + o2.radius
 
  -- cheat to avoid huge squares
- if x_d > r_2 or y_d > r_2 then
+ if abs(d.x) > r_2 or abs(d.y) > r_2 then
   return false
  end
 
- return ((x_d*x_d)+(y_d*y_d)) < r_2 * r_2
+ return vecmagsq(d) < r_2 * r_2
 end
 
 -- creates a physics object out
@@ -625,8 +710,8 @@ function make_physobj(p,mass)
  phys = {
   p=p,
   mass=mass,
-  force=makev(0,0),
-  velocity=makev(0,0),
+  force=makev(0),
+  velocity=makev(0),
   radius=p.vis_r or 5,
   is_phys=true,
   is_static=false,
@@ -676,7 +761,7 @@ function make_infinite_grid()
      circ(xc, yc, 7, 5)
 
      -- label
-     local smin = vecsub(g_cam, makev(64, 64))
+     local smin = vecsub(g_cam, makev(64))
      local str = "w: " .. xc + smin.x .. ", ".. yc + smin.y
      print(str, xc-#str*2, yc+9, 5)
     end
@@ -711,8 +796,10 @@ function make_camera()
    return false
   end,
   update=function(t)
-   t.x=g_p1.x
-   t.y=g_p1.y
+   -- t.x=g_p1.x
+   -- t.y=g_p1.y
+   -- @TODO: make the target point lead the player
+   vecset(t,veclerp(t,g_p1,0.5,0.3))
   end,
   draw=function(t)
   end
@@ -728,6 +815,14 @@ function make_debugmsg()
    print("",0,0)
    print("cpu: ".. stat(1))
    print("mem: ".. stat(2))
+   if g_mouse_ptr then
+    print(vecstr(g_mouse_ptr))
+    for _, o in pairs(g_mouse_ptr.button_down) do
+     print(print(o))
+    end
+    print(vecstr(vecxform(g_mouse_ptr, sp_world)))
+    print(360-vecatan(vecnorm(vecsub(vecxform(g_mouse_ptr, sp_world),g_p1))))
+   end
    -- local vis="false"
    -- if g_p2 and g_cam:is_visible(g_p2) then
    --  vis = "true"
@@ -821,6 +916,7 @@ function make_planet(name,x,y,sats,kind,palette, seed)
    -- pal(7,7)
    set_palette(t.palette)
    local sprite_index = 64+(16*fy+fx)*sprites_wide
+   -- @TODO: switch this to sspr and make planets bigger.  They're cool!
    spr(sprite_index,-radius,-radius,sprites_wide,sprites_wide)
    reset_palette()
    -- print(fx..", "..fy.." ["..sprite_index.."]", -10, 20, 7)
@@ -857,6 +953,12 @@ function add_gobjs(thing)
  return thing
 end
 
+function add_g_sys_objs(thing)
+ add(g_sys_objs, thing)
+ return thing
+end
+
+-- @TODO: Rings & mmoons
 g_sys_size = 500
 one_over_g_sys_size_2 = 1/(2*g_sys_size)
 g_systems = {
@@ -939,18 +1041,19 @@ function make_system(name)
  }
 
  for _, wg in pairs(sys.gates) do
-  add(g_sys_objs, make_warp_gate(unpack(wg)))
+  add_g_sys_objs(make_warp_gate(unpack(wg)))
  end
 
  -- if the system has any npcs in it
  if sys.npcs then
   for _, os in pairs(sys.npcs) do
-   add(g_sys_objs, make_npc(unpack(os)))
+   add_g_sys_objs(make_npc(unpack(os)))
   end
  end
 end
 
 function lerp(v1, v2, amount, clamp)
+ -- TOKENS: can compress this with ternary
  local result = (v2 -v1)*amount + v1
  if clamp and abs(result - v2) < clamp then
   result = v2
@@ -958,10 +1061,33 @@ function lerp(v1, v2, amount, clamp)
  return result
 end
 
-function look_at(t, p)
- local dir_vec = vecnorm(vecsub(t, p))
- local tgt_angle = flr((1-atan2(dir_vec.x, dir_vec.y)) * 360) + 360
- t.theta = flr(lerp(t.theta + 360, tgt_angle, 0.3, 0.1)) - 360
+function veclerp(v1, v2, amount, clamp)
+ -- TOKENS: can compress this with ternary
+ local result = vecadd(vecscale(vecsub(v2,v1),amount),v1)
+ if clamp and vecmag((vecsub(result,v2))) < clamp then
+  result = v2
+ end
+ return result
+end
+--
+-- function vecrand(scale_x,center_x, scale_y, center_y)
+--  local off_x = center_x and - scale_x/2 or 0
+--  local off_y = center_y and - scale_y/2 or 0
+--  
+--  return makev(rnd(scale_x) + off_x, rnd(scale_y)+off_y)
+-- end
+
+-- flip the center boolean to the other case to save tokens
+function vecrand(scale,center)
+ return vecsub(
+  vecscale(vecfromrot(flr(rnd(359))), scale),
+  center and makev(scale/2) or null_v
+ )
+end
+
+function vecset(target, source)
+ target.x = source.x
+ target.y = source.y
 end
 
 function clamp(val, minval, maxval)
@@ -975,7 +1101,7 @@ end
 
 function accel_forward(t, accel, max_speed)
  accel *= smootherstep(1.0, 0.0, vecmag(t.velocity)/max_speed)
- add_force(t, vecscale(makev(cal[t.theta][-1], sal[t.theta][1]), accel))
+ add_force(t, vecscale(makev(cal[t.theta][1], sal[t.theta][-1]), accel))
 end
 
 brain_funcs = {
@@ -987,19 +1113,21 @@ brain_funcs = {
 --   end
 --  end,
  face_player = function(t) 
-  look_at(t, g_p1)
+  look_at(t, g_p1, 5)
  end,
  patrol = function(t)
   if t.target_point then
-   local dirvec = vecsub(t, t.target_point)
-   local d = vecmag(dirvec)
    if d < 9 then
     t.target_point = makev(t.target_point.x,-1*t.target_point.y)
    end
-   look_at(t, t.target_point)
-   accel_forward(t, 1, 3)
+   local dirvec = vecsub(t, t.target_point)
+   local d = vecmag(dirvec)
+   local theta_delta = look_at(t, t.target_point, 25)
+   if theta_delta == 0 then
+    accel_forward(t, 1, 3)
+   end
   else
-   t.target_point = makev(-20,-20)
+   t.target_point = makev(-20)
   end
  end
 }
@@ -1025,8 +1153,17 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
    -- for rotating the sprite
    theta = 0,
    rendered_rot=nil,
+   health=10,
+   tag="enemy",
    update=function(t)
     t:brain()
+   end,
+   hit=function(t, damage)
+    t.am_hit = true
+    t.health -= damage
+    if t.health <= 0 then
+     del(g_sys_objs, t)
+    end
    end,
    draw=function(t)
     print_label("theta: "..t.theta)
@@ -1035,15 +1172,29 @@ function make_npc(start_x, start_y, name, brain, systems, sprite, vis_r)
      dirvec = vecsub(t, t.target_point)
      d = vecmag(dirvec)
      print_label("distance: "..d, 12)
+     print_label("health: "..t.health, 18)
      local local_target_point = vecsub(t.target_point, t)
      circfill(local_target_point.x, local_target_point.y, 3, 8)
     end
 
+    -- @TODO: Move spr call into rotate_sprite_if_changed
+    --        also move the pusht/popt in, why not
+
     pusht({{3,true},{0,false}})
+    if t.am_hit then
+     for i=0,15 do
+      pal(i,7)
+     end
+     t.am_hit = false
+     g_sleep = 1
+    end
     rotate_sprite_if_changed(t, 3, 79, 7)
+
     spr(t.sprite, -7, -7, 2, 2)
-    circ(0,0,t.radius,11)
     popt()
+
+    circ(0,0,t.radius,11)
+    reset_palette()
    end
   },
   5
@@ -1056,6 +1207,7 @@ function map_coords(o)
  return (o.x + g_sys_size) * map_size_times_sys_size + 2,
  (o.y + g_sys_size) * map_size_times_sys_size + 2
 end
+
 function make_minimap()
  return {
   space=sp_screen_native,
@@ -1089,24 +1241,154 @@ function make_minimap()
  }
 end
 
-function make_rocket(x,y)
+--[[
+Ship structure @TODO:
+The way it should work:
+ships have a loadout and a brain
+the player has a "player controller" brain that reads input
+
+That way they can activate stuff on the loadout.
+
+make_ship becomes more generic
+]]--
+
+function make_rocket(x,y, dir)
  return {
   x=x,
   y=y,
   space=sp_world,
+  dir=dir,
+  speed=1,
+  update=function(t)
+   vecadd(t, vecscale(t.dir, t.speed))
+  end,
   draw=function(t)
-   spr(x,y,1)
+   pusht({{3,true},{0,false}})
+   spr(1, -4,-4, 1,1)
+   popt()
+  end
+ }
+end
+
+function make_smoke(source_p, theta, velocity)
+ source_p = vecadd(vecrand(2, true), source_p)
+ return {
+  x=source_p.x,
+  y=source_p.y,
+  velocity=velocity,
+  space=sp_world,
+  tcreate=g_tick,
+  update=function(t)
+   if elapsed(t.tcreate) > 30 then
+    del(g_sys_objs, t)
+   end
+  end,
+  draw=function(t)
+   -- smoke size.  Max smoke size will be 4*i
+   local r = 1*smootherstep(1,0,elapsed(t.tcreate)/32)
+   for ang_fact=-1,1,2 do
+    local start=null_v
+    for i=0,3 do
+     start=vecsub(
+      null_v,
+      vecscale(
+       vecfromrot(wrap_angle(theta+45*ang_fact+15*i*ang_fact)),
+       elapsed(t.tcreate)+i*4
+      )
+     )
+     if r*i > 1 then
+      circfill(start.x,start.y,r*i,6)
+     end
+    end
+   end
+  end
+ }
+end
+
+function make_projectile(source_p,theta,velocity)
+ local offset = vecfromrot(theta, 2)
+ local initial_position = vecadd(source_p, vecscale(offset, 2))
+ sfx(3, -1)
+
+ -- smoke
+--  add_g_sys_objs(make_smoke(initial_position, theta, velocity))
+
+ return make_physobj(
+ {
+  x=initial_position.x,
+  y=initial_position.y,
+  space=sp_world,
+  dir=vecnorm(offset),
+  speed=5,
+  tcreate=g_tick,
+  vis_r=3,
+  tag="projectile",
+  collision_effect_map={
+   enemy = function(t, other)
+    add_g_sys_objs(make_smoke(t, theta, velocity))
+    other:hit(1)
+    sfx(4,-1)
+    del(g_sys_objs, t)
+   end,
+  },
+  update=function(t)
+   vecset(t, vecadd(velocity, vecadd(t, vecscale(t.dir, t.speed))))
+   if elapsed(t.tcreate) > 50 then
+    del(g_sys_objs, t)
+   end
+   -- @TODO: detect hitting the enemy @NEXT
+  end,
+  draw=function(t)
+   circfill(0,0,t.radius, 11)
+   circfill(0,0,t.vis_r, 11)
+   if elapsed(t.tcreate) <= 1 then
+    local off = vecscale(t.dir, 2)
+    circfill(off.x,off.y,8,8)
+    local off = vecscale(t.dir, -1)
+    circfill(off.x,off.y,6,0)
+    off = vecrand(2, true)
+    circfill(off.x,off.y,4,7)
+   else
+    circfill(0, 0, 3, 2)
+    circfill(-offset.x, -offset.y, 2, 2)
+    circfill(0, 0, 2, 8)
+    circfill(-offset.x, -offset.y, 1, 8)
+   end
+  end
+ },
+ 2
+ )
+end
+
+function make_mouse_ptr()
+ return {
+  x=0,
+  y=0,
+  button_down={false,false,false},
+  space=sp_screen_native,
+  update=function(t)
+   vecset(t, makev(stat(32), stat(33)))
+   local mbtn=stat(34)
+   for i,mask in pairs({1,2,4}) do
+    t.button_down[i] = band(mbtn, mask) == mask and true or false
+   end
+  end,
+  draw=function(t)
+   -- @TODO: do something more juicey, maybe line based?
+   spr(17, t.x-3, t.y-3)
   end
  }
 end
 
 function game_start()
  g_objs = {}
+ g_bg_objs = {
+  make_infinite_grid()
+ }
 
- add_gobjs(make_infinite_grid())
  g_map = add_gobjs(make_minimap())
 
- add_gobjs(make_rocket(32, -32))
+--  add_gobjs(make_rocket(32, -32))
 
  g_cam = add_gobjs(make_camera())
 
@@ -1118,9 +1400,8 @@ function game_start()
 
  make_system("earth")
  g_p1 = add_gobjs(make_player(0))
- add(g_sys_objs,make_npc(30,30,"test","patrol",{},11,6))
---  add_gobjs(make_npc(40,30,"test","face_player",{},11,6))
---  add_gobjs(make_npc(50,30,"test","face_player",{},11,6))
+ add_g_sys_objs(make_npc(30,30,"test","face_player",{},11,6))
+--  add(g_sys_objs,make_npc(-32,-32,"test","face_player",{},11,6))
 
  -- add in pushable things
 --  for i=0,0 do
@@ -1149,6 +1430,7 @@ function game_start()
 --  add(g_objs, g_brd)
 --  g_tgt = make_tgt(0,0)
 --  add(g_objs,g_tgt)
+ g_mouse_ptr = add_gobjs(make_mouse_ptr())
 end
 
 ------------------------------
@@ -1170,8 +1452,7 @@ function stdupdate()
 end
 
 function add_force(o, f)
- o.force.x += f.x
- o.force.y += f.y
+ vecset(o.force, vecadd(o.force,f))
 end
 
 function compute_force_1d(pos, f, m, v, dt)
@@ -1214,7 +1495,21 @@ end
 
 function stddraw()
  cls()
+ drawobjs(g_bg_objs)
+ drawobjs(g_sys_objs)
  drawobjs(g_objs)
+end
+
+function vecxform(obj, to_space)
+ if obj.space == to_space then
+  return obj
+ end
+
+ if obj.space == sp_screen_native then
+  if to_space == sp_world then
+   return vecsub(vecadd(makev(obj.x,obj.y),g_cam), makev(64, 64))
+  end
+ end
 end
 
 function drawobjs(objs)
@@ -1452,13 +1747,13 @@ __gfx__
 0066500033333333077777709999999903030001333bb3330000000833088803308880333333a80000000333333309a988888033305665030000000000000000
 006500003333333300077000999999991010011200333300000000883309900330099033319a9a03333333333300999000898033305bb5030000000000000000
 005000003333333300700700999999992111122300000000000000083309a003300a9033319a9a03333333333319a90030888033300000030000000000000000
-0000000000000000000000000000000099999999999993999999999933009900009900333330a800000003333319980300990033000000000000000000000000
-1120300000000000000000000000000099944499993933939944444933309a8aa8a9033330009a90088803333300aaa009a90333000000000000000000000000
-c1230100000000000000000000000000994444499339333394131114330009a99a9000333199099a989803333330a9a899900333000000000000000000000000
-112030000000000000000000000000009966666999333393941113143309900aa0099033319900099888033333099aa9a9033333000000000000000000000000
-00000000000000000000000000000000936465699339343399311114330990399309903330000300000003333311900990333333000000000000000000000000
-00000000000000000000000000000000936466699943399499411149330110311301103333333333333333333311030110333333000000000000000000000000
-00000000000000000000000000000000933533399999499999944499333333333333333333333333333333333333333333333333000000000000000000000000
+0000000002000200000000000000000099999999999993999999999933009900009900333330a800000003333319980300990033000000000000000000000000
+1120300020080020000000000000000099944499993933939944444933309a8aa8a9033330009a90088803333300aaa009a90333000000000000000000000000
+c1230100000800000000000000000000994444499339333394131114330009a99a9000333199099a989803333330a9a899900333000000000000000000000000
+112030000880880000000000000000009966666999333393941113143309900aa0099033319900099888033333099aa9a9033333000000000000000000000000
+00000000000800000000000000000000936465699339343399311114330990399309903330000300000003333311900990333333000000000000000000000000
+00000000200800200000000000000000936466699943399499411149330110311301103333333333333333333311030110333333000000000000000000000000
+00000000020002000000000000000000933533399999499999944499333333333333333333333333333333333333333333333333000000000000000000000000
 00000000000000000000000000000000999999999999999999999999333333333333333333333333333333333333333333333333000000000000000000000000
 33333300033333333330000333333333333300033333333333333300003333330000000000000000000000000000000033333300003333330000000000000000
 3333300c00333333333055003333333330000c00000000333333300cc0033333000066000000000000000000000000003333300cc00333330000000000000000
@@ -1612,8 +1907,8 @@ __sfx__
 0006011e250501d1501d230222401b2501c2601e2601f26021260202501d2501b2502f2502e2502c25025260202601d2601d260241601f260222602426026250282402b2502b2502a2502a2502c2502705022050
 0001000e01111011100111001110011100111001110011100111001110011100111001110011200215016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
 0001000e091200912009120091200a1200b1200d120111201712017120141200f1200a120081200915016330026501925019250192503b4501805003050020500105000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0002000006050060501e050060501e050060501e060260702607024070200600e0501b0501805014050090500d050080500705000000000000000000000000000000000000000000000000000000000000000000
+000100001e3502135006350103502f3501935031350213502d35026350223501c3502c350113502e3502e3502d3500c3502935024350000000000018350143500d35009350053500335001350000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
