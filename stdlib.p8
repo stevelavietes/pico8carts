@@ -171,16 +171,15 @@ end
 -- @}
 
 function game_start()
- g_cam= make_camera()
- g_p1 = make_player(0)
-
  g_objs = {
   make_mouse_ptr(),
   make_grid(sp_world, 128),
   make_grid(sp_screen_center, 128),
-  g_cam,
-  g_p1
  }
+
+ g_cam= add_gobjs(make_camera())
+ g_p1 = add_gobjs(make_player(0))
+
 
 --  g_brd = make_board()
 --  add(g_objs, g_brd)
