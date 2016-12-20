@@ -28,7 +28,7 @@ function _init()
  )
 end
 
-function _update()
+function _update60()
  stdupdate()
 end
 
@@ -60,7 +60,7 @@ function make_mouse_ptr()
   space=sp_screen_native,
   update=function(t)
    -- if you have the vector functions
-   -- vecset(t, makev(stat(32), stat(33)))
+   -- vecset(t, vecmake(stat(32), stat(33)))
    t.x = stat(32)
    t.y = stat(33)
 
@@ -84,82 +84,12 @@ function make_mouse_ptr()
    if t.button_down[1] or t.button_down[2] or t.button_down[3] then
     pal(3,3)
    end
-   print("("..t.x..","..t.y..")")
   end
  }
 end
 -- @}
 
 -- @{ built in diagnostic stuff
-function make_player(p)
- return {
-  x=0,
-  y=0,
-  p=p,
-  space=sp_world,
-  -- c_objs={make_grid(sp_local, 64)},
-  c_objs={},
-  update=function(t)
-   local m_x = 0
-   local m_y = 0
-   if btn(0, t.p) then
-    m_x =-1
-   end 
-   if btn(1, t.p) then
-    m_x = 1
-   end
-   if btn(2, t.p) then
-    m_y = -1
-   end
-   if btn(3, t.p) then
-    m_y = 1
-   end
-   t.x += m_x
-   t.y += m_y
-   updateobjs(t.c_objs)
-  end,
-  draw=function(t)
-   spr(2, -3, -3)
-   rect(-3,-3, 3,3, 8)
-   local str = "world: " .. t.x .. ", " .. t.y
-   print(str, -(#str)*2, 12, 8)
-   drawobjs(t.c_objs)
-  end
- }
-end
-
-function make_grid(space, spacing)
- return {
-  x=0,
-  y=0,
-  space=space,
-  spacing=spacing,
-  update=function(t) end,
-  draw=function(t) 
-   local space_label = "local"
-   if t.space == sp_world then
-    space_label = "world" 
-   elseif t.space == sp_screen_center then
-    space_label = "screen_center"
-   elseif t.space == sp_screen_native then
-    space_label = "screen_native"
-   end
-
-   for x=0,3 do
-    for y=0,3 do
-     local col = y*4+x
-     local xc =(x-1.5)*t.spacing 
-     local yc = (y-1.5)*t.spacing
-     rect(xc-1, yc-1,xc+1, yc+1, col)
-     circ(xc, yc, 7, col)
-     local str = space_label .. ": " .. xc .. ", ".. yc
-     print(str, xc-#str*2, yc+9, col)
-    end
-   end
-  end
- }
-end
-
 function make_cell(x,y)
  return {
   -- x=0,
@@ -170,23 +100,24 @@ function make_cell(x,y)
   x=1+9*(x-1)+1,
   y=1+9*(y-1)+1,
   containing=nil,
-  mark_for_contain=function(t, c)
+  mark_for_contain=function(t, c, amt)
    t.containing = c
    if c.container then
     c.container.containing = nil
    end
+   if amt and amt == 1 then
+    vecset(c, t)
+   else
+    c.from_loc = vecmake(c.x, c.y)
+    c.to_loc = vecmake(t.x, t.y)
+    c.to_amount = amt or 0
+   end
    c.container = t
   end,
   update=function(t)
-   if t.containing then
-    updateobjs({t.containing})
-   end
   end,
   draw=function(t)
    rect(0, 0,7, 7, 5)
-   if t.containing then
-    drawobjs({t.containing})
-   end
   end
  }
 end
@@ -195,52 +126,56 @@ end
 This needs to be refactored.  instead a "want to move" buffer, then sweep and
 resolve approach should be used.
 ]]--
-function make_merge_box(x, y)
+function make_merge_box(x, y, col)
  return {
   x=0,
   y=0,
   space=sp_local,
   container=nil,
+  to_amount=1,
+  col = col,
   update=function(t)
-   g_updates += 1
-   if btnn(0, 0) then
-    if t.container.grid_x > 1 then
-     g_board.all_cells[t.container.grid_x-1][t.container.grid_y]:mark_for_contain(t)
-    end
-   elseif btnn(1) then
-    g_ping += 1;
-    if t.container.grid_x < g_board.size_x then
-     -- g_ping += 1
-     if g_ping > 10 then
-      cls()
-      print("AUGH")
-      stop()
-     end
-     cls()
-     print(t.container.grid_x)
-     print(g_board.all_cells[t.container.grid_x+1][t.container.grid_y].grid_x)
-     -- stop()
-     g_board.all_cells[t.container.grid_x+1][t.container.grid_y]:mark_for_contain(t)
-    end
-   elseif btnn(2) then
-    if t.container.grid_y > 1 then
-     g_board.all_cells[t.container.grid_x][t.container.grid_y-1]:mark_for_contain(t)
-    end
-   elseif btnn(3) then
-    if t.container.grid_y < g_board.size_y then
-     g_board.all_cells[t.container.grid_x][t.container.grid_y+1]:mark_for_contain(t)
+   if t.from_loc and t.to_loc then
+    t.to_amount += 0.1
+
+    local interp_amount = smootherstep(0, 1, t.to_amount)
+    vecset(t, veclerp(t.from_loc, t.to_loc, interp_amount))
+
+    if t.to_amount == 1 then
+     t.from_loc = nil
+     t.to_loc = nil
     end
    end
   end,
   draw=function(t)
-   rectfill(1,1,6,6,11)
+   rectfill(1,1,6,6,col)
   end
  }
 end
 
+function make_player(player)
+ return {
+  x=0,
+  y=0,
+  space=sp_world,
+  player=player or 0,
+  update=function(t)
+   if btnn(0, t.player) then
+     g_board:shift_cells(1, 0)
+   elseif btnn(1, t.player) then
+     g_board:shift_cells(-1, 0)
+   elseif btnn(2, t.player) then
+     g_board:shift_cells(0,1)
+   elseif btnn(3, t.player) then
+     g_board:shift_cells(0,-1)
+   end
+  end,
+ }
+end
+
 function make_board(x, y)
- all_cells = {}
- flat_cells = {}
+ local all_cells = {}
+ local flat_cells = {}
  for i=1,x do
   all_cells[i] = {}
   for j=1,y do
@@ -251,8 +186,12 @@ function make_board(x, y)
   end
  end
 
- g_watch_cell = make_merge_box(2,2)
- all_cells[2][2]:mark_for_contain(g_watch_cell)
+ g_watch_cell = add_gobjs(make_merge_box(2,2,11))
+ all_cells[2][2]:mark_for_contain(g_watch_cell, 1)
+ local other = add_gobjs(make_merge_box(1,3,11))
+ all_cells[1][3]:mark_for_contain(other, 1)
+ local other = add_gobjs(make_merge_box(4,4,8))
+ all_cells[4][4]:mark_for_contain(other, 1)
  return {
   x=0,
   y=0,
@@ -261,6 +200,65 @@ function make_board(x, y)
   size_y=y,
   all_cells=all_cells,
   flat_cells=flat_cells,
+  shift_cells=function(t, x_dir, y_dir)
+   local first_x = 1
+   local final_x = t.size_x
+
+   local first_y = 1
+   local final_y = t.size_y
+
+   local x_inc = x_dir
+   local y_inc = y_dir
+
+   if x_dir < 0 then
+    first_x = final_x
+    final_x = 1
+   end
+
+   if y_dir < 0 then
+    first_y = final_y
+    final_y = 1
+   end
+
+   if x_dir == 0 then
+    x_inc = 1
+   end
+   if y_dir == 0 then
+    y_inc = 1
+   end
+
+   for i=first_x,final_x,x_inc do
+    for j=first_y,final_y,y_inc do
+     -- if this cell is empty
+     if t.all_cells[i][j].containing == nil then
+      -- if the next cell in the x direction is empty
+      if x_dir != 0 then
+       local next_i = i + x_dir
+       if (
+        (next_i != first_x) 
+        and (next_i != final_x + x_dir) 
+        and (t.all_cells[next_i][j].containing ~= nil)
+       ) then
+        -- move it over
+        t.all_cells[i][j]:mark_for_contain(t.all_cells[next_i][j].containing)
+       end
+      end
+      -- if the next cell in the y direction is empty
+      if y_dir != 0 then
+       local next_j = j + y_dir
+       if (
+        (next_j != first_y) 
+        and (next_j != final_y + y_dir) 
+        and (t.all_cells[i][next_j].containing ~= nil)
+       ) then
+        -- move it over
+        t.all_cells[i][j]:mark_for_contain(t.all_cells[i][next_j].containing)
+       end
+      end
+     end
+    end
+   end
+  end,
   update=function(t)
    updateobjs(t.flat_cells)
    print(t.flat_cells)
@@ -283,12 +281,95 @@ function make_camera()
   x=0,
   y=0,
   update=function(t)
-   t.x=g_p1.x
-   t.y=g_p1.y
+   if g_p1 then
+    t.x=g_p1.x
+    t.y=g_p1.y
+   end
   end,
   draw=function(t)
   end
  }
+end
+-- @}
+
+-- @{ general math
+function clamp(val, minval, maxval)
+ return max(min(val, maxval), minval)
+end
+
+function smootherstep(edge0, edge1, x)
+  x= clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0);
+ return x*x*x*(x*(x*6 - 15) + 10);
+end
+-- @}
+
+-- @{ vector library
+function vecmake(xf, yf)
+ return {x=xf, y=(yf or xf)}
+end
+
+function vecdistsq(a, b, sf)
+ if sf then
+  a = vecscale(a, sf)
+  b = vecscale(b, sf)
+ end
+ 
+ local distsq = (b.x-a.x)^2 + (b.y-a.y)^2
+ 
+ if sf then
+  distsq = distsq/sf
+ end
+ 
+ return distsq
+end
+
+-- global null vector
+null_v = vecmake(0)
+
+function vecnorm(v) 
+ return vecscale(v, 1/sqrt(vecdistsq(null_v,v)) )
+end
+
+function vecscale(v, m)
+ return {x=v.x*m, y=v.y*m}
+end
+
+function vecmagsq(v)
+ return v.x*v.x+v.y*v.y
+end
+
+function vecmag(v, sf)
+ if sf then
+  v = vecscale(v, sf)
+ end
+ local result=sqrt(vecmagsq(v))
+ if sf then
+  result=result/sf
+ end
+ return result
+end
+
+function vecadd(a, b)
+ return {x=a.x+b.x, y=a.y+b.y}
+end
+
+function vecsub(a, b)
+ return {x=a.x-b.x, y=a.y-b.y}
+end
+
+
+function vecset(target, source)
+ target.x = source.x
+ target.y = source.y
+end
+
+function veclerp(v1, v2, amount, clamp)
+ -- TOKENS: can compress this with ternary
+ local result = vecadd(vecscale(vecsub(v2,v1),amount),v1)
+ if clamp and vecmag((vecsub(result,v2))) < clamp then
+  result = v2
+ end
+ return result
 end
 -- @}
 
@@ -298,15 +379,6 @@ function debug_messages()
   y=0,
   space=sp_screen_native,
   draw=function(t)
-   if g_watch_cell then
-    print(
-     g_watch_cell.container.grid_x.." "..g_watch_cell.container.grid_y,
-     0,
-     100
-    )
-    print(g_ping, 0, 112)
-    print("updates:"..g_updates, 0, 118)
-   end
   end
  }
 end
@@ -317,8 +389,8 @@ function game_start()
  }
 
  g_cam= add_gobjs(make_camera())
- g_p1 = add_gobjs(make_player(0))
  g_board = add_gobjs(make_board(5,5))
+ g_p1 = add_gobjs(make_player(0))
 
  add_gobjs(debug_messages())
 
