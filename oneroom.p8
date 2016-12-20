@@ -236,18 +236,35 @@ function make_board(x, y)
    end
 
    for i=first_x,final_x,x_inc do
+    local next_i = i + x_dir
     for j=first_y,final_y,y_inc do
-     if t.all_cells[i][j].containing != nil then
-     end
-     -- if this cell is empty
-     if t.all_cells[i][j].containing == nil then
-      -- if the next cell in the x direction is empty
-      local next_i = i + x_dir
-      local next_j = j + y_dir
+     local next_j = j + y_dir
+     if (
+      (x_dir != 0 or y_dir != 0) 
+      and block_is_not_empty(i,j)
+     ) then
+      -- check for a merge
+      if block_is_not_empty(next_i, next_j) then
+       if t:block(next_i, next_j).col == t:block(i, j).col then
+        cls()
+        print("here")
+        stop()
+       end
+      end
+     else
+      -- just merge anything into this block
       t:shift_cell_from(next_i, next_j, i, j)
-        -- move it over
      end
     end
+   end
+  end,
+  block=function(t, i, j)
+   if (
+    (i > 0 and i <= t.size_x )
+    and (j > 0 and j <= t.size_y)
+    and block_is_not_empty(i, j)
+   ) then
+    return t.all_cells[i][j]
    end
   end,
   shift_cell_from=function(t, from_i, from_j, to_i, to_j)
