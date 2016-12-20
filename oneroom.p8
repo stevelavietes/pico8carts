@@ -173,6 +173,14 @@ function make_player(player)
  }
 end
 
+function block_is_not_empty(i, j)
+ return (
+  i > 0 and i <= g_board.size_x and
+  j > 0 and j <= g_board.size_y and
+  g_board.all_cells[i][j].containing != nil
+ )
+end
+
 function make_board(x, y)
  local all_cells = {}
  local flat_cells = {}
@@ -229,34 +237,28 @@ function make_board(x, y)
 
    for i=first_x,final_x,x_inc do
     for j=first_y,final_y,y_inc do
+     if t.all_cells[i][j].containing != nil then
+     end
      -- if this cell is empty
      if t.all_cells[i][j].containing == nil then
       -- if the next cell in the x direction is empty
-      if x_dir != 0 then
-       local next_i = i + x_dir
-       if (
-        (next_i != first_x) 
-        and (next_i != final_x + x_dir) 
-        and (t.all_cells[next_i][j].containing ~= nil)
-       ) then
+      local next_i = i + x_dir
+      local next_j = j + y_dir
+      t:shift_cell_from(next_i, next_j, i, j)
         -- move it over
-        t.all_cells[i][j]:mark_for_contain(t.all_cells[next_i][j].containing)
-       end
-      end
-      -- if the next cell in the y direction is empty
-      if y_dir != 0 then
-       local next_j = j + y_dir
-       if (
-        (next_j != first_y) 
-        and (next_j != final_y + y_dir) 
-        and (t.all_cells[i][next_j].containing ~= nil)
-       ) then
-        -- move it over
-        t.all_cells[i][j]:mark_for_contain(t.all_cells[i][next_j].containing)
-       end
-      end
      end
     end
+   end
+  end,
+  shift_cell_from=function(t, from_i, from_j, to_i, to_j)
+   if from_i == to_i and from_j == to_j then
+    return
+   end
+
+   if block_is_not_empty(from_i, from_j) then
+    t.all_cells[to_i][to_j]:mark_for_contain(
+     t.all_cells[from_i][from_j].containing
+    )
    end
   end,
   update=function(t)
