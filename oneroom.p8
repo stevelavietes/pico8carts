@@ -160,14 +160,44 @@ function make_player(player)
   space=sp_world,
   player=player or 0,
   update=function(t)
+   local on_press = false
    if btnn(0, t.player) then
+    on_press = true
      g_board:shift_cells(1, 0)
    elseif btnn(1, t.player) then
+    on_press = true
      g_board:shift_cells(-1, 0)
    elseif btnn(2, t.player) then
+    on_press = true
      g_board:shift_cells(0,1)
    elseif btnn(3, t.player) then
+    on_press = true
      g_board:shift_cells(0,-1)
+   end
+
+   if on_press and rnd(3) < 1  then
+    local empty_cells = {}
+    for i in all({1, g_board.size_x}) do
+     for j in all({1, g_board.size_y}) do
+      if not block_is_not_empty(i, j) then
+       add(empty_cells, {i, j})
+      end
+     end
+    end
+    local num_empty_cells = #empty_cells
+    if num_empty_cells == 0 then
+     cls()
+     print("YOU LOSE!")
+     stop()
+    end
+    local palette = {12, 10, 11, 14}
+    local col = palette[flr(rnd(#palette))+1]
+    local c = empty_cells[flr(rnd(num_empty_cells))+1]
+    local new_box = add_gobjs(make_merge_box(c[1], c[2], col))
+    g_board.all_cells[c[1]][c[2]]:mark_for_contain(
+     new_box,
+     col
+    )
    end
   end,
  }
@@ -248,6 +278,8 @@ function make_board(x, y)
        if t:block(next_i, next_j).col == t:block(i, j).col then
         cls()
         print("here")
+        print(t:block(next_i, next_j).col)
+        print(t:block(i, j).col)
         stop()
        end
       end
@@ -264,7 +296,7 @@ function make_board(x, y)
     and (j > 0 and j <= t.size_y)
     and block_is_not_empty(i, j)
    ) then
-    return t.all_cells[i][j]
+    return t.all_cells[i][j].containing
    end
   end,
   shift_cell_from=function(t, from_i, from_j, to_i, to_j)
