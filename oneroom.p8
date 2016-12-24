@@ -508,7 +508,7 @@ function drawobjs(objs)
 
    t:draw(objs)
 
-   for i=cam_stack,0,-1 do
+   for i=1,cam_stack do
     popc()
    end
   end
