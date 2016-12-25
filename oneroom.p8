@@ -42,7 +42,7 @@ sp_local = 1
 sp_screen_native = 2
 sp_screen_center = 3
 
--- @{ Useful utility function for getting started
+-- @{ useful utility function for getting started
 function add_gobjs(thing)
  add(g_objs, thing)
  return thing
@@ -50,7 +50,7 @@ end
 -- @}
 
 -- @{ mouse support
-poke(0x5F2D, 1)
+poke(0x5f2d, 1)
 
 function make_mouse_ptr()
  return {
@@ -92,13 +92,13 @@ end
 -- @{ built in diagnostic stuff
 function make_cell(x,y)
  return {
+  x=1+9*(x-1)+1,
+  y=1+9*(y-1)+1,
   -- x=0,
   -- y=0,
   space=sp_local,
   grid_x=x,
   grid_y=y,
-  x=1+9*(x-1)+1,
-  y=1+9*(y-1)+1,
   containing=nil,
   mark_for_contain=function(t, c, amt)
    t.containing = c
@@ -117,13 +117,15 @@ function make_cell(x,y)
   update=function(t)
   end,
   draw=function(t)
-   rect(0, 0,7, 7, 5)
+   rect(0,0,7,7, 5)
   end
  }
 end
 
+num_merge_blips = 4
+
 --[[
-This needs to be refactored.  instead a "want to move" buffer, then sweep and
+this needs to be refactored.  instead a "want to move" buffer, then sweep and
 resolve approach should be used.
 ]]--
 function make_merge_box(x, y, col)
@@ -134,8 +136,17 @@ function make_merge_box(x, y, col)
   container=nil,
   to_amount=1,
   col = col,
+  merge_blips=nil,
   update=function(t)
    if t.from_loc and t.to_loc then
+    if not t.merge_blips then
+     t.merge_blips = {}
+     for i=0,num_merge_blips-1 do
+      local rnd_x = (rnd(2)-1)
+      local rnd_y = (rnd(2)-1)
+      add(t.merge_blips, vecmake(rnd_x, rnd_y))
+     end
+    end
     t.to_amount += 0.1
 
     local interp_amount = smootherstep(0, 1, t.to_amount)
@@ -144,16 +155,25 @@ function make_merge_box(x, y, col)
     if t.to_amount == 1 then
      t.from_loc = nil
      t.to_loc = nil
+     t.merge_blips = nil
     end
    end
   end,
   draw=function(t)
    rectfill(1,1,6,6,col)
+
+   -- if t.merge_blips != nil then
+   --  local amt = vecsub(t, t.from_loc)
+   --  for b in all(t.merge_blips) do
+   --   local new_loc = vecadd(amt, b)
+   --   line(b.x, b.y, new_loc.x, new_loc.y)
+   --  end
+   -- end
   end
  }
 end
 
-function make_player(player)
+function make_player_controller(player)
  return {
   x=0,
   y=0,
@@ -161,6 +181,9 @@ function make_player(player)
   player=player or 0,
   update=function(t)
    local on_press = false
+   if not g_board then
+    return
+   end
    if btnn(0, t.player) then
     on_press = true
      g_board:shift_cells(1, 0)
@@ -187,17 +210,17 @@ function make_player(player)
     local num_empty_cells = #empty_cells
     if num_empty_cells == 0 then
      cls()
-     print("YOU LOSE!")
+     print("you lose!")
      stop()
     end
     local palette = {12, 10, 11, 14}
     local col = palette[flr(rnd(#palette))+1]
     local c = empty_cells[flr(rnd(num_empty_cells))+1]
-    local new_box = add_gobjs(make_merge_box(c[1], c[2], col))
-    g_board.all_cells[c[1]][c[2]]:mark_for_contain(
-     new_box,
-     col
-    )
+    -- local new_box = add_gobjs(make_merge_box(c[1], c[2], col))
+    -- g_board.all_cells[c[1]][c[2]]:mark_for_contain(
+    --  new_box,
+    --  col
+    -- )
    end
   end,
  }
@@ -223,21 +246,29 @@ function make_board(x, y)
    all_cells[i][j] = c
   end
  end
+ local watch_cells = {make_merge_box(0,0,11)}
 
- g_watch_cell = add_gobjs(make_merge_box(2,2,11))
- all_cells[2][2]:mark_for_contain(g_watch_cell, 1)
- local other = add_gobjs(make_merge_box(1,3,11))
- all_cells[1][3]:mark_for_contain(other, 1)
- local other = add_gobjs(make_merge_box(4,4,8))
- all_cells[4][4]:mark_for_contain(other, 1)
+ --  g_watch_cell = add_gobjs()
+ all_cells[2][2]:mark_for_contain(watch_cells[1], 1)
+--
+--  local other = add_gobjs(make_merge_box(1,3,11))
+--  all_cells[1][3]:mark_for_contain(other, 1)
+--
+--  other = add_gobjs(make_merge_box(4,4,8))
+--  all_cells[4][4]:mark_for_contain(other, 1)
+
+ local s_x = 8*x+1+x+1
+ local s_y = 8*y+1+y+1
+
  return {
-  x=0,
-  y=0,
-  sp=sp_screen_native,
+  x=-s_x/2,
+  y=-s_y/2,
+  space=sp_world,
   size_x=x,
   size_y=y,
   all_cells=all_cells,
   flat_cells=flat_cells,
+  watch_cells=watch_cells,
   shift_cells=function(t, x_dir, y_dir)
    local first_x = 1
    local final_x = t.size_x
@@ -310,19 +341,19 @@ function make_board(x, y)
     )
    end
   end,
+  mark_cell_for_contain=function(t, x, y, c)
+   t.all_cells[x][y]:mark_for_contain(c)
+  end,
   update=function(t)
    updateobjs(t.flat_cells)
-   print(t.flat_cells)
+   updateobjs(t.watch_cells)
   end,
   draw=function(t)
    drawobjs(t.flat_cells)
-   rect(
-    0,
-    0,
-    8*t.size_x+1+t.size_x+1,
-    8*t.size_y+1+t.size_y+1, 
-    8
-   )
+   drawobjs(t.watch_cells)
+
+   -- border square
+   rect(0,0,s_x,s_y,8)
   end
  }
 end
@@ -332,10 +363,10 @@ function make_camera()
   x=0,
   y=0,
   update=function(t)
-   if g_p1 then
-    t.x=g_p1.x
-    t.y=g_p1.y
-   end
+   -- if g_p1 then
+   --  t.x=g_p1.x
+   --  t.y=g_p1.y
+   -- end
   end,
   draw=function(t)
   end
@@ -355,6 +386,10 @@ end
 -- @}
 
 -- @{ vector library
+function vecstr(v)
+ return ""..v.x..", "..v.y
+end
+
 function vecmake(xf, yf)
  return {x=xf, y=(yf or xf)}
 end
@@ -415,7 +450,7 @@ function vecset(target, source)
 end
 
 function veclerp(v1, v2, amount, clamp)
- -- TOKENS: can compress this with ternary
+ -- tokens: can compress this with ternary
  local result = vecadd(vecscale(vecsub(v2,v1),amount),v1)
  if clamp and vecmag((vecsub(result,v2))) < clamp then
   result = v2
@@ -430,6 +465,63 @@ function debug_messages()
   y=0,
   space=sp_screen_native,
   draw=function(t)
+   if g_player_piece then
+    print(g_player_piece.x)
+    print(g_player_piece.y)
+   end
+   if g_cs and #g_cs > 0 then
+    print(#g_cs)
+   end
+  end
+ }
+end
+
+function make_player_avatar(x, y)
+ local obj={
+  x=0,
+  y=0,
+  space=sp_local,
+  update=function(t)
+  end,
+  draw=function (t)
+   rectfill(1,1,6,6,2)
+   spr(6, 0,0)
+  end
+ }
+ g_board:mark_cell_for_contain(x,y,obj)
+ local t_c = g_board.all_cells[x][y]
+ vecset(obj, t_c)
+ return obj
+end
+
+function make_test_obj(x, y, space, label, children)
+ return {
+  x=x,
+  y=y,
+  space=space,
+  label=label,
+  children=children,
+  update=function (t)
+   if label == "root" then
+    if btnn(0) then
+     t.x -= 5
+    end
+    if btnn(1) then
+     t.x += 5
+    end
+    if btnn(2) then
+     t.y += -5
+    end
+    if btnn(3) then
+     t.y += 5
+    end
+   end
+  end,
+  draw=function(t)
+   rect(-2,-2,2,2, 4)
+   circfill(0,0,1,7)
+   print(label.." "..vecstr(t), -6*#label/2, 10)
+   drawobjs(t.children)
   end
  }
 end
@@ -440,15 +532,17 @@ function game_start()
  }
 
  g_cam= add_gobjs(make_camera())
- g_board = add_gobjs(make_board(5,5))
- g_p1 = add_gobjs(make_player(0))
+--  local children = {}
+--  for i=1,10 do
+--   add(children, make_test_obj(5,12*i,sp_local,"child"..i))
+--  end
+--  g_board = add_gobjs(make_board(2,2))
+ g_board = add_gobjs(make_board(7,7))
+ add(g_board.watch_cells, (make_player_avatar(4,4)))
+--  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
+ g_p1 = add_gobjs(make_player_controller(0))
 
  add_gobjs(debug_messages())
-
---  g_brd = make_board()
---  add(g_objs, g_brd)
---  g_tgt = make_tgt(0,0)
---  add(g_objs,g_tgt)
 end
 
 ------------------------------
@@ -708,14 +802,14 @@ function make_trans(f,d,i)
 end
 
 __gfx__
-00600000101221010000000033000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0066000000088000000c000030000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0066600010033001000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00666600283083820cc8cc0000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0066650028380382000c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0066500010033001000c000030000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00650000000880000000000033000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00500000101221010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+006000001012210100000000330003303aaaa9333330003300100100000000000000000000000000000000000000000000000000000000000000000000000000
+0066000000088000000c000030000030aa000a933300900300010010000000000000000000000000000000000000000000000000000000000000000000000000
+0066600010033001000c000000000000a76076a93309940007760770000000000000000000000000000000000000000000000000000000000000000000000000
+00666600283083820cc8cc0000030000a00000a900099940076d07d0000000000000000000000000000000000000000000000000000000000000000000000000
+0066650028380382000c000000000000aa000aa90949994006660660000000000000000000000000000000000000000000000000000000000000000000000000
+0066500010033001000c0000300000303aaaaa930949994000000000000000000000000000000000000000000000000000000000000000000000000000000000
+006500000008800000000000330003303a9a99330099940000111100000000000000000000000000000000000000000000000000000000000000000000000000
+00500000101221010000000000000000a99999933009400300000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -836,6 +930,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
