@@ -137,6 +137,7 @@ function make_merge_box(x, y, col)
   to_amount=1,
   col = col,
   merge_blips=nil,
+  shiftable=true,
   update=function(t)
    if t.from_loc and t.to_loc then
     if not t.merge_blips then
@@ -315,6 +316,7 @@ function make_board(x, y)
        end
       end
      else
+
       -- just merge anything into this block
       t:shift_cell_from(next_i, next_j, i, j)
      end
@@ -335,7 +337,10 @@ function make_board(x, y)
     return
    end
 
-   if block_is_not_empty(from_i, from_j) then
+   if (
+    block_is_not_empty(from_i, from_j) 
+    and t:block(from_i, from_j).shiftable
+   ) then
     t.all_cells[to_i][to_j]:mark_for_contain(
      t.all_cells[from_i][from_j].containing
     )
@@ -481,6 +486,7 @@ function make_player_avatar(x, y)
   x=0,
   y=0,
   space=sp_local,
+  shiftable=false,
   update=function(t)
   end,
   draw=function (t)
