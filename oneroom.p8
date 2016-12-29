@@ -332,6 +332,7 @@ function make_board(x, y)
   blast=function(t, start_block, color_block, x_dir, y_dir)
    g_state = st_blasting
    add(t.watch_cells, make_blast(start_block, color_block, x_dir, y_dir))
+   del(t.watch_cells, color_block)
   end,
   shift_cells=function(t, x_dir, y_dir)
    t.blast_queue = {}
