@@ -2,6 +2,19 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 
+--[[
+ 12/25 - got the beams sort of showing up but not clearing blocks
+    -- took longer than expected because required shifting to a more turn-based
+    -- approach
+
+ 12/28/2016 - going to try and get the beams you shoot to be shaped correctly,
+  and to remove blocks that are in their way
+  - first step is to fix the bug that energy blocks don't disapear when smashed 
+   into the player
+  - thirty minutes to try and do this
+  bonus: start working on enemies that mov toward the player
+]]--
+
 g_ping = 0
 g_updates = 0
 
@@ -110,6 +123,8 @@ function make_cell(x,y)
    else
     c.from_loc = vecmake(c.x, c.y)
     c.to_loc = vecmake(t.x, t.y)
+    c.grid_x = t.grid_x
+    c.grid_y = t.grid_y
     c.to_amount = amt or 0
    end
    c.container = t
@@ -138,6 +153,11 @@ function make_merge_box(x, y, col)
   col = col,
   merge_blips=nil,
   shiftable=true,
+  merge_with=function(t, other, x_dir, y_dir)
+   if other.chargeable then
+    other:charge_with(t, x_dir, y_dir)
+   end
+  end,
   update=function(t)
    if t.from_loc and t.to_loc then
     if not t.merge_blips then
@@ -174,6 +194,36 @@ function make_merge_box(x, y, col)
  }
 end
 
+function make_blast(start_block, color_block, x_dir, y_dir)
+ return {
+  x=start_block.x,
+  y=start_block.y,
+  col=color_block.col,
+  counter=60,
+  space=sp_local,
+  update=function(t)
+   t.counter-=1
+   if t.counter == 0 then
+    color_block.container.containing = nil
+    color_block.controller = nil
+    del(g_board.watch_cells, t)
+    g_state = st_playing
+   end
+  end,
+  draw=function(t)
+   local start = vecmake(-1, -1)
+   if x_dir > 0 then
+    start.x = 9
+   end
+   if y_dir < 0 then
+    start.y = 9
+   end
+   local stop  = vecscale(vecmake(x_dir,y_dir), (3*8+4))
+   rect(start.x,start.y,-x_dir*(9*4),-y_dir*(9*4),t.col)
+  end
+ }
+end
+
 function make_player_controller(player)
  return {
   x=0,
@@ -185,6 +235,12 @@ function make_player_controller(player)
    if not g_board then
     return
    end
+
+   -- input @{
+   if not (g_state == st_playing) then
+    return
+   end
+
    if btnn(0, t.player) then
     on_press = true
      g_board:shift_cells(1, 0)
@@ -198,6 +254,7 @@ function make_player_controller(player)
     on_press = true
      g_board:shift_cells(0,-1)
    end
+   -- @}
 
    if on_press and rnd(3) < 1  then
     local empty_cells = {}
@@ -217,11 +274,12 @@ function make_player_controller(player)
     local palette = {12, 10, 11, 14}
     local col = palette[flr(rnd(#palette))+1]
     local c = empty_cells[flr(rnd(num_empty_cells))+1]
-    -- local new_box = add_gobjs(make_merge_box(c[1], c[2], col))
-    -- g_board.all_cells[c[1]][c[2]]:mark_for_contain(
-    --  new_box,
-    --  col
-    -- )
+    local new_box = make_merge_box(c[1], c[2], col)
+    add(g_board.watch_cells, new_box)
+    g_board.all_cells[c[1]][c[2]]:mark_for_contain(
+     new_box,
+     col
+    )
    end
   end,
  }
@@ -270,7 +328,14 @@ function make_board(x, y)
   all_cells=all_cells,
   flat_cells=flat_cells,
   watch_cells=watch_cells,
+  blast_queue = nil,
+  blast=function(t, start_block, color_block, x_dir, y_dir)
+   g_state = st_blasting
+   add(t.watch_cells, make_blast(start_block, color_block, x_dir, y_dir))
+  end,
   shift_cells=function(t, x_dir, y_dir)
+   t.blast_queue = {}
+
    local first_x = 1
    local final_x = t.size_x
 
@@ -307,19 +372,19 @@ function make_board(x, y)
      ) then
       -- check for a merge
       if block_is_not_empty(next_i, next_j) then
-       if t:block(next_i, next_j).col == t:block(i, j).col then
-        cls()
-        print("here")
-        print(t:block(next_i, next_j).col)
-        print(t:block(i, j).col)
-        stop()
-       end
+       t:block(next_i, next_j):merge_with(t:block(i, j), x_dir, y_dir)
       end
      else
-
       -- just merge anything into this block
       t:shift_cell_from(next_i, next_j, i, j)
      end
+    end
+   end
+
+   -- check the blast queue
+   if #(t.blast_queue) > 0 then
+    for blst_opts in all(t.blast_queue) do
+     g_board:blast(blst_opts[1], blst_opts[2], blst_opts[3], blst_opts[4])
     end
    end
   end,
@@ -487,6 +552,12 @@ function make_player_avatar(x, y)
   y=0,
   space=sp_local,
   shiftable=false,
+  chargeable=true,
+  grid_x=x,
+  grid_y=y,
+  charge_with=function(t, other, x_dir, y_dir)
+   add(g_board.blast_queue, {t, other, x_dir, y_dir})
+  end,
   update=function(t)
   end,
   draw=function (t)
@@ -549,7 +620,11 @@ function game_start()
  g_p1 = add_gobjs(make_player_controller(0))
 
  add_gobjs(debug_messages())
+ g_state = st_playing
 end
+
+st_playing = 0
+st_blasting = 1
 
 ------------------------------
 
