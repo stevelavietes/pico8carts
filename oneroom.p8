@@ -9,9 +9,12 @@ __lua__
 
  12/28/2016 - going to try and get the beams you shoot to be shaped correctly,
   and to remove blocks that are in their way
-  - first step is to fix the bug that energy blocks don't disapear when smashed 
-   into the player
   - thirty minutes to try and do this
+  - first step is to fix the bug that energy blocks don't disapear when smashed 
+   into the player [x] [10 minutes]
+  - shape beam correctly [x] [40 minutes]
+  - went way over 30 minute budget
+  - spent too much time trying to be clever rather than do the simple thing
   bonus: start working on enemies that mov toward the player
 ]]--
 
@@ -133,6 +136,7 @@ function make_cell(x,y)
   end,
   draw=function(t)
    rect(0,0,7,7, 5)
+   -- print(blocks_to_edge(t.grid_y, -1, 'y'), 2, 2, 7)
   end
  }
 end
@@ -199,11 +203,10 @@ function make_blast(start_block, color_block, x_dir, y_dir)
   x=start_block.x,
   y=start_block.y,
   col=color_block.col,
-  counter=60,
+  start_frame=g_tick,
   space=sp_local,
   update=function(t)
-   t.counter-=1
-   if t.counter == 0 then
+   if elapsed(t.start_frame) > 60 then
     color_block.container.containing = nil
     color_block.controller = nil
     del(g_board.watch_cells, t)
@@ -211,15 +214,36 @@ function make_blast(start_block, color_block, x_dir, y_dir)
    end
   end,
   draw=function(t)
-   local start = vecmake(-1, -1)
-   if x_dir > 0 then
-    start.x = 9
+   local start = vecmake(0,0)
+   local vstop = vecmake(1, 1)
+
+   -- four options
+   if x_dir < 0 then
+    start = vecmake(8, -1)
+    vstop = vecmake(9+8*blocks_to_edge(start_block.grid_x, x_dir, 'x')+2, 8)
+   elseif x_dir > 0 then
+    start = vecmake(-1, -1)
+    vstop = vecmake(-1-8*blocks_to_edge(start_block.grid_x, x_dir, 'x')-3, 8)
+   elseif y_dir > 0 then
+    start = vecmake(-1, -1)
+    vstop = vecmake(8, -1-8*blocks_to_edge(start_block.grid_y, y_dir, 'y')-3)
+   elseif y_dir < 0 then
+    start = vecmake(-1, 8)
+    vstop = vecmake(8, 9+8*blocks_to_edge(start_block.grid_y, y_dir, 'y')+2)
    end
-   if y_dir < 0 then
-    start.y = 9
-   end
-   local stop  = vecscale(vecmake(x_dir,y_dir), (3*8+4))
-   rect(start.x,start.y,-x_dir*(9*4),-y_dir*(9*4),t.col)
+
+   -- @TODO: make this animate out after a short wait for juice
+   --
+   -- local interp_amount = smootherstep(0, 1, 1-elapsed(t.start_frame)/40)
+   -- local vstop_2 = veclerp(vstop, vstart, interp_amount)
+   --
+   -- if x_dir ~= 0 then
+   --  vstop.x = vstop_2.x
+   -- elseif y_dir ~= 0 then
+   --  vstop.y = vstop_2.y
+   -- end
+
+   rectfill(start.x, start.y, vstop.x, vstop.y, t.col)
   end
  }
 end
@@ -256,6 +280,8 @@ function make_player_controller(player)
    end
    -- @}
 
+   -- @TODO: seeing a bug where blocks show up in the upper left first each time
+   -- they appear, not sure why.
    if on_press and rnd(3) < 1  then
     local empty_cells = {}
     for i in all({1, g_board.size_x}) do
@@ -293,6 +319,30 @@ function block_is_not_empty(i, j)
  )
 end
 
+-- compute the number of blocks until the block edge
+-- if dir is positive, go to the highest coordinate, negative goes towards 0
+function blocks_to_edge(dim, dir, axis)
+ -- blocks_to_edge(1, 1) -> 4 || grid size: 5, 5
+ -- blocks_to_edge(2, 1) -> 3 || grid size: 5, 5
+ -- blocks_to_edge(3, 1) -> 2 || grid size: 5, 5
+ -- blocks_to_edge(4, 1) -> 1
+ -- blocks_to_edge(5, 1) -> 0
+ -- blocks_to_edge(1, -1) -> 0 || grid size: 5, 5
+ -- blocks_to_edge(2, -1) -> 1 || grid size: 5, 5
+ -- blocks_to_edge(3, -1) -> 2 || grid size: 5, 5
+ -- blocks_to_edge(4, -1) -> 3
+ -- blocks_to_edge(5, -1) -> 4
+ local size = 1
+ if dir > 0 then
+  size = g_board.size_x
+  if axis == 'y' then
+   size = g_board.size_y
+  end
+ end
+
+ return dir * (size - dim) 
+end
+
 function make_board(x, y)
  local all_cells = {}
  local flat_cells = {}
@@ -305,10 +355,10 @@ function make_board(x, y)
    all_cells[i][j] = c
   end
  end
- local watch_cells = {make_merge_box(0,0,11)}
+ local watch_cells = {make_merge_box(4,3,11)}
 
  --  g_watch_cell = add_gobjs()
- all_cells[2][2]:mark_for_contain(watch_cells[1], 1)
+ all_cells[4][3]:mark_for_contain(watch_cells[1], 1)
 --
 --  local other = add_gobjs(make_merge_box(1,3,11))
 --  all_cells[1][3]:mark_for_contain(other, 1)
