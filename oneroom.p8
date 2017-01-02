@@ -16,6 +16,17 @@ __lua__
   - went way over 30 minute budget
   - spent too much time trying to be clever rather than do the simple thing
   bonus: start working on enemies that mov toward the player
+
+  12/29/2016
+   - going to spend 30 minutes on the top bug
+   - fix the bug about blocks only appearing in the corners [x] done took 10 min
+   - tried to also add the ability for blocks to only show up when a shift 
+     happened
+   - make the blocks only green
+
+  1/1/2017
+   - going to give this 1/2 hour
+   - add enemy that chases at the player
 ]]--
 
 g_ping = 0
@@ -126,10 +137,10 @@ function make_cell(x,y)
    else
     c.from_loc = vecmake(c.x, c.y)
     c.to_loc = vecmake(t.x, t.y)
-    c.grid_x = t.grid_x
-    c.grid_y = t.grid_y
     c.to_amount = amt or 0
    end
+   c.grid_x = t.grid_x
+   c.grid_y = t.grid_y
    c.container = t
   end,
   update=function(t)
@@ -164,14 +175,14 @@ function make_merge_box(x, y, col)
   end,
   update=function(t)
    if t.from_loc and t.to_loc then
-    if not t.merge_blips then
-     t.merge_blips = {}
-     for i=0,num_merge_blips-1 do
-      local rnd_x = (rnd(2)-1)
-      local rnd_y = (rnd(2)-1)
-      add(t.merge_blips, vecmake(rnd_x, rnd_y))
-     end
-    end
+    -- if not t.merge_blips then
+    --  t.merge_blips = {}
+    --  for i=0,num_merge_blips-1 do
+    --   local rnd_x = (rnd(2)-1)
+    --   local rnd_y = (rnd(2)-1)
+    --   add(t.merge_blips, vecmake(rnd_x, rnd_y))
+    --  end
+    -- end
     t.to_amount += 0.1
 
     local interp_amount = smootherstep(0, 1, t.to_amount)
@@ -255,7 +266,6 @@ function make_player_controller(player)
   space=sp_world,
   player=player or 0,
   update=function(t)
-   local on_press = false
    if not g_board then
     return
    end
@@ -265,50 +275,80 @@ function make_player_controller(player)
     return
    end
 
+   local dir = vecmake(0,0)
+   local did_shift = false
+
    if btnn(0, t.player) then
-    on_press = true
-     g_board:shift_cells(1, 0)
+    did_shift = g_board:shift_cells(1, 0)
+    dir.x=1
    elseif btnn(1, t.player) then
-    on_press = true
-     g_board:shift_cells(-1, 0)
+    did_shift = g_board:shift_cells(-1, 0)
+    dir.x = -1
    elseif btnn(2, t.player) then
-    on_press = true
-     g_board:shift_cells(0,1)
+    did_shift = g_board:shift_cells(0,1)
+    dir.y = 1
    elseif btnn(3, t.player) then
-    on_press = true
-     g_board:shift_cells(0,-1)
+    did_shift = g_board:shift_cells(0,-1)
+    dir.y = -1
+   end
+
+   if btnn(4, t.player) then
+    add_merge_block_to_edge(vecmake(1,1))
    end
    -- @}
 
    -- @TODO: seeing a bug where blocks show up in the upper left first each time
    -- they appear, not sure why.
-   if on_press and rnd(3) < 1  then
-    local empty_cells = {}
-    for i in all({1, g_board.size_x}) do
-     for j in all({1, g_board.size_y}) do
-      if not block_is_not_empty(i, j) then
-       add(empty_cells, {i, j})
-      end
-     end
-    end
-    local num_empty_cells = #empty_cells
-    if num_empty_cells == 0 then
-     cls()
-     print("you lose!")
-     stop()
-    end
-    local palette = {12, 10, 11, 14}
-    local col = palette[flr(rnd(#palette))+1]
-    local c = empty_cells[flr(rnd(num_empty_cells))+1]
-    local new_box = make_merge_box(c[1], c[2], col)
-    add(g_board.watch_cells, new_box)
-    g_board.all_cells[c[1]][c[2]]:mark_for_contain(
-     new_box,
-     col
-    )
+
+   if did_shift and rnd(3) < 1  then
+    add_merge_block_to_edge(dir)
    end
   end,
  }
+end
+
+function add_merge_block_to_edge(dir)
+ local valid=vecmake(0,0)
+ if dir then
+  if dir.x > 0 then 
+   valid.x = g_board.size_x 
+  elseif dir.x < 0 then
+   valid.x = 1
+  elseif dir.y > 0 then
+   valid.y = g_board.size_y
+  elseif dir.y < 0 then
+   valid.y = 1
+  end
+ end
+ local empty_cells = {}
+ for i=1,g_board.size_x do
+  for j=1,g_board.size_y do
+   -- only check border cells
+   if i==1 or i==g_board.size_x or j==1 or j==g_board.size_y then
+    if (valid.x ~= 0 and i == valid.x) or (valid.y ~= 0 and j == valid.y) then
+     if not block_is_not_empty(i, j) then
+      add(empty_cells, {i, j})
+     end
+    end
+   end
+  end
+ end
+ local num_empty_cells = #empty_cells
+ if num_empty_cells == 0 then
+  cls()
+  print("you lose!")
+  stop()
+ end
+ -- 'wide' palette
+ -- local palette = {12, 10, 11, 14}
+ -- just green for now
+ local palette = {11}
+ local col = palette[flr(rnd(#palette))+1]
+ local c = empty_cells[flr(rnd(num_empty_cells))+1]
+ local new_box = make_merge_box(c[1], c[2], col)
+ add(g_board.watch_cells, new_box)
+ g_board.all_cells[c[1]][c[2]]:mark_for_contain(new_box, col, 1.0)
+ new_box:update()
 end
 
 function block_is_not_empty(i, j)
@@ -413,6 +453,8 @@ function make_board(x, y)
     y_inc = 1
    end
 
+   local did_shift = false
+
    for i=first_x,final_x,x_inc do
     local next_i = i + x_dir
     for j=first_y,final_y,y_inc do
@@ -424,10 +466,11 @@ function make_board(x, y)
       -- check for a merge
       if block_is_not_empty(next_i, next_j) then
        t:block(next_i, next_j):merge_with(t:block(i, j), x_dir, y_dir)
+       did_shift = true
       end
      else
       -- just merge anything into this block
-      t:shift_cell_from(next_i, next_j, i, j)
+      did_shift = t:shift_cell_from(next_i, next_j, i, j) or did_shift
      end
     end
    end
@@ -438,6 +481,8 @@ function make_board(x, y)
      g_board:blast(blst_opts[1], blst_opts[2], blst_opts[3], blst_opts[4])
     end
    end
+
+   return did_shift
   end,
   block=function(t, i, j)
    if (
@@ -450,7 +495,7 @@ function make_board(x, y)
   end,
   shift_cell_from=function(t, from_i, from_j, to_i, to_j)
    if from_i == to_i and from_j == to_j then
-    return
+    return false
    end
 
    if (
@@ -460,7 +505,9 @@ function make_board(x, y)
     t.all_cells[to_i][to_j]:mark_for_contain(
      t.all_cells[from_i][from_j].containing
     )
+    return true
    end
+   return false
   end,
   mark_cell_for_contain=function(t, x, y, c)
    t.all_cells[x][y]:mark_for_contain(c)
