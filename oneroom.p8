@@ -152,13 +152,25 @@ function make_cell(x,y)
  }
 end
 
-num_merge_blips = 4
+-- num_merge_blips = 4
+
+function make_goon(x, y)
+ -- goons are red for now
+ local newgoon = make_merge_box(8)
+ g_board:mark_cell_for_contain(x, y, newgoon, 1)
+ add(g_board.watch_cells, newgoon)
+ newgoon.container:update()
+ newgoon.update = function(t)
+  -- @TODO: make this creep toward player and eventually damage them
+  stop()
+ end
+end
 
 --[[
 this needs to be refactored.  instead a "want to move" buffer, then sweep and
 resolve approach should be used.
 ]]--
-function make_merge_box(x, y, col)
+function make_merge_box(col)
  return {
   x=0,
   y=0,
@@ -307,6 +319,38 @@ function make_player_controller(player)
  }
 end
 
+function empty_cells_on_edges(valid_edges)
+ local empty_cells = {}
+ for i=1,g_board.size_x do
+  for j=1,g_board.size_y do
+   -- only check border cells
+   if i==1 or i==g_board.size_x or j==1 or j==g_board.size_y then
+    if (
+     not valid_edges
+     or (valid_edges.x ~= 0 and i == valid_edges.x) 
+     or (valid_edges.y ~= 0 and j == valid_edges.y)
+    ) then
+     if not block_is_not_empty(i, j) then
+      add(empty_cells, {i, j})
+     end
+    end
+   end
+  end
+ end
+ return empty_cells
+end
+
+function random_empty_cell(valid_edges)
+ local empty_cells = empty_cells_on_edges(valid_edges)
+ local num_empty_cells = #empty_cells
+ if num_empty_cells == 0 then
+  cls()
+  print("you lose!")
+  stop()
+ end
+ return empty_cells[flr(rnd(num_empty_cells))+1]
+end
+
 function add_merge_block_to_edge(dir)
  local valid=vecmake(0,0)
  if dir then
@@ -320,34 +364,15 @@ function add_merge_block_to_edge(dir)
    valid.y = 1
   end
  end
- local empty_cells = {}
- for i=1,g_board.size_x do
-  for j=1,g_board.size_y do
-   -- only check border cells
-   if i==1 or i==g_board.size_x or j==1 or j==g_board.size_y then
-    if (valid.x ~= 0 and i == valid.x) or (valid.y ~= 0 and j == valid.y) then
-     if not block_is_not_empty(i, j) then
-      add(empty_cells, {i, j})
-     end
-    end
-   end
-  end
- end
- local num_empty_cells = #empty_cells
- if num_empty_cells == 0 then
-  cls()
-  print("you lose!")
-  stop()
- end
  -- 'wide' palette
  -- local palette = {12, 10, 11, 14}
  -- just green for now
- local palette = {11}
- local col = palette[flr(rnd(#palette))+1]
- local c = empty_cells[flr(rnd(num_empty_cells))+1]
- local new_box = make_merge_box(c[1], c[2], col)
+--  local palette = {11}
+ local c = random_empty_cell(valid)
+--  local col = palette[flr(rnd(#palette))+1]
+ local new_box = make_merge_box(11)
  add(g_board.watch_cells, new_box)
- g_board.all_cells[c[1]][c[2]]:mark_for_contain(new_box, col, 1.0)
+ g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
  new_box:update()
 end
 
@@ -395,7 +420,7 @@ function make_board(x, y)
    all_cells[i][j] = c
   end
  end
- local watch_cells = {make_merge_box(4,3,11)}
+ local watch_cells = {make_merge_box(11)}
 
  --  g_watch_cell = add_gobjs()
  all_cells[4][3]:mark_for_contain(watch_cells[1], 1)
@@ -418,6 +443,7 @@ function make_board(x, y)
   all_cells=all_cells,
   flat_cells=flat_cells,
   watch_cells=watch_cells,
+  lastgoon = g_tick,
   blast_queue = nil,
   blast=function(t, start_block, color_block, x_dir, y_dir)
    g_state = st_blasting
@@ -509,10 +535,17 @@ function make_board(x, y)
    end
    return false
   end,
-  mark_cell_for_contain=function(t, x, y, c)
-   t.all_cells[x][y]:mark_for_contain(c)
+  mark_cell_for_contain=function(t, x, y, c, amt)
+   t.all_cells[x][y]:mark_for_contain(c, amt)
   end,
   update=function(t)
+   -- make goons
+   if elapsed(t.lastgoon) > 150 then
+    local empty = random_empty_cell()
+    make_goon(empty[1], empty[2])
+    t.lastgoon = g_tick
+   end
+
    updateobjs(t.flat_cells)
    updateobjs(t.watch_cells)
   end,
