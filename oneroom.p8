@@ -160,9 +160,55 @@ function make_goon(x, y)
  g_board:mark_cell_for_contain(x, y, newgoon, 1)
  add(g_board.watch_cells, newgoon)
  newgoon.container:update()
- newgoon.update = function(t)
-  -- @TODO: make this creep toward player and eventually damage them
+ newgoon.time_last_move = g_tick
+ newgoon.brain = br_move_at_player
+end
+--
+-- function compute_path(from_cell, to_cell)
+--  -- going to start with breadth first
+--  local frontier = {from_cell}
+--  local visited = {}
+--  for i=1,g_board.grid_x do
+--   add(visited, {})
+--   for j=1,g_board.grid_y do
+--    add(visited[i], nil)
+--   end
+--  end
+--  -- seed the first cell as visited
+--  visited[from_cell.grid_x][from_cell.grid_y] = true
+--  while #frontier > 0 do
+--   local next_frontier = {}
+--   for current in all(frontier) do
+--    for next in neighbor_cells_of(current) do
+--     if next == to_cell then
+--      -- unwind and report
+--      path_from_goal_to_start = {current}
+--      while visited[current.grid_x][current.grid_y] ~= from_cell do
+--       add(path_from_goal_to_start, visited[current.grid_x][current.grid_y])
+--       current = visited[current.grid_x][current.grid_y]
+--      end
+--      -- reverse that to get the in-order path
+--      return reversed_list(path_from_goal_to_start)
+--     end
+--
+--     if not visited[next.grid_x][next.grid_y] then
+--      add(next_frontier, next)
+--      visited[next.grid_x][next.grid_y] = current
+--     end
+--   end
+--  end
+-- end
+--
+function br_move_at_player(t)
+ if elapsed(t.time_last_move) > 5 then
+  local target_cell = g_player_piece.container
+  local current_cell = t.container
+
+  cls()
+  print("should move")
   stop()
+
+  -- local next_cell = 
  end
 end
 
@@ -180,12 +226,17 @@ function make_merge_box(col)
   col = col,
   merge_blips=nil,
   shiftable=true,
+  brain=nil,
   merge_with=function(t, other, x_dir, y_dir)
    if other.chargeable then
     other:charge_with(t, x_dir, y_dir)
    end
   end,
   update=function(t)
+   if t.brain then
+    t:brain()
+   end
+
    if t.from_loc and t.to_loc then
     -- if not t.merge_blips then
     --  t.merge_blips = {}
