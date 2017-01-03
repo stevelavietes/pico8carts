@@ -27,6 +27,13 @@ __lua__
   1/1/2017
    - going to give this 1/2 hour
    - add enemy that chases at the player
+
+  1/2/2017
+   - 1hour
+   - 1st strip out and build test scenario w/ jus tenemy and player [x]
+   - going to add pathfinding to enemy [ip]
+   - going to do this in 1 hour
+   - show path as nodes
 ]]--
 
 g_ping = 0
@@ -127,6 +134,7 @@ function make_cell(x,y)
   grid_x=x,
   grid_y=y,
   containing=nil,
+  distance_to_goal=0,
   mark_for_contain=function(t, c, amt)
    t.containing = c
    if c.container then
@@ -147,7 +155,11 @@ function make_cell(x,y)
   end,
   draw=function(t)
    rect(0,0,7,7, 5)
-   -- print(blocks_to_edge(t.grid_y, -1, 'y'), 2, 2, 7)
+   if t.distance_to_goal ~= "*" then
+    print(t.distance_to_goal, 2, 2, 7)
+   else
+    print(t.distance_to_goal, 2, 2, 11)
+   end
   end
  }
 end
@@ -162,54 +174,105 @@ function make_goon(x, y)
  newgoon.container:update()
  newgoon.time_last_move = g_tick
  newgoon.brain = br_move_at_player
+ return newgoon
 end
---
--- function compute_path(from_cell, to_cell)
---  -- going to start with breadth first
---  local frontier = {from_cell}
---  local visited = {}
---  for i=1,g_board.grid_x do
---   add(visited, {})
---   for j=1,g_board.grid_y do
---    add(visited[i], nil)
---   end
---  end
---  -- seed the first cell as visited
---  visited[from_cell.grid_x][from_cell.grid_y] = true
---  while #frontier > 0 do
---   local next_frontier = {}
---   for current in all(frontier) do
---    for next in neighbor_cells_of(current) do
---     if next == to_cell then
---      -- unwind and report
---      path_from_goal_to_start = {current}
---      while visited[current.grid_x][current.grid_y] ~= from_cell do
---       add(path_from_goal_to_start, visited[current.grid_x][current.grid_y])
---       current = visited[current.grid_x][current.grid_y]
---      end
---      -- reverse that to get the in-order path
---      return reversed_list(path_from_goal_to_start)
---     end
---
---     if not visited[next.grid_x][next.grid_y] then
---      add(next_frontier, next)
---      visited[next.grid_x][next.grid_y] = current
---     end
---   end
---  end
--- end
---
-function br_move_at_player(t)
- if elapsed(t.time_last_move) > 5 then
-  local target_cell = g_player_piece.container
-  local current_cell = t.container
 
+function _lowest_rank_in(some_list)
+ if #some_list == 0 then
   cls()
-  print("should move")
+  print("stuff in the list")
+  for k, v in pairs(some_list) do
+   print(k)
+  end
+  print("null list :(")
   stop()
-
-  -- local next_cell = 
+  return nil
  end
+
+ local lowest = some_list[1]
+ for i=2,#some_list do
+  if some_list[i].rank < lowest.rank then
+   lowest = some_list[i]
+  end
+ end
+
+ return lowest
+end
+
+function neighbor_cells_of(search_item)
+ local cell = search_item.cell
+ local neighbors = {}
+ -- + - x
+ if cell.grid_x > 1 then
+  add(neighbors, g_board.all_cells[cell.grid_x - 1][cell.grid_y])
+ end
+ if cell.grid_x < g_board.size_x then
+  add(neighbors, g_board.all_cells[cell.grid_x + 1][cell.grid_y])
+ end
+ -- + - y
+ if cell.grid_y > 1 then
+  add(neighbors, g_board.all_cells[cell.grid_x][cell.grid_y - 1])
+ end
+ if cell.grid_y < g_board.size_y then
+  add(neighbors, g_board.all_cells[cell.grid_x][cell.grid_y + 1])
+ end
+
+ for next in all(neighbors) do
+  if next != g_player_piece.container and block_is_not_empty(next.grid_x, next.grid_y) then
+   del(neighbors, next)
+  end
+ end
+
+ return neighbors
+end
+
+function distance_to_player_heuristic(from_cell)
+ local dx = abs(from_cell.grid_x - g_player_piece.grid_x)
+ local dy = abs(from_cell.grid_y - g_player_piece.grid_y)
+
+ return (dx+dy)
+end
+
+function compute_path(from_cell, to_cell)
+ local frontier = {{cell=from_cell, rank=0}}
+ local came_from = {}
+ local cost_so_far = {}
+ came_from[from_cell] = nil
+ cost_so_far[from_cell] = 0
+
+ local move_cost = 1
+
+ while frontier ~= {} and #frontier > 0 do
+  local current = _lowest_rank_in(frontier)
+  del(frontier, current)
+
+  if current.cell == to_cell then
+   return came_from, cost_so_far
+  end
+
+  local new_cost = cost_so_far[current.cell] + move_cost
+  for next in all(neighbor_cells_of(current)) do
+   if cost_so_far[next] == nil or new_cost < cost_so_far[next] then
+    cost_so_far[next] = new_cost
+    -- print("found less cost: "..new_cost)
+    local priority = new_cost + distance_to_player_heuristic(to_cell, next)
+    add(frontier, {cell=next, rank=priority})
+    came_from[next] = current.cell
+   end
+  end
+ end
+
+ return came_from, cost_so_far
+end
+
+function br_move_at_player(t)
+--  if elapsed(t.time_last_move) > 5 then
+--   cls()
+--   print("should move")
+--   stop()
+--
+--   -- local next_cell = 
+--  end
 end
 
 --[[
@@ -415,16 +478,18 @@ function add_merge_block_to_edge(dir)
    valid.y = 1
   end
  end
- -- 'wide' palette
- -- local palette = {12, 10, 11, 14}
- -- just green for now
---  local palette = {11}
- local c = random_empty_cell(valid)
---  local col = palette[flr(rnd(#palette))+1]
- local new_box = make_merge_box(11)
- add(g_board.watch_cells, new_box)
- g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
- new_box:update()
+ if false then
+  -- 'wide' palette
+  -- local palette = {12, 10, 11, 14}
+  -- just green for now
+ --  local palette = {11}
+  local c = random_empty_cell(valid)
+ --  local col = palette[flr(rnd(#palette))+1]
+  local new_box = make_merge_box(11)
+  add(g_board.watch_cells, new_box)
+  g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
+  new_box:update()
+ end
 end
 
 function block_is_not_empty(i, j)
@@ -471,10 +536,9 @@ function make_board(x, y)
    all_cells[i][j] = c
   end
  end
- local watch_cells = {make_merge_box(11)}
-
- --  g_watch_cell = add_gobjs()
- all_cells[4][3]:mark_for_contain(watch_cells[1], 1)
+ local watch_cells = {}
+--  local watch_cells = {make_merge_box(11)}
+--  all_cells[4][3]:mark_for_contain(watch_cells[1], 1)
 --
 --  local other = add_gobjs(make_merge_box(1,3,11))
 --  all_cells[1][3]:mark_for_contain(other, 1)
@@ -589,17 +653,51 @@ function make_board(x, y)
   mark_cell_for_contain=function(t, x, y, c, amt)
    t.all_cells[x][y]:mark_for_contain(c, amt)
   end,
+  _compute_paths=function (t)
+   if not g_enemy then
+    return
+   end
+
+   local path, dists = compute_path(g_enemy.container, g_player_piece.container)
+   if path == {}  then
+    cls()
+    print("null path")
+    stop()
+   end
+
+   -- reset all the cells
+   for i=1,t.size_x do
+    for j=1,t.size_y do
+     local cell = g_board.all_cells[i][j]
+     if path[cell] ~= nil then
+      cell.distance_to_goal = dists[cell]
+     else
+      cell.distance_to_goal = "."
+     end
+    end
+   end
+
+   local current = g_player_piece.container
+   while path != {} and path[current] != nil do
+    current = path[current]
+    current.distance_to_goal = '*'
+    del(path, current)
+   end
+  end,
   update=function(t)
    -- make goons
    if elapsed(t.lastgoon) > 150 then
     local empty = random_empty_cell()
-    make_goon(empty[1], empty[2])
+    -- make_goon(empty[1], empty[2])
     t.lastgoon = g_tick
    end
 
+   -- compute paths
+   t:_compute_paths()
    updateobjs(t.flat_cells)
    updateobjs(t.watch_cells)
   end,
+
   draw=function(t)
    drawobjs(t.flat_cells)
    drawobjs(t.watch_cells)
@@ -717,9 +815,12 @@ function debug_messages()
   y=0,
   space=sp_screen_native,
   draw=function(t)
+   print("cpu: ".. stat(1), 0, 0, 8)
+   print("mem: ".. stat(2), 0, 6, 8)
+   print(g_tick, 0, 12, 8)
    if g_player_piece then
-    print(g_player_piece.x)
-    print(g_player_piece.y)
+    -- print(g_player_piece.x)
+    -- print(g_player_piece.y)
    end
    if g_cs and #g_cs > 0 then
     print(#g_cs)
@@ -797,9 +898,11 @@ function game_start()
 --  end
 --  g_board = add_gobjs(make_board(2,2))
  g_board = add_gobjs(make_board(7,7))
- add(g_board.watch_cells, (make_player_avatar(4,4)))
+ g_player_piece = make_player_avatar(4,4)
+ add(g_board.watch_cells, (g_player_piece))
 --  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
  g_p1 = add_gobjs(make_player_controller(0))
+ g_enemy = make_goon(1,4)
 
  add_gobjs(debug_messages())
  g_state = st_playing
