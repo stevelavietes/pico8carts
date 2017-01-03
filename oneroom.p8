@@ -31,9 +31,11 @@ __lua__
   1/2/2017
    - 1hour
    - 1st strip out and build test scenario w/ jus tenemy and player [x]
-   - going to add pathfinding to enemy [ip]
-   - going to do this in 1 hour
-   - show path as nodes
+   - going to add pathfinding to enemy [x]
+   - going to do this in 1 hour -- turned out to take more than one hour to untangle, more like 3, with breaks.
+   - show path as nodes [x]
+   - now it shows the path -- next up is to make the enemy move along that path
+
 ]]--
 
 g_ping = 0
@@ -158,7 +160,7 @@ function make_cell(x,y)
    if t.distance_to_goal ~= "*" then
     print(t.distance_to_goal, 2, 2, 7)
    else
-    print(t.distance_to_goal, 2, 2, 11)
+    print(t.distance_to_goal, 2, 2, 12)
    end
   end
  }
@@ -177,50 +179,37 @@ function make_goon(x, y)
  return newgoon
 end
 
-function _lowest_rank_in(some_list)
- if #some_list == 0 then
-  cls()
-  print("stuff in the list")
-  for k, v in pairs(some_list) do
-   print(k)
-  end
-  print("null list :(")
-  stop()
-  return nil
- end
-
+function _pop_lowest_rank_in(some_list)
  local lowest = some_list[1]
+ local lowest_rank = lowest.rank
+
  for i=2,#some_list do
-  if some_list[i].rank < lowest.rank then
+  if some_list[i].rank < lowest_rank then
    lowest = some_list[i]
+   lowest_rank = lowest.rank
   end
  end
 
- return lowest
+ del(some_list, lowest)
+
+ return lowest.cell
 end
 
-function neighbor_cells_of(search_item)
- local cell = search_item.cell
+function neighbor_cells_of(x, y)
  local neighbors = {}
  -- + - x
- if cell.grid_x > 1 then
-  add(neighbors, g_board.all_cells[cell.grid_x - 1][cell.grid_y])
+ if x > 1 then
+  add(neighbors, g_board.all_cells[x - 1][y])
  end
- if cell.grid_x < g_board.size_x then
-  add(neighbors, g_board.all_cells[cell.grid_x + 1][cell.grid_y])
+ if x < g_board.size_x then
+  add(neighbors, g_board.all_cells[x + 1][y])
  end
  -- + - y
- if cell.grid_y > 1 then
-  add(neighbors, g_board.all_cells[cell.grid_x][cell.grid_y - 1])
+ if y > 1 then
+  add(neighbors, g_board.all_cells[x][y - 1])
  end
- if cell.grid_y < g_board.size_y then
-  add(neighbors, g_board.all_cells[cell.grid_x][cell.grid_y + 1])
- end
-
- for next in all(neighbors) do
-  if next != g_player_piece.container and block_is_not_empty(next.grid_x, next.grid_y) then
-   del(neighbors, next)
-  end
+ if y < g_board.size_y then
+  add(neighbors, g_board.all_cells[x][y + 1])
  end
 
  return neighbors
@@ -233,6 +222,12 @@ function distance_to_player_heuristic(from_cell)
  return (dx+dy)
 end
 
+function tprint(str)
+ local tcurrent = time()
+ print(str..": "..tcurrent-tlast)
+ tlast = tcurrent
+end
+
 function compute_path(from_cell, to_cell)
  local frontier = {{cell=from_cell, rank=0}}
  local came_from = {}
@@ -242,22 +237,27 @@ function compute_path(from_cell, to_cell)
 
  local move_cost = 1
 
- while frontier ~= {} and #frontier > 0 do
-  local current = _lowest_rank_in(frontier)
-  del(frontier, current)
+ while  #frontier > 0 do
+  local current_cell = _pop_lowest_rank_in(frontier)
 
-  if current.cell == to_cell then
+  if current_cell == to_cell then
    return came_from, cost_so_far
   end
 
-  local new_cost = cost_so_far[current.cell] + move_cost
-  for next in all(neighbor_cells_of(current)) do
-   if cost_so_far[next] == nil or new_cost < cost_so_far[next] then
+  local new_cost = cost_so_far[current_cell] + move_cost
+
+  for _, next in pairs(current_cell.neighbors) do
+   if (
+    not cell_is_not_empty(next) or next == to_cell
+   )
+   and 
+   (
+    cost_so_far[next] == nil or new_cost < cost_so_far[next]
+   ) then
     cost_so_far[next] = new_cost
-    -- print("found less cost: "..new_cost)
     local priority = new_cost + distance_to_player_heuristic(to_cell, next)
     add(frontier, {cell=next, rank=priority})
-    came_from[next] = current.cell
+    came_from[next] = current_cell
    end
   end
  end
@@ -266,13 +266,20 @@ function compute_path(from_cell, to_cell)
 end
 
 function br_move_at_player(t)
---  if elapsed(t.time_last_move) > 5 then
---   cls()
---   print("should move")
---   stop()
---
---   -- local next_cell = 
---  end
+ if elapsed(t.time_last_move) > 0 and true then
+  local path, _ = compute_path(t.container, g_player_piece)
+
+  local current = g_player_piece.container
+  while path != {} and path[current] != nil do
+   current = path[current]
+   del(path, current)
+   if current == t.container then
+    g_board.all_cells[current.grid_x][current.grid_y]:mark_for_contain(t)
+    return
+   end
+  end
+  t.time_last_move = g_tick
+ end
 end
 
 --[[
@@ -478,7 +485,7 @@ function add_merge_block_to_edge(dir)
    valid.y = 1
   end
  end
- if false then
+ if true then
   -- 'wide' palette
   -- local palette = {12, 10, 11, 14}
   -- just green for now
@@ -492,11 +499,15 @@ function add_merge_block_to_edge(dir)
  end
 end
 
+function cell_is_not_empty(cell)
+ return cell.containing != nil
+end
+
 function block_is_not_empty(i, j)
  return (
   i > 0 and i <= g_board.size_x and
   j > 0 and j <= g_board.size_y and
-  g_board.all_cells[i][j].containing != nil
+  cell_is_not_empty(g_board.all_cells[i][j])
  )
 end
 
@@ -669,11 +680,7 @@ function make_board(x, y)
    for i=1,t.size_x do
     for j=1,t.size_y do
      local cell = g_board.all_cells[i][j]
-     if path[cell] ~= nil then
-      cell.distance_to_goal = dists[cell]
-     else
-      cell.distance_to_goal = "."
-     end
+     cell.distance_to_goal = "."
     end
    end
 
@@ -898,6 +905,15 @@ function game_start()
 --  end
 --  g_board = add_gobjs(make_board(2,2))
  g_board = add_gobjs(make_board(7,7))
+
+ -- add neighbor lists
+ for i=1,g_board.size_x do
+  for j=1,g_board.size_y do
+   c = g_board.all_cells[i][j]
+   c.neighbors = neighbor_cells_of(i,j)
+  end
+ end
+
  g_player_piece = make_player_avatar(4,4)
  add(g_board.watch_cells, (g_player_piece))
 --  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
