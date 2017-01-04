@@ -241,6 +241,11 @@ function compute_path(from_cell, to_cell)
   local current_cell = _pop_lowest_rank_in(frontier)
 
   if current_cell == to_cell then
+   if came_from[to_cell] == nil then
+    cls()
+    print("bad_path")
+    asdf()
+   end
    return came_from, cost_so_far
   end
 
@@ -248,7 +253,7 @@ function compute_path(from_cell, to_cell)
 
   for _, next in pairs(current_cell.neighbors) do
    if (
-    not cell_is_not_empty(next) or next == to_cell
+    not (cell_is_not_empty(next) and next != to_cell)
    )
    and 
    (
@@ -266,19 +271,40 @@ function compute_path(from_cell, to_cell)
 end
 
 function br_move_at_player(t)
- if elapsed(t.time_last_move) > 0 and true then
-  local path, _ = compute_path(t.container, g_player_piece)
-
+ if elapsed(t.time_last_move) > 90 and true then
+  t.time_last_move = g_tick
+  local path, _ = compute_path(t.container, g_player_piece.container)
   local current = g_player_piece.container
+
+  cls()
+  print("hello")
   while path != {} and path[current] != nil do
+   last = current
    current = path[current]
    del(path, current)
-   if current == t.container then
-    g_board.all_cells[current.grid_x][current.grid_y]:mark_for_contain(t)
+   -- if path[current] == nil then
+   --  cls()
+   --  print("player: "..gvecstr(g_player_piece.container))
+   --  print("current: "..gvecstr(current))
+   --  print("container:" ..gvecstr(t.container))
+   --  print("ack")
+   --  stop()
+   -- end
+   if (
+    path[current] == t.container 
+    and current == g_player_piece.container 
+    ) then
+    return
+   end
+   if (
+    path[current] == t.container 
+    and current != g_player_piece.container 
+   ) then
+    current:mark_for_contain(t)
+    current:update()
     return
    end
   end
-  t.time_last_move = g_tick
  end
 end
 
@@ -680,7 +706,7 @@ function make_board(x, y)
    for i=1,t.size_x do
     for j=1,t.size_y do
      local cell = g_board.all_cells[i][j]
-     cell.distance_to_goal = "."
+     cell.distance_to_goal = ""
     end
    end
 
@@ -745,6 +771,10 @@ end
 -- @{ vector library
 function vecstr(v)
  return ""..v.x..", "..v.y
+end
+
+function gvecstr(v)
+ return ""..v.grid_x..", "..v.grid_y
 end
 
 function vecmake(xf, yf)
@@ -825,6 +855,9 @@ function debug_messages()
    print("cpu: ".. stat(1), 0, 0, 8)
    print("mem: ".. stat(2), 0, 6, 8)
    print(g_tick, 0, 12, 8)
+   if g_enemy then
+    print("enemy_pos: "..gvecstr(g_enemy.container), 0, 18, 8)
+   end
    if g_player_piece then
     -- print(g_player_piece.x)
     -- print(g_player_piece.y)
@@ -918,7 +951,7 @@ function game_start()
  add(g_board.watch_cells, (g_player_piece))
 --  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
  g_p1 = add_gobjs(make_player_controller(0))
- g_enemy = make_goon(1,4)
+ g_enemy = make_goon(1,1)
 
  add_gobjs(debug_messages())
  g_state = st_playing
