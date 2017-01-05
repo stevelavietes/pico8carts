@@ -36,6 +36,11 @@ __lua__
    - show path as nodes [x]
    - now it shows the path -- next up is to make the enemy move along that path
 
+  1/4/2017
+   - add enemy "attack" & lose state
+   - adding a world_coords() method to the box
+   - 1 hit/lose
+
 ]]--
 
 g_ping = 0
@@ -137,7 +142,7 @@ function make_cell(x,y)
   grid_y=y,
   containing=nil,
   distance_to_goal=0,
-  world_coords=function(t)
+  world_coords=function(t, from_center)
    local result = vecadd(g_board, t)
    if from_center == true then
     result = vecadd(result, vecmake(3,3))
@@ -149,15 +154,7 @@ function make_cell(x,y)
    if c.container then
     c.container.containing = nil
    end
-   if amt and amt == 1 then
-    vecset(c, t)
-   else
-    c.from_loc = vecmake(c.x, c.y)
-    c.to_loc = vecmake(t.x, t.y)
-    c.to_amount = amt or 0
-   end
-   c.grid_x = t.grid_x
-   c.grid_y = t.grid_y
+   mark_for_move(c, t, amt)
    c.container = t
   end,
   update=function(t)
@@ -277,14 +274,38 @@ function compute_path(from_cell, to_cell)
  return came_from, cost_so_far
 end
 
+function make_attack(t)
+ -- freeze the screen -- make trans back to menu?
+ -- @TODO: better feedback that game is over
+ add_gobjs(make_trans(function() _init() end))
+end
+
 function br_move_at_player(t)
+ if t.attacking != nil and elapsed(t.attacking) > 90 then
+  -- trigger attack
+  add_gobjs(make_attack(g_player_piece.container:world_coords()))
+  t.attacking = nil
+ end
+
+ local path, _ = compute_path(t.container, g_player_piece.container)
+
+ -- attack if next to the player
+ if path[g_player_piece.container] == t.container then
+  if t.attacking == nil then
+   t.attacking = g_tick
+  end
+ elseif t.attacking != nil then
+  t.attacking = nil
+  t.shake_offset = nil
+ end
+
+ if t.attacking then
+  t.shake_offset = vecrand(2, true)
+ end
+
  if elapsed(t.time_last_move) > 90 and true then
   t.time_last_move = g_tick
-  local path, _ = compute_path(t.container, g_player_piece.container)
   local current = g_player_piece.container
-
-  cls()
-  print("hello")
   while path != {} and path[current] != nil do
    last = current
    current = path[current]
@@ -319,6 +340,17 @@ end
 this needs to be refactored.  instead a "want to move" buffer, then sweep and
 resolve approach should be used.
 ]]--
+mark_for_move=function(t, to_cell, amt)
+ if amt and amt == 1 then
+  vecset(t, to_cell)
+ else
+  t.from_loc = vecmake(t.x, t.y)
+  t.to_loc = vecmake(to_cell.x, to_cell.y)
+  t.to_amount = amt or 0
+ end
+ t.grid_x = to_cell.grid_x
+ t.grid_y = to_cell.grid_y
+end
 function make_merge_box(col)
  return {
   x=0,
@@ -362,7 +394,12 @@ function make_merge_box(col)
    end
   end,
   draw=function(t)
-   rectfill(1,1,6,6,col)
+   offset = t.shake_offset
+   if offset == nil then
+    offset = null_v
+   end
+
+   rectfill(1+offset.x,1+offset.y,6+offset.x,6+offset.y,col)
 
    -- if t.merge_blips != nil then
    --  local amt = vecsub(t, t.from_loc)
@@ -566,6 +603,17 @@ function blocks_to_edge(dim, dir, axis)
  end
 
  return dir * (size - dim) 
+end
+
+function make_blip(loc)
+ return {
+  x=loc.x,
+  y=loc.y,
+  space=sp_world,
+  draw=function(t)
+   circfill(0,0,3,8)
+  end
+ }
 end
 
 function make_board(x, y)
@@ -776,6 +824,14 @@ end
 -- @}
 
 -- @{ vector library
+function vecrand(scale,center)
+ local result = vecmake(rnd(scale), rnd(scale))
+ if center then
+  result = vecsub(result, vecmake(scale/2))
+ end
+ return result
+end
+
 function vecstr(v)
  return ""..v.x..", "..v.y
 end
@@ -864,6 +920,9 @@ function debug_messages()
    print(g_tick, 0, 12, 8)
    if g_enemy then
     print("enemy_pos: "..gvecstr(g_enemy.container), 0, 18, 8)
+    if g_enemy.attacking then
+     print("attacking... "..g_enemy.attacking, 0, 24, 8)
+    end
    end
    if g_player_piece then
     -- print(g_player_piece.x)
@@ -946,6 +1005,10 @@ function game_start()
 --  g_board = add_gobjs(make_board(2,2))
  g_board = add_gobjs(make_board(7,7))
 
+--  for b in all(g_board.flat_cells) do
+--   add_gobjs(make_blip(b:world_coords(true)))
+--  end
+
  -- add neighbor lists
  for i=1,g_board.size_x do
   for j=1,g_board.size_y do
@@ -966,6 +1029,7 @@ end
 
 st_playing = 0
 st_blasting = 1
+st_menu = 2
 
 ------------------------------
 
