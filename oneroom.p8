@@ -137,6 +137,9 @@ function make_cell(x,y)
   grid_y=y,
   containing=nil,
   distance_to_goal=0,
+  world_coords=function(t)
+   return vecadd(g_board, t)
+  end,
   mark_for_contain=function(t, c, amt)
    t.containing = c
    if c.container then
