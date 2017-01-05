@@ -138,7 +138,11 @@ function make_cell(x,y)
   containing=nil,
   distance_to_goal=0,
   world_coords=function(t)
-   return vecadd(g_board, t)
+   local result = vecadd(g_board, t)
+   if from_center == true then
+    result = vecadd(result, vecmake(3,3))
+   end
+   return result
   end,
   mark_for_contain=function(t, c, amt)
    t.containing = c
