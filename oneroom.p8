@@ -41,6 +41,12 @@ __lua__
    - adding a world_coords() method to the box
    - 1 hit/lose
 
+  1/5/2017
+   - make the enemy not shiftable but "pushable"
+   - going to try and do this in an hour
+
+  1/6/2017
+   - want to enable pushing, but not break shifting
 ]]--
 
 g_ping = 0
@@ -141,7 +147,7 @@ function make_cell(x,y)
   grid_x=x,
   grid_y=y,
   containing=nil,
-  distance_to_goal=0,
+  distance_to_goal=nil,
   world_coords=function(t, from_center)
    local result = vecadd(g_board, t)
    if from_center == true then
@@ -179,6 +185,7 @@ function make_goon(x, y)
  add(g_board.watch_cells, newgoon)
  newgoon.container:update()
  newgoon.time_last_move = g_tick
+ newgoon.shiftable = ss_pushable
  newgoon.brain = br_move_at_player
  return newgoon
 end
@@ -276,7 +283,7 @@ end
 
 function make_attack(t)
  -- freeze the screen -- make trans back to menu?
- -- @TODO: better feedback that game is over
+ -- @todo: better feedback that game is over
  add_gobjs(make_trans(function() _init() end))
 end
 
@@ -303,21 +310,13 @@ function br_move_at_player(t)
   t.shake_offset = vecrand(2, true)
  end
 
- if elapsed(t.time_last_move) > 90 and true then
+ if elapsed(t.time_last_move) > 45 and true then
   t.time_last_move = g_tick
   local current = g_player_piece.container
   while path != {} and path[current] != nil do
    last = current
    current = path[current]
    del(path, current)
-   -- if path[current] == nil then
-   --  cls()
-   --  print("player: "..gvecstr(g_player_piece.container))
-   --  print("current: "..gvecstr(current))
-   --  print("container:" ..gvecstr(t.container))
-   --  print("ack")
-   --  stop()
-   -- end
    if (
     path[current] == t.container 
     and current == g_player_piece.container 
@@ -351,6 +350,12 @@ mark_for_move=function(t, to_cell, amt)
  t.grid_x = to_cell.grid_x
  t.grid_y = to_cell.grid_y
 end
+
+-- shiftable
+ss_inert     = 0
+ss_shiftable = 1
+ss_pushable  = 2
+
 function make_merge_box(col)
  return {
   x=0,
@@ -360,8 +365,11 @@ function make_merge_box(col)
   to_amount=1,
   col = col,
   merge_blips=nil,
-  shiftable=true,
+  shiftable=ss_shiftable,
   brain=nil,
+  neighbor=function(t, inc_x, inc_y)
+   return g_board.all_cells[t.container.grid_x+inc_x][t.container.grid_y+inc_y].containing
+  end,
   merge_with=function(t, other, x_dir, y_dir)
    if other.chargeable then
     other:charge_with(t, x_dir, y_dir)
@@ -446,7 +454,7 @@ function make_blast(start_block, color_block, x_dir, y_dir)
     vstop = vecmake(8, 9+8*blocks_to_edge(start_block.grid_y, y_dir, 'y')+2)
    end
 
-   -- @TODO: make this animate out after a short wait for juice
+   -- @todo: make this animate out after a short wait for juice
    --
    -- local interp_amount = smootherstep(0, 1, 1-elapsed(t.start_frame)/40)
    -- local vstop_2 = veclerp(vstop, vstart, interp_amount)
@@ -499,9 +507,6 @@ function make_player_controller(player)
     add_merge_block_to_edge(vecmake(1,1))
    end
    -- @}
-
-   -- @TODO: seeing a bug where blocks show up in the upper left first each time
-   -- they appear, not sure why.
 
    if did_shift and rnd(3) < 1  then
     add_merge_block_to_edge(dir)
@@ -573,6 +578,14 @@ function cell_is_not_empty(cell)
  return cell.containing != nil
 end
 
+function block_is_empty(i, j)
+ return (
+  i > 0 and i <= g_board.size_x and
+  j > 0 and j <= g_board.size_y and
+  not cell_is_not_empty(g_board.all_cells[i][j])
+ )
+end
+
 function block_is_not_empty(i, j)
  return (
   i > 0 and i <= g_board.size_x and
@@ -629,8 +642,8 @@ function make_board(x, y)
   end
  end
  local watch_cells = {}
---  local watch_cells = {make_merge_box(11)}
---  all_cells[4][3]:mark_for_contain(watch_cells[1], 1)
+ local watch_cells = {make_merge_box(11)}
+ all_cells[3][1]:mark_for_contain(watch_cells[1], 1)
 --
 --  local other = add_gobjs(make_merge_box(1,3,11))
 --  all_cells[1][3]:mark_for_contain(other, 1)
@@ -666,15 +679,15 @@ function make_board(x, y)
    local first_y = 1
    local final_y = t.size_y
 
-   local x_inc = x_dir
-   local y_inc = y_dir
+   local x_inc = -x_dir
+   local y_inc = -y_dir
 
-   if x_dir < 0 then
+   if x_dir > 0 then
     first_x = final_x
     final_x = 1
    end
 
-   if y_dir < 0 then
+   if y_dir > 0 then
     first_y = final_y
     final_y = 1
    end
@@ -686,26 +699,80 @@ function make_board(x, y)
     y_inc = 1
    end
 
+   -- assert that you're never moving it diagonally
+   if x_dir != 0 and y_dir != 0 then
+    cls()
+    print("Should never see this.")
+    stop()
+   end
+
    local did_shift = false
 
-   for i=first_x,final_x,x_inc do
-    local next_i = i + x_dir
-    for j=first_y,final_y,y_inc do
-     local next_j = j + y_dir
-     if (
-      (x_dir != 0 or y_dir != 0) 
-      and block_is_not_empty(i,j)
-     ) then
-      -- check for a merge
-      if block_is_not_empty(next_i, next_j) then
-       t:block(next_i, next_j):merge_with(t:block(i, j), x_dir, y_dir)
-       did_shift = true
+   local outer_loop_start = first_x
+   local outer_loop_final = final_x
+   local outer_loop_inc = x_inc
+   local inner_loop_start = first_y
+   local inner_loop_final = final_y
+   local inner_loop_inc = y_inc
+
+   local inner_loop = "y"
+
+   if x_dir != 0 then
+    outer_loop_start = first_y
+    outer_loop_final = final_y
+    outer_loop_inc = y_inc
+    inner_loop_start = first_x
+    inner_loop_final = final_x
+    inner_loop_inc = x_inc
+    inner_loop = "x"
+   end
+
+   for outer=outer_loop_start,outer_loop_final,outer_loop_inc do
+    push_buffer = {}
+    for inner=inner_loop_start,inner_loop_final,inner_loop_inc do
+     local i = outer
+     local next_i = i + outer_loop_inc
+     local prev_i = i - outer_loop_inc
+     local j = inner
+     local next_j = j + inner_loop_inc
+     local prev_j = j - inner_loop_inc
+     if inner_loop == "x" then
+      j = outer
+      next_j = j + outer_loop_inc
+      prev_j = j - outer_loop_inc
+      i = inner
+      next_i = j + inner_loop_inc
+      prev_j = j - inner_loop_inc
+     end
+
+     if block_is_empty(i, j) then
+      -- clear the push buffer
+      if #push_buffer > 0 then
+       for pb=#push_buffer, 1, -1 do
+        local elem = push_buffer[pb]
+        local g_x = elem.container.grid_x
+        local g_y = elem.container.grid_y
+        did_shift = t:shift_cell_from(g_x, g_y, g_x-x_dir, g_y-y_dir)
+       end
       end
-     else
-      -- just merge anything into this block
-      did_shift = t:shift_cell_from(next_i, next_j, i, j) or did_shift
+      push_buffer = {}
+     elseif block_is_not_empty(i, j) then
+      local this_block = t:block(i, j)
+      if this_block.shiftable == ss_inert then
+       -- @TODO: Add a squish here
+       push_buffer = {}
+      elseif this_block.shiftable == ss_shiftable then
+       add(push_buffer, this_block)
+      elseif  this_block.shiftable == ss_pushable then
+       if #push_buffer != 0 then
+        add(push_buffer, this_block)
+       end
+      end
      end
     end
+    -- check to see if the last block is a pushable, if is, squish it and shift
+    -- the rest
+    -- @TODO: squish here
    end
 
    -- check the blast queue
@@ -716,6 +783,14 @@ function make_board(x, y)
    end
 
    return did_shift
+  end,
+  cell=function(t, i, j)
+   if (
+    (i > 0 and i <= t.size_x )
+    and (j > 0 and j <= t.size_y)
+   ) then
+    return t.all_cells[i][j]
+   end
   end,
   block=function(t, i, j)
    if (
@@ -733,7 +808,6 @@ function make_board(x, y)
 
    if (
     block_is_not_empty(from_i, from_j) 
-    and t:block(from_i, from_j).shiftable
    ) then
     t.all_cells[to_i][to_j]:mark_for_contain(
      t.all_cells[from_i][from_j].containing
@@ -940,7 +1014,7 @@ function make_player_avatar(x, y)
   x=0,
   y=0,
   space=sp_local,
-  shiftable=false,
+  shiftable=ss_inert,
   chargeable=true,
   grid_x=x,
   grid_y=y,
@@ -1021,7 +1095,7 @@ function game_start()
  add(g_board.watch_cells, (g_player_piece))
 --  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
  g_p1 = add_gobjs(make_player_controller(0))
- g_enemy = make_goon(1,1)
+ g_enemy = make_goon(2,1)
 
  add_gobjs(debug_messages())
  g_state = st_playing
@@ -1290,10 +1364,10 @@ end
 __gfx__
 006000001012210100000000330003303aaaa9333330003300100100000000000000000000000000000000000000000000000000000000000000000000000000
 0066000000088000000c000030000030aa000a933300900300010010000000000000000000000000000000000000000000000000000000000000000000000000
-0066600010033001000c000000000000a76076a93309940007760770000000000000000000000000000000000000000000000000000000000000000000000000
-00666600283083820cc8cc0000030000a00000a900099940076d07d0000000000000000000000000000000000000000000000000000000000000000000000000
-0066650028380382000c000000000000aa000aa90949994006660660000000000000000000000000000000000000000000000000000000000000000000000000
-0066500010033001000c0000300000303aaaaa930949994000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0066600010033001000c000000000000a76076a93309940007760770000200000000000000000000000000000000000000000000000000000000000000000000
+00666600283083820cc8cc0000030000a00000a900099940076d07d0002200000000000000000000000000000000000000000000000000000000000000000000
+0066650028380382000c000000000000aa000aa90949994006660660002220000000000000000000000000000000000000000000000000000000000000000000
+0066500010033001000c0000300000303aaaaa930949994000000000000200000000000000000000000000000000000000000000000000000000000000000000
 006500000008800000000000330003303a9a99330099940000111100000000000000000000000000000000000000000000000000000000000000000000000000
 00500000101221010000000000000000a99999933009400300000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
