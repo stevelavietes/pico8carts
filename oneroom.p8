@@ -746,9 +746,6 @@ function make_board(x, y)
       if this_block.shiftable == ss_inert then
        -- @TODO: Add a squish here
        push_buffer = {}
-       -- cls()
-       -- print("foo")
-       -- stop()
       elseif this_block.shiftable == ss_shiftable then
        add(push_buffer, this_block)
       elseif  this_block.shiftable == ss_pushable then
