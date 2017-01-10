@@ -2,53 +2,6 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 
---[[
- 12/25 - got the beams sort of showing up but not clearing blocks
-    -- took longer than expected because required shifting to a more turn-based
-    -- approach
-
- 12/28/2016 - going to try and get the beams you shoot to be shaped correctly,
-  and to remove blocks that are in their way
-  - thirty minutes to try and do this
-  - first step is to fix the bug that energy blocks don't disapear when smashed 
-   into the player [x] [10 minutes]
-  - shape beam correctly [x] [40 minutes]
-  - went way over 30 minute budget
-  - spent too much time trying to be clever rather than do the simple thing
-  bonus: start working on enemies that mov toward the player
-
-  12/29/2016
-   - going to spend 30 minutes on the top bug
-   - fix the bug about blocks only appearing in the corners [x] done took 10 min
-   - tried to also add the ability for blocks to only show up when a shift 
-     happened
-   - make the blocks only green
-
-  1/1/2017
-   - going to give this 1/2 hour
-   - add enemy that chases at the player
-
-  1/2/2017
-   - 1hour
-   - 1st strip out and build test scenario w/ jus tenemy and player [x]
-   - going to add pathfinding to enemy [x]
-   - going to do this in 1 hour -- turned out to take more than one hour to untangle, more like 3, with breaks.
-   - show path as nodes [x]
-   - now it shows the path -- next up is to make the enemy move along that path
-
-  1/4/2017
-   - add enemy "attack" & lose state
-   - adding a world_coords() method to the box
-   - 1 hit/lose
-
-  1/5/2017
-   - make the enemy not shiftable but "pushable"
-   - going to try and do this in an hour
-
-  1/6/2017
-   - want to enable pushing, but not break shifting
-]]--
-
 g_ping = 0
 g_updates = 0
 
@@ -504,7 +457,8 @@ function make_player_controller(player)
    end
 
    if btnn(4, t.player) then
-    add_merge_block_to_edge(vecmake(1,1))
+    add_gobjs(make_squish(g_enemy))
+    g_enemy = nil
    end
    -- @}
 
@@ -629,6 +583,43 @@ function make_blip(loc)
  }
 end
 
+function shift_push_buffer(t, push_buffer, x_dir, y_dir)
+ if #push_buffer > 0 then
+  for pb=#push_buffer, 1, -1 do
+   local elem = push_buffer[pb]
+   local g_x = elem.container.grid_x
+   local g_y = elem.container.grid_y
+   did_shift = t:shift_cell_from(g_x, g_y, g_x-x_dir, g_y-y_dir)
+  end
+ end
+
+ return did_shift
+end
+
+function make_squish(thing)
+ local center = thing.container:world_coords(true)
+ del(g_board.watch_cells, thing)
+ thing.container.containing = nil
+
+ return {
+  x=center.x,
+  y=center.y,
+  space=sp_world,
+  start_tick=g_tick,
+  update=function(t)
+   if elapsed(t.start_tick) > 45 then
+    del(g_objs, t)
+   end
+  end,
+  draw=function(t)
+   local disp = vecmake(elapsed(t.start_tick))
+   for _, i in pairs({{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}) do
+    rect(i[1] * disp.x, i[2] * disp.y, i[1] * disp.x + 1, i[2]*disp.y + 1, 8)
+   end
+  end
+ }
+end
+
 function make_board(x, y)
  local all_cells = {}
  local flat_cells = {}
@@ -746,21 +737,18 @@ function make_board(x, y)
      end
 
      if block_is_empty(i, j) then
+      did_shift = shift_push_buffer(t, push_buffer, x_dir, y_dir)
+
       -- clear the push buffer
-      if #push_buffer > 0 then
-       for pb=#push_buffer, 1, -1 do
-        local elem = push_buffer[pb]
-        local g_x = elem.container.grid_x
-        local g_y = elem.container.grid_y
-        did_shift = t:shift_cell_from(g_x, g_y, g_x-x_dir, g_y-y_dir)
-       end
-      end
       push_buffer = {}
      elseif block_is_not_empty(i, j) then
       local this_block = t:block(i, j)
       if this_block.shiftable == ss_inert then
        -- @TODO: Add a squish here
        push_buffer = {}
+       -- cls()
+       -- print("foo")
+       -- stop()
       elseif this_block.shiftable == ss_shiftable then
        add(push_buffer, this_block)
       elseif  this_block.shiftable == ss_pushable then
@@ -773,6 +761,14 @@ function make_board(x, y)
     -- check to see if the last block is a pushable, if is, squish it and shift
     -- the rest
     -- @TODO: squish here
+    if (
+     #push_buffer > 0 and push_buffer[#push_buffer].shiftable == ss_pushable 
+    ) then
+     -- remov the pushable (its s`quished`)
+     add_gobjs(make_squish(push_buffer[#push_buffer]))
+     del(push_buffer, push_buffer[#push_buffer])
+     did_shift = shift_push_buffer(t, push_buffer, x_dir, y_dir)
+    end
    end
 
    -- check the blast queue
@@ -850,7 +846,7 @@ function make_board(x, y)
    -- make goons
    if elapsed(t.lastgoon) > 150 then
     local empty = random_empty_cell()
-    -- make_goon(empty[1], empty[2])
+    make_goon(empty[1], empty[2])
     t.lastgoon = g_tick
    end
 
