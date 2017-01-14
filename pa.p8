@@ -95,6 +95,11 @@ function make_board(
  local b = {
   draw=draw_board,
   update=update_board,
+  make_shake=function(b, amount, time)
+   b.shake_start=g_tick
+   b.shake_amount=amount or 5
+   b.shake_time = time or 5
+  end,
   start=function(b)
    b.st = 3 -- countdown to start
    add(b.go,make_cnt(b))
@@ -112,6 +117,8 @@ function make_board(
   cy=8, --h-4
   x=x,
   y=y,
+  noshake_x=x,
+  noshake_y=y,
   p=p, -- player (input)
   o=4,     -- rise offset
   r=0.025, -- rise rate
@@ -121,10 +128,14 @@ function make_board(
   gq={}, -- queued garbage
   st=0,  -- board state
   lc=0,  -- lines cleared
-  dropcount=0 --weight of
+  dropcount=0, --weight of
               --garbage dropped
               --this cycle
+  shake_start=g_tick,
+  shake_time=5,
+  shake_amount=10,
  }
+ b:make_shake(2, 20)
 
  for i = g_h,1,-1 do
   local e,r2,r3 = g_h-i > v,
@@ -185,7 +196,9 @@ function input_cursor(b)
    m = true
   end
  end
- if (m) sfx(0)
+ if m then
+  sfx(0)
+ end
 end
 
 function input_board(b)
@@ -225,6 +238,7 @@ function end_game(b)
  b.tophold=nil
  b.hd=nil
  local np=1
+ b:make_shake(10, 20)
  if (b.ob) np=2
 
  addggo(make_retry(np))
@@ -345,6 +359,18 @@ function update_board(b)
  end
  if b.st==0 then
   scan_board(b)
+ end
+ 
+ -- camera shake
+ b.x = b.noshake_x
+ b.y = b.noshake_y
+ if b.shake_start != nil then
+  if elapsed(b.shake_start) > b.shake_time then
+   b.shake_start = nil
+  else
+   b.x += rnd(b.shake_time) - b.shake_time / 2
+   b.y += rnd(b.shake_time) - b.shake_time / 2
+  end
  end
  update_gobjs(b.go)
 end
