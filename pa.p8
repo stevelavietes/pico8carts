@@ -276,9 +276,9 @@ function offset_board(b)
  if not b.ri then
   b.ri=g_tick
  end
- if elapsed(b.ri) > 300 then
+ if b.st == 0 and elapsed(b.ri) > 300 then
   b.ri=g_tick
-  b.r+=0.01
+  b.r+=0.0025
  end
 
  if btn(4,b.p) then
@@ -1517,10 +1517,10 @@ function get_lv(l)
  else
   r.nt=5
  end
- r.r=0.025
- for i=2,l*20 do
-  r.r+=0.01
- end
+
+ --                   EASY   NORMAL HARD   EXPERT
+ local DIFFICULTIES ={0.015, 0.025, 0.050, 0.75} 
+ r.r = DIFFICULTIES[l+1]
  return r
 end
 
@@ -1552,7 +1552,6 @@ function start_game(np)
   add_bg(bs[2],63,16)
 
  else
-
   add(bs,
    make_board(38,30,0,6,
      lv[1].nt))
