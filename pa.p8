@@ -1519,7 +1519,7 @@ function get_lv(l)
  end
 
  --                   EASY   NORMAL HARD   EXPERT
- local DIFFICULTIES ={0.015, 0.025, 0.050, 0.75} 
+ local DIFFICULTIES = {0.015, 0.025, 0.050, 0.095} 
  r.r = DIFFICULTIES[l+1]
  return r
 end
