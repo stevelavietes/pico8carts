@@ -276,9 +276,9 @@ function offset_board(b)
  if not b.ri then
   b.ri=g_tick
  end
- if b.st == 0 and elapsed(b.ri) > 300 then
+ if b.st == 0 and elapsed(b.ri) > 30 then
   b.ri=g_tick
-  b.r+=0.0025
+  b.r+=0.001
  end
 
  if btn(4,b.p) then
@@ -1495,19 +1495,30 @@ function make_main()
  )
 end
 
---function make_stats(b,x,y)
+-- function make_stats(b,x,y)
 -- return {
---  b=b,x=x,y=y,
+--  b=b,
+--  x=x,
+--  y=y,
 --  draw=function(t)
---   print('speed '..
---    (t.b.r-0.025)/0.01+1,0,0,6)
---   if b.hd then
---    print('hold '..b.hd,0,8,6)
+--   if t.b.ri then
+--    print('r: '.. t.b.r, 0, 12, 8)
+--    print('ri: '.. t.b.ri, 0, 18, 8)
 --   end
---   print('mc '..b.mc,0,16,6)
+--   -- print('speed '..
+--   --  (t.b.r-0.025)/0.01+1,0,12,6)
+--   -- if b.hd then
+--   --  print('hold '..b.hd,0,18,6)
+--   -- end
+--   -- print('mc '..b.mc,0,24,6)
 --  end
 -- }
---end
+-- end
+
+-- difficulty math
+-- we want the game to end after about 3 minutes
+-- and for it to be worth it (if you can) to play on higher difficulty
+-- working backwards should give us where it should end at 0.4
 
 function get_lv(l)
  l=g_lv[l]
@@ -1518,7 +1529,7 @@ function get_lv(l)
   r.nt=5
  end
 
- --                   EASY   NORMAL HARD   EXPERT
+ --                    EASY   NORMAL HARD   EXPERT
  local DIFFICULTIES = {0.015, 0.025, 0.050, 0.095} 
  r.r = DIFFICULTIES[l+1]
  return r
@@ -1555,7 +1566,7 @@ function start_game(np)
   add(bs,
    make_board(38,30,0,6,
      lv[1].nt))
-  --addggo(make_stats(bs[1],2,2))
+  addggo(make_stats(bs[1],2,2))
   bs[1].r=lv[1].r
 
   add_bg(bs[1],0)
