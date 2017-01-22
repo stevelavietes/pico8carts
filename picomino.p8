@@ -34,8 +34,12 @@ function _draw()
   local p1 = segs[i*2+1]
   local p2 = segs[i*2+2]
   
+  local c = 5
+  if p1[3] then
+   c = 7
+  end
   line(p1[1]*s, p1[2]*s,
-    p2[1]*s, p2[2]*s, 7)
+    p2[1]*s, p2[2]*s, c)
  end
  camera()
  
@@ -69,19 +73,18 @@ function make_spr_outline(
    if statechg then
     if not start then
      start = xx
+     add(result, {xx, yy, p})
     end
    else
     if start then
-     add(result, {start, yy})
-     add(result, {xx, yy})
+     add(result, {xx, yy, p})
      start = nil
     end
    end
   end
   
   if start then
-   add(result, {start, yy})
-   add(result, {w, yy})
+   add(result, {w, yy, p})
   end
   
  end
@@ -106,10 +109,10 @@ function make_spr_outline(
    if statechg then
     if not start then
      start = yy
+     add(result, {xx, yy, p})
     end
    else
     if start then
-     add(result, {xx, start})
      add(result, {xx, yy})
      start = nil
     end
@@ -117,7 +120,6 @@ function make_spr_outline(
   end
   
   if start then
-   add(result, {xx, start})
    add(result, {xx, h})
   end
   
