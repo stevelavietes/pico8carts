@@ -296,7 +296,7 @@ function offset_board(b)
    if r[i].t > 0 then
     if b.tophold then
      b.o=9
-     if elapsed(b.tophold) > 120 then
+     if elapsed(b.tophold) > 60 then
       b.st=1
       if b.ob then
        b.ob.st=2
@@ -768,7 +768,7 @@ function scan_board(b)
   addggo(make_bubble(
     max(0,b.x+(mx-1)*9-17),
     b.y+my*9,ch..'x',true))
-  incr_hold(b,ch*25)	--tune
+  incr_hold(b,ch*10)	--tune
  end
 
  if mc>3 then
@@ -1001,7 +1001,7 @@ function draw_board(b)
  palt(0,false)
  if b.tophold then
   spr(
-   49+elapsed(b.tophold)/120*8,
+   49+elapsed(b.tophold)/60*8,
     g_wp-7,-18)
  end
  if #b.gq > 0 then
