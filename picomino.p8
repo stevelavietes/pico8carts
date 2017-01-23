@@ -5,6 +5,7 @@ __lua__
 function _init()
  which = 0
  count = 12
+ scale = 16
 end
 
 function _update()
@@ -14,6 +15,21 @@ function _update()
  if btnp(1) then
   which = (which + 1) % count
  end
+ 
+ if btn(2) then
+  if scale > 1 then
+   scale = scale - 1
+  end
+ end
+ 
+ if btn(3) then
+  if scale < 100 then
+   scale = scale + 1
+  end
+ end
+ 
+ 
+ 
 
 end
 
@@ -24,11 +40,18 @@ function _draw()
   spr(48+i, i*8, 0)
  end
  
- local segs = make_spr_outline(
-    which*8, 24, 5, 5)
+ local segs, rects, col =
+   make_spr_outline(
+      which*8, 24, 5, 5)
  
  camera(-24, -24)
- local s = 16
+ local s = scale
+ 
+ for i=1,#rects do
+  local r = rects[i]
+  rectfill(r[1]*s,r[2]*s,
+    r[3]*s, r[4]*s, col)
+ end
  
  for i=0,#segs/2 -1 do
   local p1 = segs[i*2+1]
@@ -49,16 +72,44 @@ end
 function make_spr_outline(
   x, y, w, h)
  local result = {}
+ local rects = {}
  
  local start = nil
+ local rstart = nil
+ local firstcolor = nil
  
  --horizontal
  for yy = 0,h do
   start = nil
+  rstart = nil
   
   for xx = 0,w-1 do
    local p =
-     sget(x+xx, y+yy) > 0
+     sget(x+xx, y+yy)
+     
+   if p > 0 then
+    if not firstcolor then
+     firstcolor = p
+    end
+    p = true
+    
+   else
+    p = false
+   end
+   
+   
+   if p then
+    if not rstart then
+     rstart = {xx,yy}
+     add(rects, rstart)
+    end
+   else
+    if rstart then
+     add(rstart, xx)
+     add(rstart, yy+1)
+     rstart = nil
+    end
+   end
    
    local statechg = false
    
@@ -85,6 +136,11 @@ function make_spr_outline(
   
   if start then
    add(result, {w, yy, p})
+  end
+  
+  if rstart then
+   add(rstart, w)
+   add(rstart, yy+1)
   end
   
  end
@@ -126,7 +182,8 @@ function make_spr_outline(
  end
  
  
- return result
+ return result, rects,
+   firstcolor
  
  
 end
