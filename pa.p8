@@ -217,7 +217,7 @@ function input_board(b)
  end
 end
 
-function end_game(b)
+function end_game(b, single_player)
  for t in all(b.s or {}) do
   t.s=nil
   t.ss=nil
@@ -233,13 +233,19 @@ function end_game(b)
  b.hd=nil
  local np=1
  make_shake(b, 10, 20)
- if (b.ob) np=2
+ if b.ob then 
+  np=2
+ end
+
+ local score = nil
+ if single_player then
+  score = b.sb.s
+ end
 
  addggo(make_retry(np))
- add(b.go,make_winlose(b.st==2,
-   --(g_wp)/2-16,(g_hp)/2-16))
-   --hard-wire for tokens
-   11,38))
+  --(g_wp)/2-16,(g_hp)/2-16))
+  --hard-wire for tokens
+ add(b.go, make_winlose(b.st==2, 11, 38, score))
 end
 
 function offset_board(b)
@@ -292,10 +298,12 @@ function offset_board(b)
      b.o=9
      if elapsed(b.tophold) > 120 then
       b.st=1
-      end_game(b)
       if b.ob then
        b.ob.st=2
+       end_game(b)
        end_game(b.ob)
+      else
+       end_game(b, true)
       end
      end
     else
@@ -1068,21 +1076,93 @@ end
 
 function make_winlose(
   wl, --true win
-  x,y
+  x,
+  y,
+  score
  )
  local r={
-  x=x,y=y,s=68,
+  x=x,
+  y=y,
+  s=68,
   e=g_tick,
+  score=score,
   draw=function(t)
    local y=sin(g_tick/35)*3
    local e=elapsed(t.e)
    if e<10 then
     y=(10-e)*-4
    end
-   spr(t.s,0,y,4,2)
+   if t.score then
+    local n = t.score
+    local digit = 10000
+    local offset=0
+    local ndigits = #(""..n)
+    local origin=-6*ndigits
+    if n < 10 then
+     origin = 0
+    end
+
+    current_frame = flr(14*(elapsed(t.e) % 20)/20) + 1
+
+    palt(15, true)
+    palt(0, false)
+
+    for i=1,4 do
+     if current_frame == i then
+      pal(i, 9)
+     else
+      pal(i, 2)
+     end
+    end
+    for i=5,8 do
+     pal(i, 6)
+     if current_frame and i >= current_frame and current_frame > 5 then
+      pal(i, 10)
+     else
+     end
+    end
+    pal(14, 6)
+
+    local y = -24+8*sin((elapsed(t.e+10*offset) % 60)/60)
+
+    if (0 == n) then 
+     sspr(0, 96, 8, 8, origin, y, 32, 32)
+    else
+     while digit > n*10  do
+      digit = flr(digit / 10)
+     end
+     digit = flr(digit / 10)
+     repeat
+      y = -24+8*sin((elapsed(t.e+10*offset) % 60)/60)
+      sspr(
+       (flr(n/digit) % 10)*8,
+       96,
+       8,
+       8,
+       origin + offset*24,
+       y,
+       32,
+       32
+      )
+      digit = flr(digit/10)
+      offset += 1
+     until (digit == 0)
+    end
+
+    palt(15, false)
+    palt(0, true)
+
+   for i=0,16 do
+    pal(i, i)
+   end
+   else
+    spr(t.s,0,y,4,2)
+   end
   end
  }
- if (wl) r.s=64
+ if wl then 
+  r.s=64
+ end
  return r
 end
 
