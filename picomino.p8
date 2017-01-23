@@ -1,12 +1,20 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-
 function _init()
  which = 0
  count = 12
  scale = 8
  level = 1
+ 
+ workspr1 = 5
+ workspr2 = 7
+ 
+ sprcpy(workspr1,
+   which+48)
+ --flip_spr_data(
+ -- 24, 0, workspr1*8, 0, 5, false)
+ 
 end
 
 function _update()
@@ -15,27 +23,37 @@ function _update()
   if level > 1 then
    level = level - 1
   end
+  
+  sprcpy(workspr1,
+   which+48)
  end
  if btnp(1) then
   which = (which + 1) % count
   
   level = level + 1
   
+  sprcpy(workspr1,
+   which+48)
+   
  end
  
- if btn(2) then
-  if scale > 1 then
-   scale = scale - 1
-  end
+ if btnp(4) then
+  sprcpy(workspr2, workspr1)
+  rotate_spr_data(
+    workspr2*8, 0, workspr1*8,
+      0, 5, false)
+  
+ elseif btnp(5) then
+  sprcpy(workspr2, workspr1)
+  
+  rotate_spr_data(
+    workspr2*8, 0, workspr1*8,
+      0, 5, true)
+  
+  
  end
  
- if btn(3) then
-  if scale < 100 then
-   scale = scale + 1
-  end
- end
- 
- 
+ level_debug_update()
  
 
 end
@@ -49,7 +67,7 @@ function _draw()
  
  local segs, rects, col =
    make_spr_outline(
-      which*8, 24, 5, 5)
+      workspr1*8, 0, 5, 5)
  
  camera(-24, -24)
  local s = scale
@@ -73,8 +91,29 @@ function _draw()
  end
  camera()
  
- print(level, 0, 100, 7)
+ level_debug_draw()
  
+ 
+ spr(workspr1, 0, 32)
+end
+
+
+function level_debug_update()
+ if btn(2) then
+  if scale > 1 then
+   scale = scale - 1
+  end
+ end
+  
+ if btn(3) then
+  if scale < 100 then
+   scale = scale + 1
+  end
+ end
+end
+
+function level_debug_draw()
+ print(level, 0, 100, 7)
  
  local count, pieces =
    get_level_data(level)
@@ -84,9 +123,8 @@ function _draw()
  for i = 1,#pieces do
   spr(pieces[i], 24+i*6, 100)
  end
- 
- 
 end
+
 
 
 function make_spr_outline(
@@ -208,11 +246,8 @@ function make_spr_outline(
  
 end
 
--- y=96
--- groups of 32
--- offset by 16-- y=96
--- groups of 32
--- offset by 16
+-- begin level data functions
+
 function get_level_xy(n)
  return flr((n-1)/32) * 16,
    96+((n-1)%32)
@@ -235,6 +270,59 @@ function get_level_data(n)
  return start, pieces
  
 end
+
+-- end level data functions
+
+function getspraddr(n)
+ return flr(n/16)*512+(n%16)*4
+end
+
+function sprcpy(dst,src,w,h)
+ w = w or 1
+ h = h or 1
+ for i=0,h*8-1 do
+  memcpy(getspraddr(dst)+64*i,
+     getspraddr(src)+64*i,4*w)
+ end
+end
+
+function rotate_spr_data(
+  x, y, dx, dy, size, cw)
+ local dxx, dyy = nil
+ for yy = 0,size-1 do
+  for xx = 0, size-1 do
+   if cw then
+    dxx = size - 1 - yy
+    dyy = xx
+   else
+    dxx = yy
+    dyy = size - 1 - xx
+   end
+   sset(dx+dxx, dy+dyy,
+     sget(x+xx,y+yy))   
+  end
+ end
+end
+
+function flip_spr_data(
+  x, y, dx, dy, size, vert)
+ local dxx, dyy = nil
+ for yy = 0,size-1 do
+  for xx = 0, size-1 do
+   if vert then
+    dxx = xx
+    dyy = size - 1 - yy
+   else
+    dxx = size - 1 - xx
+    dyy = yy
+   end
+   sset(dx+dxx, dy+dyy,
+     sget(x+xx,y+yy))   
+  end
+ end
+end
+
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000000000
