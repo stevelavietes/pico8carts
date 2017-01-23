@@ -5,7 +5,7 @@ __lua__
 function _init()
  which = 0
  count = 12
- scale = 16
+ scale = 8
  level = 1
 end
 
@@ -72,6 +72,19 @@ function _draw()
     p2[1]*s, p2[2]*s, c)
  end
  camera()
+ 
+ print(level, 0, 100, 7)
+ 
+ 
+ local count, pieces =
+   get_level_data(level)
+   
+ print(count, 16, 100, 6)
+ 
+ for i = 1,#pieces do
+  spr(pieces[i], 24+i*6, 100)
+ end
+ 
  
 end
 
@@ -202,7 +215,7 @@ end
 -- offset by 16
 function get_level_xy(n)
  return flr((n-1)/32) * 16,
-   (n-1)%32
+   96+((n-1)%32)
 end
 
 function get_level_data(n)
@@ -212,7 +225,7 @@ function get_level_data(n)
  
  local pieces = {}
  for i = 0, 11 do
-  local p = sget(x+2+i)
+  local p = sget(x+2+i, y)
   if p == 0 then
    break
   end
