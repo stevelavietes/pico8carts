@@ -799,6 +799,7 @@ function scan_board(b)
     {ch,mc,g_tick,0},
     g_tick)
   make_shake(b, 5, 5)
+  sfx(10)
  end
 
  reset_chain(b)
