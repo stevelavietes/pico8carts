@@ -46,9 +46,9 @@ function _draw()
  cls()
  rectfill(0,0,127,127,5)
  draw_gobjs(g_go)
- --print('cpu:'..
- --  (flr(stat(1)*100))..'%',100,0,
- --   7)
+--  print('cpu:'..
+--   (flr(stat(1)*100))..'%',100,0,
+--    7)
 end
 --
 function make_row(
@@ -1256,14 +1256,14 @@ function make_garbscore(b)
   gq={},
   b=b,
   draw=function(t)
-   local w=4*(#(''..t.s))
+   local w=5*(#(''..t.s))
    rectfill(1,1,8+w,7,6)
 
    spr(t.sp,1,1)
 
    local digit = 10000
    local n = t.s
-   local offset=6
+   local offset=7
 
    -- 6 frames of "bling" play out over a second
    local current_frame = nil
@@ -1300,7 +1300,7 @@ function make_garbscore(b)
     repeat
      spr(192 + (flr(n/digit) % 10), offset, 1)
      digit = flr(digit/10)
-     offset += 6
+     offset += 7
     until (digit == 0)
    end
 
@@ -1506,7 +1506,25 @@ end
 function add_bg(b,bx,cx)
  addggo({
   draw=function()
-   map(cx,0,bx,((b.o)%8)-8,8,17)
+   local y_start = ((b.o)%8)-8
+   local odd = y_start % 2
+   map(cx,0,bx,y_start,8,17)
+   -- @TODO: expensive in CPU and tokens
+   local sy_base = ((b.o)%8)-8
+   if b.shake_start != nil then
+    for sx=bx+1,bx+64,2 do
+     for sy=odd-1,127,2 do
+      local col = pget(sx, sy)
+      for i=0,1 do
+       for j=0,1 do
+        if col == 13 or col == 14 then
+         pset(sx+i, sy+j, 11)
+        end
+       end
+      end
+     end
+    end
+   end
   end
  })
 end
