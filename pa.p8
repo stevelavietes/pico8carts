@@ -4,6 +4,11 @@ __lua__
 function _init()
  -- globals struct
 
+ -- @NOTES: I think the idea of the background is better than its current 
+ --         implementation
+ --         maybe we can remove the bar on the left and the tophold indicators
+ --         in favor of putting animation in the bg?
+
  g_tick = 0
  g_cs = {}   --camera stack
  g_ct = 0    --controllers
@@ -46,9 +51,9 @@ function _draw()
  cls()
  rectfill(0,0,127,127,5)
  draw_gobjs(g_go)
---  print('cpu:'..
---   (flr(stat(1)*100))..'%',100,0,
---    7)
+ print('cpu:'..
+  (flr(stat(1)*100))..'%',100,0,
+   7)
 end
 --
 function make_row(
@@ -1503,6 +1508,15 @@ function make_title()
  }
 end
 
+function clamp(val, minval, maxval)
+ return max(min(val, maxval), minval)
+end
+
+function smootherstep(edge0, edge1, x)
+  x= clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0);
+ return x*x*x*(x*(x*6 - 15) + 10);
+end
+
 function add_bg(b,bx,cx)
  addggo({
   draw=function()
@@ -1512,14 +1526,26 @@ function add_bg(b,bx,cx)
    -- @TODO: expensive in CPU and tokens
    local sy_base = ((b.o)%8)-8
    if b.shake_start != nil then
+    local current_frame = 128*smootherstep(
+     0,
+     1, 
+     1-((elapsed(b.shake_start))/b.shake_time)
+    )
+    local width = b.shake_amount
+
+    --[[
+     because this loop uses pget() and pset(), it is extremely expensive.  to
+     reduce the cost, only iterate on rows and columns where there might be a
+     bg map pattern (taking advantage of observing the structure of the map).
+     Otherwise this takes up 100% of the CPU.
+    ]]-- 
     for sx=bx+1,bx+64,2 do
      for sy=odd-1,127,2 do
-      local col = pget(sx, sy)
-      for i=0,1 do
-       for j=0,1 do
-        if col == 13 or col == 14 then
-         pset(sx+i, sy+j, 11)
-        end
+      local dist = abs(sy - current_frame)
+      if  dist < width*3 then
+       local col = pget(sx, sy)
+       if col == 13 or col == 14 then
+        pset(sx, sy, 11)
        end
       end
      end
