@@ -2,36 +2,31 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 function _init()
+ stdinit()
+ 
  which = 0
  count = 12
  scale = 8
  level = 1
+ maxlevel = 113
  
  workspr1 = 5
  workspr2 = 7
  
- sprcpy(workspr1,
-   which+48)
- --flip_spr_data(
- -- 24, 0, workspr1*8, 0, 5, false)
+ sprcpy(workspr1, which+48)
  
+ add(g_objs,
+   make_level_debug())
 end
 
 function _update()
  if btnp(0) then
   which = (which - 1) % count
-  if level > 1 then
-   level = level - 1
-  end
-  
   sprcpy(workspr1,
    which+48)
  end
  if btnp(1) then
   which = (which + 1) % count
-  
-  level = level + 1
-  
   sprcpy(workspr1,
    which+48)
    
@@ -53,8 +48,9 @@ function _update()
   
  end
  
- level_debug_update()
+ scale_debug_update()
  
+ stdupdate()
 
 end
 
@@ -91,14 +87,49 @@ function _draw()
  end
  camera()
  
- level_debug_draw()
+ --level_debug_draw()
  
  
  spr(workspr1, 0, 32)
+ 
+ stddraw()
 end
 
 
-function level_debug_update()
+function make_level_debug()
+ return {
+  x=0,y=0,
+  level = 1,
+  update=function(t,s)
+   if btnp(0) then
+  	 if t.level > 1 then
+     t.level = t.level - 1
+    end 
+   end
+   if btnp(1) then
+  	 t.level = t.level + 1
+   end
+  end,
+  draw=function(t)
+   print(t.level, 0, 100, 7)
+ 
+   local count, pieces =
+     get_level_data(t.level)
+   
+   print(count, 16, 100, 6)
+ 
+   for i = 1,#pieces do
+    spr(pieces[i], 24+i*6, 100)
+   end
+  
+  end
+ 
+ }
+end
+
+
+
+function scale_debug_update()
  if btn(2) then
   if scale > 1 then
    scale = scale - 1
@@ -109,19 +140,6 @@ function level_debug_update()
   if scale < 100 then
    scale = scale + 1
   end
- end
-end
-
-function level_debug_draw()
- print(level, 0, 100, 7)
- 
- local count, pieces =
-   get_level_data(level)
-   
- print(count, 16, 100, 6)
- 
- for i = 1,#pieces do
-  spr(pieces[i], 24+i*6, 100)
  end
 end
 
@@ -322,7 +340,89 @@ function flip_spr_data(
  end
 end
 
+-------------------------------
 
+function stdinit()
+ g_tick=0    --time
+ g_ct=0      --controllers
+ g_ctl=0     --last controllers
+ g_cs = {}   --camera stack 
+ g_objs = {} --objects
+ g_camx = 0
+ g_camy = 0
+end
+
+function stdupdate()
+ g_tick = max(0,g_tick+1)
+ -- current/last controller
+ g_ctl = g_ct
+ g_ct = btn()
+ updateobjs(g_objs)
+end
+
+function updateobjs(objs)
+ foreach(objs, function(t)
+  if t.update then
+   t:update(objs)
+  end
+ end)
+end
+
+function stddraw()
+ pushc(g_camx, g_camy)
+ drawobjs(g_objs)
+ popc()
+end
+
+function drawobjs(objs)
+ foreach(objs, function(t)
+  if t.draw then
+   pushc(-t.x, -t.y)
+   t:draw(objs)
+   popc()
+  end
+ end)
+end
+
+--returns state,changed
+function btns(i,p)
+ i=shl(1,i)
+ if p==1 then
+  i=shl(i,8)
+ end
+ local c,cng =
+   band(i,g_ct),
+   band(i,g_ctl)
+ return c>0,c~=cng
+end
+
+--returns new press only
+function btnn(i,p)
+ if p==-1 then --either
+  return btnn(i,0) or btnn(i,1)
+ end
+ local pr,chg=btns(i,p)
+ return pr and chg
+end
+
+function pushc(x, y)
+ local l=g_cs[#g_cs] or {0,0}
+ local n={l[1]+x,l[2]+y}
+ add(g_cs, n)
+ camera(n[1], n[2])
+end
+
+function popc()
+ local len = #g_cs
+ g_cs[len] = nil
+ len -= 1
+ if len > 0 then
+  local xy=g_cs[len]
+  camera(xy[1],xy[2])
+ else
+  camera()
+ end
+end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000000000
