@@ -27,14 +27,23 @@ end
 function make_piece_debug()
 
  sprcpy(workspr1, 14)
-
+ 
+ local transduration = 4
+ 
  return {
  x=24,y=24,
  which=0,
  count=12,
  scale=8,
  
+ 
  update=function(t,s)
+  
+  
+  if btnn(4) then
+   t.xformstatecount =
+    transduration 
+  end
   
   if btn(4) then
    if btnn(0) then
@@ -51,7 +60,7 @@ function make_piece_debug()
         0, 5, true)
    end
   else
-  
+   
    if btnp(0) then
     t.which = (t.which - 1) %
       t.count
@@ -90,39 +99,59 @@ function make_piece_debug()
    local cy = s*5/2
    local bc = 0
    
-   circ(cy,cy, s * 5 / 2 + 8, 5)
+   local radius = s * 5 / 2 + 8
    
-   if btnn(0) then
-    pal(6, 0)
-    bc = 9
+   if t.xformstatecount then
+    radius = radius * (1 - (
+      t.xformstatecount
+        / transduration))
+    
+    
+    t.xformstatecount -= 1
+    
+    if t.xformstatecount < 1
+      then
+     t.xformstatecount = nil
+      
+    end
+   
    end
    
-   rectfill(-14, cy-7, -2,
+   circ(cy,cy, radius, 5)
+   if not t.xformstatecount then
+   
+    if btnn(0) then
+     pal(6, 0)
+     bc = 9
+    end
+   
+    rectfill(-14, cy-7, -2,
       cy+6, bc)
    
-   spr(64, -16,  s*5 / 2 - 8,
+    spr(64, -16,  s*5 / 2 - 8,
       2, 2, 1) 
    
-   rect(-14, cy-7, -2,
+    rect(-14, cy-7, -2,
       cy+6, 7)
       
-   pal()
+    pal()
    
-   bc = 0
-   if btnn(1) then
-    pal(6, 0)
-    bc = 9
+    bc = 0
+    if btnn(1) then
+     pal(6, 0)
+     bc = 9
+    end
+   
+    rectfill(s*5+2, cy-7, s*5+14, cy+6,
+      bc)
+   
+    rect(s*5+2, cy-7, s*5+14,
+      cy+6, 7)
+   
+    spr(64, s*5 + 1, cy-8,
+      2, 2)
+    pal()
    end
-   
-   rectfill(s*5+2, cy-7, s*5+14, cy+6,
-     bc)
-   
-   rect(s*5+2, cy-7, s*5+14,
-    cy+6, 7)
-   
-   spr(64, s*5 + 1, cy-8,
-     2, 2)
-   pal()
   end
   
   local segs, rects, col =
@@ -594,7 +623,6 @@ __gfx__
 602cead64b000000901942cead6000007012cead389b000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6042ce3bda000000904cead63b80000070194a63bd28000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6092ad63c400000090192ced638000007042ced63b8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
