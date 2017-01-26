@@ -4,97 +4,111 @@ __lua__
 function _init()
  stdinit()
  
- which = 0
- count = 12
- scale = 8
  level = 1
  maxlevel = 113
- 
  workspr1 = 5
  workspr2 = 7
  
- sprcpy(workspr1, which+48)
- 
  add(g_objs,
    make_level_debug())
+ add(g_objs,
+   make_piece_debug())
 end
 
 function _update()
- if btnp(0) then
-  which = (which - 1) % count
-  sprcpy(workspr1,
-   which+48)
- end
- if btnp(1) then
-  which = (which + 1) % count
-  sprcpy(workspr1,
-   which+48)
-   
- end
- 
- if btnp(4) then
-  sprcpy(workspr2, workspr1)
-  rotate_spr_data(
-    workspr2*8, 0, workspr1*8,
-      0, 5, false)
-  
- elseif btnp(5) then
-  sprcpy(workspr2, workspr1)
-  
-  rotate_spr_data(
-    workspr2*8, 0, workspr1*8,
-      0, 5, true)
-  
-  
- end
- 
- scale_debug_update()
- 
- stdupdate()
-
+  stdupdate()
 end
 
 function _draw()
  cls()
- 
- for i=0,15 do
-  spr(48+i, i*8, 0)
- end
- 
- local segs, rects, col =
-   make_spr_outline(
-      workspr1*8, 0, 5, 5)
- 
- camera(-24, -24)
- local s = scale
- 
- for i=1,#rects do
-  local r = rects[i]
-  rectfill(r[1]*s,r[2]*s,
-    r[3]*s, r[4]*s, col)
- end
- 
- for i=0,#segs/2 -1 do
-  local p1 = segs[i*2+1]
-  local p2 = segs[i*2+2]
-  
-  local c = 5
-  if p1[3] then
-   c = 7
-  end
-  line(p1[1]*s, p1[2]*s,
-    p2[1]*s, p2[2]*s, c)
- end
- camera()
- 
- --level_debug_draw()
- 
- 
- spr(workspr1, 0, 32)
- 
  stddraw()
 end
 
+function make_piece_debug()
+ return {
+ x=0,y=0,
+ which=0,
+ count=12,
+ scale=8,
+
+ update=function(t,s)
+  if btnp(0) then
+   t.which = (t.which - 1) %
+     t.count
+   sprcpy(workspr1,
+     t.which+48)
+  end
+  if btnp(1) then
+   t.which = (t.which + 1) %
+     t.count
+   sprcpy(workspr1,
+     t.which+48)
+   
+  end
+ 
+  if btnp(4) then
+   sprcpy(workspr2, workspr1)
+   rotate_spr_data(
+     workspr2*8, 0, workspr1*8,
+       0, 5, false)
+  
+  elseif btnp(5) then
+   sprcpy(workspr2, workspr1)
+  
+   rotate_spr_data(
+     workspr2*8, 0, workspr1*8,
+       0, 5, true)
+  
+  end
+  
+  if btn(2) then
+   if t.scale > 1 then
+    t.scale = t.scale - 1
+   end
+  end
+  
+  if btn(3) then
+   if t.scale < 100 then
+    t.scale = t.scale + 1
+   end
+  end
+ end,
+ draw=function(t)
+  for i=0,15 do
+   spr(48+i, i*8, 0)
+  end
+ 
+  local segs, rects, col =
+    make_spr_outline(
+       workspr1*8, 0, 5, 5)
+ 
+  pushc(-24, -24)
+  local s = t.scale
+ 
+  for i=1,#rects do
+   local r = rects[i]
+   rectfill(r[1]*s,r[2]*s,
+     r[3]*s, r[4]*s, col)
+  end
+ 
+  for i=0,#segs/2 -1 do
+   local p1 = segs[i*2+1]
+   local p2 = segs[i*2+2]
+  
+   local c = 5
+   if p1[3] then
+    c = 7
+   end
+   line(p1[1]*s, p1[2]*s,
+     p2[1]*s, p2[2]*s, c)
+  end
+  popc()
+ 
+ 
+  spr(workspr1, 0, 32)
+ end
+ }
+end
 
 function make_level_debug()
  return {
@@ -127,21 +141,6 @@ function make_level_debug()
  }
 end
 
-
-
-function scale_debug_update()
- if btn(2) then
-  if scale > 1 then
-   scale = scale - 1
-  end
- end
-  
- if btn(3) then
-  if scale < 100 then
-   scale = scale + 1
-  end
- end
-end
 
 
 
@@ -552,6 +551,7 @@ eeeeeeeebbbbbbbb11111111dddddddd333333338888888822222222666666669999999944444444
 602cead64b000000901942cead6000007012cead389b000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6042ce3bda000000904cead63b80000070194a63bd28000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6092ad63c400000090192ced638000007042ced63b8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
