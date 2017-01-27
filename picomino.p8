@@ -59,7 +59,7 @@ function make_piece_debug()
       workspr2*8, 0, workspr1*8,
         0, 5, true)
    end
-  else
+  elseif btn(5) then
    
    if btnp(0) then
     t.which = (t.which - 1) %
@@ -85,7 +85,22 @@ function make_piece_debug()
      t.scale = t.scale + 1
     end
    end
-  
+  else
+   if btnn(0) then
+    t.x -= t.scale
+   end
+   if btnn(1) then
+    t.x += t.scale
+   end
+   if btnn(2) then
+    t.y -= t.scale
+   end
+   if btnn(3) then
+    t.y += t.scale
+   end
+   
+   
+   
   end
   
   
@@ -99,7 +114,7 @@ function make_piece_debug()
    local cy = s*5/2
    local bc = 0
    
-   local radius = s * 5 / 2 + 8
+   local radius = s * 5 / 2 + 10
    
    if t.xformstatecount then
     radius = radius * (1 - (
@@ -114,45 +129,49 @@ function make_piece_debug()
      t.xformstatecount = nil
       
     end
-   
    end
    
    circ(cy,cy, radius, 5)
-   if not t.xformstatecount then
+   rect(cy-1,cy-1,cy+1,cy+1,5)
    
-    if btnn(0) then
-     pal(6, 0)
-     bc = 9
-    end
    
-    rectfill(-14, cy-7, -2,
-      cy+6, bc)
-   
-    spr(64, -16,  s*5 / 2 - 8,
-      2, 2, 1) 
-   
-    rect(-14, cy-7, -2,
-      cy+6, 7)
-      
-    pal()
-   
-    bc = 0
-    if btnn(1) then
-     pal(6, 0)
-     bc = 9
-    end
-   
-    rectfill(s*5+2, cy-7, s*5+14, cy+6,
-      bc)
-   
-    rect(s*5+2, cy-7, s*5+14,
-      cy+6, 7)
-   
-    spr(64, s*5 + 1, cy-8,
-      2, 2)
-    pal()
+   if btnn(0) then
+    pal(6, 0)
+    bc = 9
    end
+    
+   local icy = cy
+   local icx = cy - radius
+   
+   rectfill(icx-7, icy-7, icx+6,
+     icy+6, bc)
+   
+   rect(icx-7, icy-7, icx+6,
+     icy+6, 5)
+   
+   spr(64, icx - 8, icy - 8,
+     2, 2, 1) 
+   
+   pal()
+   
+   bc = 0
+   if btnn(1) then
+    pal(6, 0)
+    bc = 9
+   end
+    
+   icx = cy + radius
+   rectfill(icx-7, icy-7, icx+6,
+     icy+6, bc)
+   
+   rect(icx-7, icy-7, icx+6,
+     icy+6, 5)
+   
+   spr(64, icx-8, icy-8,
+     2, 2)
+   pal()
   end
+ 
   
   local segs, rects, col =
     make_spr_outline(
