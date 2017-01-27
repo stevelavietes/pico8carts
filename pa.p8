@@ -1541,12 +1541,9 @@ function add_bg(b,bx,cx)
     ]]-- 
     for sx=bx+1,bx+64,2 do
      for sy=odd-1,127,2 do
-      local dist = abs(sy - current_frame)
-      if  dist < width*3 then
-       local col = pget(sx, sy)
-       if col == 13 or col == 14 then
-        pset(sx, sy, 11)
-       end
+      local col = pget(sx, sy)
+      if col == 13 or col == 14 then
+       pset(sx, sy, 11)
       end
      end
     end
