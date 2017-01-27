@@ -28,7 +28,25 @@ function make_piece_debug()
 
  sprcpy(workspr1, 14)
  
- local transduration = 4
+ local k_transduration = 4
+ 
+ local st_idle = 0
+ local st_xformmenu = 1
+ local st_rotateleft = 2
+ local st_rotateright = 3
+ local st_blockmenu = 4
+ 
+ local dir_left={-1,0}
+ local dir_right={1,0}
+ local dir_up={0,-1}
+ local dir_down={0,1}
+ local dirs={
+  dir_left,
+  dir_right,
+  dir_up,
+  dir_down,
+ }
+ 
  
  return {
  x=24,y=24,
@@ -36,13 +54,93 @@ function make_piece_debug()
  count=12,
  scale=8,
  
+ state=st_idle,
+ 
+ 
+ 
+ update_state=function(t,s)
+  
+  if t.state == st_idle then
+   t:update_idle(t,s)
+  elseif t.state ==
+    st_xformmenu then
+   t:update_xformmenu(t,s) 
+   
+  end
+  
+  
+ end,
+ 
+ update_idle=function(t,s)
+  
+  if btnn(4) then
+   t.state = st_xformmenu
+   t.xformstatecount = 
+     k_transduration + 1
+  
+  elseif btnn(5) then
+   t.state = st_blockmenu
+   t.xformstatecount = 
+     k_transduration + 1
+  end
+  
+  if t.state ~= st_idle then
+   t:update_state(t,s)
+  else
+   if btnn(0) then
+    t.x -= t.scale
+   end
+   if btnn(1) then
+    t.x += t.scale
+   end
+   if btnn(2) then
+    t.y -= t.scale
+   end
+   if btnn(3) then
+    t.y += t.scale
+   end
+  end
+  
+ end,
+ 
+ update_xformmenu=function(t,s)
+  
+  if not btn(4) then
+   t.state = st_idle
+   return
+  end
+  
+  if t.xformstatecount then
+   t.xformstatecount -= 1
+   if t.xformstatecount < 1
+     then
+    t.xformstatecount = nil
+   end
+  end
+  
+  if btnn(0) then
+    sprcpy(workspr2, workspr1)
+    rotate_spr_data(
+      workspr2*8, 0, workspr1*8,
+        0, 5, false)
+  
+  elseif btnn(1) then
+    sprcpy(workspr2, workspr1)
+  
+    rotate_spr_data(
+      workspr2*8, 0, workspr1*8,
+        0, 5, true)
+  end 
+ 
+ end,
  
  update=function(t,s)
   
-  
+  t:update_state(t,s)
+  --[[
   if btnn(4) then
    t.xformstatecount =
-    transduration 
+     k_transduration 
   end
   
   if btn(4) then
@@ -102,76 +200,92 @@ function make_piece_debug()
    
    
   end
-  
+  --]]
   
  end,
+ 
+ drawmenu=function(t,
+   leftspr,
+   rightspr,
+   upspr,
+   downspr)
+  local s = t.scale
+  local cy = s*5/2
+  local bc = 0
+  local radius = s * 5 / 2 + 10
+  
+  if t.xformstatecount then
+   radius = radius * (1 - (
+     t.xformstatecount
+       / k_transduration))
+  end
+  
+  circ(cy,cy, radius, 5)
+  rect(cy-1,cy-1,cy+1,cy+1,5)
+  
+  if leftspr then
+   t:drawmenuicon(1, leftspr,
+     radius, cy)
+  end
+  
+  if rightspr then
+   t:drawmenuicon(2, rightspr,
+     radius, cy)
+  end
+  
+  if upspr then
+   t:drawmenuicon(3, upspr,
+     radius, cy)
+  end
+  
+  if downspr then
+   t:drawmenuicon(4, downspr,
+     radius, cy)
+  end
+  
+ end,
+ 
+ drawmenuicon=function(
+   t, wdir, wspr, radius, cy)
+  
+  local bc = 0
+  
+  if btnn(wdir-1) then
+   pal(6, 0)
+   bc = 9
+  end
+  
+  local dirv = dirs[wdir]
+  
+  local icx =
+    cy + radius*dirv[1]
+  
+  local icy =
+    cy + radius*dirv[2]
+  
+  rectfill(icx-7, icy-7, icx+6,
+    icy+6, bc)
+   
+  rect(icx-7, icy-7, icx+6,
+    icy+6, 5)
+   
+  spr(wspr, icx - 8, icy - 8,
+    2, 2, 1) 
+   
+  pal()
+  
+ end,
+ 
+ 
  
  draw=function(t)
   
   local s = t.scale
   
-  --todo, make this a state
-  --instead of a button test
-  if btn(4) then
-   local cy = s*5/2
-   local bc = 0
-   
-   local radius = s * 5 / 2 + 10
-   
-   if t.xformstatecount then
-    radius = radius * (1 - (
-      t.xformstatecount
-        / transduration))
-    
-    
-    t.xformstatecount -= 1
-    
-    if t.xformstatecount < 1
-      then
-     t.xformstatecount = nil
-      
-    end
-   end
-   
-   circ(cy,cy, radius, 5)
-   rect(cy-1,cy-1,cy+1,cy+1,5)
-   
-   
-   if btnn(0) then
-    pal(6, 0)
-    bc = 9
-   end
-    
-   local icy = cy
-   local icx = cy - radius
-   
-   rectfill(icx-7, icy-7, icx+6,
-     icy+6, bc)
-   
-   rect(icx-7, icy-7, icx+6,
-     icy+6, 5)
-   
-   spr(64, icx - 8, icy - 8,
-     2, 2, 1) 
-   
-   pal()
-   
-   bc = 0
-   if btnn(1) then
-    pal(6, 0)
-    bc = 9
-   end
-    
-   icx = cy + radius
-   rectfill(icx-7, icy-7, icx+6,
-     icy+6, bc)
-   
-   rect(icx-7, icy-7, icx+6,
-     icy+6, 5)
-   
-   spr(64, icx-8, icy-8,
-     2, 2)
-   pal()
+  
+  if t.state == st_xformmenu
+    then
+   t:drawmenu(64, 96, 66, 98)
   end
  
   
@@ -191,16 +305,9 @@ function make_piece_debug()
    
    rectfill(x1, y1, x2, y2, col)
    
-   clipc(x1,y1,x2-x1+1,y2-y1+1)
-   map(0,0,-(g_tick % 8)-8,0,10,10)
-   --pushc(-(g_tick % (s*5)), 0) 
-   --line(0,0,s*5,s*5,7)
-   --line(-(s*5),0,0,s*5,7)
-   --line(-(s*5)/2,0,s*5/2,s*5,7)
-   
-   --popc()
-   
-   clip()
+   --clipc(x1,y1,x2-x1+1,y2-y1+1)
+   --map(0,0,-(g_tick % 8)-8,0,10,10)
+   --clip()
    
   
   end
@@ -593,16 +700,16 @@ f000f000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000006000000000000000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000066000000000000006060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000666660000000000060006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000066006000000000666666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000006000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000600000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000600000600000000666666600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000060006000000000060006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000006660000000000006060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
