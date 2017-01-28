@@ -11,7 +11,7 @@ function _init()
  add(g_objs,
    make_level_debug())
  add(g_objs,
-   make_piece_debug())
+   make_block())
 
 end
 
@@ -24,9 +24,7 @@ function _draw()
  stddraw()
 end
 
-function make_piece_debug()
-
- sprcpy(workspr1, 14)
+function make_block()
  
  local k_transduration = 4
  
@@ -35,6 +33,8 @@ function make_piece_debug()
  local st_rotateleft = 2
  local st_rotateright = 3
  local st_blockmenu = 4
+ local st_stowed = 5
+ local st_placed = 6
  
  local dir_left={-1,0}
  local dir_right={1,0}
@@ -49,15 +49,13 @@ function make_piece_debug()
  
  
  local t = {
- x=24,y=24,
- which=0,
- count=12,
- scale=8,
+  x=24,y=24,
+  which=0,
+  count=12,
+  scale=8,
  
- state=st_idle,
- 
- 
- 
+  state=st_idle,
+  
  update_state=function(t,s)
   
   if t.state == st_idle then
@@ -177,9 +175,6 @@ function make_piece_debug()
      t.count
    
    t:updategeo()
-   --todo update geo
-   sprcpy(workspr1,
-     t.which+48)
      
    t:setprevnext()
   elseif btnn(1) then
@@ -187,13 +182,8 @@ function make_piece_debug()
      t.count
    
    t:updategeo()
-   
-   --todo read from
-   sprcpy(workspr1,
-     t.which+48) 
-   
-   
    t:setprevnext()
+   
   end
   
   if btn(2) then
@@ -213,23 +203,31 @@ function make_piece_debug()
  update=function(t,s)
   t:update_state(t,s)
  end,
+
+ getspr=function(t)
+  --todo, this will replace
+  --which as a fixed function
+  --deal
+  
+  return t.which+48
+ end,
  
  syncout=function(t)
-  sprcpy(t.which+48, workspr1)
+  sprcpy(t:getspr(), workspr1)
   t:updategeo()
  end,
  
  syncin=function(t)
-   sprcpy(workspr1, t.which+48)
+   sprcpy(workspr1, t:getspr())
  end,
  
  updategeo=function(t)
   
   local x, y =
-    getsprxy(t.which+48)
+    getsprxy(t:getspr())
   
   local segs, rects, col =
-    make_spr_outline(
+    get_spr_outline(
        x, y, 5, 5)
   
   t.segs = segs
@@ -310,6 +308,7 @@ function make_piece_debug()
  end,
  
  setprevnext=function(t)
+  --todo reference other blocks
   
   local prev = 
     (t.which - 1) % t.count
@@ -322,7 +321,6 @@ function make_piece_debug()
   
   t:makeblockmenuspr(
     100, 48+next)
-    
   
  end,
  
@@ -443,7 +441,7 @@ end
 
 
 
-function make_spr_outline(
+function get_spr_outline(
   x, y, w, h)
  local result = {}
  local rects = {}
@@ -865,6 +863,7 @@ f000f000000000000000000000000000000000000000000000000000000000000000000000000000
 602cead64b000000901942cead6000007012cead389b000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6042ce3bda000000904cead63b80000070194a63bd28000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6092ad63c400000090192ced638000007042ced63b8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
