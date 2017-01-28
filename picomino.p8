@@ -48,7 +48,7 @@ function make_piece_debug()
  }
  
  
- return {
+ local t = {
  x=24,y=24,
  which=0,
  count=12,
@@ -123,28 +123,34 @@ function make_piece_debug()
   end
   
   if btnn(0) then
+    t:syncin()
     sprcpy(workspr2, workspr1)
     rotate_spr_data(
       workspr2*8, 0, workspr1*8,
         0, 5, false)
-  
+    t:syncout()
   elseif btnn(1) then
+    t:syncin()
     sprcpy(workspr2, workspr1)
   
     rotate_spr_data(
       workspr2*8, 0, workspr1*8,
         0, 5, true)
-  
+    t:syncout()
   elseif btnn(2) then
+   t:syncin()
    sprcpy(workspr2, workspr1)  
   	flip_spr_data(
   	 workspr2*8, 0, workspr1*8,
         0, 5)
+   t:syncout()
   elseif btnn(3) then
+   t:syncin()
    sprcpy(workspr2, workspr1)  
   	flip_spr_data(
   	 workspr2*8, 0, workspr1*8,
         0, 5, true)
+   t:syncout()
   end
   
  
@@ -169,6 +175,9 @@ function make_piece_debug()
   if btnn(0) then
    t.which = (t.which - 1) %
      t.count
+   
+   t:updategeo()
+   --todo update geo
    sprcpy(workspr1,
      t.which+48)
      
@@ -176,8 +185,13 @@ function make_piece_debug()
   elseif btnn(1) then
    t.which = (t.which + 1) %
      t.count
+   
+   t:updategeo()
+   
+   --todo read from
    sprcpy(workspr1,
      t.which+48) 
+   
    
    t:setprevnext()
   end
@@ -197,33 +211,30 @@ function make_piece_debug()
  end,
  
  update=function(t,s)
-  
   t:update_state(t,s)
-  --[[
-  if btnn(4) then
-   t.xformstatecount =
-     k_transduration 
-  end
+ end,
+ 
+ syncout=function(t)
+  sprcpy(t.which+48, workspr1)
+  t:updategeo()
+ end,
+ 
+ syncin=function(t)
+   sprcpy(workspr1, t.which+48)
+ end,
+ 
+ updategeo=function(t)
   
-  if btn(5) then
-   
+  local x, y =
+    getsprxy(t.which+48)
   
-   if btn(2) then
-    if t.scale > 1 then
-     t.scale = t.scale - 1
-    end
-   end
+  local segs, rects, col =
+    make_spr_outline(
+       x, y, 5, 5)
   
-   if btn(3) then
-    if t.scale < 100 then
-     t.scale = t.scale + 1
-    end
-   end
-  
-   
-  end
-  --]]
-  
+  t.segs = segs
+  t.rects = rects
+  t.col = col
  end,
  
  drawmenu=function(t,
@@ -317,10 +328,9 @@ function make_piece_debug()
  
  makeblockmenuspr=function(t,
    dst, src)
-  local sx = (src % 16) * 8
-  local sy = flr(src/16) * 8
-  local dx = (dst % 16) * 8
-  local dy = flr(dst/16) * 8
+   
+  local sx, sy = getsprxy(src)
+  local dx, dy = getsprxy(dst)
   
   for y = 0, 4 do
    for x = 0, 4 do
@@ -341,6 +351,9 @@ function make_piece_debug()
   
   local s = t.scale
   
+  for i = 0, t.count-1 do
+   spr(48+i, i*6-20, -10)
+  end
   
   if t.state == st_xformmenu
     then
@@ -351,13 +364,13 @@ function make_piece_debug()
    t:drawmenu(68, 100)
   end
  
+  t:drawblock(t.segs,
+    t.rects, t.col, s)
   
-  local segs, rects, col =
-    make_spr_outline(
-       workspr1*8, 0, 5, 5)
+ end,
  
-  
- 
+ drawblock=function(
+   t, segs, rects, col, s)
   for i=1,#rects do
    local r = rects[i]
    
@@ -386,9 +399,14 @@ function make_piece_debug()
    line(p1[1]*s, p1[2]*s,
      p2[1]*s, p2[2]*s, c)
   end
-  
+ 
  end
+ 
  }
+ 
+ t:updategeo()
+ 
+ return t
 end
 
 function make_level_debug()
@@ -572,9 +590,15 @@ end
 
 -- end level data functions
 
+function getsprxy(n)
+ return (n % 16) * 8,
+   flr(n/16) * 8
+end
+
 function getspraddr(n)
  return flr(n/16)*512+(n%16)*4
 end
+
 
 function sprcpy(dst,src,w,h)
  w = w or 1
