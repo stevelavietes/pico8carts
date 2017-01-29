@@ -11,7 +11,7 @@ function _init()
  --add(g_objs,
  --  make_level_debug())
  
- add(g_objs, make_board(50))
+ add(g_objs, make_board(2))
 
  
  
@@ -32,6 +32,11 @@ function make_board(level)
      get_level_data(level)
  
  local fullscale = 7
+ local stowedscale = 3
+ local stowedypos = fullscale*8
+ local stowedxwidth =
+   stowedscale*5
+ 
  local blocks = {}
 
  for i = 1, #seq do
@@ -42,7 +47,7 @@ function make_board(level)
    return bspr
   end
   b.scale = 3
-  b.x = (i-1) * 3 * 5
+  b.x = (i-1) * stowedxwidth
   b.y = fullscale * 5 + 4
   b:updategeo()
   b.state = 6
@@ -76,14 +81,19 @@ function make_board(level)
    --print ('Ž—', 0, 0, 5) 
    --print (#t.pieces, 0, 8)
    
-   print(t.startcount +
-     t.subcount, 0, -10, 6)
      
    local s = fullscale
+   
+   local w = t.startcount +
+     t.subcount
+   
+   local tw = #t.blocks
+   
+   rectfill(w*s,0,s*tw,s*5,13)
    for i = 0, 5 do
-    line(0, i*s, s*12, i*s, 1)
+    line(0, i*s, s*tw, i*s, 1)
    end
-   for i = 0, 12 do
+   for i = 0, tw do
     line(i*s, 0, i*s, s*5, 1)
    end
    
@@ -120,6 +130,7 @@ function make_board(level)
     b.state = 4
     b.x = 0
     b.y = 0
+    b.skip = 1
     
     b:setprevnext()
     board.activeblock = b
@@ -128,9 +139,9 @@ function make_board(level)
     
     t.scale = 3
     t.state = 6
-    t.x = (t.index) * 3 * 5
-    t.y = fullscale * 7
-    
+    t.x = (t.index) *
+      stowedxwidth
+    t.y = stowedypos
     
    end
    
@@ -148,14 +159,12 @@ function make_board(level)
     if b != t.activeblock then
      add(t.objs, b) 
      
-     b.x = (b.index) * 3 * 5
-     b.y = fullscale * 7
+     b.x = (b.index) *
+       stowedxwidth
+     b.y = stowedypos
   
     end
     
-    
-    
-  
     b.setprevnext = pnfnc
     b.nextblock = nextblock
     b.prevblock = prevblock
@@ -239,6 +248,9 @@ function make_block()
   if t.state ~= st_idle then
    t:update_state(t,s)
   else
+   
+   --movement
+   --todo constrain
    if btnn(0) then
     t.x -= t.scale
    end
@@ -340,21 +352,14 @@ function make_block()
    t:nextblock()  
   end
   
-  if btn(2) then
-   if t.scale > 1 then
-    t.scale = t.scale - 1
-   end
-  end
-  
-  if btn(3) then
-   if t.scale < 100 then
-    t.scale = t.scale + 1
-   end
-  end
-   
  end,
  
  update=function(t,s)
+ 
+  if t.skip then
+   t.skip = nil
+   return
+  end
   t:update_state(t,s)
  end,
 
@@ -508,14 +513,6 @@ function make_block()
  draw=function(t)
   local s = t.scale
   
-  if t.index then
-   print(t.index, 0,0,7)
-  end
-  --[[
-  for i = 0, t.count-1 do
-   spr(48+i, i*6-20, -10)
-  end
-  --]]
   if t.state == st_xformmenu
     then
    t:drawmenu(64, 96, 66, 98)
@@ -1026,7 +1023,6 @@ f000f000000000000000000000000000000000000000000000000000000000000000000000000000
 602cead64b000000901942cead6000007012cead389b000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6042ce3bda000000904cead63b80000070194a63bd28000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6092ad63c400000090192ced638000007042ced63b8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
