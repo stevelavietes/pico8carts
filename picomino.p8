@@ -8,11 +8,22 @@ function _init()
  workspr1 = 5
  workspr2 = 7
  
- add(g_objs,
-   make_level_debug())
+ --add(g_objs,
+ --  make_level_debug())
+ 
+ add(g_objs, make_board(1))
  add(g_objs,
    make_block())
-
+ 
+ g_objs[#g_objs].x = 64
+ --local b = make_block()
+ --b.which = 2
+ --b.x = 32
+ --b.y = 64
+ --b:updategeo()
+ --add(g_objs, b)
+ 
+ 
 end
 
 function _update()
@@ -22,6 +33,50 @@ end
 function _draw()
  cls()
  stddraw()
+end
+
+function make_board(level)
+ 
+ local startcount, seq =
+     get_level_data(level)
+ 
+ local blocks = {}
+ for i = 1, #seq do
+  local b = make_block()
+  local bspr = seq[i]
+  
+  b.getspr = function(t)
+   return bspr
+  end
+  b.scale = 3
+  b.x = (i-1) * 3 * 5
+  b.y = 0
+  b:updategeo()
+  b.state = 6
+  add(blocks, b)
+  add(g_objs, b)
+ end
+ 
+ blocks[1].state = 0
+ 
+ local t = {
+  x=0,y=0,
+  level=level,
+  startcount=startcount,
+  subcount=0,
+  seq=seq,
+  blocks=blocks,
+  update=function(t,s)
+  end,
+  draw=function(t,s)
+   print ('Ž—', 0, 0, 5) 
+   --print (#t.pieces, 0, 8)
+   
+  end
+ }
+
+ return t
+ 
 end
 
 function make_block()
@@ -49,7 +104,7 @@ function make_block()
  
  
  local t = {
-  x=24,y=24,
+  x=0,y=0,
   which=0,
   count=12,
   scale=8,
@@ -346,13 +401,13 @@ function make_block()
  end,
  
  draw=function(t)
-  
   local s = t.scale
   
+  --[[
   for i = 0, t.count-1 do
    spr(48+i, i*6-20, -10)
   end
-  
+  --]]
   if t.state == st_xformmenu
     then
    t:drawmenu(64, 96, 66, 98)
