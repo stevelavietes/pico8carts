@@ -11,17 +11,8 @@ function _init()
  --add(g_objs,
  --  make_level_debug())
  
- add(g_objs, make_board(1))
- add(g_objs,
-   make_block())
- 
- g_objs[#g_objs].x = 64
- --local b = make_block()
- --b.which = 2
- --b.x = 32
- --b.y = 64
- --b:updategeo()
- --add(g_objs, b)
+ add(g_objs, make_board(50))
+
  
  
 end
@@ -40,7 +31,9 @@ function make_board(level)
  local startcount, seq =
      get_level_data(level)
  
+ local fullscale = 7
  local blocks = {}
+
  for i = 1, #seq do
   local b = make_block()
   local bspr = seq[i]
@@ -50,31 +43,133 @@ function make_board(level)
   end
   b.scale = 3
   b.x = (i-1) * 3 * 5
-  b.y = 0
+  b.y = fullscale * 5 + 4
   b:updategeo()
   b.state = 6
+  b.index = i - 1
   add(blocks, b)
-  add(g_objs, b)
+  
  end
  
  blocks[1].state = 0
+ blocks[1].scale = fullscale
+ blocks[1].x = 0
+ blocks[1].y = 0
+ 
+ 
  
  local t = {
-  x=0,y=0,
+  x=(128 - fullscale*12)/2,y=32,
   level=level,
   startcount=startcount,
   subcount=0,
   seq=seq,
   blocks=blocks,
+  
+  activeblock=blocks[1],
+  
   update=function(t,s)
+   updateobjs(t.objs)
   end,
+  
   draw=function(t,s)
-   print ('Ž—', 0, 0, 5) 
+   --print ('Ž—', 0, 0, 5) 
    --print (#t.pieces, 0, 8)
    
-  end
+   print(t.startcount +
+     t.subcount, 0, -10, 6)
+     
+   local s = fullscale
+   for i = 0, 5 do
+    line(0, i*s, s*12, i*s, 1)
+   end
+   for i = 0, 12 do
+    line(i*s, 0, i*s, s*5, 1)
+   end
+   
+   drawobjs(t.objs)
+  end,
+  
+  updategeo=function(t)
+   t.objs = {}
+   
+   local width = t.startcount +
+     t.subcount
+   local blocks = t.blocks
+   local board = t
+   
+   function pnfnc(t)
+    local prev =
+      (t.index - 1) % width
+    local next =
+      (t.index + 1) % width
+    t:makeblockmenuspr(
+      68, blocks[
+        prev + 1]:getspr())
+    t:makeblockmenuspr(
+      100, blocks[
+        next + 1]:getspr())
+   end
+   
+   function goblock(t, o)
+    local n =
+      (t.index + o) % width
+    
+    local b = blocks[n+1]
+    b.scale = fullscale
+    b.state = 4
+    b.x = 0
+    b.y = 0
+    
+    b:setprevnext()
+    board.activeblock = b
+    
+    sfx(0)
+    
+    t.scale = 3
+    t.state = 6
+    t.x = (t.index) * 3 * 5
+    t.y = fullscale * 7
+    
+    
+   end
+   
+   function prevblock(t)
+    goblock(t, -1)
+   end
+   
+   function nextblock(t)
+    goblock(t, 1)
+   end
+   
+   
+   for i = 1, width do
+    local b = t.blocks[i]
+    if b != t.activeblock then
+     add(t.objs, b) 
+     
+     b.x = (b.index) * 3 * 5
+     b.y = fullscale * 7
+  
+    end
+    
+    
+    
+  
+    b.setprevnext = pnfnc
+    b.nextblock = nextblock
+    b.prevblock = prevblock
+   end
+   
+   add(t.objs, t.activeblock)
+   
+  end,
+  
+  objs={}
  }
 
+ t:updategeo()
+ 
  return t
  
 end
@@ -210,6 +305,20 @@ function make_block()
   
  end,
  
+ nextblock=function(t)
+  t.which = (t.which + 1) %
+    t.count
+  t:updategeo()   
+  t:setprevnext()
+ end,
+ 
+ prevblock=function(t)
+  t.which = (t.which + 1) %
+     t.count
+  t:updategeo()
+  t:setprevnext()
+ end,
+ 
  update_blockmenu=function(t,s)
   if not btn(5) then
    t.state = st_idle
@@ -226,19 +335,9 @@ function make_block()
   end
   
   if btnn(0) then
-   t.which = (t.which - 1) %
-     t.count
-   
-   t:updategeo()
-     
-   t:setprevnext()
+   t:prevblock()
   elseif btnn(1) then
-   t.which = (t.which + 1) %
-     t.count
-   
-   t:updategeo()
-   t:setprevnext()
-   
+   t:nextblock()  
   end
   
   if btn(2) then
@@ -298,7 +397,7 @@ function make_block()
   local s = t.scale
   local cy = s*5/2
   local bc = 0
-  local radius = s * 5 / 2 + 10
+  local radius = s * 5 / 2 + 9
   
   if t.xformstatecount then
    radius = radius * (1 - (
@@ -351,7 +450,13 @@ function make_block()
   
   rectfill(icx-7, icy-7, icx+6,
     icy+6, bc)
-   
+  
+  line(icx-6, icy+7, icx+7,
+    icy+7, 1)
+  
+  line(icx+7, icy-6, icx+7,
+    icy+7, 1)
+  
   rect(icx-7, icy-7, icx+6,
     icy+6, 5)
    
@@ -403,6 +508,9 @@ function make_block()
  draw=function(t)
   local s = t.scale
   
+  if t.index then
+   print(t.index, 0,0,7)
+  end
   --[[
   for i = 0, t.count-1 do
    spr(48+i, i*6-20, -10)
@@ -956,7 +1064,7 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000100003c1503c1503c1503c15000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
