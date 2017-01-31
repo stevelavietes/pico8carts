@@ -130,8 +130,40 @@ function make_board(level)
        for bi = 1, #t.blocks do
         local b2 = t.blocks[bi]
         
-        if b1 != b2 then
-        
+        if b != b2
+          and b2.state ==
+            st_placed then
+         
+         local b2x =
+           flr(b2.x / b2.scale)
+         
+         local b2y =
+           flr(b2.y / b2.scale)
+         
+         local s2x, s2y =
+           getsprxy(
+             b2:getspr())
+         
+         local dx =
+           bx - b2x + x
+         local dy =
+           by - b2y + y
+         
+         if dx >= 0
+           and dx < 5
+           and dy >= 0
+           and dy < 5
+           and sget(s2x + dx,
+             s2y + dy) > 0 then
+          
+          add(o, y*5+x)
+         end
+         
+         
+         -- todo, find spr
+         -- offset
+         
+         
         end
        
        end
@@ -201,26 +233,39 @@ function make_board(level)
     
     local b = blocks[n+1]
     b.scale = fullscale
+    
+    if b.state != st_placed
+      then
+     b.x = 0
+     b.y = 0
+    end
+    
     b.state = st_blockmenu
-    b.x = 0
-    b.y = 0
+    
+    
+    
     b.skip = 1
     
     b:setprevnext()
     board.activeblock = b
     
-    sfx(0)
+    --sfx(0)
     
-    t.scale = 3
-    t.state = st_stowed
-    t.x = (t.index) *
-      stowedxwidth
-    t.y = stowedypos
+    if #t.overlap > 0 then
+     t.scale = 3
+     t.state = st_stowed
+    
+     t.x = (t.index) *
+       stowedxwidth
+     t.y = stowedypos
+    
+    else
+     t.state = st_placed
+    end
     
     t.overlap = {}
     
-    add(board.toraise,
-      b)
+    add(board.toraise, b)
     
    end
    
@@ -238,10 +283,12 @@ function make_board(level)
     if b != t.activeblock then
      add(t.objs, b) 
      
-     b.x = (b.index) *
-       stowedxwidth
-     b.y = stowedypos
-  
+     if b.state == st_stowed
+       then
+      b.x = (b.index) *
+        stowedxwidth
+      b.y = stowedypos
+     end
     end
     
     b.setprevnext = pnfnc
@@ -646,6 +693,38 @@ function make_block()
   end
   pal()
   
+  local outline = 
+    g_tick % 16 > 7
+    and t.state != st_stowed
+    and t.state != st_placed
+  
+  if outline then
+   for i=0,#segs/2 -1 do
+    local p1 = segs[i*2+1]
+    local p2 = segs[i*2+2]
+  
+    local horz = p1[2] == p2[2]
+    
+    
+    if horz then
+     local yo = 1
+     if p1[3] then
+      yo = -1
+     end
+     line(p1[1]*s, p1[2]*s+yo,
+       p2[1]*s, p2[2]*s+yo, 15)
+    else
+     local xo = 1
+     if p1[3] then
+      xo = -1
+     end
+         
+    line(p1[1]*s+xo, p1[2]*s,
+      p2[1]*s+xo, p2[2]*s, 15)
+    end
+   end 
+  end  
+   
   for i=0,#segs/2 -1 do
    local p1 = segs[i*2+1]
    local p2 = segs[i*2+2]
@@ -657,7 +736,7 @@ function make_block()
    line(p1[1]*s, p1[2]*s,
      p2[1]*s, p2[2]*s, c)
   end
- 
+  
  end
  
  }
@@ -1123,6 +1202,7 @@ __gfx__
 602cead64b000000901942cead6000007012cead389b000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6042ce3bda000000904cead63b80000070194a63bd28000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 6092ad63c400000090192ced638000007042ced63b8a000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
