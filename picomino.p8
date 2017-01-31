@@ -86,13 +86,13 @@ function make_board(level)
     t.toraise = {}
    end
    
-   t:setactiveoverlap()
+   t:setactiveoverlap(s)
    
-   --todo, set overlap
+   
    
   end,
   
-  setactiveoverlap=function(t)
+  setactiveoverlap=function(t,s)
    if not t.activeblock then
     return
    end
@@ -175,8 +175,40 @@ function make_board(level)
    
    b.overlap = o
    
-   --todo
-  
+   -- now check if the rest
+   -- are placed
+   if #o == 0 then
+    
+    local allplaced = true
+    for i = 1, w do
+     local b2 = t.blocks[i]
+     if b2 != b and
+       b2.state != st_placed
+         then
+      allplaced = false
+      break  
+     end
+    end
+   
+    if allplaced then
+     t.subcount += 1
+     
+     if t.startcount
+       + t.subcount > #t.blocks
+         then
+      del(s, t)
+      add(s, make_board(
+        t.level + 1))
+     else
+      
+      t:updategeo()
+     end
+     
+    end
+    
+   end
+   
+   
   end,
   
   
@@ -185,7 +217,11 @@ function make_board(level)
   draw=function(t,s)
    --print ('Ž—', 0, 0, 5) 
    --print (#t.pieces, 0, 8)
-   
+   print('level '
+     .. level
+     ..'-'
+     .. t.subcount + 1,
+       -t.x, -t.y, 7)
      
    local s = fullscale
    
@@ -688,7 +724,7 @@ function make_block()
    local x = (v%5)*s
    
    clipc(x,y,s+1,s+1)
-   map(0,0, 0, g_tick%8, 6,6)
+   map(0,0, 0, -(g_tick%8), 6,6)
    clip()
   end
   pal()
@@ -705,14 +741,13 @@ function make_block()
   
     local horz = p1[2] == p2[2]
     
-    
     if horz then
      local yo = 1
      if p1[3] then
       yo = -1
      end
      line(p1[1]*s, p1[2]*s+yo,
-       p2[1]*s, p2[2]*s+yo, 15)
+       p2[1]*s, p2[2]*s+yo, 6)
     else
      local xo = 1
      if p1[3] then
@@ -720,7 +755,7 @@ function make_block()
      end
          
     line(p1[1]*s+xo, p1[2]*s,
-      p2[1]*s+xo, p2[2]*s, 15)
+      p2[1]*s+xo, p2[2]*s, 6)
     end
    end 
   end  
