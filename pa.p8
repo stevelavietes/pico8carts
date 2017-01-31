@@ -474,7 +474,7 @@ function update_fall(b)
    --print(t.g)
    --print(t.gm)
    --stop()
-  elseif (elapsed(t.s) > 0) then
+  elseif elapsed(t.s) > 0 then
    -- execute the fall
    t.s = nil
    t.ss = nil
@@ -828,8 +828,7 @@ function send_garb(sx,sy,b,gb,e)
   sx=sx,sy=sy,b=b,gb=gb,e=e,
   update=function(t,s)
    if elapsed(t.e)>15 then
-    for gb in all(
-      garb_size(t.gb)) do
+    for gb in all(garb_size(t.gb)) do
      add(t.b.gq,gb)
     end
     del(s,t)
@@ -1131,7 +1130,7 @@ function make_winlose(
 
     local y = -24+8*sin((elapsed(t.e+10*offset) % 60)/60)
 
-    if (0 == n) then 
+    if 0 == n then 
      sspr(0, 96, 8, 8, origin, y, 32, 32)
     else
      while digit > n*10  do
@@ -1221,7 +1220,9 @@ function make_vsscore()
     spr(72+i,1,1)
     local v = g_wins[i+1]
     local pad=' '
-    if (v>9) pad=''
+    if v>9 then
+     pad=''
+    end
     print(pad..v,8,2,0)
     popc()
    end
@@ -1295,7 +1296,7 @@ function make_garbscore(b)
    end
    pal(14, 6)
 
-   if (0 == n) then 
+   if 0 == n then 
     spr(192, offset, 1)
    else
     while digit > n*10  do
@@ -1401,7 +1402,9 @@ function make_1playgarb(b)
  return {
   --b=b,
   update=function(t)
-   if (b.st~=0) return
+   if b.st~=0 then
+    return
+   end
    --every two seconds
    if g_tick%60>=59 then
     --increased odds by level
@@ -1444,13 +1447,19 @@ function make_clock(b)
   draw=function(t)
    rectfill(-1,-1,19,5,6)
    local mp,sp = '',''
-   if (t.m<10) mp=0
-   if (t.s<10) sp=0
+   if t.m<10 then
+    mp=0
+   end
+   if t.s<10 then
+    sp=0
+   end
    print(mp..t.m..':'..sp..t.s,
      0,0,0)
   end,
   update=function(t)
-   if (t.b.st~=0) return
+   if t.b.st~=0 then
+    return
+   end
    t.c+=1
    --fixed-point math not
    --accurate enough for
@@ -1508,30 +1517,23 @@ function make_title()
  }
 end
 
-function clamp(val, minval, maxval)
- return max(min(val, maxval), minval)
-end
-
-function smootherstep(edge0, edge1, x)
-  x= clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0);
+function smootherstep(x)
  return x*x*x*(x*(x*6 - 15) + 10);
 end
 
 function add_bg(b,bx,cx)
- addggo({
+ addggo(
+ {
   draw=function()
    local y_start = ((b.o)%8)-8
    local odd = y_start % 2
    map(cx,0,bx,y_start,8,17)
+
    -- @TODO: expensive in CPU and tokens
-   local sy_base = ((b.o)%8)-8
    if b.shake_start != nil then
     local current_frame = 128*smootherstep(
-     0,
-     1, 
      1-((elapsed(b.shake_start))/b.shake_time)
     )
-    local width = b.shake_amount
 
     --[[
      because this loop uses pget() and pset(), it is extremely expensive.  to
@@ -1595,7 +1597,9 @@ function make_menu(
    spr(48,-x,3+10*t.i)
   end,
   update=function(t,s)
-   if (t.off) return
+   if t.off then 
+    return
+   end
    if elapsed(t.s)<(t.e*2) then
     return
    end
@@ -1922,7 +1926,9 @@ function addggo(t)
 end
 
 function trans(s)
- if (s<1) return
+ if s<1 then
+  return
+ end
  s=2^s
  local b,m,o =
    0x6000,
