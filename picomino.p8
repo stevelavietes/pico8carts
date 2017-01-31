@@ -11,7 +11,7 @@ function _init()
  --add(g_objs,
  --  make_level_debug())
  
- add(g_objs, make_board(2))
+ add(g_objs, make_board(1))
 
  
  
@@ -50,7 +50,7 @@ function make_board(level)
   b.x = (i-1) * stowedxwidth
   b.y = fullscale * 5 + 4
   b:updategeo()
-  b.state = 6
+  b.state = st_stowed
   b.index = i - 1
   add(blocks, b)
   
@@ -64,18 +64,91 @@ function make_board(level)
  
  
  local t = {
-  x=(128 - fullscale*12)/2,y=32,
+  x=(128 - fullscale*#blocks)/2,y=32,
   level=level,
   startcount=startcount,
   subcount=0,
   seq=seq,
   blocks=blocks,
-  
+  toraise={},
   activeblock=blocks[1],
   
   update=function(t,s)
    updateobjs(t.objs)
+   
+   if #t.toraise > 0 then
+   
+    for i = 1, #t.toraise do
+     del(t.objs, t.toraise[i])
+     add(t.objs, t.toraise[i])
+    end
+   
+    t.toraise = {}
+   end
+   
+   t:setactiveoverlap()
+   
+   --todo, set overlap
+   
   end,
+  
+  setactiveoverlap=function(t)
+   if not t.activeblock then
+    return
+   end
+   
+   local b = t.activeblock
+   local bx = flr(b.x / b.scale)
+   local by = flr(b.y / b.scale)
+   
+   local sx, sy = getsprxy(
+     b:getspr())
+   
+   local o = {}
+   
+   local w = t.startcount +
+     t.subcount
+   
+   for y = 0, 4 do
+    for x = 0, 4 do
+     if sget(sx+x, sy+y) > 0
+       then
+      
+      
+      if x + bx >= w
+        or x + bx < 0
+        or y + by > 4
+        or y + by < 0
+          then
+        add(o, y*5+x)
+        
+      else
+       
+       -- todo check against
+       -- stowed blocks
+       
+       for bi = 1, #t.blocks do
+        local b2 = t.blocks[bi]
+        
+        if b1 != b2 then
+        
+        end
+       
+       end
+       
+      end
+     end
+    end
+   end
+   
+   b.overlap = o
+   
+   --todo
+  
+  end,
+  
+  
+  
   
   draw=function(t,s)
    --print ('Ž—', 0, 0, 5) 
@@ -89,7 +162,8 @@ function make_board(level)
    
    local tw = #t.blocks
    
-   rectfill(w*s,0,s*tw,s*5,13)
+   rectfill(w*s, 0,s*tw,
+     s*5, 13)
    for i = 0, 5 do
     line(0, i*s, s*tw, i*s, 1)
    end
@@ -127,7 +201,7 @@ function make_board(level)
     
     local b = blocks[n+1]
     b.scale = fullscale
-    b.state = 4
+    b.state = st_blockmenu
     b.x = 0
     b.y = 0
     b.skip = 1
@@ -138,10 +212,15 @@ function make_board(level)
     sfx(0)
     
     t.scale = 3
-    t.state = 6
+    t.state = st_stowed
     t.x = (t.index) *
       stowedxwidth
     t.y = stowedypos
+    
+    t.overlap = {}
+    
+    add(board.toraise,
+      b)
     
    end
    
@@ -183,17 +262,20 @@ function make_board(level)
  
 end
 
+-- block states
+st_idle = 0
+st_xformmenu = 1
+st_rotateleft = 2
+st_rotateright = 3
+st_blockmenu = 4
+st_stowed = 5
+st_placed = 6
+ 
 function make_block()
  
  local k_transduration = 4
  
- local st_idle = 0
- local st_xformmenu = 1
- local st_rotateleft = 2
- local st_rotateright = 3
- local st_blockmenu = 4
- local st_stowed = 5
- local st_placed = 6
+ 
  
  local dir_left={-1,0}
  local dir_right={1,0}
@@ -212,7 +294,8 @@ function make_block()
   which=0,
   count=12,
   scale=8,
- 
+  
+  overlap={},
   state=st_idle,
   
  update_state=function(t,s)
@@ -410,7 +493,7 @@ function make_block()
        / k_transduration))
   end
   
-  circ(cy,cy, radius, 5)
+  circ(cy,cy, radius, 6)
   rect(cy-1,cy-1,cy+1,cy+1,5)
   
   if leftspr then
@@ -463,7 +546,7 @@ function make_block()
     icy+7, 1)
   
   rect(icx-7, icy-7, icx+6,
-    icy+6, 5)
+    icy+6, 6)
    
   spr(wspr, icx - 8, icy - 8,
     2, 2, 1) 
@@ -473,8 +556,8 @@ function make_block()
  end,
  
  setprevnext=function(t)
-  --todo reference other blocks
-  
+  --overriden
+  --[[
   local prev = 
     (t.which - 1) % t.count
   
@@ -486,7 +569,7 @@ function make_block()
   
   t:makeblockmenuspr(
     100, 48+next)
-  
+  --]]
  end,
  
  makeblockmenuspr=function(t,
@@ -545,7 +628,24 @@ function make_block()
    
   
   end
- 
+  
+  if col == 8 then
+   pal(7, 13)
+  else
+   pal(7, 8)
+  end
+  
+  for i = 1, #t.overlap do
+   local v = t.overlap[i]
+   local y = flr(v/5)*s
+   local x = (v%5)*s
+   
+   clipc(x,y,s+1,s+1)
+   map(0,0, 0, g_tick%8, 6,6)
+   clip()
+  end
+  pal()
+  
   for i=0,#segs/2 -1 do
    local p1 = segs[i*2+1]
    local p2 = segs[i*2+2]
@@ -903,14 +1003,14 @@ __gfx__
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000f000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00f000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0f000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-f000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000f000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00f000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0f000f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-f000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00070007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+07000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+70007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00070007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+07000700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+70007000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006060000000000000000000000000000
