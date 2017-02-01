@@ -793,6 +793,7 @@ function make_block()
    pal(7, 8)
   end
   
+  
   for i = 1, #t.overlap do
    local v = t.overlap[i]
    local y = flr(v/5)*s
@@ -834,6 +835,10 @@ function make_block()
     end
    end 
   end  
+  
+  local placed =
+    t.state == st_placed
+  
    
   for i=0,#segs/2 -1 do
    local p1 = segs[i*2+1]
@@ -842,6 +847,9 @@ function make_block()
    local c = 5
    if p1[3] then
     c = 7
+   end
+   if placed then
+    c = 1
    end
    line(p1[1]*s, p1[2]*s,
      p2[1]*s, p2[2]*s, c)
