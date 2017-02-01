@@ -51,9 +51,9 @@ function _draw()
  cls()
  rectfill(0,0,127,127,5)
  draw_gobjs(g_go)
- print('cpu:'..
-  (flr(stat(1)*100))..'%',100,0,
-   7)
+--  print('cpu:'..
+--   (flr(stat(1)*100))..'%',100,0,
+--    7)
 end
 --
 function make_row(
@@ -1792,6 +1792,7 @@ function start_game(np)
    bs[i].r=lv[i].r
   end
   bs[2].x=70
+  bs[2].noshake_x =70
   bs[1].ob=bs[2]
   bs[2].ob=bs[1]
 
