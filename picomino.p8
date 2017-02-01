@@ -35,7 +35,7 @@ function make_board(level)
  local stowedscale = 3
  local stowedypos = fullscale*8
  local stowedxwidth =
-   stowedscale*5
+   stowedscale*4.5
  
  local blocks = {}
 
@@ -58,8 +58,8 @@ function make_board(level)
  
  blocks[1].state = 0
  blocks[1].scale = fullscale
- blocks[1].x = 0
- blocks[1].y = 0
+ blocks[1].x = -4 * fullscale
+ blocks[1].y = -0 * fullscale
  
  
  
@@ -107,8 +107,7 @@ function make_board(level)
    
    local o = {}
    
-   local w = t.startcount +
-     t.subcount
+   local w = t:getwidth()
    
    for y = 0, 4 do
     for x = 0, 4 do
@@ -194,9 +193,8 @@ function make_board(level)
     if allplaced then
      t.subcount += 1
      
-     if t.startcount
-       + t.subcount > #t.blocks
-         then
+     if t:getwidth() >
+       #t.blocks then
       del(s, t)
       add(s, make_board(
         t.level + 1))
@@ -245,11 +243,15 @@ function make_board(level)
    drawobjs(t.objs)
   end,
   
+  getwidth=function(t)
+   return t.startcount + 
+     t.subcount
+  end,
+  
   updategeo=function(t)
    t.objs = {}
    
-   local width = t.startcount +
-     t.subcount
+   local width = t:getwidth()
    
    --todo, anim target  
    t.x = 
@@ -281,9 +283,10 @@ function make_board(level)
     
     if b.state != st_placed
       then
-     b.x = 0
+     b.x = -4 * fullscale
      b.y = 0
     end
+    
     
     b.state = st_blockmenu
     
@@ -297,13 +300,9 @@ function make_board(level)
     --sfx(0)
     
     if #t.overlap > 0 then
-     t.scale = 3
-     t.state = st_stowed
-    
-     t.x = (t.index) *
-       stowedxwidth
-     t.y = stowedypos
-    
+     
+     board:stowblock(t)
+     
     else
      t.state = st_placed
     end
@@ -322,7 +321,21 @@ function make_board(level)
     goblock(t, 1)
    end
    
-   
+   function stowothers(t)
+    --todo
+    for i = 1, width do
+     local b = board.blocks[i]
+     
+     if b != t
+       and b.state == st_placed
+         then
+       board:stowblock(b)
+      
+     end
+     
+    end
+   end
+    
    for i = 1, width do
     local b = t.blocks[i]
     if b != t.activeblock then
@@ -330,19 +343,64 @@ function make_board(level)
      
      if b.state == st_stowed
        then
-      b.x = (b.index) *
-        stowedxwidth
-      b.y = stowedypos
+      t:stowblock(b)
      end
     end
     
     b.setprevnext = pnfnc
     b.nextblock = nextblock
     b.prevblock = prevblock
+    b.stowothers = stowothers
    end
    
    add(t.objs, t.activeblock)
    
+  end,
+  
+  stowblock=function(t,b)
+   b.scale = 3
+   b.state = st_stowed
+    
+   b.x = (b.index) *
+     stowedxwidth
+   b.y = stowedypos
+   
+   t:packstowedblocks()
+  end,
+  
+  packstowedblocks=function(t)
+   local stowedcount =   0
+   local index = 0
+   for i = 1, t:getwidth() do
+    local b = t.blocks[i]
+    
+    if b.state == st_stowed
+      then
+     stowedcount += 1
+     
+    end
+   end
+   
+   
+   local cx = (t:getwidth() *
+     fullscale / 2)
+   
+   local xmin = cx -
+     (stowedcount *
+       stowedxwidth / 2)
+   
+   
+   for i = 1, t:getwidth() do
+    local b = t.blocks[i]
+    if b.state == st_stowed
+      then
+     
+     b.x = xmin +
+       stowedxwidth*index
+     index += 1
+    end
+   
+   end 
   end,
   
   objs={}
@@ -506,6 +564,11 @@ function make_block()
   t:setprevnext()
  end,
  
+ --placeholder
+ stowothers=function(t)
+ 
+ end,
+ 
  update_blockmenu=function(t,s)
   if not btn(5) then
    t.state = st_idle
@@ -526,7 +589,7 @@ function make_block()
   elseif btnn(1) then
    t:nextblock()  
   elseif btnn(3) then
-   --todo, clear stuff
+   t:stowothers()
   end
   
   
@@ -1249,6 +1312,7 @@ __gfx__
 0000000000000000000000000000000000000000000000000000000000000000602cead64b000000901942cead6000007012cead389b00000000000000000000
 00000000000000000000000000000000000000000000000000000000000000006042ce3bda000000904cead63b80000070194a63bd2800000000000000000000
 00000000000000000000000000000000000000000000000000000000000000006092ad63c400000090192ced638000007042ced63b8a00000000000000000000
+
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
