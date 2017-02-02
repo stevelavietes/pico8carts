@@ -343,6 +343,7 @@ function make_board(level)
      
      if b.state == st_stowed
        then
+      t.scale = 3
       t:stowblock(b)
      end
     end
@@ -358,12 +359,12 @@ function make_board(level)
   end,
   
   stowblock=function(t,b)
-   b.scale = 3
+   b.targetscale = 3
    b.state = st_stowed
     
-   b.x = (b.index) *
+   b.targetx = (b.index) *
      stowedxwidth
-   b.y = stowedypos
+   b.targety = stowedypos
    
    t:packstowedblocks()
   end,
@@ -395,7 +396,7 @@ function make_board(level)
     if b.state == st_stowed
       then
      
-     b.x = xmin +
+     b.targetx = xmin +
        stowedxwidth*index
      index += 1
     end
@@ -461,6 +462,58 @@ function make_block()
    
   end
   
+  
+ end,
+ 
+ movetotarget=function(t)
+  
+  local rate = 4
+  
+  if t.targetx then
+   if abs(t.targetx - t.x) <
+     rate then
+    t.x = t.targetx
+    t.targetx = nil
+   else
+    if t.targetx > t.x then
+     t.x += rate
+    else
+     t.x -= rate
+    end
+   end 
+  end
+  
+  if t.targety then
+   if abs(t.targety - t.y) <
+     rate then
+    t.y = t.targety
+    t.targety = nil
+   else
+    if t.targety > t.y then
+     t.y += rate
+    else
+     t.y -= rate
+    end
+   end 
+  end
+  
+  
+  
+  if t.targetscale then
+  	if abs(t.scale
+  	  - t.targetscale) <= 1.25 then
+  	 t.scale = t.targetscale
+  	 t.targetscale = nil
+  	else
+  	 if t.targetscale > t.scale
+  	   then
+  	  t.scale += 1
+  	 else
+  	  t.scale -= 1
+  	 end
+  	
+  	end
+  end
   
  end,
  
@@ -601,6 +654,7 @@ function make_block()
    t.skip = nil
    return
   end
+  t:movetotarget()
   t:update_state(t,s)
  end,
 
