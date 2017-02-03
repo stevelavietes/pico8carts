@@ -11,7 +11,7 @@ function _init()
  --add(g_objs,
  --  make_level_debug())
  
- add(g_objs, make_board(1))
+ add(g_objs, make_board(2))
 
  
  
@@ -273,7 +273,7 @@ function make_board(level)
    
    function resetpos(t)
      t.x =
-      (flr(startcount/2) - 2)
+      (flr(width/2) - 2)
         * fullscale
      t.y = -6 * fullscale
    end
