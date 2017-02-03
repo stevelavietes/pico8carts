@@ -13,7 +13,7 @@ function _init()
  --add(g_objs,
  --  make_level_debug())
  
- add(g_objs, make_board(2))
+ add(g_objs, make_board(1))
 
  
  
