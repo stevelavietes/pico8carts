@@ -48,7 +48,7 @@ function _init()
  }
 
  --disable sound
- --memset(0x3200,0,0x4300-0x3200)
+--  memset(0x3200,0,0x4300-0x3200)
 end
 
 function _update()
@@ -261,9 +261,10 @@ function end_game(b, single_player)
  local score = nil
  if single_player then
   score = b.sb.s
+  addggo(make_enter_score(score))
+ else
+  addggo(make_retry(np))
  end
-
- addggo(make_enter_score(score))
 
   --(g_wp)/2-16,(g_hp)/2-16))
   --hard-wire for tokens
