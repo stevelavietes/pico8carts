@@ -654,10 +654,24 @@ function make_block()
   elseif btnn(1) then
    t:nextblock()  
   elseif btnn(3) then
-   t:stowothers()
+   t.stowcount = 0
   elseif btnn(2) then
    if t.resetpos then
     t:resetpos()
+   end
+  else
+   
+   if t.stowcount then
+    if btn(3) then
+     t.stowcount += 1
+     if t.stowcount > 12 then
+      t:stowothers()
+      t.stowcount = nil
+     end
+    else
+     t.stowcount = nil
+    end
+   
    end
   end
   
@@ -775,29 +789,42 @@ function make_block()
   
   rect(icx-7, icy-7, icx+6,
     icy+6, 6)
-   
-  spr(wspr, icx - 8, icy - 8,
-    2, 2) 
-   
+  
+  if type(wspr) == 'function'
+    then
+   wspr(t, icx-7, icy-7)
+  else
+   spr(wspr, icx - 8, icy - 8,
+     2, 2) 
+  end
+  
   pal()
   
  end,
  
+ drawstowallicon=function(t,
+   x,y)
+  
+  if t.stowcount then
+  
+  
+   rectfill(x+1,
+     y+12 - t.stowcount,
+       x+12, y+12, 9)
+   
+  else
+   rectfill(
+     x+1, y+1, x+12, y+12,0)
+    
+   
+  end
+  
+  spr(70, x-1, y-1,
+     2, 2) 
+ end,
+ 
  setprevnext=function(t)
-  --overriden
-  --[[
-  local prev = 
-    (t.which - 1) % t.count
   
-  local next = 
-    (t.which + 1) % t.count
-  
-  t:makeblockmenuspr(
-    68, 48+prev)
-  
-  t:makeblockmenuspr(
-    100, 48+next)
-  --]]
  end,
  
  makeblockmenuspr=function(t,
@@ -830,7 +857,8 @@ function make_block()
   
   elseif t.state == st_blockmenu
     then
-   t:drawmenu(68, 100, 102, 70)
+   t:drawmenu(68, 100, 102,
+     t.drawstowallicon)
   end
  
   t:drawblock(t.segs,
