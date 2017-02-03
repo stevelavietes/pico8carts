@@ -484,49 +484,40 @@ function make_block()
   local rate = 4
   
   if t.targetx then
-   if abs(t.targetx - t.x) <
-     rate then
-    t.x = t.targetx
+   local x, done =
+     moveto(t.x, t.targetx,
+       rate)
+   t.x = x
+   if done then
     t.targetx = nil
-   else
-    if t.targetx > t.x then
-     t.x += rate
-    else
-     t.x -= rate
-    end
-   end 
+   end
+   
   end
   
   if t.targety then
-   if abs(t.targety - t.y) <
-     rate then
-    t.y = t.targety
+   local y, done =
+     moveto(t.y, t.targety,
+       rate)
+   t.y = y
+   if done then
     t.targety = nil
-   else
-    if t.targety > t.y then
-     t.y += rate
-    else
-     t.y -= rate
-    end
-   end 
+   end
+   
+   
   end
   
-  
-  
   if t.targetscale then
-  	if abs(t.scale
-  	  - t.targetscale) <= 1.25 then
-  	 t.scale = t.targetscale
-  	 t.targetscale = nil
-  	else
-  	 if t.targetscale > t.scale
-  	   then
-  	  t.scale += 1
-  	 else
-  	  t.scale -= 1
-  	 end
-  	
-  	end
+  
+   local s, done =
+     moveto(t.scale,
+       t.targetscale, 1)
+       
+   t.scale = s
+   if done then
+    t.targetscale = nil
+   end
+   
+   
   end
   
  end,
@@ -1289,6 +1280,18 @@ function clipc(x,y,w,h)
  end
  clip(x,y,w,h)
 end
+
+function moveto(s, e, d)
+ if abs(s - e) <= d then
+  return e, true
+ end
+ if s > e then
+  return s - d
+ else
+  return s + d
+ end
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070007
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000700070
