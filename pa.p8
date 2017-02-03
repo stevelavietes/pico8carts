@@ -5,7 +5,19 @@ __lua__
 cartdata("picotris_attack_high_scores")
 alphabet = "abcdefghijklmnopqrstuvwxyz "
 
+function clear_scores()
+ for i=0,63 do
+  dset(i, 1)
+ end
+end
+
 function _init()
+--  clear_scores()
+--  cls()
+--  print(intified("aaa")[3])
+--  print(intified("bbb")[3])
+--  print(intified("zzz")[3])
+--  stop()
  -- globals struct
 
  -- @NOTES: I think the idea of the background is better than its current 
@@ -262,28 +274,34 @@ function load_high_score_table()
  local highscore_table = {}
 
  -- initials
- for entry=0, 63, 4 do
+ for entry=0, 19, 4 do
   local initials = ""
   for i=0, 2 do
    local current = dget(entry+i)
    initials = initials .. sub(alphabet, current, current)
   end
   local score = dget(entry+3) 
-  if initials != "" or score != 0 then
-   add(highscore_table, {initials, score})
-  end
+  add(highscore_table, {initials, score})
  end
  return highscore_table
 end
 
 function make_high_score_list(scores)
  return {
-  x=0,
-  y=0,
+  x=40,
+  y=20,
   draw=function(t)
    local result = load_high_score_table()
+   rectfill(0,0, 2+11*4+2, 2+6*5-1, 5)
+   rectfill(-1,-1, 2+11*4, 2+6*5-2, 6)
+   rect(-2,-2, 2+11*4+1, 2+6*5-2, 0)
    local i=1
    for stuff in all(result) do
+    if i == 1 then
+     color(8)
+    else
+     color(0)
+    end
     print("["..i.."] "..stuff[1]..": "..stuff[2])
     i+=1
    end
@@ -294,7 +312,7 @@ end
 function make_enter_score(score)
  -- load the previous high scores
  local scores = load_high_score_table()
---  local new_score_loc = insert_score_at(scores, score)
+ local new_score_loc = find_new_score_loc(scores, score)
 
  -- assume that score saved to table is sorted
  if not new_score_loc then
@@ -340,13 +358,14 @@ function make_enter_score(score)
     end
    else
     if btnn(4) or btnn(5) then
-     scores = insert_score(scores, t.initials, score)
+     save_score(scores, new_score_loc, t.initials, score)
      addggo(make_retry())
      addggo(make_high_score_list(new_scores))
      del(g_go, t)
     end
    end
 
+   t.initial_str = ""
    for i=1,3 do
     t.initial_str = (t.initial_str..sub(alphabet, t.initials[i], t.initials[i]))
    end
@@ -1757,7 +1776,55 @@ function make_menu(
  return m
 end
 
-function save_scores(scores)
+function intified(str)
+ result = {}
+ for i=1,3 do
+  for l=1,26 do
+   if sub(str, i, i) == sub(alphabet, l, l) then
+    add(result, l)
+   end
+  end
+ end
+ return result
+end
+
+function save_score(scores, new_score_loc, initials, score)
+ new_scores = {}
+ for i=1, max(#scores, new_score_loc) do
+  if i == new_score_loc then
+   add(new_scores, {initials, score})
+   -- print(i..": ".."new: "..initials[1]..initials[2]..initials[3].. " ".. score)
+  end
+
+  if i <= #scores then
+   add(new_scores, {intified(scores[i][1]), scores[i][2]})
+   -- print(i..": "..scores[i][1])
+  end
+ end
+ for i=1, #new_scores do
+  for l=0,2 do
+   dset(4*(i-1)+l, new_scores[i][1][l+1])
+   -- print((i-1)*4+l)
+  end
+  dset(4*(i-1)+3, new_scores[i][2])
+   -- print(3+(i-1)*4)
+ end
+end
+
+function find_new_score_loc(scores, score)
+ if #scores >= 5 and scores[5][2] >= score then
+  return nil
+ end
+
+ ind = 1
+ for scr_tpl in all(scores) do
+  if score > scr_tpl[2] then
+   return ind
+  end
+  ind += 1
+ end
+
+ return ind
 end
 
 function make_retry(np)
@@ -1861,7 +1928,8 @@ function make_main()
     run()
     return
    elseif i == 3 then
-    addggo(make_enter_score(10))
+    addggo(make_high_score_list())
+    -- addggo(make_enter_score(11))
     del(s, t)
     return
    end
