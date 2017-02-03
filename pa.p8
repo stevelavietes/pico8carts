@@ -5,19 +5,14 @@ __lua__
 cartdata("picotris_attack_high_scores")
 alphabet = "abcdefghijklmnopqrstuvwxyz "
 
-function clear_scores()
- for i=0,63 do
-  dset(i, 1)
- end
-end
+-- function clear_scores()
+--  for i=0,63 do
+--   dset(i, 1)
+--  end
+-- end
 
 function _init()
 --  clear_scores()
---  cls()
---  print(intified("aaa")[3])
---  print(intified("bbb")[3])
---  print(intified("zzz")[3])
---  stop()
  -- globals struct
 
  -- @NOTES: I think the idea of the background is better than its current 
@@ -287,24 +282,36 @@ function load_high_score_table()
  return highscore_table
 end
 
+function digits(num)
+ local result = 1
+ while (num/10 >= 1) do
+  result += 1
+  num = flr(num/10)
+ end
+ return result
+end
+
 function make_high_score_list(scores)
+ if not scores then
+  scores = load_high_score_table()
+ end
  return {
   x=40,
   y=20,
+  ndigits=digits(scores[1][2]),
+  scores=scores,
   draw=function(t)
-   local result = load_high_score_table()
-   rectfill(0,0, 2+11*4+2, 2+6*5-1, 5)
-   rectfill(-1,-1, 2+11*4, 2+6*5-2, 6)
-   rect(-2,-2, 2+11*4+1, 2+6*5-2, 0)
-   local i=1
-   for stuff in all(result) do
+   cursor(0, 0)
+   rectfill(0,0, 2+(8+t.ndigits)*4+3, 2+6*5-1, 5)
+   rectfill(-1,-1, 3+(8+t.ndigits)*4, 2+6*5-2, 6)
+   rect(-2,-2, 2+(8+t.ndigits)*4+2, 2+6*5-2, 0)
+   for i, stuff in pairs(scores) do
     if i == 1 then
      color(8)
     else
      color(0)
     end
     print("["..i.."] "..stuff[1]..": "..stuff[2])
-    i+=1
    end
   end
  }
@@ -361,7 +368,7 @@ function make_enter_score(score)
     if btnn(4) or btnn(5) then
      save_score(scores, new_score_loc, t.initials, score)
      addggo(make_retry())
-     addggo(make_high_score_list(new_scores))
+     addggo(make_high_score_list())
      del(g_go, t)
     end
    end
@@ -1231,6 +1238,7 @@ function make_winlose(
   s=68,
   e=g_tick,
   score=score,
+  -- draw giant score
   draw=function(t)
    local y=sin(g_tick/35)*3
    local e=elapsed(t.e)
@@ -1921,7 +1929,7 @@ function make_main()
    '1 player',
    '2 player',
    'exit',
-   'debug_high_score'
+   'show high scores'
   },
   function(t,i,s)
    if i == 2 then
@@ -1929,9 +1937,13 @@ function make_main()
     run()
     return
    elseif i == 3 then
-    addggo(make_high_score_list())
+    if not t.hs_visible then
+     addggo(make_high_score_list())
+    end
+    t.hs_visible = true
+
     -- addggo(make_enter_score(11))
-    del(s, t)
+    -- del(s, t)
     return
    end
    t.off=true
