@@ -855,7 +855,7 @@ function make_block()
   
   if t.state == st_xformmenu
     then
-   t:drawmenu(224, 198, 194,
+   t:drawmenu(224, 192, 194,
      226)
   
   elseif t.state == st_blockmenu
