@@ -807,17 +807,14 @@ function make_block()
  drawstowallicon=function(t,
    x,y)
   
-  if t.stowcount then
   
-  
+  rectfill(
+     x+1, y+1, x+12, y+12,0)
+   
+  if t.stowcount then 
    rectfill(x+1,
      y+12 - t.stowcount,
        x+12, y+12, 9)
-   
-  else
-   rectfill(
-     x+1, y+1, x+12, y+12,0)
-    
    
   end
   
