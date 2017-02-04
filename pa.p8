@@ -15,7 +15,7 @@ function _init()
 --  clear_scores()
  -- globals struct
 
- -- @NOTES: I think the idea of the background is better than its current 
+ -- @notes: i think the idea of the background is better than its current 
  --         implementation
  --         maybe we can remove the bar on the left and the tophold indicators
  --         in favor of putting animation in the bg?
@@ -1677,7 +1677,7 @@ function add_bg(b,bx,cx)
    local odd = y_start % 2
    map(cx,0,bx,y_start,8,17)
 
-   -- @TODO: expensive in CPU and tokens
+   -- @todo: expensive in cpu and tokens
    if b.shake_start != nil then
     local current_frame = 128*smootherstep(
      1-((elapsed(b.shake_start))/b.shake_time)
@@ -1687,7 +1687,7 @@ function add_bg(b,bx,cx)
      because this loop uses pget() and pset(), it is extremely expensive.  to
      reduce the cost, only iterate on rows and columns where there might be a
      bg map pattern (taking advantage of observing the structure of the map).
-     Otherwise this takes up 100% of the CPU.
+     otherwise this takes up 100% of the cpu.
     ]]-- 
     for sx=bx+1,bx+64,2 do
      for sy=odd-1,127,2 do
@@ -1928,15 +1928,15 @@ function make_main()
   {
    '1 player',
    '2 player',
-   'exit',
+   --'exit',
    'show high scores'
   },
   function(t,i,s)
+   --if i == 2 then
+   -- load('git/menu')
+   -- run()
+   -- return
    if i == 2 then
-    load('git/menu')
-    run()
-    return
-   elseif i == 3 then
     if not t.hs_visible then
      addggo(make_high_score_list())
     end
@@ -2317,7 +2317,6 @@ f000000ffff000fff000000ff000000fffff000ff000000ff000000fffff000ff000000fffff000f
 0000000000000000000000000000000000000000000000003a9999a3000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000003aaaaaa3000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000030000003000000000000000000000000000000000000000000000000000000000000000000000000
-
 __gff__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
