@@ -527,20 +527,20 @@ function make_block()
    t:update_state(t,s)
   else
    
-   --movement
-   --todo constrain
-   if btnn(0) then
-    t.x -= t.scale
-   end
-   if btnn(1) then
-    t.x += t.scale
-   end
-   if btnn(2) then
-    t.y -= t.scale
-   end
-   if btnn(3) then
-    t.y += t.scale
-   end
+  --movement
+  --todo constrain
+  if btnp(0) then
+   t.x -= t.scale
+  end
+  if btnp(1) then
+   t.x += t.scale
+  end
+  if btnp(2) then
+   t.y -= t.scale
+  end
+  if btnp(3) then
+   t.y += t.scale
+  end
   end
   
  end,
