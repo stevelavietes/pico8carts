@@ -269,6 +269,12 @@ function make_board(level)
    --line(-t.x, -t.y+9,
    --  -t.x+127, -t.y+9, 5)
    
+   --[[
+   sprcpy(workspr1, 0)
+   sprstochcpy(
+     workspr1, t.activeblock:getspr(), 50)
+   spr(workspr1, -30, 20)
+   --]]
    
    local s = fullscale
    
@@ -398,7 +404,34 @@ function make_board(level)
      
     end
    end
+   
+   local seqn = flr(
+     (width - 2)/2)
+   
+   function getprevseq(t)
+    local r = {}
     
+    for i = 1, seqn do
+     add(r, blocks[
+      ((t.index - 1 - i)
+        % width) + 1]:getspr())
+    end
+    
+    return r
+   end
+   
+   function getnextseq(t)
+    local r = {}
+    
+    for i = 1, seqn do
+     add(r, blocks[
+      ((t.index + 1 + i)
+        % width) + 1]:getspr())
+    end
+    
+    return r
+   end
+   
    for i = 1, width do
     local b = t.blocks[i]
     if b != t.activeblock then
@@ -416,6 +449,9 @@ function make_board(level)
     b.prevblock = prevblock
     b.stowothers = stowothers
     b.resetpos = resetpos
+    b.getprevseq = getprevseq
+    b.getnextseq = getnextseq
+    
    end
    
    if t.subcount == 0 then
@@ -820,6 +856,42 @@ function make_block()
   
  end,
  
+ drawprevicon=function(t,x,y)
+  spr(prevspr, x-1, y-1,
+     2, 2)
+  
+  local sq = t:getprevseq()
+  if (#sq == 0) return
+  
+  local l = x-#sq*6
+  local r = x-1
+  rectfill(l, y+3,r,y+9,0)
+  line(l, y+3, r, y+3, 1)
+  line(l, y+9, r, y+9, 1)
+  
+  for i = 1,#sq do
+   spr(sq[i], x - i*6, y+4)
+  end
+ end,
+ 
+ drawnexticon=function(t,x,y)
+  spr(nextspr, x-1, y-1,
+     2, 2)
+  
+  local sq = t:getnextseq()
+  if (#sq == 0) return
+  
+  local l = x+14
+  local r = l+#sq*6
+  rectfill(l, y+3,r,y+9,0)
+  line(l, y+3, r, y+3, 1)
+  line(l, y+9, r, y+9, 1)
+  for i = 1,#sq do
+   spr(sq[i], x + i*6 + 9, y+4)
+  end
+  
+ end,
+ 
  drawstowallicon=function(t,
    x,y)
   
@@ -873,14 +945,19 @@ function make_block()
   
   elseif t.state == st_blockmenu
     then
-   t:drawmenu(prevspr, nextspr,
-     230, t.drawstowallicon)
+   
+   t:drawmenu(
+     t.drawprevicon,
+     t.drawnexticon,
+     230,
+     t.drawstowallicon)
   end
  
   t:drawblock(t.segs,
     t.rects, t.col, s)
   
  end,
+ 
  
  drawblock=function(
    t, segs, rects, col, s)
@@ -1249,6 +1326,51 @@ function flip_spr_data(
  end
 end
 
+--[[
+function sprstochcpy(
+  dst, src, prob, w, h)
+ 
+ local s = getspraddr(src)
+ local d = getspraddr(dst)
+ 
+ local m1 = 15
+ local m2 = shl(m1, 4)
+ 
+ w = w or 1
+ h = h or 1
+ for y=0,h*8-1 do
+  
+  for x=0,w*4-1 do
+   local p = peek(s+64*y+x)
+   if p ~= 0 then
+     local v1 = band(p, m1)
+     local v2 = band(p, m2)
+     
+     local dp = peek(d+64*y+x)
+     
+     if v1 > 0 and
+       rnd(100) < prob then
+      
+      dp = bor(
+        band(dp, m2), v1)
+      
+     end
+    
+     if v2 > 0 and
+       rnd(100) < prob then
+      dp = bor(
+        band(dp, m1), v2)
+     end
+     
+     poke(d+64*y+x, dp)
+    
+   end
+  end
+ 
+ end
+ 
+end
+--]]
 -------------------------------
 
 function stdinit()
@@ -1364,10 +1486,10 @@ end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070007
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000700070
-00700700fffff00002200000003000000040000000000000006600000000000008880000090000000aaa00000bb000000c00000000d000000ee0000007000700
-000770000000000002000000003000000440000000000000066000000000000000800000090000000a0a00000b0000000ccc00000dd000000ee0000070007000
-00077000000000000200000000000000004000000000000000000000000000000000000009900000000000000000000000000000000000000000000000070007
-00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000700070
+00000000fffff00002200000003000000040000000000000006600000000000008880000090000000aaa00000bb000000c00000000d000000ee0000007000700
+000000000000000002000000003000000440000000000000066000000000000000800000090000000a0a00000b0000000ccc00000dd000000ee0000070007000
+00000000000000000200000000000000004000000000000000000000000000000000000009900000000000000000000000000000000000000000000000070007
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000700070
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007000700
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070007000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
