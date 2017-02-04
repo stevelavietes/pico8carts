@@ -203,6 +203,44 @@ function make_board(level)
      else
       
       local x = t.x
+      
+      --todo capture positions
+      --from center
+      
+      local w = t:getwidth() - 1
+      local cx = w*fullscale/2
+      local cy = w*2.5
+      
+      local segs = {}
+      for i = 1, w do
+      	
+      	b = t.blocks[i]
+       
+       local x = b.x
+       local y = b.y
+       
+       for j = 1, #b.segs do
+        local seg = b.segs[j]
+        
+        local x1 =
+          (seg[1]*fullscale + x)
+            - cx
+        local y1 =
+          (seg[2]*fullscale + y)
+            - cy
+        
+        add(segs, {x1,y1})
+        
+       end
+       
+       
+      	
+      end
+      
+      add(g_objs,
+         make_fill_trans(
+          cx+t.x, cy+t.y, segs))
+      
       t:updategeo()
       
       t.targetx = t.x
@@ -938,6 +976,41 @@ function make_block()
  t:updategeo()
  
  return t
+end
+
+function make_fill_trans(
+  x, y, segs)
+ return {
+  x=x,y=y,segs=segs,
+  count=-1,
+  update=function(t,s)
+   t.count += 1
+   t.y -= 1
+   if t.count >= 30 then
+    del(s, t)
+   end
+  end,
+  draw=function(t)
+   for i = 1, #t.segs/2 do
+    local s1 = t.segs[
+      (i-1)*2 + 1]
+    local s2 = t.segs[
+      (i-1)*2 + 2]
+    local s = 1 + t.count * 0.25
+    
+    local c = 7
+    
+    if g_tick % 2 == 0 then
+     c = 9
+    end
+    line(s1[1]*s, s1[2]*s,
+      s2[1]*s, s2[2]*s, c)
+   
+   end
+  end
+ 
+ }
+
 end
 
 function make_level_debug()
