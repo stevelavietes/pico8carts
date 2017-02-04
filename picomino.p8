@@ -74,6 +74,9 @@ function make_board(level)
   activeblock=blocks[1],
   
   update=function(t,s)
+  
+   movetot(t, 'x', 'targetx', 1)
+   
    updateobjs(t.objs)
    
    if #t.toraise > 0 then
@@ -199,7 +202,11 @@ function make_board(level)
         t.level + 1))
      else
       
+      local x = t.x
       t:updategeo()
+      
+      t.targetx = t.x
+      t.x = x
      end
      
     end
@@ -219,9 +226,17 @@ function make_board(level)
      .. level
      ..'-'
      .. t.subcount + 1,
-       -t.x, -t.y, 7)
-     
+       -t.x, -t.y + 1, 6)
+   
+   --line(-t.x, -t.y+9,
+   --  -t.x+127, -t.y+9, 5)
+   
+   
    local s = fullscale
+   
+   --line(-t.x, s * 7,
+   --  -t.x+127, s*7, 5)
+   
    
    local w = t.startcount +
      t.subcount
@@ -483,42 +498,14 @@ function make_block()
   
   local rate = 4
   
-  if t.targetx then
-   local x, done =
-     moveto(t.x, t.targetx,
-       rate)
-   t.x = x
-   if done then
-    t.targetx = nil
-   end
-   
-  end
+  movetot(t, 'x', 'targetx',
+    rate)
   
-  if t.targety then
-   local y, done =
-     moveto(t.y, t.targety,
-       rate)
-   t.y = y
-   if done then
-    t.targety = nil
-   end
-   
-   
-  end
+  movetot(t, 'y', 'targety',
+    rate)
   
-  if t.targetscale then
-  
-   local s, done =
-     moveto(t.scale,
-       t.targetscale, 1)
-       
-   t.scale = s
-   if done then
-    t.targetscale = nil
-   end
-   
-   
-  end
+  movetot(t, 'scale',
+    'targetscale', 1)
   
  end,
  
@@ -1292,10 +1279,19 @@ function moveto(s, e, d)
  end
 end
 
+function movetot(t, f1, f2, d)
+ if (not t[f2]) return
+ local v, done =
+   moveto(t[f1], t[f2], d)
+ t[f1] = v
+ if (done) t[f2] = nil
+end
+
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070007
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000700070
-007007001111100002200000003000000040000000000000006600000000000008880000090000000aaa00000bb000000c00000000d000000ee0000007000700
+00700700fffff00002200000003000000040000000000000006600000000000008880000090000000aaa00000bb000000c00000000d000000ee0000007000700
 000770000000000002000000003000000440000000000000066000000000000000800000090000000a0a00000b0000000ccc00000dd000000ee0000070007000
 00077000000000000200000000000000004000000000000000000000000000000000000009900000000000000000000000000000000000000000000000070007
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000700070
