@@ -20,8 +20,8 @@ function _init()
  g_objs = {}
  g_uiobjs = {} 
  
- make_title()
- --game_start()
+--  make_title()
+ game_start()
 end
 
 function update_collision(o1,o2)
@@ -96,7 +96,8 @@ function _update()
   return
  end
  
- if g_tick % 6 == 0 then
+ -- disabling for now to test other mechanic
+ if false and g_tick % 6 == 0 then
   g_timer -= 1
  end
  
@@ -226,18 +227,38 @@ function game_start()
  g_violets={}
   
 	g_violets={
-   make_violet(0),
-   make_violet(1)
+   make_violet(0) 
+   ,
+   -- make_violet(1)
  }
  foreach(g_violets, init_phys)
  
+ -- the pushable blocks (heart boxes)
  g_blocks={
-  make_block(50,35)
+  -- make_block(50,35)
  }
  foreach(g_blocks, init_phys)
- 
- g_violets[2].x = 86
- g_violets[2].direction=0
+
+ for i = 0,15 do
+  mset(i,0,72)
+ end 
+
+ -- not sure why 30 works, have to ask @stevel
+ for i = 0,15 do
+  mset(i,30,72)
+ end 
+
+ -- make some walls to bounce off of
+ for x in all({2, 13}) do
+  for y=8,30 do
+   mset(x, y, 72)
+  end
+ end
+
+ if #g_violets > 1 then
+  g_violets[2].x = 86
+  g_violets[2].direction=0
+ end
 
  
  --init as random
@@ -604,6 +625,7 @@ function make_violet(p)
   will_hold=false,
   is_holdable=false,
   breaks_blocks=true,
+  jumps=2,
   ---
   update=function(t)
    if t.off then
@@ -679,11 +701,16 @@ function make_violet(p)
    end
    
    --jump
-   if btnn(5,p) then
-    if t.y == ground and
-      t.speedy == 0 then
+   if btnn(5,p) and t.jumps > 0 then
+    t.jumps -= 1
+    -- if t.y == ground and
+    --   t.speedy == 0 then
      t.speedy = -6 - abs(t.speed)
-    end
+    -- end
+   end
+
+   if t.y == ground and t.speedy == 0 then
+    t.jumps = 2
    end
 
    t.frame=(t.frame+frameadj)%3
@@ -1016,53 +1043,53 @@ function scrollby(n)
  
  
   
- while i<16 do
-  
-  local len=flr(rnd(2))+i+2
-  
-  local s = 0
-  
-   
-  if not empty then
-   if on then
-    if rnd(100) > 50 then
-     s=72
-    else
-     s=71
-    end
-   end
-  end
-  
-  on = not on
-  
-  local start=i
-  for j=i,len do
-   if i > 15 then
-    break
-   end
-   if j==start
-     and i>0
-     and s==0
-     and lasts==71 then
-    mset(i,nexty,87)
-   else
-    mset(i,nexty,s)
-   end
-   i+=1
-  end
-  
-  lasts = s
-  
- end
+--  while i<16 do
+--   
+--   local len=flr(rnd(2))+i+2
+--   
+--   local s = 0
+--   
+--    
+--   if not empty then
+--    if on then
+--     if rnd(100) > 50 then
+--      s=72
+--     else
+--      s=71
+--     end
+--    end
+--   end
+--   
+--   on = not on
+--   
+--   local start=i
+--   for j=i,len do
+--    if i > 15 then
+--     break
+--    end
+--    if j==start
+--      and i>0
+--      and s==0
+--      and lasts==71 then
+--     mset(i,nexty,87)
+--    else
+--     mset(i,nexty,s)
+--    end
+--    i+=1
+--   end
+--   
+--   lasts = s
+--   
+--  end
  
- if empty and rnd(100)>50 then
-  local i = flr(rnd(11))
-  local l = flr(rnd(6))+i 
-  for x=i,l do
-   mset(x,nexty,72)
-  end
- 
- end
+--  if empty and rnd(100)>50 then
+--   local i = flr(rnd(11))
+--   local l = flr(rnd(6))+i 
+--   for x=i,l do
+--    mset(x,nexty,72)
+--   end
+--  
+--  end
  
 
  
