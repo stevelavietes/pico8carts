@@ -71,7 +71,7 @@ function make_board(level,
  local fullscale = 7
  local stowedscale = 3
  local stowedypos =
-   fullscale*7 - 1
+   fullscale*6 - 1
  local stowedxwidth =
    stowedscale*4.5
  
