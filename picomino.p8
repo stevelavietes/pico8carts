@@ -695,6 +695,15 @@ function make_block()
   
   if not btn(4) then
    t.state = st_idle
+   
+   if btn(5) then
+    --todo share this code
+    t.state = st_blockmenu
+    t.xformstatecount = 
+     k_transduration + 1
+    t:setprevnext()
+   end
+   
    return
   end
   
@@ -763,6 +772,14 @@ function make_block()
  update_blockmenu=function(t,s)
   if not btn(5) then
    t.state = st_idle
+   
+   if btn(4) then
+    --todo share this code
+    t.state = st_xformmenu
+    t.xformstatecount = 
+     k_transduration + 1
+   end
+   
    return
   end
   
