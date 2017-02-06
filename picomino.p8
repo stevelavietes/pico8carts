@@ -51,8 +51,9 @@ function _draw()
    .. startotal
  
  print(sc, 125 - #sc*5, 2, 6)
+ pal(5, 0)
  spr(25, 120, 0)
- 
+ pal()
  stddraw()
  
  
