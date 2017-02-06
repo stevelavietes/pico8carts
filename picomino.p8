@@ -917,6 +917,7 @@ function make_block()
        / k_transduration))
   end
   
+  circ(cy+1,cy+1, radius, 0)
   circ(cy,cy, radius, 6)
   rect(cy-1,cy-1,cy+1,cy+1,5)
   
@@ -1347,7 +1348,7 @@ function make_main_menu(level)
    end
    
    if not t.buttondown then
-    if btnp(4) or btnp(5) then
+    if btnp(5) then
      del(s, t)
      add(s, make_board(t.level,
        progress[t.level][1]))
