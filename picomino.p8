@@ -261,6 +261,41 @@ function make_board(level,
       --todo, juice
      end
      
+     
+     local w = t:getwidth() - 1
+     local cx = w*fullscale/2
+     local cy = w*2.5
+      
+     local segs = {}
+     for i = 1, w do
+      	
+     	b = t.blocks[i]
+       
+      local x = b.x
+      local y = b.y
+       
+      for j = 1, #b.segs do
+       local seg = b.segs[j]
+        
+       local x1 =
+         (seg[1]*fullscale + x)
+           - cx
+       local y1 =
+         (seg[2]*fullscale + y)
+           - cy
+        
+       add(segs, {x1,y1})
+        
+      end
+      	
+     end
+      
+     add(g_objs,
+       make_fill_trans(
+        cx+t.x, cy+t.y, segs))
+      
+     
+     
      if t:getwidth() >
        #t.blocks then
       t.done = true
@@ -270,39 +305,6 @@ function make_board(level,
       --todo capture positions
       --from center
       
-      local w = t:getwidth() - 1
-      local cx = w*fullscale/2
-      local cy = w*2.5
-      
-      local segs = {}
-      for i = 1, w do
-      	
-      	b = t.blocks[i]
-       
-       local x = b.x
-       local y = b.y
-       
-       for j = 1, #b.segs do
-        local seg = b.segs[j]
-        
-        local x1 =
-          (seg[1]*fullscale + x)
-            - cx
-        local y1 =
-          (seg[2]*fullscale + y)
-            - cy
-        
-        add(segs, {x1,y1})
-        
-       end
-       
-       
-      	
-      end
-      
-      add(g_objs,
-         make_fill_trans(
-          cx+t.x, cy+t.y, segs))
       
       t:updategeo()
       
