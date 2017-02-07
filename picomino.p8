@@ -1,15 +1,73 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+
+-- what we call the save slot for this cart
+cartdata("picomino_progress_save_state")
+
+-- in case you need to clear the save data
+-- function clear_data()
+--  for i=0,63 do
+--   dset(i, 1)
+--  end
+-- end
+
+function _read_bitflag_array()
+ -- read a flat list of all the slots
+ local bitflags = {}
+ for i=0,31 do
+  add(bitflags, dget(i))
+ end
+
+ -- convert the slots into per-sublevel booleans
+ local completed = {}
+ local index = 0
+ local slot = 1
+ local current = bitflags[slot]
+ for i=1, 512 do
+  add(completed, band(shl(1, index), current) != 0)
+  index += 1
+  if index == 16 then
+   index = 0
+   slot += 1 
+   current = bitflags[slot]
+  end
+ end
+
+ return completed
+end
+
+function save_progress(progress)
+ local slot = 0
+ local current = 0
+ local saved_in_slot = 0
+
+ for level in all(progress) do
+  for i=1, level[2] do
+   if i <= level[1] then
+    current = bor(current, shl(1, saved_in_slot))
+   end
+   saved_in_slot += 1
+   if saved_in_slot > 15 then
+    dset(slot, current)
+    current = 0
+    saved_in_slot = 0
+    slot += 1
+   end
+  end
+ end
+end
+
 function _init()
  stdinit()
- 
+
  maxlevel = 113
  workspr1 = 5
  workspr2 = 7
  prevspr = 196
  nextspr = 228
 
+ per_sublevel_completions = _read_bitflag_array()
  
  progress = {}
  startotal = 0
@@ -17,8 +75,17 @@ function _init()
  for i = 1,maxlevel do
   local s,p = get_level_data(i)
   local n = (#p - s + 1)
-  
-  progress[i] = {0,n,startotal}
+
+  local completed = 0
+  for i=1, n do
+   if per_sublevel_completions[startotal + i] then
+    completed += 1
+   end
+  end
+
+  -- per level progress
+  --             sublevels completed, sublevels total, bitoffset
+  progress[i] = {completed,n,startotal}
   startotal += n
  end
   
@@ -257,6 +324,7 @@ function make_board(level,
      local p = progress[t.level]
      if t.subcount > p[1] then
       p[1] = t.subcount
+      save_progress(progress)
       starcount += 1
       --todo, juice
      end
