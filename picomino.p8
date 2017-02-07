@@ -65,8 +65,18 @@ end
 function make_board(level,
   sublevel)
  
+ 
  local startcount, seq =
      get_level_data(level)
+ 
+ -- already finished? start
+ -- over
+ if sublevel then
+  if startcount + sublevel
+    >= #seq then
+   sublevel = 0
+  end
+ end
  
  local fullscale = 7
  local stowedscale = 3
@@ -111,6 +121,13 @@ function make_board(level,
   activeblock=blocks[1],
   
   update=function(t,s)
+   
+   if t.done then
+   	if btnn(5) then
+     t:backtomenu(1)	
+   	end
+   	return
+   end
    
    movetot(t, 'x', 'targetx', 1)
    
@@ -242,11 +259,8 @@ function make_board(level,
      
      if t:getwidth() >
        #t.blocks then
-      del(s, t)
-      add(s, make_board(
-        t.level + 1))
+      t.done = true
      else
-      
       local x = t.x
       
       --todo capture positions
@@ -311,6 +325,12 @@ function make_board(level,
      .. t.subcount + 1,
        -t.x, -t.y + 123, 5)
    
+   if t.done then
+    if g_tick % 40 < 20 then
+     print('press — to return',
+        -t.x + 30, -12, 6)
+    end
+   end
    --line(-t.x, -t.y+9,
    --  -t.x+127, -t.y+9, 5)
    
@@ -569,9 +589,10 @@ function make_board(level,
    end 
   end,
   
-  backtomenu=function(t)
+  backtomenu=function(t, next)
+   next = next or 0
    add(g_objs, make_main_menu(
-     t.level)) 
+     t.level + next)) 
    del(g_objs, t)
   end,
   
@@ -1538,7 +1559,11 @@ function get_level_data(n)
   if p == 0 then
    break
   end
+  
   add(pieces, p)
+  
+  --debug shorter boards
+  --if (n == 1 and i == 3) break
  end
  
  return start, pieces
