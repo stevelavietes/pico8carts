@@ -44,6 +44,9 @@ end
 function _draw()
  cls()
  
+ 
+ --map(0,0,0,0,16,16)
+ 
  rectfill(0, 0, 127, 8, 1)
  rectfill(0, 0, 127, 3, 13)
  
@@ -56,6 +59,7 @@ function _draw()
  pal(5, 0)
  spr(25, 120, 0)
  pal()
+ 
  stddraw()
  
  
@@ -319,11 +323,16 @@ function make_board(level,
   draw=function(t,s)
    --print ('Ž—', 0, 0, 5) 
    --print (#t.pieces, 0, 8)
+   
+   line(-t.x, -t.y + 120,
+     -t.x + 127, -t.y + 120, 1)
+   rectfill(-t.x, -t.y + 121,
+     -t.x + 127, -t.y + 127, 13)
    print('level '
      .. level
      ..'-'
      .. t.subcount + 1,
-       -t.x, -t.y + 123, 5)
+       -t.x + 1, -t.y + 122, 1)
    
    if t.done then
     if g_tick % 40 < 20 then
@@ -352,8 +361,9 @@ function make_board(level,
    
    local tw = #t.blocks
    
-   --rectfill(w*s, 0,s*tw,
-   --  s*5, 13)
+   rectfill(-2, -2,
+     w*s+2, s*5+2, 0)
+   
    for i = 0, 5 do
     line(0, i*s, s*w, i*s, 1)
    end
