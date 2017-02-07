@@ -590,10 +590,19 @@ function make_board(level,
   end,
   
   backtomenu=function(t, next)
-   next = next or 0
-   add(g_objs, make_main_menu(
-     t.level + next)) 
-   del(g_objs, t)
+   t.trans = true
+   add(g_objs, make_trans(
+    function()
+     next = next or 0
+     add(g_objs, make_main_menu(
+       t.level + next)) 
+     del(g_objs, t)
+   
+   end))
+    
+   
+   
+   
   end,
   
   objs={}
@@ -1350,6 +1359,9 @@ function make_main_menu(level)
   buttondown=true,
   update=function(t,s)
    --taco
+   if t.done or t.trans then
+    return
+   end
    
    if t.buttondown
      and not btn(5) then
@@ -1370,9 +1382,17 @@ function make_main_menu(level)
    
    if not t.buttondown then
     if btnp(5) then
-     del(s, t)
-     add(s, make_board(t.level,
-       progress[t.level][1]))
+     
+     
+     add(s, make_trans(
+      function()
+       del(s, t)
+       add(s, make_board(
+       t.level, 
+         progress[t.level][1]))
+       end))
+    
+    
     end
    end
    
@@ -1386,7 +1406,8 @@ function make_main_menu(level)
    if t.sel == 0 then
     c = 7
     
-    if g_tick % 40 < 20 then
+    if not t.done and
+      g_tick % 40 < 20 then
      print('press — to begin',
        0, -10, 5)
     end
@@ -1784,7 +1805,63 @@ function movetot(t, f1, f2, d)
  if (done) t[f2] = nil
 end
 
+function elapsed(t)
+ if g_tick>=t then
+  return g_tick - t
+ end
+ return 32767-t+g_tick
+end
 
+function trans(s)
+ if s<1 then
+  return
+ end
+ s=2^s
+ local b,m,o =
+   0x6000,
+   15,
+   s/2-1+(32*s)
+
+ for y=0,128-s,s do
+  for x=0,128-s,s do
+   local a=b+x/2
+   local c=band(peek(a+o),m)
+   c=bor(c,shl(c,4))
+   for i=1,s do
+    memset(a,c,s/2)
+    a+=64
+   end
+  end
+  b+=s*64
+ end
+end
+
+function make_trans(f,d,i)
+ return {
+  d=d,
+  e=g_tick,
+  f=f,
+  i=i,
+  update=function(t,s)
+   if elapsed(t.e)>10 then
+    if (t.f) t:f(s)
+    del(s,t)
+    if not t.i then
+     add(s,
+       make_trans(nil,nil,1))
+    end
+   end
+  end,
+  draw=function(t)
+   local x=flr(elapsed(t.e)/2)
+   if t.i then
+    x=5-x
+   end
+   trans(x)
+  end,
+  x=0,y=0
+ }
+end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070007
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000700070
