@@ -61,8 +61,8 @@ end
 function _init()
  stdinit()
  
- drawbg = true
- 
+ drawbg = false
+ drawhead = false
  
  maxlevel = 113
  workspr1 = 5
@@ -96,16 +96,20 @@ function _init()
  --add(g_objs,
  --  make_level_debug())
  
- add(g_objs, make_main_menu(1))
- 
- --add(g_objs, make_board(1))
+ --todo, transition this on
+ --add(g_objs, make_main_menu(1)) 
 
- 
- 
- 
- 
- 
- 
+
+ add(g_objs, make_trans(
+    function()
+     drawbg=true
+     drawhead=true
+     add(g_objs,
+       make_main_menu(1))
+   
+   end))
+
+
 end
 
 function _update()
@@ -119,43 +123,40 @@ function _draw()
  if drawbg then
  
  --pal(1, 0)
- for i = 2, 15 do
-  
-  pal(i, 0)
-  
- end
- 
- --local cx = -(g_tick % 80)/2 + 40
- local cx = -(g_tick % 40) + 40
- pushc(cx, g_tick % 40)
-  for y = 0, 5 do
-   for x = 0, 5 do
-    map(16, 0, x*40,
-     y*40, 5,5)
-   end
+  for i = 2, 15 do
+   pal(i, 0)
   end
- popc()
- pal()
  
- --draw_wave(8, 240, g_tick/50)
+  --local cx = -(g_tick % 80)/2 + 40
+  local cx = -(g_tick % 40) + 40
+  pushc(cx, g_tick % 40)
+   for y = 0, 5 do
+    for x = 0, 5 do
+     map(16, 0, x*40,
+      y*40, 5,5)
+    end
+   end
+  popc()
+  pal()
+ 
+  --draw_wave(3, 128, g_tick/50)
  end
  
- --map(0,0,0,0,16,16)
+ if drawhead then
+  rectfill(0, 0, 127, 8, 1)
+  rectfill(0, 0, 127, 3, 13)
+  line(0, 9, 127, 9, 0)
  
- rectfill(0, 0, 127, 8, 1)
- rectfill(0, 0, 127, 3, 13)
- line(0, 9, 127, 9, 0)
+  spr(16, 1, 1, 8, 1)
+  local sc = starcount
+    .. '/'
+    .. startotal
  
- spr(16, 1, 1, 8, 1)
- local sc = starcount
-   .. '/'
-   .. startotal
- 
- print(sc, 125 - #sc*5, 2, 6)
- pal(5, 0)
- spr(25, 120, 0)
- pal()
- 
+  print(sc, 125 - #sc*5, 2, 6)
+  pal(5, 0)
+  spr(25, 120, 0)
+  pal()
+ end
  stddraw()
  
  
