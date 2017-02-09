@@ -154,7 +154,7 @@ function _draw()
  
   print(sc, 125 - #sc*5, 2, 6)
   pal(5, 0)
-  spr(34 + (g_tick%15)/3, 120,
+  spr(34 + (g_tick%24)/4, 120,
    0)
   pal()
  end
@@ -1540,7 +1540,7 @@ function make_main_menu(level)
     palt(9, i > l[1])
     palt(10, i > l[1])
     palt(15, i > l[1])
-    spr(34 + (g_tick%15)/3,
+    spr(34 + (g_tick%24)/4,
       x, -2)
     
     x += 9
