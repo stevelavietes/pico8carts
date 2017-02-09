@@ -722,17 +722,15 @@ function make_board(level,
 
  t:updategeo()
  
- --[[
+ 
  menuitem(1, 'exit puzzle',
   function()
-   
-   add(g_objs, make_main_menu(
-     t.level)) 
-   del(g_objs, t)
-   
+   t:backtomenu()
   end
  )
- --]]
+ 
+ menuitem(2, '------',
+   function()end)
  
  return t
  
@@ -1557,7 +1555,7 @@ function make_main_menu(level)
   x=0,y=60,
  }
 
- --menuitem(1, nil, nil)
+ menuitem(1, nil, nil)
  
  return t
 end
