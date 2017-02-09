@@ -110,7 +110,7 @@ function _init()
      drawbg=true
      drawhead=true
      add(g_objs,
-       make_main_menu(1))
+       make_main_menu(1, 22))
    
    end))
 
@@ -1467,17 +1467,19 @@ function make_title()
 end
 
 
-function make_main_menu(level)
+function make_main_menu(level,
+  growon)
  drawbg = true
  
  local t = {
   level=level,
   sel=0,
+  growon=growon,
   buttondown=true,
   update=function(t,s)
    --taco
    if t.done or t.trans or
-     t.off then
+     t.off or t.growon then
     return
    end
    
@@ -1550,13 +1552,31 @@ function make_main_menu(level)
   },
   draw=function(t)
   
-  
-   rectfill(0, -13, 127, 40, 0)
+   local top = -13
+   local bot = 40
+   
+   
+   if t.growon then
+    t.growon -= 1
+    if t.growon == 0 then
+     t.growon = nil
+    end
+   end
+   
+   if t.growon then
+    top += t.growon*2
+    bot -= t.growon*2
+   end
+   
+   rectfill(0, top, 127, bot, 0)
    local c = 6
    if (t.off) c = 5
-   line(0, -14, 127, -14, c)
-   line(0, 41, 127, 41, c)
+   line(0, top-1, 127, top-1, c)
+   line(0, bot+1, 127, bot+1, c)
    
+   if t.growon then
+    return
+   end
    --spr(128, 10, -40, 3, 4)
    local s = 'level ' .. t.level
    
@@ -1567,7 +1587,7 @@ function make_main_menu(level)
     if not t.done and
       g_tick % 40 < 20 then
      print('press — to begin',
-       0, -10, 5)
+       1, -10, 5)
     end
    end
    print(s, 10, 0, c)
