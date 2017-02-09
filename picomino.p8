@@ -6,11 +6,16 @@ __lua__
 cartdata("picomino_progress_save_state")
 
 -- in case you need to clear the save data
--- function clear_data()
---  for i=0,63 do
---   dset(i, 1)
---  end
--- end
+function clear_data()
+ for i=0,63 do
+  dset(i, 0)
+ end
+ for i = 1, #progress do
+  progress[i][1] = 0
+ end
+ starcount = 0
+ 
+end
 
 function _read_bitflag_array()
  -- read a flat list of all the slots
@@ -1471,7 +1476,8 @@ function make_main_menu(level)
   buttondown=true,
   update=function(t,s)
    --taco
-   if t.done or t.trans then
+   if t.done or t.trans or
+     t.off then
     return
    end
    
@@ -1513,8 +1519,27 @@ function make_main_menu(level)
         t.level, 
           progress[t.level][1]))
         end))
+     elseif t.sel == 2 then
+      
+      t.off = true
+      add(s, make_menu({
+         'cancel',
+         'reset all data'},
+       function(mt, mi, ms)
+        t.off = nil
+        del(ms, mt)
+        
+        if mi == 1 then
+         clear_data()
+        end
+        
+       end   
+         
+      ))
+         
      end
     
+     
     end
    end
    
@@ -1527,13 +1552,15 @@ function make_main_menu(level)
   
   
    rectfill(0, -13, 127, 40, 0)
-   line(0, -14, 127, -14, 6)
-   line(0, 41, 127, 41, 6)
+   local c = 6
+   if (t.off) c = 5
+   line(0, -14, 127, -14, c)
+   line(0, 41, 127, 41, c)
    
    --spr(128, 10, -40, 3, 4)
    local s = 'level ' .. t.level
    
-   local c = 6
+   c = 5
    if t.sel == 0 then
     c = 7
     
@@ -2032,6 +2059,90 @@ function draw_wave(a,yp,off)
    
  end
 
+end
+
+
+function make_menu(
+ lbs, --menu lables
+ fnc, --chosen callback
+ x,y, --pos
+ omb, --omit backdrop
+ p,   --player
+ cfnc --cancel callback
+)
+ local m={
+  --lbs=lbs,
+  --f=fnc,
+  --fc=cfnc,
+  i=0, --item
+  s=g_tick,
+  e=5,
+  x=x or 64,
+  y=y or 80,
+  h=10*#lbs+4,
+  --omb=omb,
+  tw=0,--text width
+  p=p or -1,
+  draw=function(t)
+   local e=elapsed(t.s)
+   local w=t.tw*4+10
+   local x=min(1,e/t.e)*(w+9)/2
+   if not omb then
+    rectfill(-x,0,x,t.h,0)
+    rect(-x,0,x,t.h,6)
+   end
+   if e<t.e then
+    return
+   end
+   x=w/2+1
+   for i,l in pairs(lbs) do
+    if not t.off or i==t.i+1 then
+     local y=4+(i-1)*10
+     print(l,-x+9,y+1,0)
+     print(l,-x+9,y,7)
+    end
+   end
+   spr(24,-x-1,3+10*t.i,1,1,1)
+  end,
+  update=function(t,s)
+   if t.off then 
+    return
+   end
+   if elapsed(t.s)<(t.e*2) then
+    return
+   end
+
+   if btnn(5,t.p) then
+    if fnc then
+     fnc(t,t.i,s)
+     --sfx(2)
+    end
+   end
+
+   --cancel
+   if btnn(4,t.p) then
+    if cfnc then
+     cfnc(t,s)
+     --sfx(2)
+    end
+   end
+
+   if btnn(2,t.p) and
+     t.i>0 then
+    t.i-=1
+    --sfx(1)
+   end
+   if btnn(3,t.p) and
+     t.i<(#lbs-1) then
+    t.i+=1
+    --sfx(1)
+   end
+  end
+ }
+ for l in all(lbs) do
+  m.tw=max(m.tw,#l)
+ end
+ return m
 end
 
 __gfx__
