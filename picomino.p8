@@ -2493,7 +2493,7 @@ function howtoplay(s)
   
   {15, fields(5)},
   {120, fields(5,2)},
-  {160, fields(5,3)},
+  {120, fields(5,3)},
   {120, fields(5,2)},
   
  })
