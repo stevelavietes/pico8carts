@@ -165,6 +165,7 @@ function _draw()
  end
  stddraw()
  
+ --[[
  if override_ct then
   if btnd(0) then
    print('‹', 0, 20, 7)
@@ -189,6 +190,7 @@ function _draw()
   
   
  end
+ --]]
  
 end
 
@@ -1552,41 +1554,27 @@ function make_main_menu(level,
         
      elseif t.sel == 1 then
       
+      -- reset block positions
+      for i = 1, 14 do
+       sprcpy(i, 176+i)
+      end
+        
       add(s, make_trans(
        function()
         del(s, t)
+        
+        
+ 
         add(s, make_board(
           1, 0))
         
         menulevel_override = 
           t.level
         
-        --test automator
-        override_ct = 
-          make_automator(
-          {
-           {10, fields(1)},
-           {30, fields(4)},
-           {30, fields(4,0)},
-           {1, 0},
-           {10, fields(1)},
-           {1, fields(5)},
-           {10, fields(5,2)},
-           {1, fields(5)},
-           {10, fields(5,0)},
-           {2, 0},
-           {5, fields(3)},
-           {2, 0},
-           {5, fields(3)},
-           {2, 0},
-           {10, fields(5,0)},
-           {10, fields(5)},
-           {10, fields(5,0)},
-           {60, fields(5,2)},
-          })
-        
-        end))
-     
+        howtoplay(s)
+      
+       end))
+         
      elseif t.sel == 2 then
       
       t.off = true
@@ -2341,6 +2329,251 @@ function make_menu(
  return m
 end
 
+function make_textbox(
+  text, x, y, dur, lines,
+    donefnc)
+ 
+ return {
+  x=x,y=y,count=0,
+  update=function(t,s)
+   
+   if btn(4) then
+   
+    for i = 1, #g_objs do
+     --taco
+     if g_objs[i].backtomenu
+       then
+      override_ct = nil
+      g_objs[i]:backtomenu()
+      break
+     end
+    end
+    del(s, t)
+    return
+   end
+   
+   t.count += 1
+   if t.count > dur then
+    if donefnc then
+     donefnc(t, s)
+    end
+    del(s, t)
+    
+   end
+  end,
+  draw=function(t)
+   if (not text) return
+   
+   local top = -3
+   local bot =
+     -3 + 7*lines + 3
+   
+   local h = bot - top
+   
+   if t.count < h then
+    top += (h - t.count)/2
+    bot -= (h - t.count)/2
+   end
+   
+   rectfill(-t.x, top,
+     -t.x + 127, bot, 0)
+   line(-t.x, top-1, -t.x+127,
+     top-1, 6)
+   line(-t.x, bot+1, -t.x+127,
+     bot+1, 6)
+    
+   
+   local delay = 20
+   if t.count > delay then
+    local str = text
+   
+    if t.count - delay <
+      #text then
+     str = sub(text, 0,
+       t.count - delay)
+    end
+  
+    print(str, 10, 0, 7)
+   end
+   
+  end,
+ 
+ }
+  
+end
+
+function howtoplay(s)
+ 
+ override_ct = make_automator({
+  {80, 0}, --initial wait
+  --move
+  {10, fields(3)}, {1, 0},
+  {10, fields(3)}, {1, 0},
+  {10, fields(3)}, {1, 0},
+  
+  {8, fields(0)}, {1, 0},
+  {8, fields(0)}, {1, 0},
+  {8, fields(0)}, {1, 0},
+  {8, fields(1)}, {1, 0},
+  {8, fields(1)}, {1, 0},
+  {8, fields(1)}, {1, 0},
+  
+  {8, fields(1)}, {1, 0},
+  {8, fields(3)}, {1, 0},
+  {8, fields(1)}, {1, 0},
+  {8, fields(2)}, {1, 0},
+  {8, fields(0)}, {1, 0},
+  {7, fields(0)}, {1, 0},
+  {6, fields(3)}, {1, 0},
+  
+  {45, 0},
+  
+  -- xform menu
+  -- rotate
+  {120, fields(4)},
+  {10, fields(4, 0)},
+  {1, fields(4)},
+  {1, fields(4,0)},
+  {30, fields(4)},
+  {1, fields(4,1)},
+  {10, fields(4)},
+  {1, fields(4,1)},
+  {60, fields(4)},
+  
+  -- flip
+  {1, fields(4,2)},
+  {60, fields(4)},
+  {1, fields(4,3)},
+  {20, fields(4)},
+  
+  {10, 0},
+  {1, fields(3)}, {10, 0},
+  {1, fields(3)}, {30, 0},
+  
+  {160, fields(5)},
+  {1, fields(5,0)},
+  {30, fields(5)},
+  {1, fields(5,0)},
+  {6, fields(5)},
+  {1, fields(5,1)},
+  {6, fields(5)},
+  {1, fields(5,0)},
+  {6, 0},
+  {1, fields(3)}, {5,0},
+  {1, fields(3)}, {5,0},
+  {1, fields(3)}, {5,0},
+  
+  {1, fields(4,0)},
+  {12, fields(4)},
+  {1, fields(4,0)},
+  {12, fields(4)},
+  
+  {8, fields(3)}, {1, 0},
+  {8, fields(3)}, {1, 0},
+  {8, fields(3)}, {1, 0},
+  {8, fields(0)}, {1, 0},
+  {8, fields(3)}, {1, 0},
+  
+  {15, 0},
+  {15, fields(5,1)},
+  {5, 0},
+  
+  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, {1, 0},
+  {5, fields(4,0)},
+  {5, fields(4)},
+  {5, fields(4,0)},
+  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, {1, 0},
+  {5, fields(3)},
+  {180, 0},
+  
+  {15, fields(5)},
+  {120, fields(5,2)},
+  {160, fields(5,3)},
+  {120, fields(5,2)},
+  
+ })
+        
+        
+ add(s, make_textbox(
+  'fit all pieces to cover\n'
+     .. 'the board.',
+   0, 4, 90, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'move the block with\n'
+   .. '‹ ‘ ” ƒ',
+   0, 4, 120, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'hold Ž to open the\n'
+   .. 'transformation menu',
+   0, 110, 120, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'press ‹ and ‘ while\n'
+   .. 'holding Ž to rotate',
+   0, 110, 120, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'press ” and ƒ while\n'
+   .. 'holding Ž to flip',
+   0, 110, 120, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'hold — to open the\n'
+   .. 'block menu',
+   0, 4, 120, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'press ‹ and ‘ while\n'
+   ..'holding — to pick blocks',
+   0, 4, 100, 2,
+ function(t,s)
+  add(s, make_textbox(
+   nil, 0, 4, 300, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'press ” while holding —'
+   ..'\nto move off the board'
+   , 0, 4, 100, 2,
+ function(t,s)
+  add(s, make_textbox(
+   nil, 0, 4, 80, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'press and hold ƒ while'
+ ..'\nholding — to stow blocks'
+   , 0, 110, 80, 2,
+ function(t,s)
+  add(s, make_textbox(
+   nil, 0, 110, 30, 2,
+ function(t,s)
+  add(s, make_textbox(
+   'press and hold ” while'
+ ..'\nholding — to exit'
+   , 0, 110, 100, 2,
+ function(t,s)
+ 
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ end))
+ 
+end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070007
 000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000700070
@@ -2431,10 +2664,10 @@ ee00000cccccc0099999003333300ee000ee0cccccc09900099003333300000000060000059a9950
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000200000033300000040000000000000006000000000000000800000090000000000000000bb00000c00000000dd00000e00000000000000
+00000000fffff00002200000003000000040000000000000006600000000000008880000090000000aaa00000bb000000c00000000d000000ee0000000000000
+000000000000000002000000003000000440000000000000066000000000000000800000090000000a0a00000b0000000ccc00000dd000000ee0000000000000
+00000000000000000200000000000000004000000000000000000000000000000000000009900000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
