@@ -165,7 +165,30 @@ function _draw()
  end
  stddraw()
  
- 
+ if override_ct then
+  if btnd(0) then
+   print('‹', 0, 20, 7)
+  end
+  if btnd(1) then
+   print('‘', 10, 20, 7)
+  end
+  if btnd(2) then
+   print('”', 20, 20, 7)
+  end
+  if btnd(3) then
+   print('ƒ', 30, 20, 7)
+  end
+  if btnd(4) then
+   print('Ž', 40, 20, 7)
+  end
+  if btnd(5) then
+   print('—', 40, 20, 7)
+  end
+  
+  
+  
+  
+ end
  
 end
 
@@ -359,11 +382,13 @@ function make_board(level,
      t.subcount += 1
      
      local p = progress[t.level]
-     if t.subcount > p[1] then
-      p[1] = t.subcount
-      save_progress(progress)
-      starcount += 1
-      --todo, juice
+     if t.subcount > p[1]
+      and not override_ct then
+      
+       p[1] = t.subcount
+       save_progress(progress)
+       starcount += 1
+       --todo, juice
      end
      
      
@@ -782,12 +807,12 @@ function make_block()
   
   
   if t.m1 then
-   if not btn(4) then
+   if not btnd(4) then
     t.m1 = nil
    end
   end
   if t.m2 then
-   if not btn(5) then
+   if not btnd(5) then
     t.m2 = nil
    end
   end
@@ -841,18 +866,19 @@ function make_block()
    t:update_state(t,s)
   else
    
+  
   --movement
   --todo constrain
-  if btnp(0) then
+  if btnpp(0) then
    t.x -= t.scale
   end
-  if btnp(1) then
+  if btnpp(1) then
    t.x += t.scale
   end
-  if btnp(2) then
+  if btnpp(2) then
    t.y -= t.scale
   end
-  if btnp(3) then
+  if btnpp(3) then
    t.y += t.scale
   end
   end
@@ -861,10 +887,10 @@ function make_block()
  
  update_xformmenu=function(t,s)
   
-  if not btn(4) then
+  if not btnd(4) then
    t.state = st_idle
    
-   if btn(5) then
+   if btnd(5) then
     --todo share this code
     t.state = st_blockmenu
     t.xformstatecount = 
@@ -938,10 +964,11 @@ function make_block()
  end,
  
  update_blockmenu=function(t,s)
-  if not btn(5) then
+  if not btnd(5) then
    t.state = st_idle
    
-   if btn(4) then
+   
+   if btnd(4) then
     --todo share this code
     t.state = st_xformmenu
     t.xformstatecount = 
@@ -977,7 +1004,7 @@ function make_block()
   else
    
    if t.stowcount then
-    if btn(3) then
+    if btnd(3) then
      t.stowcount += 1
      if t.stowcount > 12 then
       t:stowothers()
@@ -987,7 +1014,7 @@ function make_block()
      t.stowcount = nil
     end
    elseif t.backcount then
-    if btn(2) then
+    if btnd(2) then
      t.backcount += 1
      if t.backcount > 12 then
       t:backtomenu()
@@ -1472,7 +1499,8 @@ function make_main_menu(level,
  drawbg = true
  
  local t = {
-  level=level,
+  level=menulevel_override
+    or level,
   sel=0,
   growon=growon,
   buttondown=true,
@@ -1521,6 +1549,44 @@ function make_main_menu(level,
         t.level, 
           progress[t.level][1]))
         end))
+        
+     elseif t.sel == 1 then
+      
+      add(s, make_trans(
+       function()
+        del(s, t)
+        add(s, make_board(
+          1, 0))
+        
+        menulevel_override = 
+          t.level
+        
+        --test automator
+        override_ct = 
+          make_automator(
+          {
+           {10, fields(1)},
+           {30, fields(4)},
+           {30, fields(4,0)},
+           {1, 0},
+           {10, fields(1)},
+           {1, fields(5)},
+           {10, fields(5,2)},
+           {1, fields(5)},
+           {10, fields(5,0)},
+           {2, 0},
+           {5, fields(3)},
+           {2, 0},
+           {5, fields(3)},
+           {2, 0},
+           {10, fields(5,0)},
+           {10, fields(5)},
+           {10, fields(5,0)},
+           {60, fields(5,2)},
+          })
+        
+        end))
+     
      elseif t.sel == 2 then
       
       t.off = true
@@ -1639,6 +1705,10 @@ function make_main_menu(level,
  }
 
  menuitem(1, nil, nil)
+ 
+ if menulevel_override then
+  menulevel_override = nil
+ end
  
  return t
 end
@@ -1914,6 +1984,19 @@ function stdupdate()
  -- current/last controller
  g_ctl = g_ct
  g_ct = btn()
+ 
+ if override_ct then
+  ct, ctl =
+    override_ct:update()
+ 
+  if ct then
+   g_ct = ct
+   g_ctl = ctl
+  else
+   override_ct = nil
+  end
+ end
+ 
  updateobjs(g_objs)
 end
 
@@ -1943,6 +2026,12 @@ end
 
 --returns state,changed
 function btns(i,p)
+ local c, cng =
+   _btn(i,p,g_ct),
+   _btn(i,p,g_ctl)
+ 
+ return c,c~=cng
+ --[[
  i=shl(1,i)
  if p==1 then
   i=shl(i,8)
@@ -1951,7 +2040,17 @@ function btns(i,p)
    band(i,g_ct),
    band(i,g_ctl)
  return c>0,c~=cng
+ --]]
 end
+
+function _btn(i,p,ct)
+ i=shl(1,i)
+ if p==1 then
+  i=shl(i,8)
+ end
+ return band(i,ct)>0
+end
+
 
 --returns new press only
 function btnn(i,p)
@@ -1961,6 +2060,83 @@ function btnn(i,p)
  local pr,chg=btns(i,p)
  return pr and chg
 end
+
+function btnd(i,p)
+ if override_ct then
+  return _btn(i,p,g_ct)
+ end
+ return btn(i,p)
+end
+
+function btnpp(i,p)
+
+ -- xxx: cut corner for
+ -- automated case and don't
+ -- do the repeats
+ if override_ct then
+  return btnn(i,p)
+ end
+ 
+ return btnp(i,p)
+end
+
+function make_automator(
+  entries)
+ 
+ return {
+  entries = entries,
+  index=1,
+  count=0, 
+  update=function(t,s)
+   
+   
+   local entry =
+     t.entries[t.index]
+   
+   
+   
+   local ct = entry[2]
+   local ctl = ct
+   
+   if t.count == 0 then
+    ctl = 0
+    if t.index > 1 then
+     ctl =
+       t.entries[t.index - 1][2]
+    end
+   end
+   
+   t.count += 1
+   
+   if t.count >= entry[1] then
+    t.index += 1
+    t.count = 0
+   end
+   
+   if t.index > #t.entries then
+   	--todo, callback
+   	return nil
+   end
+   
+   return ct, ctl
+   
+  end
+ }
+
+end
+
+function fields(...)
+ local f = {...}
+ 
+ local r = 0
+ 
+ for i = 1, #f do
+  r = bor(r, shl(1, f[i]))
+ end
+ return r
+end
+
+
 
 function pushc(x, y)
  local l=g_cs[#g_cs] or {0,0}
