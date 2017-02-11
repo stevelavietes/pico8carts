@@ -155,7 +155,9 @@ function _draw()
  if drawhead then
   rectfill(0, 0, 127, 8, 1)
   rectfill(0, 0, 127, 3, 13)
-  line(0, 9, 127, 9, 0)
+  local c = 0
+  if (not drawbg) c = 5
+  line(0, 9, 127, 9, c)
  
   spr(16, 1, 1, 8, 1)
   local sc = starcount
