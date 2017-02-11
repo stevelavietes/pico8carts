@@ -109,8 +109,13 @@ function _init()
     function()
      drawbg=true
      drawhead=true
+     
+     local l = min(
+       max(dget(63),1),
+         maxlevel)
+     
      add(g_objs,
-       make_main_menu(1, 22))
+       make_main_menu(l, 22))
    
    end))
 
@@ -1500,6 +1505,8 @@ function make_main_menu(level,
   growon)
  drawbg = true
  
+ dset(63, level)
+ 
  local t = {
   level=menulevel_override
     or level,
@@ -1522,10 +1529,13 @@ function make_main_menu(level,
     if btnp(0) then
      if t.level > 1 then
       t.level -= 1
+      dset(63, t.level)
+ 
      end
     elseif btnp(1) then
      if t.level < maxlevel then
       t.level += 1
+      dset(63, t.level)
      end
     end
    end
@@ -1587,6 +1597,7 @@ function make_main_menu(level,
         
         if mi == 1 then
          clear_data()
+         t.level = 1
         end
         
        end   
