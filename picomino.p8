@@ -226,7 +226,6 @@ end
 function make_big_plus_one()
  local x, y = getsprxy(98)
  local segs, rects, col = get_spr_outline(x, y, 16, 16)
- add(g_objs, make_fill_trans(58, 58, segs))
  celebrate = g_tick
  add(
   g_objs,
