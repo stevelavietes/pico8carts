@@ -2697,7 +2697,7 @@ function play_escalate(total)
    end
    
    t.step += 1
-   if t.step >= 6 then
+   if t.step >= 4 then
     t.step = 0
     t.count += 1
     
