@@ -277,7 +277,7 @@ function make_board(level,
  -- over
  if sublevel then
   if startcount + sublevel
-    >= #seq then
+    > #seq then
    sublevel = 0
   end
  end
@@ -506,6 +506,8 @@ function make_board(level,
      if t:getwidth() >
        #t.blocks then
       t.done = true
+      --don't get wider
+      t.subcount -= 1
      else
       local x = t.x
       
@@ -825,8 +827,11 @@ function make_board(level,
    add(g_objs, make_trans(
     function()
      next = next or 0
+     local l = min(
+       t.level + next,
+         maxlevel)
      add(g_objs, make_main_menu(
-       t.level + next)) 
+       l)) 
      del(g_objs, t)
    
    end))
