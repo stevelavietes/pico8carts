@@ -159,7 +159,20 @@ function _draw()
   if (not drawbg) c = 5
   line(0, 9, 127, 9, c)
  
+  if celebrate then
+   col_map = {{14 ,15}, {12, 6}, {9, 10}, {3, 11}}
+   offset = (flr(elapsed(celebrate)/3)) % 4 + 1
+   for i=1, 4 do
+    local first = col_map[i]
+    local next = col_map[(offset+i)%4+1]
+    pal(first[1], next[1])
+    pal(first[2], next[2])
+   end
+  end
   spr(16, 1, 1, 8, 1)
+  if celebrate then
+   pal()
+  end
   local sc = starcount
     .. '/'
     .. startotal
@@ -214,6 +227,7 @@ function make_big_plus_one()
  local x, y = getsprxy(98)
  local segs, rects, col = get_spr_outline(x, y, 16, 16)
  add(g_objs, make_fill_trans(58, 58, segs))
+ celebrate = g_tick
  add(
   g_objs,
   {
@@ -230,6 +244,7 @@ function make_big_plus_one()
     else
      del(g_objs, t)
      add(g_objs, make_fill_trans(t.x, t.y, segs))
+     celebrate = nil
     end
    end,
    draw=function(t)
