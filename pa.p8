@@ -1,6 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- competitive block matching
 
 cartdata("picotris_attack_high_scores")
 alphabet = "abcdefghijklmnopqrstuvwxyz "
