@@ -588,9 +588,8 @@ function update_fall(b)
    if (t.g 
        and t.g[1] ==0 
        and t.g[2] ==0) then
-    if (not t.f and 
-       not t.s and 
-       not t.m) then
+    -- if it isn't already falling or matching
+    if (not t.f and not t.gm) then
      update_fall_gb(b,x,y)
     end
    elseif y<g_h and t.t>0 then
@@ -638,11 +637,6 @@ end
 
 function update_fall_gb(b,x,y)
  local t = b.t[y][x]
- --xxx t.g should always be set
- --    working around for now
- if t.gm or not t.g then
-  return
- end
  local should_fall = true
  local lastgx=t.g[3]+x-1
  local lastgy=t.g[4]+y-1
@@ -682,10 +676,12 @@ function fall_above(x,y,t,b)
  for a=y-1,1,-1 do
   local a_t = b.t[a][x]
   if a_t.g and not a_t.f then
-   update_fall_gb(
-    b,
-    x-a_t.g[1],
-    a-a_t.g[2])
+   local root_gb_x = x-a_t.g[1]
+   local root_gb_y = a-a_t.g[2]
+   local root_block = b.t[root_gb_y][root_gb_x]
+   if not root_block.gm then
+    update_fall_gb(b, root_gb_x, root_gb_y)
+   end
    break
   end
   if busy(a_t) then
