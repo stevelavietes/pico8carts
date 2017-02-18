@@ -333,6 +333,21 @@ function make_board(level,
    	return
    end
    
+   --[[
+   if btnn(5, 1) then
+    local ba =
+      t:getboardarray()
+    printh('hi')
+    for y = 1, #ba do
+     local r = ba[y]
+     for x = 1, #r do
+      printh(r[x])
+     end
+    end
+   end
+   --]]
+   
+   
    movetot(t, 'x', 'targetx', 1)
    
    updateobjs(t.objs)
@@ -352,6 +367,128 @@ function make_board(level,
    
    
   end,
+  
+  getboardarray=function(t)
+   local w = t:getwidth()
+   local ba = {}
+   
+   for y = 1,5 do
+    local r = {}
+    ba[y] = r
+    for x = 1, w do
+     r[x] = false
+    end
+   end
+   
+   for i = 1, w do
+    
+    local b = t.blocks[i]
+    
+    if b.state ~= st_stowed
+      then
+     
+     local bx =
+       flr(b.x/b.scale)
+     local by =
+       flr(b.y/b.scale)
+     
+     local sx, sy = getsprxy(
+       b:getspr())
+     
+     for y = 0, 4 do
+      local yy = y + by
+      for x = 0, 4 do
+       local xx = x + bx
+       if xx >= 0
+         and xx < w
+         and yy >= 0
+         and yy < 5
+         and sget(sx+x, sy+y)
+           > 0
+         then
+        ba[yy+1][xx+1] = true
+       end
+      end
+     end
+    end
+   end
+   
+   return ba
+  
+  end,
+  
+  getbadnegspace=function(t)
+ 
+   local ba = t:getboardarray()
+   local w, h = #ba[1], 5
+   
+   local g2c, c2g = {}, {}
+   local busy = {}
+   
+   function check(x,y, ll)
+    
+    if x < 0 or x >= w
+      or y < 0 or y >= h then
+     return nil
+    end
+    
+    local i = y*w+x
+    
+    if (busy[i]) return
+    
+    --already there
+    if c2g[i] then
+     return c2g[i]
+    end
+    
+    
+    --filled
+    if ba[y+1][x+1] then
+     return
+    end
+    
+    --left,right,up,down
+    --already in grp?
+    
+    busy[i] = true
+    local g = check(x-1,y)
+    if (not g) g = check(x+1,y,1)
+    if (not g) g = check(x,y-1,1)
+    if (not g) g = check(x,y+1,1)
+    busy[i] = nil
+    
+    if not ll then
+     if g then
+      add(g, {x,y})
+     else
+      g = {{x,y}}
+      add(g2c, g)
+     end
+    
+     c2g[i] = g
+    end
+    
+    return g
+    
+   end
+   
+   
+   for y = 1, h do
+    for x = 1, w do
+     check(x-1,y-1)
+    end
+   end
+   
+   local result = {}
+   for i = 1, #g2c do
+    if #g2c[i] % 5 ~= 0 then
+     add(result, g2c[i])
+    end
+   end
+   
+   return result
+  end,
+  
   
   setactiveoverlap=function(t,s)
    if not t.activeblock then
@@ -582,7 +719,30 @@ function make_board(level,
     line(i*s, 0, i*s, s*5, 1)
    end
    
-   rect(-2, -2, s*w + 2, s*5 + 2)
+   local bn =
+     t:getbadnegspace()
+   
+   for i = 1 ,#bn do
+    local grp = bn[i]
+    for j = 1, #grp do
+     local cell = grp[j]
+     local x,y =
+       cell[1],cell[2]
+       
+     local off = 3
+     if g_tick % 30 > 14 then
+      off = 2
+     end
+     rectfill(x*s+off, y*s+off,
+       (x+1)*s-off,
+         (y+1)*s-off, 1)
+    end
+   
+   end
+   
+   
+   rect(-2, -2, s*w + 2,
+     s*5 + 2, 1)
    
    drawobjs(t.objs)
   end,
