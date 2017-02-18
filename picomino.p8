@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- almost impossible blocks
+-- for your entertainment
 
 -- what we call the save slot for this cart
 cartdata("picomino_progress_save_state")
@@ -712,6 +714,10 @@ function make_board(level,
    --print ('Ž—', 0, 0, 5) 
    --print (#t.pieces, 0, 8)
    
+   line(-t.x, -t.y+10,
+     -t.x, -t.y+127, 1)
+   line(-t.x+127, -t.y+10,
+     -t.x+127, -t.y+127, 1)
    line(-t.x, -t.y + 120,
      -t.x + 127, -t.y + 120, 1)
    rectfill(-t.x, -t.y + 121,
