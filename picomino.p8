@@ -730,9 +730,9 @@ function make_board(level,
        cell[1],cell[2]
        
      local off = 3
-     if g_tick % 30 > 14 then
-      off = 2
-     end
+     --if g_tick % 30 > 14 then
+     -- off = 2
+     --end
      rectfill(x*s+off, y*s+off,
        (x+1)*s-off,
          (y+1)*s-off, 1)
@@ -2683,28 +2683,29 @@ function make_textbox(
 end
 
 function howtoplay(s)
+ local off1 = {1,0}
  
  override_ct = make_automator({
   {80, 0}, --initial wait
   --move
-  {10, fields(3)}, {1, 0},
-  {10, fields(3)}, {1, 0},
-  {10, fields(3)}, {1, 0},
+  {10, fields(3)}, off1,
+  {10, fields(3)}, off1,
+  {10, fields(3)}, off1,
   
-  {8, fields(0)}, {1, 0},
-  {8, fields(0)}, {1, 0},
-  {8, fields(0)}, {1, 0},
-  {8, fields(1)}, {1, 0},
-  {8, fields(1)}, {1, 0},
-  {8, fields(1)}, {1, 0},
+  {8, fields(0)}, off1,
+  {8, fields(0)}, off1,
+  {8, fields(0)}, off1,
+  {8, fields(1)}, off1,
+  {8, fields(1)}, off1,
+  {8, fields(1)}, off1,
   
-  {8, fields(1)}, {1, 0},
-  {8, fields(3)}, {1, 0},
-  {8, fields(1)}, {1, 0},
-  {8, fields(2)}, {1, 0},
-  {8, fields(0)}, {1, 0},
-  {7, fields(0)}, {1, 0},
-  {6, fields(3)}, {1, 0},
+  {8, fields(1)}, off1,
+  {8, fields(3)}, off1,
+  {8, fields(1)}, off1,
+  {8, fields(2)}, off1,
+  {8, fields(0)}, off1,
+  {7, fields(0)}, off1,
+  {6, fields(3)}, off1,
   
   {45, 0},
   
@@ -2748,26 +2749,26 @@ function howtoplay(s)
   {1, fields(4,0)},
   {12, fields(4)},
   
-  {8, fields(3)}, {1, 0},
-  {8, fields(3)}, {1, 0},
-  {8, fields(3)}, {1, 0},
-  {8, fields(0)}, {1, 0},
-  {8, fields(3)}, {1, 0},
+  {8, fields(3)}, off1,
+  {8, fields(3)}, off1,
+  {8, fields(3)}, off1,
+  {8, fields(0)}, off1,
+  {8, fields(3)}, off1,
   
   {15, 0},
   {15, fields(5,1)},
   {5, 0},
   
-  {5, fields(3)}, {1, 0},
-  {5, fields(3)}, {1, 0},
-  {5, fields(3)}, {1, 0},
-  {5, fields(3)}, {1, 0},
-  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, off1,
+  {5, fields(3)}, off1,
+  {5, fields(3)}, off1,
+  {5, fields(3)}, off1,
+  {5, fields(3)}, off1,
   {5, fields(4,0)},
   {5, fields(4)},
   {5, fields(4,0)},
-  {5, fields(3)}, {1, 0},
-  {5, fields(3)}, {1, 0},
+  {5, fields(3)}, off1,
+  {5, fields(3)}, off1,
   {5, fields(3)},
   {180, 0},
   
