@@ -425,14 +425,18 @@ function make_board(level,
    local g2c, c2g = {}, {}
    local busy = {}
    
-   function check(x,y, ll)
-    
+   function geti(x,y)
     if x < 0 or x >= w
       or y < 0 or y >= h then
      return nil
     end
+    return y*w+x
+   end
+   function check(x,y, ll)
     
-    local i = y*w+x
+    
+    local i = geti(x,y)
+    if (not i) return
     
     if (busy[i]) return
     
@@ -457,14 +461,14 @@ function make_board(level,
     if (not g) g = check(x,y+1,1)
     busy[i] = nil
     
-    if not ll then
+    if not ll and not c2g[i] then
      if g then
       add(g, {x,y})
      else
       g = {{x,y}}
       add(g2c, g)
      end
-    
+     
      c2g[i] = g
     end
     
@@ -479,10 +483,46 @@ function make_board(level,
     end
    end
    
+   --merge
+   for i = 1, #g2c do
+    local grp = g2c[i]
+    
+    for j = 1, #grp do
+     local c = grp[j]
+     local x,y = c[1],c[2]
+     
+     local tests = {
+      geti(x-1,y),
+      geti(x+1,y),
+      geti(x,y-1),
+      geti(x,y+1)
+     }
+     
+     for k = 1, 4 do
+      local grp2 =
+        c2g[tests[k]]
+      
+      if grp2 and grp2 ~= grp
+        then
+       for l = 1, #grp2 do
+        local c2 = grp2[l]
+        c2g[geti(c2[1],c2[2])]
+          = grp
+        add(grp, c2)
+        grp2[l] = nil
+       end 
+      end
+     end
+    end
+   end
+   
+   
    local result = {}
    for i = 1, #g2c do
-    if #g2c[i] % 5 ~= 0 then
-     add(result, g2c[i])
+    local grp = g2c[i]
+    if #grp % 5 > 0
+      then
+     add(result, grp)
     end
    end
    
@@ -736,8 +776,10 @@ function make_board(level,
      rectfill(x*s+off, y*s+off,
        (x+1)*s-off,
          (y+1)*s-off, 1)
+     
+     
     end
-   
+    --print(#grp, 0, i*10 + 20, 6)
    end
    
    
@@ -1679,6 +1721,7 @@ function make_fill_trans(
 
 end
 
+--[[
 function make_level_debug()
  return {
   x=0,y=0,
@@ -1709,7 +1752,7 @@ function make_level_debug()
  
  }
 end
-
+--]]
 
 function make_letter_block(
   sprite)
