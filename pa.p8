@@ -782,6 +782,14 @@ function match_garb(b,x,y,ch,gbt)
    if yy==ye and yy<g_h-1 then
     match_garb(b,xx,yy+1,ch,gbt)
    end
+   -- match left and right
+   if xx==x and xx > 1 then
+    match_garb(b,xx-1,yy,ch,gbt)
+   end
+   if xx==xe and xx < g_w-1 then
+    match_garb(b,xx+1,yy,ch,gbt)
+   end
+
    --
   end
  end
