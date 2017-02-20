@@ -190,32 +190,7 @@ function _draw()
  end
  stddraw()
  
- --[[
- if override_ct then
-  if btnd(0) then
-   print('‹', 0, 20, 7)
-  end
-  if btnd(1) then
-   print('‘', 10, 20, 7)
-  end
-  if btnd(2) then
-   print('”', 20, 20, 7)
-  end
-  if btnd(3) then
-   print('ƒ', 30, 20, 7)
-  end
-  if btnd(4) then
-   print('Ž', 40, 20, 7)
-  end
-  if btnd(5) then
-   print('—', 40, 20, 7)
-  end
-  
-  
-  
-  
- end
- --]]
+ 
  
 end
 
