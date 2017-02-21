@@ -926,6 +926,11 @@ function scan_board(b)
     max(0,b.x+(mx-1)*9-17),
     b.y+my*9,ch..'x',true))
   incr_hold(b,ch*10)	--tune
+  if ch > 2 then
+   sfx(40+ch-2)
+   b.trumpets = true
+   make_shake(b, 7, 5)
+  end
  end
 
  if mc>3 then
@@ -955,7 +960,9 @@ function scan_board(b)
     tb,
     {ch,mc,g_tick,0},
     g_tick)
-  make_shake(b, 5, 5)
+  if b.trumpets == false then
+   make_shake(b, 5, 5)
+  end
   sfx(10)
  end
 
@@ -1680,6 +1687,12 @@ function add_bg(b,bx,cx)
 
    -- @todo: expensive in cpu and tokens
    if b.shake_start != nil then
+    local tgt_col = 11
+    if b.trumpets == true then
+     tgt_col = 9
+     stop()
+    end
+
     --[[
      because this loop uses pget() and pset(), it is extremely expensive.  to
      reduce the cost, only iterate on rows and columns where there might be a
@@ -1690,9 +1703,13 @@ function add_bg(b,bx,cx)
      for sy=odd-1,127,2 do
       local col = pget(sx, sy)
       if col == 13 or col == 14 then
-       pset(sx, sy, 11)
+       pset(sx, sy, tgt_col)
       end
      end
+    end
+   else
+    if b.trumpets == true then
+     b.trumpets = false
     end
    end
   end
