@@ -1474,7 +1474,7 @@ function make_garbscore(b)
   update=function(t)
    local amount = 0
    for gb in all(t.gq) do
-    t.s+=gb[1]*gb[2]
+    t.s+=(g_start_level+1)*gb[1]*gb[2]
     del(t.gq,gb)
     amount += min(gb[1], 5)
    end
@@ -1561,7 +1561,7 @@ function make_1playgarb(b)
    --every two seconds
    if g_tick%60>=59 then
     --increased odds by level
-    if rnd(100)>85-(g_lv[1]*12)
+    if rnd(100)>85-(g_lv[1]*12) and g_start_level > 0
       then
      add(b.gq,{3,1,g_tick})
     end
@@ -1670,10 +1670,6 @@ function make_title()
  }
 end
 
-function smootherstep(x)
- return x*x*x*(x*(x*6 - 15) + 10);
-end
-
 function add_bg(b,bx,cx)
  addggo(
  {
@@ -1684,10 +1680,6 @@ function add_bg(b,bx,cx)
 
    -- @todo: expensive in cpu and tokens
    if b.shake_start != nil then
-    local current_frame = 128*smootherstep(
-     1-((elapsed(b.shake_start))/b.shake_time)
-    )
-
     --[[
      because this loop uses pget() and pset(), it is extremely expensive.  to
      reduce the cost, only iterate on rows and columns where there might be a
@@ -1876,6 +1868,8 @@ function make_lmenu(p,pm)
    'expert'},
   function(t,i,s)
    t.off=true
+   -- for tracking difficulty, we save the initial difficulty selection
+   g_start_level = i
    g_lv[p+1]=i
    t.pm:accept(t,s)
   end,
