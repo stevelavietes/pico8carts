@@ -1481,7 +1481,7 @@ function make_garbscore(b)
   update=function(t)
    local amount = 0
    for gb in all(t.gq) do
-    t.s+=(g_start_level+1)*gb[1]*gb[2]
+    t.s+=flr(((g_start_level+1)*gb[1]*gb[2])/2)
     del(t.gq,gb)
     amount += min(gb[1], 5)
    end
