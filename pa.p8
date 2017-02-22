@@ -1482,8 +1482,8 @@ function make_garbscore(b)
    local amount = 0
    for gb in all(t.gq) do
     t.s+=flr(((g_start_level+1)*gb[1]*gb[2])/2)
-    del(t.gq,gb)
     amount += min(gb[1], 5)
+    del(t.gq,gb)
    end
    if amount > 0 then
     make_shake(t, amount, 4*amount)
@@ -1690,7 +1690,6 @@ function add_bg(b,bx,cx)
     local tgt_col = 11
     if b.trumpets == true then
      tgt_col = 9
-     stop()
     end
 
     --[[
