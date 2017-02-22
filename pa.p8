@@ -960,7 +960,7 @@ function scan_board(b)
     tb,
     {ch,mc,g_tick,0},
     g_tick)
-  if b.trumpets == false then
+  if not b.trumpets or b.trumpets == false then
    make_shake(b, 5, 5)
   end
   sfx(10)
