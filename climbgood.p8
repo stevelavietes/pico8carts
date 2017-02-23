@@ -701,24 +701,34 @@ function make_violet(p)
      t.will_hold=false
     end
 
+    -- state detection
+    t.x += t.speed
+    local on_wall = next_to_wall(t)
+    t.x -= t.speed
+    local jumping = (t.y != ground)
+
     --left
     if btn(0,p) then
      if t.direction == 1 then
       t.frame = 0
      end
-     t.direction = 0
-     t.speed =
-     max(-2-spdadj,
-     t.speed-2*t.speedinc)
+     if (not jumping) or on_wall or t.speed < 0 then
+      t.direction = 0
+      t.speed =
+      max(-2-spdadj,
+      t.speed-2*t.speedinc)
+     end
      --right
     elseif btn(1,p) then
      if t.direction == 0 then
       t.frame = 0
      end
-     t.direction = 1
-     t.speed =
-     min(2+spdadj,
-     t.speed+2*t.speedinc)
+     if (not jumping) or on_wall or t.speed > 0 then
+      t.direction = 1
+      t.speed =
+      min(2+spdadj,
+      t.speed+2*t.speedinc)
+     end
      --stop
     else
      if abs(t.speed) < 
@@ -729,14 +739,7 @@ function make_violet(p)
      end
     end
 
-    t.x += t.speed
-    local flip = false
-    if next_to_wall(t) then
-     flip = true
-    end
-    t.x -= t.speed
-
-    if flip then
+    if on_wall then
      t.jumps = max(t.jumps, 1)
     end
 
@@ -749,7 +752,7 @@ function make_violet(p)
     -- end
 
 
-    if flip then
+    if on_wall then
      t.speed *= -1
      t.jumps +=1 
     end
