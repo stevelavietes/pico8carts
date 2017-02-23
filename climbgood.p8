@@ -444,11 +444,9 @@ function _draw()
   2,121)
  if g_violets[1] then
   color(11)
-  g_violets[1].x += g_violets[1].speed
-  if next_to_wall(g_violets[1]) then
+  if g_violets[1]:next_to_wall() then
    color(9)
   end
-  g_violets[1].x -= g_violets[1].speed
   print("speed: "..table_to_string(g_violets[1].speed), 2, 116)
   print("jumps: "..table_to_string(g_violets[1].jumps), 2, 110)
  end
@@ -702,9 +700,7 @@ function make_violet(p)
     end
 
     -- state detection
-    t.x += t.speed
-    local on_wall = next_to_wall(t)
-    t.x -= t.speed
+    local on_wall = t:next_to_wall()
     local jumping = (t.y != ground)
 
     --left
@@ -765,6 +761,13 @@ function make_violet(p)
    t.frame=(t.frame+frameadj)%3
 
   end,
+  next_to_wall=function (t)
+   t.x += t.speed
+   local on_wall = next_to_wall(t)
+   t.x -= t.speed
+
+   return on_wall
+  end,
   ---
   draw=function(t)
    local sflip =
@@ -800,6 +803,9 @@ function make_violet(p)
     if g_state == 1
       and (g_tick%4)>2 then
      s = 2
+    end
+    if t:next_to_wall() then
+     s = 12
     end
    end
    
