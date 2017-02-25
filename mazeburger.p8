@@ -1570,30 +1570,6 @@ function make_maze(sizex,sizey)
    local sx = (x-1)*64
    local sy = (y-1)*64
    
-   --cull
-   if not t.skipcull then
-    if sx > g_camx + 128
-      then
-     return
-    end
-   
-    if sx < g_camx
-      and sx + 64 < g_camx
-      then
-     return
-    end
-    if sy > g_camy + 128
-      then
-     return
-    end
-   
-    if sy < g_camy
-      and sy + 64 < g_camy
-      then
-     return
-    end
-   end
-   
    local isactive = (
      t.cx == x - 1
      and t.cy == y - 1)
