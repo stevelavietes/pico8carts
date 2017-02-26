@@ -1165,9 +1165,9 @@ function make_player(maze,mzy)
    
    t.couldproj = nil
    
-   if cellhasdr(cell,t.dr)
-     then
-    if t.dr == 1 then
+   --if cellhasdr(cell,t.dr)
+   --  then
+    if cellhasdr(cell,1) then
      if (t.mzx % 8) > 5.5 and
        t.maze.cx < t.maze.sx-1
         
@@ -1181,7 +1181,9 @@ function make_player(maze,mzy)
         t.couldproj = 1
        end
      end
-    elseif t.dr == 2 then
+    end
+    
+    if cellhasdr(cell,2) then
      if (t.mzy % 8) > 5.5 and
        t.maze.cy < t.maze.sy - 1
         
@@ -1197,7 +1199,9 @@ function make_player(maze,mzy)
        t.couldproj = 2
       end
      end
-    elseif t.dr == 0 then
+    end 
+     
+    if cellhasdr(cell,0) then
      if (t.mzy % 8) < 1.5 and
        t.maze.cy > 0
         
@@ -1213,7 +1217,9 @@ function make_player(maze,mzy)
        t.couldproj = 0
       end
      end
-    elseif t.dr == 3 then
+    end
+     
+    if cellhasdr(cell,3) then
      if (t.mzx % 8) < 1.5 and
        t.maze.cx > 0
        
@@ -1229,7 +1235,7 @@ function make_player(maze,mzy)
       end
      end
     end
-   end
+   --end
    
    --don't allow rotate
    --during transition
@@ -1361,22 +1367,27 @@ function make_player(maze,mzy)
    popc()
    
    local d = t.couldproj
-    
-   if d and g_tick % 20 > 9
+   
+   local cyc = g_tick % 24
+   if d and cyc > 7
      then
     
-    color(7)
+    if cyc > 15 then
+     color(7)
+    else
+     color(6)
+    end
     local cx = flr(t.mzx/8)*64
     local cy = flr(t.mzy/8)*64
     
     if d == 0 then
-     print('”', cx + 28, cy)
+     print('”', cx + 28, cy-4)
     elseif d == 1 then
-     print('‘', cx + 64, cy+28)
+     print('‘', cx + 64, cy+30)
     elseif d == 2 then
-     print('ƒ', cx + 28, cy+64)
+     print('ƒ', cx + 28, cy+66)
     else
-     print('‹', cx-8, cy+28)
+     print('‹', cx-8, cy+30)
     end
     --spr(8, cx, cy)
     
@@ -2891,13 +2902,15 @@ function make_enemyflyoff(
   end,
   draw=function(t)
    spr(64,4,4)
-   
+    
+    --[[
     if g_tick % 2 == 0 then
      local f= flr(
        (g_tick%8)/2)
      spr(84+f,1,4)
      spr(84+f,7,4,1,1,true)
     end
+    --]]
   end
  }
 
