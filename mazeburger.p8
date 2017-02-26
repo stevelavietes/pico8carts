@@ -1,6 +1,9 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- savoury action game
+--
+cartdata("mazeburgersave")
 
 
 function _init()
@@ -10,12 +13,19 @@ function _init()
  g_dbgmove = false
  --]]
  
+ menuitem(1, 'reset high score',
+  function()
+   g_hiscore = 0
+   dset(0, 0)
+  end
+ )
+ 
  g_rotbtnfnc = btnn
  
 	g_maxcells = 8
  g_rotsignalobjs = {}
  g_score = 0
- g_hiscore = 0
+ g_hiscore = dget(0)
  
  stdinit()
  
@@ -1375,7 +1385,7 @@ function make_player(maze,mzy)
     if cyc > 15 then
      color(7)
     else
-     color(6)
+     color(5)
     end
     local cx = flr(t.mzx/8)*64
     local cy = flr(t.mzy/8)*64
@@ -2618,7 +2628,7 @@ function make_hit(game,x,y)
     if g_lives < 1 then
      g_hiscore = max(g_score,
        g_hiscore)
-       
+     dset(0, g_hiscore)
      --transition?
      g_objs = {}
      add(g_objs, make_main())
@@ -2766,8 +2776,9 @@ function make_main()
   draw=function(t)
    
    if g_tick % 32 > 16 then
-    print('press to start',
-      36, 120, 7)
+    print(
+     'press — or Ž to start',
+      19, 120, 7)
    end
    
    
