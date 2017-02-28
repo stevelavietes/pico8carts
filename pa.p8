@@ -2081,6 +2081,9 @@ function draw_gobjs(s)
 end
 
 function elapsed(t)
+ if t == nil then
+  return 32767
+ end
  if g_tick>=t then
   return g_tick - t
  end
