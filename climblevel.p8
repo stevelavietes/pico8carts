@@ -172,6 +172,13 @@ function spr2num(x,y,w)
  return num,x,y
 end
 
+function num2spr(x,y,w,n)
+ --todo
+ 
+ 
+end
+
+
 function getsprxy(n)
  return (n % 16) * 8,
    flr(n/16) * 8
@@ -196,6 +203,17 @@ function nextsprxy(x,y)
  
  return x,y
 end
+
+function boardtospr(board,
+ sprid)
+
+ local x,y = getsprxy(sprid)
+
+
+
+
+end
+
 
 function _init()
  local b = load_board(16)
