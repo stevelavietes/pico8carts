@@ -173,9 +173,16 @@ function spr2num(x,y,w)
 end
 
 function num2spr(x,y,w,n)
- --todo
+ local mask = 15
  
+ for i = 0, w-1 do
+   sset(x,y,
+     shr(band(n,mask),i*4))
+   x,y = nextsprxy(x,y)
+   mask = shl(mask, 4)
+ end
  
+ return x,y
 end
 
 
@@ -208,8 +215,64 @@ function boardtospr(board,
  sprid)
 
  local x,y = getsprxy(sprid)
+ local sx,sy = x,y
+ 
+ local addr = y*64 + x/2
+ 
+ x, y = num2spr(x,y,2,
+   board.numscreens) 
 
+--it_horzblock
+--it_vertblock = 2
+--it_platform = 3
 
+ 
+ local writefncs = {
+  [it_horzblock]=function(
+    item,x,y)
+   return num2spr(x,y,1,
+     item.width)  
+  end,
+  
+  [it_vertblock]=function(
+    item,x,y)
+   return num2spr(x,y,1,
+     item.height)  
+  end,
+  
+  [it_platform]=function(
+    item,x,y)
+   return num2spr(x,y,1,
+     item.width)  
+  end,
+ 
+ }
+ 
+ 
+ for i = 1, #board.items do
+  local item = board.items[i]
+  x,y = num2spr(x,y,1,
+    item.itemtype)
+  x,y = num2spr(x,y,1,
+    item.xpos)
+  x,y = num2spr(x,y,2,
+    item.yscr)
+  x,y = num2spr(x,y,1,
+    item.ypos)
+  
+  local fnc = writefncs[
+    item.itemtype]
+  
+  if fnc then
+   x,y = fnc(item, x, y)
+  end
+ 
+ end
+ 
+ --todo figure out width
+ --for now, do one row
+ size = 64*8
+ cstore(addr, addr, size)
 
 
 end
@@ -227,6 +290,7 @@ function _init()
   end
  end
  
+ boardtospr(b, 32)
  
 end
 
