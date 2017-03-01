@@ -61,6 +61,9 @@ function load_board(sprid)
  return result
 end
 
+m_brick = 72
+m_platform = 71
+ 
 function board2table(board)
  local t = {}
  
@@ -75,13 +78,12 @@ function board2table(board)
 
  
 
- local m_brick = 72
- local m_platform = 71
+ 
  
  local function horzrun(x,y,w,m)
   if (y < 1 or y > #t) return
   for i = x, min(
-    16, x+w) do
+    16, x+w-1) do
    t[y][i] = m
   end
  end
@@ -99,7 +101,7 @@ function board2table(board)
     function(item,x,y)
    
    for i = y, min(
-     y+item.height, #t) do
+     y+item.height-1, #t) do
     t[i][x] = m_brick  
    end
    
@@ -211,6 +213,8 @@ function nextsprxy(x,y)
  return x,y
 end
 
+
+
 function boardtospr(board,
  sprid)
 
@@ -218,6 +222,9 @@ function boardtospr(board,
  local sx,sy = x,y
  
  local addr = y*64 + x/2
+ 
+ --blank whole row for now
+ memset(addr, 0, 64*16*8)
  
  x, y = num2spr(x,y,2,
    board.numscreens) 
@@ -277,31 +284,372 @@ function boardtospr(board,
 
 end
 
-
-function _init()
- local b = load_board(16)
- local t = board2table(b)
+function table2map(t,
+  scrollpos)
  
- --test transfering first
- --screen to map
+ --todo, scrollpos
  for y = 1, 16 do
   for x = 1, 16 do
    mset(x-1, 32-y, t[y][x])
   end
  end
+
+
+end
+
+function stdinit()
+ g_tick=0    --time
+ g_ct=0      --controllers
+ g_ctl=0     --last controllers
+ g_cs = {}   --camera stack 
+ g_objs = {} --objects
+ g_camx = 0
+ g_camy = 0
  
- boardtospr(b, 32)
+ g_ms=0      --mouseb
+ g_msl=0     --last mouseb
+end
+
+function pushc(x, y)
+ local l=g_cs[#g_cs] or {0,0}
+ local n={l[1]+x,l[2]+y}
+ add(g_cs, n)
+ camera(n[1], n[2])
+end
+
+function popc()
+ local len = #g_cs
+ g_cs[len] = nil
+ len -= 1
+ if len > 0 then
+  local xy=g_cs[len]
+  camera(xy[1],xy[2])
+ else
+  camera()
+ end
+end
+
+
+function updateobjs(objs)
+ foreach(objs, function(t)
+  if t.update then
+   t:update(objs)
+  end
+ end)
+end
+
+function drawobjs(objs)
+ foreach(objs, function(t)
+  if t.draw then
+   pushc(-t.x, -t.y)
+   t:draw(objs)
+   popc()
+  end
+ end)
+end
+
+function stdupdate()
+ g_tick = max(0,g_tick+1)
+ -- current/last controller
+ g_ctl = g_ct
+ g_ct = btn()
+ 
+ --current/last mouse button
+ g_msl = g_ms
+ g_ms = stat(34)
+ --mbtn=stat(34)
+ 
+ 
+ updateobjs(g_objs)
+end
+
+
+--returns state,changed
+function btns(i,p)
+ i=shl(1,i)
+ if p==1 then
+  i=shl(i,8)
+ end
+ local c,cng =
+   band(i,g_ct),
+   band(i,g_ctl)
+ return c>0,c~=cng
+end
+
+--returns new press only
+function btnn(i,p)
+ if p==-1 then --either
+  return btnn(i,0) or btnn(i,1)
+ end
+ local pr,chg=btns(i,p)
+ return pr and chg
+end
+
+function mbtn(i) 
+ return band(
+  g_ms, shl(1, i)) > 0
+end
+
+function mbtnn(i) 
+ return mbtn(i) and
+   band(g_msl, shl(1, i)) == 0
+end
+
+
+
+function stddraw()
+ pushc(g_camx, g_camy)
+ drawobjs(g_objs)
+ popc()
+end
+
+-------------------------------
+
+it_horzblock_meta = {
+ draw=function(t)
+  for j = 1, t.width do
+	  spr(m_brick, (j-1)*8, -8)
+	 end
+ end,
+ 
+ bound=function(t)
+  return {0, -8, 8*t.width, 0}
+ end,
+ 
+}
+
+it_vertblock_meta = {
+ draw=function(t)
+  for j = 1, t.height do
+   spr(m_brick,0, (j*1)*-8)
+  end
+ end,
+ 
+ bound=function(t)
+  return {0, -8*t.height, 8, 0}
+ end,
+}
+
+it_platform_meta = {
+ draw=function(t)
+  for j = 1, t.width do
+   spr(m_platform,
+     (j-1)*8, -8)
+  end
+ end,
+ 
+ bound=function(t)
+  return {0, -8, 8*t.width, -4}
+ end,
+ 
+}
+
+it_metas = {
+  [it_horzblock]=
+    {__index=it_horzblock_meta},
+  [it_vertblock]=
+    {__index=it_vertblock_meta},
+  [it_platform]=
+    {__index=it_platform_meta},
+}
+
+-------------------------------
+
+function make_board_obj(board)
+	
+	for i = 1, #board.items do
+	 local item = board.items[i]
+	 
+	 setmetatable(item,
+	   it_metas[item.itemtype])
+	 
+	 
+
+	 
+	end
+	
+	
+	return {
+  board=board,	
+	 scrollpos=0,
+	 
+	 itempos=function(t, item)
+	  return item.xpos*8,
+	    item.yscr*128 -
+	       item.ypos*8
+	 end,
+	 
+	 update=function(t,s)
+	  if mbtnn(0) then
+	   
+	   local mx = stat(32)
+	   local my = 128 - stat(33)
+	   my -= t.scrollpos
+	   
+	   local selitem = nil
+	   for i = #t.board.items, 1,
+	     -1 do
+	    
+		   local item =
+		     t.board.items[i]
+	   
+	    local ix, iy =
+	      t:itempos(item)
+	    
+	    local b = item:bound()
+	    
+	    local lmx = mx-ix
+	    local lmy = -(my+iy)
+	    
+	    --item.lmy = lmy
+	    if lmx >= b[1]
+	      and lmy >= b[2]
+	      and lmx < b[3]
+	      and lmy < b[4]
+	      then
+	     selitem = item
+	     break
+	    end
+	    
+	   end
+	   
+	   for i = 1, #t.board.items
+	     do
+	    local item =
+	      t.board.items[i]
+	    
+	    if item == selitem then
+	     item.selected = true
+	    else
+	     item.selected = nil
+	    end
+	   end
+	  
+	  end
+	  
+	  if btnp(0) then
+	   for item in all(
+	     board.items) do
+	     
+	    if item.selected then
+	     item.xpos = max(
+	       item.xpos-1, 0)
+	    
+	    end
+	   end
+	  end
+	  
+	  if btnp(1) then
+	   for item in all(
+	     board.items) do
+	     
+	    if item.selected then
+	     item.xpos = min(
+	       item.xpos+1, 15)
+	    
+	    end
+	   end
+	  end
+	  
+	  
+	  
+	  	  
+	 end,
+	 
+	 draw=function(t)
+	 	pushc(0, t.scrollpos - 128)
+	  
+	  for i = 1, #t.board.items do
+	   local item =
+	     t.board.items[i]
+	  
+	   
+	   local ix, iy =
+	     t:itempos(item)
+	   
+	   pushc(-ix, -iy)
+	   
+	   item:draw()
+	   
+	   --print(ix .. ','.. iy, 0,0,7)
+	   if item.selected then
+	    local b = item:bound()
+	   
+	    rect(b[1], b[2], b[3], b[4],
+	      (g_tick % 10)/5 + 6)
+	   
+	   
+	   end
+	   --[[
+	   if item.lmy then
+	    print(item.lmy, -8,-8, 6)
+	   
+	   end
+	   --]]
+	   
+	   
+	   popc()
+	   
+	  end	
+	 
+	  popc()
+	 end,
+	 x=0,y=0
+ }
+
+end
+
+
+
+-------------------------------
+
+poke(0x5f2d, 1)
+
+function _init()
+ stdinit()
+ 
+ local b = load_board(16)
+ 
+ 
+ menuitem(1, 'save board',
+   function()
+   
+   end)
+ 
+ 
+ local t = board2table(b)
+ table2map(t)
+ --boardtospr(b, 32)
+ 
+ add(g_objs, make_board_obj(b))
+ 
+ 
+ 
  
 end
 
 function _update()
-
+  stdupdate()
 end
 
 function _draw()
  cls()
+ stddraw()
+ 
+ 
+ spr(73, stat(32), stat(33))
+ --print( stat(32) .. ',' ..
+ --  stat(33), stat(32), stat(33)-8)
+ 
+ 
+ --[[
  --todo, track scrolling
- map(0, 16, 0, 00, 16, 16)
+ for i = 0, 15 do
+  pal(i, 1)
+ end
+ map(0, 16, 0, 0, 16, 16)
+ pal()
+ --]]
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -336,14 +684,14 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000111111114444444400000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000013333333aaa4aaaa00000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000013b333b39994a99900000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000001bbb3bbb9994a99900000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000111111114444444400000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000000000000aaaaaaa400000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000000000000a999999400000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000000000000a999999400000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000111111114444444477000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000013333333aaa4aaaa75700000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000013b333b39994a99975570000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000001bbb3bbb9994a99975557000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000111111114444444475555700000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000aaaaaaa475757000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000a999999477075700000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000a999999400007000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
