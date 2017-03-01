@@ -950,6 +950,7 @@ function scan_board(b)
     tb,
     {1,(mtlc-2)*6+1,g_tick,1},
     g_tick)
+  make_shake(b, 7, 5)
  end
 
  if tb and
