@@ -1277,7 +1277,6 @@ function make_player(maze,mzy)
    
    pushc(ox, oy)
    
-   spr(2+s,4,4,1,1,fp,false)
    
    local fo = 0
    if g_tick % 20 > 9 then
