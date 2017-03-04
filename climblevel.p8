@@ -605,8 +605,8 @@ function make_board_obj(board)
 	   
 	   
 	   
-	   t.cmx = mx
-	   t.cmy = my
+	   --t.cmx = mx
+	   --t.cmy = my
 	   
 	   if mx >= 120 then
 	    if my < 8 then
@@ -663,34 +663,12 @@ function make_board_obj(board)
 	   
 	  end
 	  
+	  --[[
 	  if not mbtn(0) then
 	   t.cmx = nil
 	   t.cmy = nil
    end
-	  
-	  if btnp(0) then
-	   for item in all(
-	     board.items) do
-	     
-	    if item.selected then
-	     item.xpos = max(
-	       item.xpos-1, 0)
-	    
-	    end
-	   end
-	  end
-	  
-	  if btnp(1) then
-	   for item in all(
-	     board.items) do
-	     
-	    if item.selected then
-	     item.xpos = min(
-	       item.xpos+1, 15)
-	    
-	    end
-	   end
-	  end
+	  --]]
 	  
 	  	  
 	 end,
