@@ -3,8 +3,8 @@ version 8
 __lua__
 
 -- { debug stuff can be deleted
--- turn any thing into a string (table, boolean, whatever)
 function repr(arg)
+ -- turn any thing into a string (table, boolean, whatever)
  if arg == nil then
   return "nil"
  end
@@ -22,7 +22,7 @@ function repr(arg)
  return ""..arg
 end
 
-function printstdout(msg)
+function print_stdout(msg)
  -- print 'msg' to the terminal, whatever it might be
  printh("["..repr(g_tick).."] "..repr(msg))
 end
