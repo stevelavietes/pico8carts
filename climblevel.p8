@@ -405,6 +405,58 @@ end
 
 -------------------------------
 
+it_base = {
+ 
+ ytomappos=function(t)
+  return t.yscr*16+t.ypos
+ end,
+ 
+ yfrommappos=function(t, y)
+  if y < 0 then
+   return 0, 0
+  end
+  
+  return flr(y/16), y % 16
+ end,
+ 
+ clickevent=function(t, mx, my)
+  sfx(0)
+  
+  t._s_mx = mx
+  t._s_my = my
+  
+  t._s_xpos = t.xpos
+  t._s_ypos = t:ytomappos()
+  
+ end,
+ 
+ dragevent=function(t, mx, my)
+  
+  local ox =
+    flr((mx - t._s_mx) /8)
+  
+  t.xpos = min(15,
+    max(0, t._s_xpos + ox))
+  
+  local oy =
+    flr((my - t._s_my) /8)
+  
+  local scr, pos =
+    t:yfrommappos(
+      t._s_ypos + oy)
+  
+  t.yscr = max(0, scr)
+  t.ypos = max(0, pos)
+  
+ end,
+ 
+}
+
+it_base_meta = {
+  __index=it_base,
+}
+
+
 it_horzblock_meta = {
  draw=function(t)
   for j = 1, t.width do
@@ -415,6 +467,7 @@ it_horzblock_meta = {
  bound=function(t)
   return {0, -8, 8*t.width, 0}
  end,
+ 
  
 }
 
@@ -428,6 +481,7 @@ it_vertblock_meta = {
  bound=function(t)
   return {0, -8*t.height, 8, 0}
  end,
+ 
 }
 
 it_platform_meta = {
@@ -441,7 +495,7 @@ it_platform_meta = {
  bound=function(t)
   return {0, -8, 8*t.width, -4}
  end,
- 
+
 }
 
 it_metas = {
@@ -452,6 +506,10 @@ it_metas = {
   [it_platform]=
     {__index=it_platform_meta},
 }
+
+foreach(it_metas, function(t)
+ setmetatable(t.__index, it_base_meta)
+end)
 
 -------------------------------
 
@@ -476,7 +534,7 @@ function make_board_obj(board)
 	 
 	 itempos=function(t, item)
 	  return item.xpos*8,
-	    item.yscr*128 -
+	    item.yscr*-128 -
 	       item.ypos*8
 	 end,
 	 
@@ -514,6 +572,7 @@ function make_board_obj(board)
       then
      selitem = item
      
+     item:clickevent(mx, my)
      t.clickitem = item
      
      break
@@ -574,26 +633,32 @@ function make_board_obj(board)
 	   
 	   if mbtn(0) then
 	    if ci == mi_scrollup then
-	     t.scrollpos -= 1 
+	     t.scrollpos -= 8 
 	    elseif ci ==
 	      mi_scrolldown then
 	     t.scrollpos = min(0,
-	       t.scrollpos + 1)
+	       t.scrollpos + 8)
 	    
 	    else
 	     if type(ci) == 'table'
-	       and ci.itemtype then
-	      
+	       and ci.dragevent then
+	       
 	      --todo send mouse pos to
 	      --item 
 	      local imx, imy =
 		       t:itemsmpos(mx, my)
 		     
+		     ci:dragevent(imx, imy)
+		     
 	     end
 	    end
 	    
 	   else
+	    
 	    t.clickitem = nil
+	    
+	    
+    
 	   end
 	   
 	  end
@@ -601,7 +666,7 @@ function make_board_obj(board)
 	  if not mbtn(0) then
 	   t.cmx = nil
 	   t.cmy = nil
-	  end
+   end
 	  
 	  if btnp(0) then
 	   for item in all(
