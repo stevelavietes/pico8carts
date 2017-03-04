@@ -31,8 +31,7 @@ end
 function _init()
  stdinit()
 
- add(
-  g_objs,
+ add_gobjs(
    make_menu(
    {
     'go',
