@@ -2,6 +2,32 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 
+-- { debug stuff can be deleted
+-- turn any thing into a string (table, boolean, whatever)
+function repr(arg)
+ if arg == nil then
+  return "nil"
+ end
+ if type(arg) == "boolean" then
+  return arg and "true" or "false"
+ end
+ if type(arg) == "table" then 
+  local retval = " table{ "
+  for k, v in pairs(arg) do
+   retval = retval .. k .. ": ".. table_to_string(v).. ","
+  end
+  retval = retval .. "} "
+  return retval
+ end
+ return ""..arg
+end
+
+function printstdout(msg)
+ -- print 'msg' to the terminal, whatever it might be
+ printh("["..repr(g_tick).."] "..repr(msg))
+end
+-- }
+
 function _init()
  stdinit()
 
