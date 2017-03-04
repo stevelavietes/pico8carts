@@ -455,6 +455,10 @@ it_metas = {
 
 -------------------------------
 
+mi_scrollup = 0
+mi_scrolldown = 1
+
+
 function make_board_obj(board)
 	
 	for i = 1, #board.items do
@@ -462,9 +466,6 @@ function make_board_obj(board)
 	 
 	 setmetatable(item,
 	   it_metas[item.itemtype])
-	 
-	 
-
 	 
 	end
 	
@@ -479,52 +480,127 @@ function make_board_obj(board)
 	       item.ypos*8
 	 end,
 	 
-	 update=function(t,s)
-	  if mbtnn(0) then
-	   
-	   local mx = stat(32)
-	   local my = 128 - stat(33)
-	   my -= t.scrollpos
-	   
-	   local selitem = nil
-	   for i = #t.board.items, 1,
-	     -1 do
-	    
-		   local item =
-		     t.board.items[i]
-	   
-	    local ix, iy =
-	      t:itempos(item)
-	    
-	    local b = item:bound()
-	    
-	    local lmx = mx-ix
-	    local lmy = -(my+iy)
-	    
-	    --item.lmy = lmy
-	    if lmx >= b[1]
-	      and lmy >= b[2]
-	      and lmx < b[3]
-	      and lmy < b[4]
-	      then
-	     selitem = item
-	     break
-	    end
-	    
-	   end
-	   
-	   for i = 1, #t.board.items
-	     do
-	    local item =
-	      t.board.items[i]
-	    
-	    if item == selitem then
-	     item.selected = true
-	    else
-	     item.selected = nil
-	    end
-	   end
+	 itemsmpos=function(t,mx,my)
+	  local imx = mx
+		 local imy = 128 - my
+		 imy -= t.scrollpos
 	  
+	  return imx, imy
+	 end,
+	 
+	 clicktestitems=function
+	   (t, mx, my)
+	  
+	  local selitem = nil
+   for i = #t.board.items, 1,
+     -1 do
+    
+	   local item =
+	     t.board.items[i]
+   
+    local ix, iy =
+      t:itempos(item)
+    
+    local b = item:bound()
+    
+    local lmx = mx-ix
+    local lmy = -(my+iy)
+    
+    --item.lmy = lmy
+    if lmx >= b[1]
+      and lmy >= b[2]
+      and lmx < b[3]
+      and lmy < b[4]
+      then
+     selitem = item
+     
+     t.clickitem = item
+     
+     break
+    end
+    
+   end
+   
+   
+   
+   for i = 1, #t.board.items
+     do
+    local item =
+      t.board.items[i]
+    
+    if item == selitem then
+     item.selected = true
+    else
+     item.selected = nil
+    end
+   end
+  end,
+	 
+	 update=function(t,s)
+	  
+	  local mx = stat(32)
+	  local my = stat(33)
+	   
+	  if mbtnn(0) then
+	   t.clickitem = nil
+	   
+	   
+	   
+	   t.cmx = mx
+	   t.cmy = my
+	   
+	   if mx >= 120 then
+	    if my < 8 then
+	     t.clickitem = mi_scrollup
+	    elseif my >= 120 then
+	     t.clickitem =
+	       mi_scrolldown
+	    end
+	   
+	   end
+	     
+	   
+	   if not t.clickitem then
+		   local imx, imy =
+		     t:itemsmpos(mx, my)
+		   t:clicktestitems(imx,imy)
+	   end
+	   
+	  end
+	  
+	  local ci = t.clickitem
+	  
+	  if ci then
+	   
+	   if mbtn(0) then
+	    if ci == mi_scrollup then
+	     t.scrollpos -= 1 
+	    elseif ci ==
+	      mi_scrolldown then
+	     t.scrollpos = min(0,
+	       t.scrollpos + 1)
+	    
+	    else
+	     if type(ci) == 'table'
+	       and ci.itemtype then
+	      
+	      --todo send mouse pos to
+	      --item 
+	      local imx, imy =
+		       t:itemsmpos(mx, my)
+		     
+	     end
+	    end
+	    
+	   else
+	    t.clickitem = nil
+	   end
+	   
+	  end
+	  
+	  if not mbtn(0) then
+	   t.cmx = nil
+	   t.cmy = nil
 	  end
 	  
 	  if btnp(0) then
@@ -551,13 +627,33 @@ function make_board_obj(board)
 	   end
 	  end
 	  
-	  
-	  
 	  	  
 	 end,
 	 
+	 drawui=function(t)
+	  
+	  if t.clickitem ==
+	    mi_scrollup then
+	   pal(5, 6)
+	  end
+	  spr(74, 120, 0)
+	  pal()
+	  
+	  if t.clickitem ==
+	    mi_scrolldown then
+	   pal(5, 6)
+	  end
+	  spr(74, 120, 120, 1, 1,
+	    false, true)
+	  pal()
+	 end,
+	 
 	 draw=function(t)
+	  
 	 	pushc(0, t.scrollpos - 128)
+	  
+	  line(0, -1, 127, -1, 1)
+	  
 	  
 	  for i = 1, #t.board.items do
 	   local item =
@@ -580,12 +676,6 @@ function make_board_obj(board)
 	   
 	   
 	   end
-	   --[[
-	   if item.lmy then
-	    print(item.lmy, -8,-8, 6)
-	   
-	   end
-	   --]]
 	   
 	   
 	   popc()
@@ -593,6 +683,9 @@ function make_board_obj(board)
 	  end	
 	 
 	  popc()
+	  
+	  t:drawui()
+	  
 	 end,
 	 x=0,y=0
  }
@@ -685,11 +778,11 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000111111114444444477000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000013333333aaa4aaaa75700000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000013b333b39994a99975570000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000001bbb3bbb9994a99975557000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000111111114444444475555700000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000000000000aaaaaaa475757000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000013333333aaa4aaaa75700000000500000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000013b333b39994a99975570000005150000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000001bbb3bbb9994a99975557000051115000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000111111114444444475555700511111500000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000aaaaaaa475757000555555500000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000a999999477075700000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000a999999400007000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
