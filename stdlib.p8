@@ -14,7 +14,7 @@ function repr(arg)
  if type(arg) == "table" then 
   local retval = " table{ "
   for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. table_to_string(v).. ","
+   retval = retval .. k .. ": ".. repr(v).. ","
   end
   retval = retval .. "} "
   return retval
