@@ -1,0 +1,5 @@
+# backup files
+*.bak
+
+# random OS garbage
+.DS_Store
