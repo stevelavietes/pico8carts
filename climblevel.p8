@@ -296,6 +296,9 @@ end
 function table2map(t,
   scrollpos)
  
+ if #t == 0 then
+  return
+ end
  --todo, scrollpos
  for y = 1, 16 do
   for x = 1, 16 do
@@ -601,6 +604,120 @@ function make_board_obj(board)
 	 
 	end
 	
+ menuactions = {
+  {'add horz brick', false,
+    function(t, sel)
+     local y = flr(
+       t.scrollpos/-8) + 8
+     
+     local item = {
+      itemtype=it_horzblock,
+      xpos=5,
+      ypos=y%16,
+      yscr=flr(y/16),
+      width=3,
+      selected=true,
+     }
+     setmetatable(item,
+       it_metas[it_horzblock])
+     
+     for i in all(sel) do
+      i.selected = nil
+     end
+     
+     add(t.board.items, item)
+    end},
+  {'add vert brick', false,
+    function(t, sel)
+     local y = flr(
+       t.scrollpos/-8) + 2
+     
+     local item = {
+      itemtype=it_vertblock,
+      xpos=5,
+      ypos=y%16,
+      yscr=flr(y/16),
+      height=3,
+      selected=true,
+     }
+     setmetatable(item,
+       it_metas[it_vertblock])
+     
+     for i in all(sel) do
+      i.selected = nil
+     end
+     
+     add(t.board.items, item)
+    end},
+  
+  {'add platform', false,
+    function(t, sel)
+    
+     local y = flr(
+       t.scrollpos/-8) + 8
+     
+     local item = {
+      itemtype=it_platform,
+      xpos=5,
+      ypos=y%16,
+      yscr=flr(y/16),
+      width=3,
+      selected=true,
+     }
+     setmetatable(item,
+       it_metas[it_platform])
+     
+     for i in all(sel) do
+      i.selected = nil
+     end
+     
+     add(t.board.items, item)
+     
+    
+    end},
+  {'delete selected', true,
+    function(t, sel)
+    
+     for i = 1, #sel do
+      del(t.board.items,
+        sel[i])
+     end
+    
+    end},
+  
+  {'duplicate selected', true,
+    function(t, sel)
+     
+     for i in all(sel) do
+      setmetatable(i, nil)
+      
+      local dupi = {}
+      
+      for k, v in pairs(i) do
+       dupi[k] = v
+      end
+      
+      setmetatable(i,
+        it_metas[i.itemtype])
+      i.selected = nil
+      setmetatable(dupi,
+        it_metas[i.itemtype])
+      
+      add(t.board.items, dupi)
+     end
+     
+    end},
+    
+  {'save', false,
+    function(t)
+     boardtospr(t.board,
+       16)
+
+    end},  
+  
+ }
+	
+	
 	
 	return {
   board=board,	
@@ -675,10 +792,72 @@ function make_board_obj(board)
    return newlyselected
   end,
 	 
+	 getselected=function(t)
+	  local r = {}
+	  
+	  for i = 1, #t.board.items do
+	   local item =
+	     t.board.items[i]
+	   
+	   if item.selected then
+	    add(r, item)
+	   end
+	  end
+	  
+	  return r
+	 end,
+	 
+	 updatemenu=function(t,
+	   mx, my)
+	   
+	   
+	   
+	   
+	   if mbtnn(0) then
+	    local i =
+	      flr((my - 10)/12)
+	   
+	    if (my - 10) % 12 < 8 then
+	     local a = menuactions[i]
+	      
+	     if a then
+	     
+	      local sel =
+	        t:getselected()
+	        
+	      if a[2] and
+	        #sel == 0 then
+	       return
+	      end
+	      sfx(0)
+	      a[3](t, sel)
+	      
+	      
+	     end
+	    
+	    end
+	   
+	   
+	   end
+	   
+	   
+	   --local y = i*12+10
+	   --rectfill(8, y, 96, y+8, 0)
+	   
+	   
+	 end,
+	 
+	 --editor update
 	 update=function(t,s)
 	  
 	  local mx = stat(32)
 	  local my = stat(33)
+
+   if btn(4) then
+    t:updatemenu(mx, my)
+   
+    return
+   end
 
 	  if mbtnn(0) then
 	  
@@ -796,6 +975,38 @@ function make_board_obj(board)
 	  pal()
 	 end,
 	 
+	 drawmenu=function(t)
+	  
+	  local selected = false
+	  for i = 1, #t.board.items do
+	   if t.board.items[i].selected
+	     then
+	    selected = true
+	    break
+	   end
+	  end
+	  
+	  for i = 1, #menuactions do
+	   
+	   local a = menuactions[i]
+	   
+	   local c = 7
+	   
+	   if a[2]
+	     and not selected then
+	    c = 5
+	   end
+	   
+	   local y = i*12+10
+	   rectfill(8, y, 96, y+8, 0)
+	   rect(8, y, 96, y+8, 5)
+	   print(a[1], 10, y+2, c)
+	  
+	  end
+	  
+	  
+	 end,
+	 
 	 draw=function(t)
 	  
 	 	pushc(0, t.scrollpos - 128)
@@ -833,6 +1044,11 @@ function make_board_obj(board)
 	  popc()
 	  
 	  t:drawui()
+	  
+	  if btn(4) then
+	   t:drawmenu()
+	  end
+	  
 	  
 	 end,
 	 x=0,y=0
@@ -901,9 +1117,9 @@ __gfx__
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-71220019000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-14009433000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00cd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
