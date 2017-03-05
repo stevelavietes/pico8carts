@@ -2,24 +2,30 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 time_colors={11,3,4,9,10,14,2,8}
+-- skate up the tower, I dare you
 
--- debug shit can be deleted
-function table_to_string(tbl)
- if tbl == nil then
+function repr(arg)
+ -- turn any thing into a string (table, boolean, whatever)
+ if arg == nil then
   return "nil"
  end
- if type(tbl) == "boolean" then
-  return tbl and "true" or "false"
+ if type(arg) == "boolean" then
+  return arg and "true" or "false"
  end
- if type(tbl) == "table" then 
+ if type(arg) == "table" then 
   local retval = " table{ "
-  for k, v in pairs(tbl) do
-   retval = retval .. k .. ": ".. table_to_string(v).. ","
+  for k, v in pairs(arg) do
+   retval = retval .. k .. ": ".. repr(v).. ","
   end
   retval = retval .. "} "
   return retval
  end
- return ""..tbl
+ return ""..arg
+end
+
+function print_stdout(msg)
+ -- print 'msg' to the terminal, whatever it might be
+ printh("["..repr(g_tick).."] "..repr(msg))
 end
 
 function _init()
@@ -461,9 +467,12 @@ function _draw()
   color(11)
   if g_violets[1]:next_to_wall() then
    color(9)
+   if g_violets[1].wall_hang_timer and g_violets[1].wall_hang_timer > 0 then
+    color(12)
+   end
   end
-  print("speed: "..table_to_string(g_violets[1].speed), 2, 116)
-  print("jumps: "..table_to_string(g_violets[1].jumps), 2, 110)
+  print("speed: "..repr(g_violets[1].speed), 2, 116)
+  print("jumps: "..repr(g_violets[1].jumps), 2, 110)
  end
  color(5)
 
@@ -668,6 +677,7 @@ function make_violet(p)
   is_holdable=false,
   breaks_blocks=true,
   jumps=2,
+  wall_hang_timer=nil,
   ---
   update=function(t)
    if t.off then
@@ -717,6 +727,16 @@ function make_violet(p)
     -- state detection
     local on_wall = t:next_to_wall()
     local jumping = (t.y != ground)
+
+    if on_wall then
+     if t.wall_hang_timer then
+      t.wall_hang_timer -= 1
+     else
+      t.wall_hang_timer = 10
+     end
+    else
+     t.wall_hang_timer = nil
+    end
 
     --left
     if btn(0,p) then
@@ -995,7 +1015,11 @@ function test_break(o)
    return
   end
  end
- 
+end
+
+function smootherstep(x)
+ -- assumes x in [0, 1]
+ return x*x*x*(x*(x*6 - 15) + 10);
 end
 
 function update_phys(o)
@@ -1048,7 +1072,13 @@ function update_phys(o)
  end
  
  
- o.y+=o.speedy
+ local fact = 1
+ if o.wall_hang_timer and o.wall_hang_timer > 0 then
+  fact = 0.25
+ elseif o.wall_hang_timer then
+  fact = smootherstep(1-max(-35, o.wall_hang_timer)/(-35))
+ end
+ o.y+=o.speedy*fact
  o.x+=o.speed
  
  test_xstop(o)
