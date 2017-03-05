@@ -1,8 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-time_colors={11,3,4,9,10,14,2,8}
 -- skate up the tower, I dare you
+time_colors={11,3,4,9,10,14,2,8}
 
 function repr(arg)
  -- turn any thing into a string (table, boolean, whatever)
