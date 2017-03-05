@@ -226,6 +226,15 @@ function boardtospr(board,
  --blank whole row for now
  memset(addr, 0, 64*8)
  
+ --set number of screens
+ --by finding the highest
+ --item and adding 1 (xxx)
+ local numscreens = 1
+ for i in all(board.items) do
+  numscreens = max(numscreens,
+    i.yscr+1)
+ end
+ 
  x, y = num2spr(x,y,2,
    board.numscreens) 
 
@@ -420,7 +429,7 @@ it_base = {
  end,
  
  clickevent=function(t, mx, my)
-  sfx(0)
+  --sfx(0)
   
   t._s_mx = mx
   t._s_my = my
@@ -462,13 +471,36 @@ it_horzblock_meta = {
   for j = 1, t.width do
 	  spr(m_brick, (j-1)*8, -8)
 	 end
+	 
+	 if not t.selected then
+	  return
+	 end
+	 if t.width > 1 then
+	  print('‹', t.width*8+2, -9,
+	    5)
+	 end
+	 if t.width < 16 then
+	  print('‘', t.width*8+2, -3,
+	    5)
+	 end
+	 
+	 
  end,
  
  bound=function(t)
   return {0, -8, 8*t.width, 0}
  end,
  
+ update=function(t)
+  if btnp(0) then
+   t.width = max(1, t.width-1)
+  end
+  
+  if btnp(1) then
+   t.width = min(15, t.width+1)
+  end
  
+ end,
 }
 
 it_vertblock_meta = {
@@ -476,10 +508,37 @@ it_vertblock_meta = {
   for j = 1, t.height do
    spr(m_brick,0, (j*1)*-8)
   end
+  
+  if not t.selected then
+	  return
+	 end
+	 if t.height > 1 then
+	  print('ƒ', -3,
+	    t.height*-8-6, 5)
+	 end
+	 if t.height < 15 then
+	  print('”', 5,
+	    t.height*-8-6, 5)
+	 end
+	 
+	 
  end,
  
  bound=function(t)
   return {0, -8*t.height, 8, 0}
+ end,
+ 
+ update=function(t)
+  if btnp(3) then
+   t.height = max(1,
+     t.height-1)
+  end
+  
+  if btnp(2) then
+   t.height = min(15,
+     t.height+1)
+  end
+ 
  end,
  
 }
@@ -490,12 +549,27 @@ it_platform_meta = {
    spr(m_platform,
      (j-1)*8, -8)
   end
+  
+  if not t.selected then
+	  return
+	 end
+	 if t.width > 1 then
+	  print('‹', t.width*8+2, -9,
+	    5)
+	 end
+	 if t.width < 16 then
+	  print('‘', t.width*8+2, -3,
+	    5)
+	 end
+	 
  end,
  
  bound=function(t)
   return {0, -8, 8*t.width, -4}
  end,
 
+ update=
+   it_horzblock_meta.update,
 }
 
 it_metas = {
@@ -549,6 +623,7 @@ function make_board_obj(board)
 	 clicktestitems=function
 	   (t, mx, my)
 	  
+	  local newlyselected = false
 	  local selitem = nil
    for i = #t.board.items, 1,
      -1 do
@@ -572,6 +647,9 @@ function make_board_obj(board)
       then
      selitem = item
      
+     if not item.selected then
+      newlyselected = true
+     end
      item:clickevent(mx, my)
      t.clickitem = item
      
@@ -593,14 +671,18 @@ function make_board_obj(board)
      item.selected = nil
     end
    end
+   
+   return newlyselected
   end,
 	 
 	 update=function(t,s)
 	  
 	  local mx = stat(32)
 	  local my = stat(33)
-	   
+
 	  if mbtnn(0) then
+	  
+	   local newlyselected = false
 	   t.clickitem = nil
 	   
 	   
@@ -622,8 +704,21 @@ function make_board_obj(board)
 	   if not t.clickitem then
 		   local imx, imy =
 		     t:itemsmpos(mx, my)
-		   t:clicktestitems(imx,imy)
+		   newlyselected =
+		     t:clicktestitems(imx,imy)
+	    
+	    if newlyselected then
+	     del(t.board.items,
+	       t.clickitem)
+	     
+	     add(t.board.items,
+	       t.clickitem)
+	     
+	    
+	    end
+	   
 	   end
+	   
 	   
 	  end
 	  
@@ -661,6 +756,16 @@ function make_board_obj(board)
     
 	   end
 	   
+	  end
+	  
+	  
+	  for i in all(
+	    t.board.items) do
+	   
+	   if i.selected and i.update
+	     then
+	    i:update(t)
+	   end
 	  end
 	  
 	  --[[
