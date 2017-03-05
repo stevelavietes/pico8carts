@@ -2,6 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 -- skate up the tower, I dare you
+
 time_colors={11,3,4,9,10,14,2,8}
 
 function repr(arg)
@@ -454,15 +455,13 @@ function _draw()
  -- height/score display
  color(1)
  local scrl=128-g_scroffset
- rectfill(1,120,
-  1+4*(8+numdigits(scrl)),126)
+--  rectfill(1,120, 1+4*(8+numdigits(scrl)),126)
  if shouldscroll() then
   color(11)
  else
   color(3)
  end
- print("height: "..flr(scrl),
-  2,121)
+--  print("height: "..flr(scrl), 2,121)
  if g_violets[1] then
   color(11)
   if g_violets[1]:next_to_wall() then
@@ -477,18 +476,18 @@ function _draw()
  color(5)
 
  --time remaining display
+ --[[
  color(1)
  rectfill(1,1,
  13+4*(8+numdigits(g_timer)),7)
 
  local ncolors=#time_colors
  local t_c = max(1+ncolors-min(
- flr((g_timer+10) / 10),
- ncolors),1)
+ flr((g_timer+10) / 10), ncolors),1)
 
  color(time_colors[t_c])
- print("remaining: "
- ..flr(g_timer),2,2)
+ print("remaining: "..flr(g_timer),2,2)
+ ]]--
 
 
  --[[
