@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
--- skate up the tower, I dare you
+-- skate up the tower, i dare you
 
 time_colors={11,3,4,9,10,14,2,8}
 
@@ -488,6 +488,8 @@ function _draw()
   if mp and mp[1] and mp[2] and mget(mp[1], mp[2]) then
    print("m: "..mget(mp[1], mp[2]).." pos: "..mp[1]..", "..mp[2]..", flags: "..fget(mget(mp[1], mp[2])), 2, 122, 1)
   end
+  
+ 
  end
  color(5)
 
@@ -825,7 +827,19 @@ function make_violet(p)
    t.frame=(t.frame+frameadj)%3
 
    local map_pos = map_position(t)
-   local map_flags = band(shl(1,4), fget(mget(map_pos[1], map_pos[2])))
+   local map_flags =
+     band(shl(1,4),
+       fget(mget(map_pos[1],
+         map_pos[2])))
+   
+   if map_flags == 0
+     and map_pos[3] then
+    map_flags =
+     band(shl(1,4),
+       fget(mget(map_pos[3],
+         map_pos[2])))
+   end
+   
    cls()
    print(map_flags)
    if map_flags != 0 then
@@ -842,7 +856,7 @@ function make_violet(p)
   end,
   ---
   draw=function(t)
-   -- @TODO: review this function - much of it can be stripped from this build
+   -- @todo: review this function - much of it can be stripped from this build
    local sflip =
      (t.direction == 1)
    local s = 4
@@ -946,7 +960,6 @@ function make_violet(p)
    -- t.last_speed = t.speed
    
    spr(s,x,y,2,2,sflip)
-   
    pal()
    
    if t.off then
@@ -963,15 +976,22 @@ end
 
 function map_position(o)
  local off=getlocaloff()
- local my = flr((o.y-off-1)/8)+3
+ local my = flr(
+   (o.y-off+o.hby1 -1)/8)+1
  
  local mx = flr((o.x+o.hbx0)/8)
- local mx2 = min(15,max(0,mx+1))
+ local mx2 = flr((o.x+o.hbx1)/8)
+ 
  local mys = getscrmy()
- return {
+ local r = {
   mx2,
   mys[my]
  }
+ 
+ if mx ~= mx2 then
+  add(r, mx2)
+ end
+ return r 
 end
 
 function next_to_wall(o)
