@@ -1987,39 +1987,41 @@ it_readers = {
  [it_horzblock]=
    function(item,x,y)
     return loaditemfield(
-      item,x,y,1,'width')
+      item,x,y,1,'width',1)
    end,
  [it_vertblock]=
    function(item,x,y)
     return loaditemfield(
-      item,x,y,1,'height')
+      item,x,y,1,'height',1)
    end,
  [it_platform]=
    function(item,x,y)
     return loaditemfield(
-      item,x,y,1,'width')
-   end,
- [it_goal]=
-   function(item,x,y)
-    return loaditemfield(
-      item,x,y,1,'width')
+      item,x,y,1,'width',1)
    end,
  [it_spawn_loc]=
    function(item,x,y)
     return loaditemfield(
-      item,x,y,1,'width')
+      item,x,y,1,'width',1)
+   end,
+ [it_goal]=
+   function(item,x,y)
+    return loaditemfield(
+      item,x,y,1,'width',1)
    end,
 }
 
 function loaditemfield(
-  item,x,y,w,name)
+  item,x,y,w,name,offset)
  local v,x,y =
   spr2num(x,y,w)
-   
+ 
+ if (offset) v += offset
  item[name] = v
  
  return x,y
 end
+
 
 
 
