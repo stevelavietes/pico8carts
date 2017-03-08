@@ -162,6 +162,7 @@ function _update()
 
  for v in all(g_violets) do
   if v.y > 127 and not v.off then
+   respawn_in_level()
    v.off = g_tick
    v.y = 140
    --v.x = 60
@@ -681,6 +682,10 @@ function init_phys(o)
  for k,v in pairs(phys) do o[k] = v end
 
  return o
+end
+
+function respawn_in_level()
+ game_start(g_current_level)
 end
 
 function level_complete()
@@ -1639,7 +1644,6 @@ function make_drawon(d, fnc)
      then
     t.fnc(t,s)
    end
-    
   
   end,
   draw=function(t,s)
