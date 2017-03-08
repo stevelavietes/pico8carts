@@ -259,6 +259,11 @@ function game_start(level)
    ,
    -- make_violet(1)
  }
+ 
+ add(g_objs,
+      make_pop(g_violets[1].x,
+        g_violets[1].y))
+      
  foreach(g_violets, init_phys)
  
  -- the pushable blocks (heart boxes)
@@ -680,11 +685,45 @@ end
 
 function level_complete()
  if g_current_level < #c_level_indices then
-  game_start(g_current_level + 1)
+  --game_start(g_current_level + 1)
+  add(g_objs, make_leveltrans(
+    g_current_level + 1))
  else
   game_completed()
  end
 end
+
+function make_leveltrans(next)
+ g_violets[1].off = true
+ g_violets[1].trans = true
+ 
+ return {
+  x=0,y=0,off=true,
+  update=function(t,s)
+   
+   local mapline =
+     flr((128-g_scroffset)/8)+32
+   
+   
+   if mapline - #g_leveltable
+     > 32 then
+    
+    g_violets[1].trans = nil
+    g_violets[1].off = nil
+    
+    
+    game_start(next)
+    del(s, t)
+   else
+    scrollby(-3)
+    g_violets[1].y-=3
+   end
+   
+  end
+ } 
+end
+
+
 
 function game_completed()
  cls()
@@ -716,6 +755,10 @@ function make_violet(p)
     t.xoff = sin(g_tick/100)*10
     t.yoff = sin(g_tick/200)*10
 
+    if t.trans then
+     return
+    end
+    
     if btn(0,p) then
      t.x-=1
     end
