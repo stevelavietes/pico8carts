@@ -1,6 +1,14 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+
+-----------------------
+-- begin: shared code
+-----------------------
+
+-- (itemdef)
+-- item type constants
+
 it_none = 0
 it_horzblock = 1
 it_vertblock = 2
@@ -63,6 +71,8 @@ function load_board(sprid)
  return result
 end
 
+--sprite constants for rendering
+--to map table
 m_brick = 72
 m_platform = 71
 m_spawn = 88
@@ -88,6 +98,13 @@ function board2table(board)
   end
  end
  
+ -- (itemdef)
+ -- items which want to be rendered
+ -- should extend this table with
+ -- a function which sets the y,x
+ -- values of a sequential table
+ -- of sequential tables
+
  local renderfncs = {
   [it_horzblock]=function(item,x,y)
    horzrun(x, y, item.width, m_brick)
@@ -121,8 +138,14 @@ function board2table(board)
  return t
 end
 
-
-
+-- (itemdef)
+-- any object which reads its
+-- own fields (beyond ones
+-- shared by all objects)
+-- should register a function
+-- here which fills those into
+-- the item and returns the
+-- advanced x,y pixel position
 it_readers = {
  [it_horzblock]=
    function(item,x,y)
@@ -162,9 +185,6 @@ function loaditemfield(
  return x,y
 end
 
-
-
-
 function spr2num(x,y,w)
  local num = 0
  for i = 0, w-1 do
@@ -176,20 +196,6 @@ function spr2num(x,y,w)
  
  return num,x,y
 end
-
-function num2spr(x,y,w,n)
- local mask = 15
- 
- for i = 0, w-1 do
-   sset(x,y,
-     shr(band(n,mask),i*4))
-   x,y = nextsprxy(x,y)
-   mask = shl(mask, 4)
- end
- 
- return x,y
-end
-
 
 function getsprxy(n)
  return (n % 16) * 8,
@@ -216,6 +222,22 @@ function nextsprxy(x,y)
  return x,y
 end
 
+-----------------------
+-- end: shared code
+-----------------------
+
+function num2spr(x,y,w,n)
+ local mask = 15
+ 
+ for i = 0, w-1 do
+   sset(x,y,
+     shr(band(n,mask),i*4))
+   x,y = nextsprxy(x,y)
+   mask = shl(mask, 4)
+ end
+ 
+ return x,y
+end
 
 
 function boardtospr(board,
@@ -240,12 +262,15 @@ function boardtospr(board,
  
  x, y = num2spr(x,y,2,
    numscreens) 
-
---it_horzblock
---it_vertblock = 2
---it_platform = 3
-
  
+ -- (itemdef)
+ -- any item type which needs to
+ -- write custom fields to the
+ -- serialized level should
+ -- implement a function here
+ -- which writes to sprite data
+ -- and returns the advanced
+ -- x,y sprite pixel position
  local writefncs = {
   [it_horzblock]=function(
     item,x,y)
@@ -428,13 +453,19 @@ function stddraw()
 end
 
 -------------------------------
-
+-- base class of editor items
 it_base = {
  
+ -- utility for converting
+ -- from yscr+ypos into a
+ -- single y value
  ytomappos=function(t)
   return t.yscr*16+t.ypos
  end,
  
+ -- utility for converting
+ -- to yscr,ypos from a single
+ -- y value
  yfrommappos=function(t, y)
   if y < 0 then
    return 0, 0
@@ -443,6 +474,10 @@ it_base = {
   return flr(y/16), y % 16
  end,
  
+ -- base class first click
+ -- stores the mouse position
+ -- and x,y pos at the start
+ -- the drag for comparison
  clickevent=function(t, mx, my)
   --sfx(0)
   
@@ -454,6 +489,12 @@ it_base = {
   
  end,
  
+ -- called while the mouse is
+ -- held down on an object
+ -- (including in the same
+ -- cycle as first clicked)
+ -- base behavior implements
+ -- movement dragging
  dragevent=function(t, mx, my)
   
   local ox =
@@ -481,6 +522,20 @@ it_base_meta = {
 }
 
 
+-- (itemdef)
+-- item-specific methods
+-- draw and bound are required
+-- for interaction
+-- update is currently only
+-- used for items which track
+-- button presses on their own
+-- 
+-- y increases upward
+-- (opposite of screen coords)
+--
+-- mouse coordinates are in 
+-- item-local space
+
 it_horzblock_meta = {
  draw=function(t)
   for j = 1, t.width do
@@ -502,6 +557,8 @@ it_horzblock_meta = {
 	 
  end,
  
+ -- expressed in item-local
+ -- coordinates
  bound=function(t)
   return {0, -8, 8*t.width, 0}
  end,
@@ -605,6 +662,13 @@ it_platform_meta = {
  update=it_horzblock_meta.update
 }
 
+-- (itemdef)
+-- registry of item-specific
+-- method metatables
+-- editor items should have one
+-- if they're intended to be
+-- visible and interactive
+
 it_metas = {
   [it_horzblock]=
     {__index=it_horzblock_meta},
@@ -637,7 +701,12 @@ function make_board_obj(board)
 	   it_metas[item.itemtype])
 	 
 	end
-	
+
+ -- (itemdef)
+ -- menu callbacks in this form:
+ -- 1) title
+ -- 2) requiresSelection
+ -- 3) action	
  menuactions = {
   {
    'add goal', 
