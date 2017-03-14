@@ -252,19 +252,7 @@ function game_start(level)
  g_state = 1 -- play!
  g_objs={}
  g_uiobjs={}
- g_violets={}
- g_violets={
-   make_violet(0) 
-   ,
-   -- make_violet(1)
- }
- 
- add(g_objs,
-      make_pop(g_violets[1].x,
-        g_violets[1].y))
-      
- foreach(g_violets, init_phys)
- 
+
  -- the pushable blocks (heart boxes)
  g_blocks={
   -- make_block(50,35)
@@ -326,6 +314,27 @@ function game_start(level)
  end
  --]]
 
+ if not g_spawn_loc then
+  cls()
+  print(
+   "error: level ["
+   ..g_current_level
+   .."] does not have a spawn"
+   .." set."
+  )
+  stop()
+ end
+
+ g_violets={
+   make_violet(0, g_spawn_loc[1], g_spawn_loc[2]), 
+ }
+ 
+ add(g_objs,
+      make_pop(g_violets[1].x,
+        g_violets[1].y))
+      
+ foreach(g_violets, init_phys)
+ 
  if #g_violets > 1 then
   g_violets[2].x = 86
   g_violets[2].direction=0
@@ -786,10 +795,10 @@ function game_completed()
  stop()
 end
 
-function make_violet(p)
+function make_violet(p, x, y)
  return {
-  x=27,
-  y=64,
+  x=x,
+  y=y,
   frame=0,
   hbx0=4,
   hbx1=12,
@@ -1969,6 +1978,7 @@ it_spawn_loc = 5
 it_sprobj = 6
 
 function load_board(sprid)
+ g_spawn_loc = nil
  local result = {}
  
  local x,y = getsprxy(sprid)
@@ -2027,7 +2037,7 @@ end
 --to map table
 m_brick = 72
 m_platform = 71
-m_spawn = 88
+m_spawn = 86
 m_goal = 87
  
 function board2table(board)
@@ -2127,6 +2137,7 @@ it_readers = {
    end,
  [it_spawn_loc]=
    function(item,x,y)
+    g_spawn_loc = {12*x, y}
     return loaditemfield(
       item,x,y,1,'width',1)
    end,
