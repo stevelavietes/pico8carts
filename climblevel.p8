@@ -330,9 +330,8 @@ function boardtospr(board,
   end,
  }
  
- 
- for i = 1, #board.items do
-  local item = board.items[i]
+ local function
+   writeitemhead(item)
   x,y = num2spr(x,y,1,
     item.itemtype)
   x,y = num2spr(x,y,1,
@@ -341,6 +340,71 @@ function boardtospr(board,
     item.yscr)
   x,y = num2spr(x,y,1,
     item.ypos)
+ end
+ 
+ local sprobjs = {}
+ 
+ for i = 1, #board.items do
+  local item = board.items[i]
+  
+  if item.itemtype ==
+    it_sprobj then
+   
+   add(sprobjs, item)
+   
+  else
+   writeitemhead(item)
+  
+   local fnc = writefncs[
+     item.itemtype]
+  
+   if fnc then
+    x,y = fnc(item, x, y)
+   end
+  end
+  
+ end
+ 
+ function qsort(lo, hi)
+  if lo < hi then
+   local p = partition(lo, hi)
+   qsort(lo, p - 1)
+   qsort(p + 1, hi)
+  end
+ end
+ 
+ function swap(i, j)
+  local tmp = sprobjs[i]
+  sprobjs[i] = sprobjs[j]
+  sprobjs[j] = tmp
+ end
+ 
+ function gety(item)
+  return item.yscr*16+item.ypos
+ end
+ 
+ function partition(lo, hi)
+  local pivot = sprobjs[hi]
+  local i = lo - 1
+  for j = lo, hi - 1 do
+   if gety(sprobjs[j]) <
+     gety(pivot) then
+    i += 1
+    swap(i, j)
+   end
+  end
+  swap(i+1, hi)
+  return i + 1
+ end
+ 
+ if #sprobjs > 1 then
+  qsort(1, #sprobjs)
+ end
+ 
+ for i = 1, #sprobjs do
+  local item = sprobjs[i]
+  
+  writeitemhead(item)
   
   local fnc = writefncs[
     item.itemtype]
