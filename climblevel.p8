@@ -15,6 +15,7 @@ it_vertblock = 2
 it_platform = 3
 it_goal = 4
 it_spawn_loc = 5
+it_sprobj = 6
 
 function load_board(sprid)
  local result = {}
@@ -133,12 +134,16 @@ function board2table(board)
  
  for i = 1, #board.items do
   local item = board.items[i]
-
-  renderfncs[item.itemtype](
-   item,
-   item.xpos+1,
-   item.yscr*16 + item.ypos+1
-  )
+  local fnc =
+    renderfncs[item.itemtype]
+  
+  if fnc then
+   fnc (
+    item,
+    item.xpos+1,
+    item.yscr*16 + item.ypos+1
+   )
+  end
  end
 
  return t
@@ -179,6 +184,12 @@ it_readers = {
       item,x,y,1,'width',1)
     x,y = loaditemfield(
       item,x,y,1,'height',1)
+    return x,y
+   end,
+ [it_sprobj]=
+   function(item,x,y)
+    x,y = loaditemfield(
+      item,x,y,1,'objtype')
     return x,y
    end,
 }
@@ -309,6 +320,12 @@ function boardtospr(board,
      item.width-1)
    x,y = num2spr(x, y, 1,
      item.height-1)
+   return x,y
+  end,
+  
+  [it_sprobj]=function(item, x, y)
+   x,y = num2spr(x, y, 1,
+     item.objtype)
    return x,y
   end,
  }
@@ -716,6 +733,48 @@ it_platform_meta = {
  update=it_horzblock_meta.update
 }
 
+it_sprobj_meta = {
+	
+	draw=function(t)
+	 
+	 local b = t:bound()
+	 
+	 rect(b[1]-1, b[2]-1,
+	   b[3]+1, b[4]+1, 14)
+	 print(t.objtype, b[1]+1,
+	   b[2]+2, 14)
+	 
+	 if not t.selected then
+	  return
+	 end
+	 print('‹', b[1] - 9,
+	   b[2] + 2, 6)
+	 print('‘', b[1] + 11,
+	   b[2] + 2, 6)
+	 
+	
+	end,
+	
+	bound=function(t)
+  return {0, -8, 8, 0}
+ end, 
+
+ update=function(t)
+  if btnp(0) then
+   t.objtype =
+     (t.objtype - 1) % 16
+  end
+  
+  if btnp(1) then
+   t.objtype =
+     (t.objtype + 1) % 16
+  end
+  
+  
+ end,
+
+}
+
 -- (itemdef)
 -- registry of item-specific
 -- method metatables
@@ -733,7 +792,9 @@ it_metas = {
   [it_spawn_loc]=
     {__index=it_spawn_loc_meta},
   [it_goal]=
-    {__index=it_goal_meta},
+    {__index=it_goal_meta},    
+  [it_sprobj]=
+    {__index=it_sprobj_meta},
 }
 
 foreach(it_metas, function(t)
@@ -868,6 +929,31 @@ function make_board_obj(board)
      }
      setmetatable(item,
        it_metas[it_platform])
+     
+     for i in all(sel) do
+      i.selected = nil
+     end
+     
+     add(t.board.items, item)
+     
+    
+    end},
+  {'add sprite object', false,
+    function(t, sel)
+    
+     local y = flr(
+       t.scrollpos/-8) + 8
+     
+     local item = {
+      itemtype=it_sprobj,
+      xpos=5,
+      ypos=y%16,
+      yscr=flr(y/16),
+      objtype=0,
+      selected=true,
+     }
+     setmetatable(item,
+       it_metas[it_sprobj])
      
      for i in all(sel) do
       i.selected = nil

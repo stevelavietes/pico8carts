@@ -1894,6 +1894,7 @@ it_vertblock = 2
 it_platform = 3
 it_goal = 4
 it_spawn_loc = 5
+it_sprobj = 6
 
 function load_board(sprid)
  local result = {}
@@ -2012,12 +2013,16 @@ function board2table(board)
  
  for i = 1, #board.items do
   local item = board.items[i]
-
-  renderfncs[item.itemtype](
-   item,
-   item.xpos+1,
-   item.yscr*16 + item.ypos+1
-  )
+  local fnc =
+    renderfncs[item.itemtype]
+  
+  if fnc then
+   fnc (
+    item,
+    item.xpos+1,
+    item.yscr*16 + item.ypos+1
+   )
+  end
  end
 
  return t
@@ -2058,6 +2063,12 @@ it_readers = {
       item,x,y,1,'width',1)
     x,y = loaditemfield(
       item,x,y,1,'height',1)
+    return x,y
+   end,
+ [it_sprobj]=
+   function(item,x,y)
+    x,y = loaditemfield(
+      item,x,y,1,'objtype')
     return x,y
    end,
 }
