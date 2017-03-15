@@ -353,6 +353,14 @@ function game_start(level)
  spawn_sprobj()
 end
 
+ot_apple = 0
+
+sprobj_ctors = {
+ [ot_apple] = function(x,y)
+  return make_apple(x,y)
+ end,
+}
+
 
 function spawn_sprobj()
  
@@ -2092,11 +2100,6 @@ function board2table(board)
  return t
 end
 
-
-sprobj_ctors = {
- [0] = make_apple,
-
-}
 
 -- (itemdef)
 -- any object which reads its
