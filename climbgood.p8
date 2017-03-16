@@ -275,6 +275,7 @@ function game_start(level)
  g_leveltable = board2table(
    board)
  
+ g_spawn_loc = nil
  g_sprobjs = {}
  for i = 1, #board.items do
   local item = board.items[i]
@@ -1993,7 +1994,6 @@ it_spawn_loc = 5
 it_sprobj = 6
 
 function load_board(sprid)
- g_spawn_loc = nil
  local result = {}
  
  local x,y = getsprxy(sprid)
