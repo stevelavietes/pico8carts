@@ -1994,6 +1994,7 @@ it_spawn_loc = 5
 it_sprobj = 6
 
 function load_board(sprid)
+ g_scroffset = 128
  local result = {}
  
  local x,y = getsprxy(sprid)
