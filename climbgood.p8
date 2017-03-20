@@ -816,6 +816,44 @@ function game_completed()
  stop()
 end
 
+function normalize(x, y)
+ local len = sqrt(x*x + y*y)
+ return {x/len, y/len}
+end
+
+g_speed_cols = {10,14,11}
+function make_blur(from_obj)
+ local dir = normalize(
+  from_obj.speed,
+  from_obj.speedy
+ )
+ local dir = {-dir[1], -dir[2]}
+ local speed_off = 0
+ if from_obj.speed < 0 then
+  speed_off = 16
+ end
+ return {
+  x=rnd(7)-4+from_obj.x+speed_off,
+  y=rnd(15)-4+from_obj.y+6,
+  dir=dir,
+  start=g_tick,
+  draw=function(t)
+   line(
+    t.x,
+    t.y,
+    t.x+2*dir[1],
+    t.y+2*dir[2],
+    g_speed_cols[flr(rnd(3))+1]
+   )
+  end,
+  update=function(t)
+   if elapsed(t.start) > 5 then
+    del(from_obj.speed_blurs, t)
+   end
+  end
+ }
+end
+
 function make_violet(p, x, y)
  return {
   x=x,
@@ -833,6 +871,7 @@ function make_violet(p, x, y)
   breaks_blocks=true,
   jumps=2,
   wall_hang_timer=nil,
+  speed_blurs={},
   ---
   update=function(t)
    if t.off then
@@ -971,9 +1010,12 @@ function make_violet(p, x, y)
    cls()
    print(map_flags)
    if map_flags != 0 then
+    t.speed_blurs = {}
     level_complete()
    end
-
+   for i in all(t.speed_blurs) do
+    i:update()
+   end
   end,
   next_to_wall=function (t)
    t.x += t.speed
@@ -1012,6 +1054,8 @@ function make_violet(p, x, y)
     pal(14,11)
     pal(8,2)
    end
+
+   local ntw = t:next_to_wall()
    
    if t.y ~= ground then
     s=0
@@ -1019,7 +1063,7 @@ function make_violet(p, x, y)
       and (g_tick%4)>2 then
      s = 2
     end
-    if t:next_to_wall() then
+    if ntw then
      s = 12
     end
    end
@@ -1108,6 +1152,21 @@ function make_violet(p, x, y)
      s=134
     end
     spr(s,x,y,2,2)
+   end
+
+   if abs(t.speed) > 3 and not ntw and not t.off then
+    if #t.speed_blurs < 10 then
+     add(
+      t.speed_blurs,
+      make_blur(t)
+     )
+    end
+   elseif not ntw then
+    t.speed_blurs = {}
+   end
+
+   for s in all(t.speed_blurs) do
+    s:draw()
    end
   end
   ---
