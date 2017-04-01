@@ -12,6 +12,15 @@ function repr(arg)
   return arg and "true" or "false"
  end
  if type(arg) == "table" then 
+  if arg[1] then
+   -- hackity hack hac
+   local retval = " list[ "
+   for _, v in pairs(arg) do
+    retval = retval .. repr(v) .. ","
+   end
+   retval = retval .. "] "
+   return retval
+  end
   local retval = " table{ "
   for k, v in pairs(arg) do
    retval = retval .. k .. ": ".. repr(v).. ","
