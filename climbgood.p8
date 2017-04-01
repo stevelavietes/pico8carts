@@ -524,7 +524,9 @@ function numdigits(n)
 end
 
 function draw_thing(thing)
- thing:draw()
+ if thing.draw then
+  thing:draw()
+ end
 end
 
 function _draw()
@@ -566,13 +568,7 @@ function _draw()
  
  foreach(g_violets, draw_thing)
  foreach(g_blocks, draw_thing)
- 
-
- foreach(g_objs, function(t)
-  if t.draw then
-   t:draw(g_objs)
-  end
- end)
+ foreach(g_objs, draw_thing)
 
  draw_uiobjs(g_uiobjs)
  
