@@ -1343,6 +1343,15 @@ function update_phys(o)
   return
  end
 
+ -- apply zippers 
+ if overlaps_map_field(o, f_zipup) then
+  o.speedy -= 0.5
+ end
+
+ if overlaps_map_field(o, f_zipdown) then
+  o.speedy += 0.5
+ end
+
  local ground=o:getflr()
  local drag=o.speedinc
  if o.y ~= ground then
