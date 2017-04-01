@@ -1232,6 +1232,54 @@ function next_to_wall(o)
  return hit
 end
 
+function overlaps_map_field(o, f)
+ for i in all(map_fields_list2(o)) do
+  if i == f then
+   return true
+  end
+ end
+ return false
+end
+
+function map_fields_list2(o)
+ local off=getlocaloff()
+ local my = flr((o.y-off)/8)+1
+ local mx = flr((o.x+o.hbx0)/8)
+
+ local mx2 =
+   min(15,max(0,mx+1))
+ local mys = getscrmy()
+ 
+ --hby1/8
+ local h=0
+ if o.hby1 > 8 then
+  h=1
+ end
+ local x_options = {mx, mx2}
+ 
+ local tmp_results = {}
+ 
+ --todo, base on rect
+ for i=0,h do
+  for x in all(x_options) do
+   for n=0,7 do
+    if fget(mget(x,mys[my+i]), n) then
+     tmp_results[n] = true
+    end
+   end
+  end
+ end
+
+ local result = {}
+ for i=0,7 do
+  if tmp_results[i] == true then
+   add(result, i)
+  end
+ end
+
+ return result
+end
+
 function test_xstop(o)
  if (not o.breaks_blocks) return
  
