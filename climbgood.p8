@@ -2187,6 +2187,14 @@ m_goal = 87
 m_zipup = 89
 m_zipdown = 90
  
+-- field globals
+-- todo: could be better if these 
+-- are the shl fields, not integer
+-- constants
+f_goal = 4
+f_zipup = 6
+f_zipdown = 5
+
 function board2table(board)
  local t = {}
  
