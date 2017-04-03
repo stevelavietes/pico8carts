@@ -596,11 +596,13 @@ function _draw()
   -- print("speed: "..repr(g_violets[1].speed), 2, 116)
   -- print("jumps: "..repr(g_violets[1].jumps), 2, 110)
   local mp = map_position(g_violets[1])
-  if mp and mp[1] and mp[2] and mget(mp[1], mp[2]) then
-   print(repr(g_spawn_loc), 2, 122, 1)
-  end
-  
- 
+   print(
+    "fields: "
+    .. repr(map_fields_list2(g_violets[1])),
+    2,
+    122,
+    1
+   )
  end
  color(5)
 
