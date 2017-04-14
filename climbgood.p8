@@ -672,8 +672,6 @@ function _draw()
     color(12)
    end
   end
-  -- print("speed: "..repr(g_violets[1].speed), 2, 116)
-  -- print("jumps: "..repr(g_violets[1].jumps), 2, 110)
   local mp = map_position(g_violets[1])
    -- print(
    --  "fields: "
@@ -682,7 +680,6 @@ function _draw()
    --  122,
    --  1
    -- )
-   print("speed: "..repr(g_violets[1].moving_left), 2, 122, 1)
  end
  color(5)
 
@@ -1070,7 +1067,6 @@ function make_violet(p, x, y)
      if t.direction == 1 then
       t.frame = 0
      end
-      t.moving_left = true
       t.direction = 0
       t.speed = max(
        -2-spdadj,
@@ -1081,7 +1077,7 @@ function make_violet(p, x, y)
      if t.direction == 0 then
       t.frame = 0
      end
-      .direction = 1
+      t.direction = 1
       t.speed =
       min(
        2+spdadj,
