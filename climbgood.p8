@@ -682,6 +682,7 @@ function _draw()
    --  122,
    --  1
    -- )
+   print("speed: "..repr(g_violets[1].x), 2, 122, 1)
  end
  color(5)
 
@@ -1024,114 +1025,83 @@ function make_violet(p, x, y)
  return {
   x=x,
   y=y,
-  frame=0,
   hbx0=4,
   hbx1=12,
   hby0=0,
   hby1=16,
-  holding=nil,
-  last_speed=nil,
-  pushed=nil,
-  will_hold=false,
-  is_holdable=false,
-  breaks_blocks=true,
   jumps=2,
-  wall_hang_timer=nil,
-  speed_blurs={},
-  init_tick=g_tick,
+  frame=0,
+  speed=0,
+  speedy=0,
+  last_speed=0,
   rot_ctr=0,
-  ---
+  init_tick=g_tick,
   update=function(t)
    if t.off then
     t.frame=0
     t.xoff = sin(g_tick/100)*10
     t.yoff = sin(g_tick/200)*10
-
     if t.trans then
      return
     end
-    
-    if btn(0,p) then
-     t.x-=1
-    end
+   end
 
-    if btn(1,p) then
-     t.x+=1
-    end
+   local ground = t:getflr()
+   local spdadj=2
 
-    if t.y > 20 then
-     t.y-=1
-    end
+   -- state detection
+   local on_wall = t:next_to_wall()
+   local jumping = (t.y != ground)
 
-    if t.y < 88 and btn(5,p)
-     then
-      t.off=nil
-      t.x+=t.xoff
-      t.y+=t.yoff
-      t.xoff=nil
-      t.yoff=nil
-      add(g_objs,
-      make_pop(t.x,t.y))
-     end
-
-     return
-    end
-
-    local ground = t:getflr()
-    local spdadj=2
-    local frameadj=1
-
-    -- --run
-    -- if btn(4,p) then
-    --  spdadj=2 --was 2
-    --  frameadj=1
-    --  t.will_hold=true
-    -- else
-    --  t.will_hold=false
-    -- end
-
-    -- state detection
-    local on_wall = t:next_to_wall()
-    local jumping = (t.y != ground)
-
-    if on_wall then
-     if t.wall_hang_timer then
-      t.wall_hang_timer -= 1
-     else
-      t.wall_hang_timer = 10
-     end
+   if on_wall then
+    if t.wall_hang_timer then
+     t.wall_hang_timer -= 1
     else
-     t.wall_hang_timer = nil
+     t.wall_hang_timer = 10
     end
+   else
+    t.wall_hang_timer = nil
+   end
+
+    -- input
 
     --left
     if btn(0,p) then
      if t.direction == 1 then
       t.frame = 0
      end
-     if (not jumping) or on_wall or t.speed < 0 then
+     if (
+      (not jumping) 
+      or on_wall 
+      or t.speed < 0
+     ) then
       t.direction = 0
-      t.speed =
-      max(-2-spdadj,
-      t.speed-2*t.speedinc)
+      t.speed = max(
+       -2-spdadj,
+       t.speed-2*t.speedinc
+      )
      end
-     --right
+    --right
     elseif btn(1,p) then
      if t.direction == 0 then
       t.frame = 0
      end
-     if (not jumping) or on_wall or t.speed > 0 then
+     if (
+      (not jumping) 
+      or on_wall 
+      or t.speed > 0
+     ) then
       t.direction = 1
       t.speed =
-      min(2+spdadj,
-      t.speed+2*t.speedinc)
+      min(
+       2+spdadj,
+       t.speed+2*t.speedinc
+      )
      end
-     --stop
     else
      if abs(t.speed) < 
       t.speedinc then
       t.speed=0
-      --t.frame=(t.frame+0.5)%3
       t.frame = 0
      end
     end
@@ -1141,34 +1111,39 @@ function make_violet(p, x, y)
      t.init_tick = nil
     end
 
+
     --jump
     if btnn(5,p) and t.jumps > 0 then
      t.jumps -= 1
-    -- if t.y == ground and
-    --   t.speedy == 0 then
      t.speedy = -9
-    -- end
+    end
 
-
+    -- todo: this should give a
+    -- speed boost but have a 
+    -- fixed direction.
+    -- less control, but more 
+    -- distance
     if on_wall then
      t.speed *= -1
      t.jumps +=1 
      t.init_tick = nil
     end
-   end
 
-   if t.y == ground and t.speedy == 0 then
+   if (
+    t.y == ground 
+    and t.speedy == 0
+   ) then
     t.jumps = 2
    end
 
-   t.frame=(t.frame+frameadj)%3
+   t.frame=(t.frame+1)%3
 
    local map_pos = map_position(t)
    local map_flags =
      band(shl(1,4),
        fget(mget(map_pos[1],
          map_pos[2])))
-   
+
    if map_flags == 0
      and map_pos[3] then
     map_flags =
@@ -1176,105 +1151,32 @@ function make_violet(p, x, y)
        fget(mget(map_pos[3],
          map_pos[2])))
    end
-   
-   cls()
-   print(map_flags)
+
    if map_flags != 0 then
     t.speed_blurs = {}
     level_complete()
    end
-   for i in all(t.speed_blurs) do
-    i:update()
-   end
-
-   if abs(t.speed) > 0 then
-   end
+   -- for i in all(t.speed_blurs) do
+   --  i:update()
+   -- end
   end,
-  next_to_wall=function (t)
-   t.x += t.speed
-   local on_wall = next_to_wall(t)
-   t.x -= t.speed
-
-   return on_wall
-  end,
-  ---
   draw=function(t)
-   -- @todo: review this function - much of it can be stripped from this build
+   -- which direction to draw the
+   -- sprite
    local sflip =
      (t.direction == 1)
+
+   -- sprite to draw
    local s = 4
-   
-   --duck
-   if g_state == 1
-     and btn(3,p) then
-    s = 14 
-   end
-
-   local ground = t:getflr()
-
-   if t.speed ~= 0 then
-    if ((sflip and t.speed<0) or
-      (not sflip and
-        t.speed > 0))
-      then
-     s=12
-    else
-     s=2*flr(t.frame)+6
-    end
-   end
-   if p==1 then
-    pal(2,3)
-    pal(14,11)
-    pal(8,2)
-   end
-
-   local ntw = t:next_to_wall()
-   
-   if t.y ~= ground then
-    s=0
-    if g_state == 1
-      and (g_tick%4)>2 then
-     s = 2
-    end
-    if ntw then
-     s = 12
-    end
-   end
-   
-   --debug ground detection
-   if false then
-   line(t.x, ground,
-     t.x+16, ground, 7)
-   line(t.x,t.y,t.x+16,t.y,8)
-   if t.gy then
-    line(t.x,t.gy,t.x+16,
-     t.gy,11)
-   end
-   end
-   
-   if t.holding then
-    s+=32
-   end
-   
-   local x = t.x
-   local y = t.y
-   if t.off then
-    s=4
-    if t.xoff then
-     x+=t.xoff
-     y+=t.yoff
-    end
-   end
-
-   s=4
-   local flip_x = false
-   local flip_y = false
    if abs(t.speedy) == 0 then
     if abs(t.speed) > 0 then
      s = 46
     end
 
-    if abs(t.speed) > 0 and abs(t.speed) > abs(t.last_speed) then
+    if (
+     abs(t.speed) > 0 
+     and abs(t.speed) > abs(t.last_speed)
+    ) then
      if not t.pushed then
       t.pushed = g_tick
      end
@@ -1284,11 +1186,12 @@ function make_violet(p, x, y)
      t.pushed = nil
     end
    else
-    if t.speedy > 0 then
-     -- @todo: could be removed if it isn't readable.  or maybe turned into a spin jump?
+    if abs(t.speedy) > 0 then
+     if t.speedy > 0 then
       s = 10
-    else
+     else
       s = 8
+     end
     end
 
     if t.jumps == 0 then
@@ -1306,56 +1209,357 @@ function make_violet(p, x, y)
    end
    t.last_speed = t.speed
 
-   -- s=0
-   -- if btn(4) then
-   --  t.rot_ctr += 2
-   -- end
-   -- rotate_sprite_90(38, 0, t.rot_ctr, g_rot_c_cw)
-
-   -- if t.last_speed and abs(t.last_speed) < abs(t.speed) then
-   --  if not t.pushed then
-   --   t.pushed = g_tick
-   --  end
-   --  if t.pushed then
-   --   if elapsed(t.pushed) < 10 then
-   --    s = 6
-   --   end
-   --  end
-   -- elseif abs(t.speed) > 0 then
-   --  s = 46
-   -- end
-   -- t.last_speed = t.speed
-   
-   spr(s,x,y,2,2,sflip)
+   spr(s,t.x,t.y,2,2,sflip)
    pal()
-   
-   if t.off then
-    s=132
-    if g_tick%20>10 then
-     s=134
-    end
-    spr(s,x,y,2,2)
-   end
+  end,
+  next_to_wall=function (t)
+   t.x += t.speed
+   local on_wall = next_to_wall(t)
+   t.x -= t.speed
 
-   if abs(t.speed) > 3 and not ntw and not t.off then
-    add_particle(t.x, t.y, -1, 1, 30, 6, 0.0625) 
-    if #t.speed_blurs < 10 then
-     add(
-      t.speed_blurs,
-      make_blur(t)
-     )
-    end
-   elseif not ntw then
-    t.speed_blurs = {}
-   end
-
-   for s in all(t.speed_blurs) do
-    s:draw()
-   end
-  end
-  ---
+   return on_wall
+  end,
  }
 end
+
+-- function make_violet(p, x, y)
+--  return {
+--   x=x,
+--   y=y,
+--   frame=0,
+--   hbx0=4,
+--   hbx1=12,
+--   hby0=0,
+--   hby1=16,
+--   holding=nil,
+--   last_speed=nil,
+--   pushed=nil,
+--   will_hold=false,
+--   is_holdable=false,
+--   breaks_blocks=true,
+--   jumps=2,
+--   wall_hang_timer=nil,
+--   speed_blurs={},
+--   init_tick=g_tick,
+--   rot_ctr=0,
+--   ---
+--   update=function(t)
+--    if t.off then
+--     t.frame=0
+--     t.xoff = sin(g_tick/100)*10
+--     t.yoff = sin(g_tick/200)*10
+--
+--     if t.trans then
+--      return
+--     end
+--     
+--     if btn(0,p) then
+--      t.x-=1
+--     end
+--
+--     if btn(1,p) then
+--      t.x+=1
+--     end
+--
+--     if t.y > 20 then
+--      t.y-=1
+--     end
+--
+--     if t.y < 88 and btn(5,p)
+--      then
+--       t.off=nil
+--       t.x+=t.xoff
+--       t.y+=t.yoff
+--       t.xoff=nil
+--       t.yoff=nil
+--       add(g_objs,
+--       make_pop(t.x,t.y))
+--      end
+--
+--      return
+--     end
+--
+--     local ground = t:getflr()
+--     local spdadj=2
+--     local frameadj=1
+--
+--     -- --run
+--     -- if btn(4,p) then
+--     --  spdadj=2 --was 2
+--     --  frameadj=1
+--     --  t.will_hold=true
+--     -- else
+--     --  t.will_hold=false
+--     -- end
+--
+--     -- state detection
+--     local on_wall = t:next_to_wall()
+--     local jumping = (t.y != ground)
+--
+--     if on_wall then
+--      if t.wall_hang_timer then
+--       t.wall_hang_timer -= 1
+--      else
+--       t.wall_hang_timer = 10
+--      end
+--     else
+--      t.wall_hang_timer = nil
+--     end
+--
+--     --left
+--     if btn(0,p) then
+--      if t.direction == 1 then
+--       t.frame = 0
+--      end
+--      if (not jumping) or on_wall or t.speed < 0 then
+--       t.direction = 0
+--       t.speed =
+--       max(-2-spdadj,
+--       t.speed-2*t.speedinc)
+--      end
+--      --right
+--     elseif btn(1,p) then
+--      if t.direction == 0 then
+--       t.frame = 0
+--      end
+--      if (not jumping) or on_wall or t.speed > 0 then
+--       t.direction = 1
+--       t.speed =
+--       min(2+spdadj,
+--       t.speed+2*t.speedinc)
+--      end
+--      --stop
+--     else
+--      if abs(t.speed) < 
+--       t.speedinc then
+--       t.speed=0
+--       --t.frame=(t.frame+0.5)%3
+--       t.frame = 0
+--      end
+--     end
+
+       -- @TODO: resume update pulling from here
+--
+--     if on_wall then
+--      t.jumps = max(t.jumps, 1)
+--      t.init_tick = nil
+--     end
+--
+--     --jump
+--     if btnn(5,p) and t.jumps > 0 then
+--      t.jumps -= 1
+--     -- if t.y == ground and
+--     --   t.speedy == 0 then
+--      t.speedy = -9
+--     -- end
+--
+--
+--     if on_wall then
+--      t.speed *= -1
+--      t.jumps +=1 
+--      t.init_tick = nil
+--     end
+--    end
+--
+--    if t.y == ground and t.speedy == 0 then
+--     t.jumps = 2
+--    end
+--
+--    t.frame=(t.frame+frameadj)%3
+--
+--    local map_pos = map_position(t)
+--    local map_flags =
+--      band(shl(1,4),
+--        fget(mget(map_pos[1],
+--          map_pos[2])))
+--    
+--    if map_flags == 0
+--      and map_pos[3] then
+--     map_flags =
+--      band(shl(1,4),
+--        fget(mget(map_pos[3],
+--          map_pos[2])))
+--    end
+--    
+--    cls()
+--    print(map_flags)
+--    if map_flags != 0 then
+--     t.speed_blurs = {}
+--     level_complete()
+--    end
+--    for i in all(t.speed_blurs) do
+--     i:update()
+--    end
+--
+--    if abs(t.speed) > 0 then
+--    end
+--   end,
+--   next_to_wall=function (t)
+--    t.x += t.speed
+--    local on_wall = next_to_wall(t)
+--    t.x -= t.speed
+--
+--    return on_wall
+--   end,
+--   ---
+--   draw=function(t)
+--    -- @todo: review this function - much of it can be stripped from this build
+--    local sflip =
+--      (t.direction == 1)
+--    local s = 4
+--    
+--    --duck
+--    if g_state == 1
+--      and btn(3,p) then
+--     s = 14 
+--    end
+--
+--    local ground = t:getflr()
+--
+--    if t.speed ~= 0 then
+--     if ((sflip and t.speed<0) or
+--       (not sflip and
+--         t.speed > 0))
+--       then
+--      s=12
+--     else
+--      s=2*flr(t.frame)+6
+--     end
+--    end
+--    if p==1 then
+--     pal(2,3)
+--     pal(14,11)
+--     pal(8,2)
+--    end
+--
+--    local ntw = t:next_to_wall()
+--    
+--    if t.y ~= ground then
+--     s=0
+--     if g_state == 1
+--       and (g_tick%4)>2 then
+--      s = 2
+--     end
+--     if ntw then
+--      s = 12
+--     end
+--    end
+--    
+--    --debug ground detection
+--    if false then
+--    line(t.x, ground,
+--      t.x+16, ground, 7)
+--    line(t.x,t.y,t.x+16,t.y,8)
+--    if t.gy then
+--     line(t.x,t.gy,t.x+16,
+--      t.gy,11)
+--    end
+--    end
+--    
+--    if t.holding then
+--     s+=32
+--    end
+--    
+--    local x = t.x
+--    local y = t.y
+--    if t.off then
+--     s=4
+--     if t.xoff then
+--      x+=t.xoff
+--      y+=t.yoff
+--     end
+--    end
+--
+--    s=4
+--    local flip_x = false
+--    local flip_y = false
+--    if abs(t.speedy) == 0 then
+--     if abs(t.speed) > 0 then
+--      s = 46
+--     end
+--
+--     if abs(t.speed) > 0 and abs(t.speed) > abs(t.last_speed) then
+--      if not t.pushed then
+--       t.pushed = g_tick
+--      end
+--
+--      s = 4 + ((flr(elapsed(t.pushed) / 3)) % 2)*2
+--     else
+--      t.pushed = nil
+--     end
+--    else
+--     if t.speedy > 0 then
+--      -- @todo: could be removed if it isn't readable.  or maybe turned into a spin jump?
+--       s = 10
+--     else
+--       s = 8
+--     end
+--
+--     if t.jumps == 0 then
+--      if t.init_tick == nil then
+--       t.init_tick = g_tick
+--       t.rot_ctr = 0
+--      end
+--      s = 0
+--      t.rot_ctr += 1
+--      rotate_sprite_90(38, 0, t.rot_ctr, g_rot_c_cw)
+--     end
+--    end
+--    if t.wall_hang_timer and t.wall_hang_timer > 0 then
+--     s = 36
+--    end
+--    t.last_speed = t.speed
+--
+--    -- s=0
+--    -- if btn(4) then
+--    --  t.rot_ctr += 2
+--    -- end
+--    -- rotate_sprite_90(38, 0, t.rot_ctr, g_rot_c_cw)
+--
+--    -- if t.last_speed and abs(t.last_speed) < abs(t.speed) then
+--    --  if not t.pushed then
+--    --   t.pushed = g_tick
+--    --  end
+--    --  if t.pushed then
+--    --   if elapsed(t.pushed) < 10 then
+--    --    s = 6
+--    --   end
+--    --  end
+--    -- elseif abs(t.speed) > 0 then
+--    --  s = 46
+--    -- end
+--    -- t.last_speed = t.speed
+--    
+--    spr(s,x,y,2,2,sflip)
+--    pal()
+--    
+--    if t.off then
+--     s=132
+--     if g_tick%20>10 then
+--      s=134
+--     end
+--     spr(s,x,y,2,2)
+--    end
+--
+--    if abs(t.speed) > 3 and not ntw and not t.off then
+--     add_particle(t.x, t.y, -1, 1, 30, 6, 0.0625) 
+--     if #t.speed_blurs < 10 then
+--      add(
+--       t.speed_blurs,
+--       make_blur(t)
+--      )
+--     end
+--    elseif not ntw then
+--     t.speed_blurs = {}
+--    end
+--
+--    for s in all(t.speed_blurs) do
+--     s:draw()
+--    end
+--   end
+--   ---
+--  }
+-- end
 
 function map_position(o)
  local off=getlocaloff()
