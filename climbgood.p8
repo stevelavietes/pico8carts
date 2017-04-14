@@ -682,7 +682,7 @@ function _draw()
    --  122,
    --  1
    -- )
-   print("speed: "..repr(g_violets[1].x), 2, 122, 1)
+   print("speed: "..repr(g_violets[1].moving_left), 2, 122, 1)
  end
  color(5)
 
@@ -1070,34 +1070,23 @@ function make_violet(p, x, y)
      if t.direction == 1 then
       t.frame = 0
      end
-     if (
-      (not jumping) 
-      or on_wall 
-      or t.speed < 0
-     ) then
+      t.moving_left = true
       t.direction = 0
       t.speed = max(
        -2-spdadj,
        t.speed-2*t.speedinc
       )
-     end
     --right
     elseif btn(1,p) then
      if t.direction == 0 then
       t.frame = 0
      end
-     if (
-      (not jumping) 
-      or on_wall 
-      or t.speed > 0
-     ) then
-      t.direction = 1
+      .direction = 1
       t.speed =
       min(
        2+spdadj,
        t.speed+2*t.speedinc
       )
-     end
     else
      if abs(t.speed) < 
       t.speedinc then
@@ -1112,7 +1101,7 @@ function make_violet(p, x, y)
     end
 
 
-    --jump
+    --jmp
     if btnn(5,p) and t.jumps > 0 then
      t.jumps -= 1
      t.speedy = -9
