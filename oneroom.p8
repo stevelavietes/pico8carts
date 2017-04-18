@@ -646,6 +646,7 @@ function make_board(x, y)
  local s_y = 8*y+1+y+1
 
  return {
+  level=g_current_level,
   x=-s_x/2,
   y=-s_y/2,
   space=sp_world,
@@ -854,14 +855,32 @@ function make_board(x, y)
   end,
 
   draw=function(t)
+
    drawobjs(t.flat_cells)
    drawobjs(t.watch_cells)
+   drawobjs(t.scoreboard)
 
    -- border square
    rect(0,0,s_x,s_y,8)
   end
  }
 end
+
+function make_scoreboard()
+ return {
+  x=32,
+  y=1,
+  space=sp_screen_native,
+  draw=function(t)
+   -- @TODO: handle multipe digits in the scoreboard...
+   rect(50, 0, 85, 14, 7)
+   cursor(52, 2)
+   color(6)
+   print("level: "..g_current_level)
+   print("score: "..g_current_score)
+  end
+  }
+ end
 
 function make_camera()
  return {
@@ -1059,9 +1078,12 @@ function make_test_obj(x, y, space, label, children)
  }
 end
 
+g_current_level = 1
+g_current_score = 0
+
 function game_start()
  g_objs = {
-  make_mouse_ptr(),
+  -- make_mouse_ptr(),
  }
 
  g_cam= add_gobjs(make_camera())
@@ -1071,6 +1093,7 @@ function game_start()
 --  end
 --  g_board = add_gobjs(make_board(2,2))
  g_board = add_gobjs(make_board(7,7))
+ g_score = add_gobjs(make_scoreboard())
 
 --  for b in all(g_board.flat_cells) do
 --   add_gobjs(make_blip(b:world_coords(true)))
