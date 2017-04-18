@@ -140,6 +140,7 @@ function make_goon(x, y)
  newgoon.time_last_move = g_tick
  newgoon.shiftable = ss_pushable
  newgoon.brain = br_move_at_player
+ g_goon_count += 1
  return newgoon
 end
 
@@ -514,7 +515,7 @@ function add_merge_block_to_edge(dir)
    valid.y = 1
   end
  end
- if true then
+ if false then
   -- 'wide' palette
   -- local palette = {12, 10, 11, 14}
   -- just green for now
@@ -530,6 +531,10 @@ end
 
 function cell_is_not_empty(cell)
  return cell.containing != nil
+end
+
+function make_level_transition()
+ stop()
 end
 
 function block_is_empty(i, j)
@@ -601,6 +606,7 @@ function make_squish(thing)
  del(g_board.watch_cells, thing)
  thing.container.containing = nil
 
+ g_goon_count -= 1
  return {
   x=center.x,
   y=center.y,
@@ -633,8 +639,8 @@ function make_board(x, y)
   end
  end
  local watch_cells = {}
- local watch_cells = {make_merge_box(11)}
- all_cells[3][1]:mark_for_contain(watch_cells[1], 1)
+--  local watch_cells = {make_merge_box(11)}
+--  all_cells[3][1]:mark_for_contain(watch_cells[1], 1)
 --
 --  local other = add_gobjs(make_merge_box(1,3,11))
 --  all_cells[1][3]:mark_for_contain(other, 1)
@@ -842,16 +848,20 @@ function make_board(x, y)
   end,
   update=function(t)
    -- make goons
-   if elapsed(t.lastgoon) > 150 then
-    local empty = random_empty_cell()
-    make_goon(empty[1], empty[2])
-    t.lastgoon = g_tick
-   end
+   -- if elapsed(t.lastgoon) > 150 then
+   --  local empty = random_empty_cell()
+   --  make_goon(empty[1], empty[2])
+   --  t.lastgoon = g_tick
+   -- end
 
    -- compute paths
    t:_compute_paths()
    updateobjs(t.flat_cells)
    updateobjs(t.watch_cells)
+
+   if g_goon_count == 0 then
+    make_level_transition()
+   end
   end,
 
   draw=function(t)
@@ -1092,6 +1102,7 @@ function game_start()
 --   add(children, make_test_obj(5,12*i,sp_local,"child"..i))
 --  end
 --  g_board = add_gobjs(make_board(2,2))
+ g_goon_count = 0
  g_board = add_gobjs(make_board(7,7))
  g_score = add_gobjs(make_scoreboard())
 
@@ -1111,7 +1122,22 @@ function game_start()
  add(g_board.watch_cells, (g_player_piece))
 --  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
  g_p1 = add_gobjs(make_player_controller(0))
- g_enemy = make_goon(2,1)
+
+ -- add goons
+ for i=1,(g_current_level+1) do
+  local empty = random_empty_cell()
+  g_enemy = make_goon(empty[1], empty[2])
+ end
+
+ -- add merge boxes
+ local numboxes = flr(8+rnd(3))
+ for i=1,numboxes do
+  local c = random_empty_cell(valid)
+  local new_box = make_merge_box(11)
+  add(g_board.watch_cells, new_box)
+  g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
+  new_box:update()
+ end
 
  add_gobjs(debug_messages())
  g_state = st_playing
