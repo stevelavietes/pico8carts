@@ -13,13 +13,19 @@ function _init()
    make_menu(
    {
     'go',
+    'score screen',
    },
    function (t, i, s)
     add (
      s,
      make_trans(
      function()
-      game_start()
+      if i == 0 then
+       game_start()
+      else
+       g_current_score = 10
+       _game_over()
+      end
      end
      )
     )
@@ -238,7 +244,48 @@ end
 function make_attack(t)
  -- freeze the screen -- make trans back to menu?
  -- @todo: better feedback that game is over
- add_gobjs(make_trans(function() _init() end))
+ add_gobjs(make_trans(function() _game_over() end))
+end
+
+function make_game_over_screen(score)
+ return {
+  x=-20,
+  y=-20,
+  space=sp_screen_center,
+  draw=function(t)
+   rect(0, 0, 38, 14, 8)
+   print("game over", 2, 2, 2)
+   print("score: "..score, 2, 8, 12)
+  end
+ }
+end
+
+function _game_over()
+ local final_score = g_current_score
+ reset()
+ add_gobjs(make_game_over_screen(final_score))
+ add_gobjs(
+  make_menu(
+   {
+    "reset",
+    "main menu"
+   },
+   function (t, i, s)
+    add(
+     s,
+     make_trans(
+      function()
+       if i == 0 then
+        game_start()
+       else
+        _init()
+       end
+      end
+     )
+    )
+   end
+  )
+ )
 end
 
 function br_move_at_player(t)
@@ -534,7 +581,8 @@ function cell_is_not_empty(cell)
 end
 
 function make_level_transition()
- stop()
+ g_current_level += 1
+ make_level()
 end
 
 function block_is_empty(i, j)
@@ -1091,12 +1139,22 @@ end
 g_current_level = 1
 g_current_score = 0
 
-function game_start()
+function reset()
  g_objs = {
   -- make_mouse_ptr(),
  }
-
  g_cam= add_gobjs(make_camera())
+ g_current_level = 1
+ g_current_score = 0
+ g_state = st_menu
+end
+
+function game_start()
+ reset()
+ make_level()
+end
+
+function make_level()
 --  local children = {}
 --  for i=1,10 do
 --   add(children, make_test_obj(5,12*i,sp_local,"child"..i))
@@ -1191,7 +1249,8 @@ function drawobjs(objs)
    -- if you're drawing screen center 
    if t.space == sp_screen_center then
     pushc(-64, -64)
-    cam_stack += 1
+    pushc(-t.x, -t.y)
+    cam_stack += 2
    elseif t.space == sp_world and g_cam  then
     pushc(g_cam.x - 64, g_cam.y - 64)
     pushc(-t.x, -t.y)
