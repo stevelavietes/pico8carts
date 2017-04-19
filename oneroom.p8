@@ -582,6 +582,7 @@ end
 
 function make_level_transition()
  g_current_level += 1
+ reset(false)
  make_level()
 end
 
@@ -655,6 +656,7 @@ function make_squish(thing)
  thing.container.containing = nil
 
  g_goon_count -= 1
+ g_current_score += 1
  return {
   x=center.x,
   y=center.y,
@@ -1139,18 +1141,21 @@ end
 g_current_level = 1
 g_current_score = 0
 
-function reset()
+function reset(constants)
  g_objs = {
   -- make_mouse_ptr(),
  }
  g_cam= add_gobjs(make_camera())
- g_current_level = 1
- g_current_score = 0
- g_state = st_menu
+
+ if constants then
+  g_current_level = 1
+  g_current_score = 0
+  g_state = st_menu
+ end
 end
 
 function game_start()
- reset()
+ reset(true)
  make_level()
 end
 
