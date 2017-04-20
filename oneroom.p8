@@ -522,7 +522,7 @@ function empty_cells_on_edges(valid_edges)
  for i=1,g_board.size_x do
   for j=1,g_board.size_y do
    -- only check border cells
-   if i==1 or i==g_board.size_x or j==1 or j==g_board.size_y then
+   if (not valid_edges) or i==1 or i==g_board.size_x or j==1 or j==g_board.size_y then
     if (
      not valid_edges
      or (valid_edges.x ~= 0 and i == valid_edges.x) 
@@ -538,6 +538,7 @@ function empty_cells_on_edges(valid_edges)
  return empty_cells
 end
 
+-- if valid_edges is null, this will put boxes anywhere on the grid
 function random_empty_cell(valid_edges)
  local empty_cells = empty_cells_on_edges(valid_edges)
  local num_empty_cells = #empty_cells
@@ -892,7 +893,7 @@ function make_board(x, y)
    local current = g_player_piece.container
    while path != {} and path[current] != nil do
     current = path[current]
-    current.distance_to_goal = '*'
+    -- current.distance_to_goal = '*'
     del(path, current)
    end
   end,
@@ -1195,7 +1196,7 @@ function make_level()
  -- add merge boxes
  local numboxes = flr(8+rnd(3))
  for i=1,numboxes do
-  local c = random_empty_cell(valid)
+  local c = random_empty_cell()
   local new_box = make_merge_box(11)
   add(g_board.watch_cells, new_box)
   g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
