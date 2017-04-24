@@ -5,6 +5,35 @@ __lua__
 g_ping = 0
 g_updates = 0
 
+function repr(arg)
+ -- turn any thing into a string (table, boolean, whatever)
+ if arg == nil then
+  return "nil"
+ end
+ if type(arg) == "boolean" then
+  return arg and "true" or "false"
+ end
+ if type(arg) == "table" then 
+  if arg[1] then
+   -- hackity hack hac
+   local retval = " list[ "
+   for _, v in pairs(arg) do
+    retval = retval .. repr(v) .. ","
+   end
+   retval = retval .. "] "
+   return retval
+  end
+  local retval = " table{ "
+  for k, v in pairs(arg) do
+   retval = retval .. k .. ": ".. repr(v).. ","
+  end
+  retval = retval .. "} "
+  return retval
+ end
+ return ""..arg
+end
+
+
 function _init()
  stdinit()
 
