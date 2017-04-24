@@ -64,11 +64,40 @@ function _init()
 end
 
 function _update60()
- stdupdate()
+ if g_state == st_freeze then
+  if g_freeze_frame > 0 then
+   g_freeze_frame -= 1
+  else
+   g_state = st_playing
+  end
+ else
+  stdupdate()
+ end
 end
 
 function _draw()
- stddraw()
+ targetc = 7
+ if g_dying then
+  targetc = 2
+ end
+ if g_state == st_freeze then
+  for i=0,123 do
+   for j=0,123 do
+    local c = pget(i, j)
+    if c != 0 and c != 1 then
+     pset(i, j, targetc)
+
+     c = pget(i+1, j+1)
+     if c == 0 then
+      pset(i+1, j+1, 1)
+     end
+
+    end
+   end
+  end
+ else
+  stddraw()
+ end
 end
 
 -- coordinate systems
