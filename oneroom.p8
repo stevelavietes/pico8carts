@@ -302,6 +302,10 @@ end
 function make_attack(t)
  -- freeze the screen -- make trans back to menu?
  -- @todo: better feedback that game is over
+ g_state = st_freeze
+ g_freeze_frame = 40
+ g_dying = true
+
  add_gobjs(make_trans(function() _game_over() end))
 end
 
