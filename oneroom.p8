@@ -409,6 +409,7 @@ mark_for_move=function(t, to_cell, amt)
   t.from_loc = vecmake(t.x, t.y)
   t.to_loc = vecmake(to_cell.x, to_cell.y)
   t.to_amount = amt or 0
+  add(g_board.dust,make_dust(t.from_loc))
  end
  t.grid_x = to_cell.grid_x
  t.grid_y = to_cell.grid_y
@@ -643,6 +644,40 @@ function cell_is_not_empty(cell)
  return cell.containing != nil
 end
 
+function make_dust(loc)
+ if loc.x == 0 or loc.y == 0 then
+  return nil
+ end
+ local offsets={}
+ for i=1,3 do
+  add(offsets, {rnd(7), rnd(7)})
+ end
+ return {
+  x=loc.x,
+  y=loc.y,
+  space=sp_local,
+  start=g_tick,
+  offsets=offsets,
+  showing=#offsets,
+  update=function(t)
+   local e = elapsed(t.start)
+   if e > 10 then
+    del(g_board.dust, t)
+   end
+   if e % 3 == 0 then
+    t.showing -= 1
+   end
+  end,
+  draw=function(t)
+   for i=1,#t.offsets do
+    if i <= t.showing then
+     local o = t.offsets[i]
+     rect(o[1],o[2],o[1]+1,o[2]+1,6)
+    end
+   end
+  end
+ }
+end
 function make_level_transition()
  g_current_level += 1
  reset(false)
@@ -827,6 +862,7 @@ function make_board(x, y)
   flat_cells=flat_cells,
   watch_cells=watch_cells,
   lastgoon = g_tick,
+  dust={},
   blast_queue = nil,
   blast=function(t, start_block, color_block, x_dir, y_dir)
    g_state = st_blasting
@@ -1023,15 +1059,13 @@ function make_board(x, y)
    t:_compute_paths()
    updateobjs(t.flat_cells)
    updateobjs(t.watch_cells)
-
-   if g_goon_count == 0 then
-    make_level_transition()
-   end
+   updateobjs(t.dust)
   end,
 
   draw=function(t)
 
    drawobjs(t.flat_cells)
+   drawobjs(t.dust)
    drawobjs(t.watch_cells)
    drawobjs(t.scoreboard)
 
