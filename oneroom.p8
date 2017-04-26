@@ -2,8 +2,15 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 
-g_ping = 0
-g_updates = 0
+cartdata("pushback_high_scores")
+alphabet = "abcdefghijklmnopqrstuvwxyz "
+
+function clear_scores()
+ for i=0,63 do
+  dset(i, 1)
+ end
+end
+-- clear_scores()
 
 function repr(arg)
  -- turn any thing into a string (table, boolean, whatever)
@@ -98,7 +105,7 @@ function _init()
        game_start()
       else
        g_current_score = 10
-       _game_over()
+       add_gobjs(make_high_score_list())
       end
      end
      )
@@ -360,14 +367,206 @@ function make_game_over_screen(score)
  }
 end
 
+function find_new_score_loc(scores, score)
+ if #scores >= 5 and scores[5][2] >= score then
+  return nil
+ end
+
+ ind = 1
+ for scr_tpl in all(scores) do
+  if score > scr_tpl[2] then
+   return ind
+  end
+  ind += 1
+ end
+
+ return ind
+end
+
+function load_high_score_table()
+ local highscore_table = {}
+
+ -- initials
+ for entry=0, 19, 4 do
+  local initials = ""
+  for i=0, 2 do
+   local current = dget(entry+i)
+   initials = initials .. sub(alphabet, current, current)
+  end
+  local score = dget(entry+3) 
+  add(highscore_table, {initials, score})
+ end
+ return highscore_table
+end
+
+function save_score(scores, new_score_loc, initials, score)
+ new_scores = {}
+ for i=1, max(#scores, new_score_loc) do
+  if i == new_score_loc then
+   add(new_scores, {initials, score})
+   -- print(i..": ".."new: "..initials[1]..initials[2]..initials[3].. " ".. score)
+  end
+
+  if i <= #scores then
+   add(new_scores, {intified(scores[i][1]), scores[i][2]})
+   -- print(i..": "..scores[i][1])
+  end
+ end
+ for i=1, #new_scores do
+  for l=0,2 do
+   dset(4*(i-1)+l, new_scores[i][1][l+1])
+   -- print((i-1)*4+l)
+  end
+  dset(4*(i-1)+3, new_scores[i][2])
+   -- print(3+(i-1)*4)
+ end
+end
+
+function make_enter_score(score)
+ -- load the previous high scores
+ local scores = load_high_score_table()
+ local new_score_loc = find_new_score_loc(scores, score)
+
+ -- assume that score saved to table is sorted
+ if not new_score_loc then
+  -- show high score list
+  add_gobjs(make_retry(np))
+  add_gobjs(make_high_score_list(scores))
+  return
+ end
+
+ return {
+  x=0,
+  y=0,
+  initials = {1, 1, 1},
+  initial_str="aaa",
+  current_letter=0,
+  update=function(t)
+   if btnn(0) then 
+    t.current_letter = max(t.current_letter - 1, 0)
+   end
+   if btnn(1) then 
+    t.current_letter = min(t.current_letter + 1, 3)
+   end
+   -- down
+   if t.current_letter < 3 then
+    if btnn(3) then
+     t.initials[t.current_letter + 1] = min(
+      27,
+      t.initials[t.current_letter+1] + 1
+     )
+     if t.initials[t.current_letter + 1] == 27 then
+      t.initials[t.current_letter + 1] = 1
+     end
+    end
+    -- up
+    if btnn(2) then
+     t.initials[t.current_letter + 1] = max(
+      0,
+      t.initials[t.current_letter+1] - 1
+     )
+     if t.initials[t.current_letter + 1] == 0 then
+      t.initials[t.current_letter + 1] = 26 
+     end
+    end
+   else
+    if btnn(4) or btnn(5) then
+     save_score(scores, new_score_loc, t.initials, score)
+     add_gobjs(make_retry())
+     add_gobjs(make_high_score_list())
+     del(g_go, t)
+    end
+   end
+
+   t.initial_str = ""
+   for i=1,3 do
+    t.initial_str = (t.initial_str..sub(alphabet, t.initials[i], t.initials[i]))
+   end
+  end,
+  draw=function(t)
+   -- background
+   rect(45,79,90,96,0)
+   rectfill(46,80,89,95,5)
+
+   print(t.initial_str,55,82,12)
+   print("high score!", 47, 90, 12)
+   if t.current_letter == 3 then
+    pal(1, 11)
+   end
+   spr(225, 67, 80, 2, 2)
+   if t.current_letter == 3 then
+    pal(1, 1)
+   end
+   -- cursor
+   if t.current_letter < 3 then
+    rect(54+4*t.current_letter, 81, 54+4*t.current_letter+4, 87, 11)
+   end
+  end
+ }
+end
+
 function _game_over()
  local final_score = g_current_score
  reset()
- add_gobjs(make_game_over_screen(final_score))
+
+ add_gobjs(make_enter_score(g_current_score))
+end
+
+function digits(num)
+ local result = 1
+ while (num/10 >= 1) do
+  result += 1
+  num = flr(num/10)
+ end
+ return result
+end
+
+
+function make_high_score_list(scores)
+ if not scores then
+  scores = load_high_score_table()
+ end
+ return {
+  x=40,
+  y=20,
+  ndigits=digits(scores[1][2]),
+  scores=scores,
+  draw=function(t)
+   cursor(0, 0)
+   rectfill(0,0, 2+(8+t.ndigits)*4+3, 2+6*5-1, 5)
+   rectfill(-1,-1, 3+(8+t.ndigits)*4, 2+6*5-2, 6)
+   rect(-2,-2, 2+(8+t.ndigits)*4+2, 2+6*5-2, 0)
+   for i, stuff in pairs(scores) do
+    if i == 1 then
+     color(8)
+    else
+     color(0)
+    end
+    print("["..i.."] "..stuff[1]..": "..stuff[2])
+   end
+  end
+ }
+end
+
+function intified(str)
+ result = {}
+ for i=1,3 do
+  for l=1,26 do
+   if sub(str, i, i) == sub(alphabet, l, l) then
+    add(result, l)
+   end
+  end
+ end
+ return result
+end
+
+
+function make_retry()
+ add_gobjs(make_game_over_screen(g_current_score))
  add_gobjs(
   make_menu(
    {
-    "reset",
+    "play again",
     "main menu"
    },
    function (t, i, s)
@@ -1555,7 +1754,6 @@ function stdupdate()
  -- current/last controller
  g_ctl = g_ct
  g_ct = btn()
- g_updates = 0
 
  if g_state == st_freeze then
   if elapsed(g_freeze_frame) > g_freeze_framecount then
@@ -1919,15 +2117,15 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001cc100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001c1111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001cc1cc111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001c11c1c1cc11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001cc1c1c1c1c1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001111c1c1c1c1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000011111ccc1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000011111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
