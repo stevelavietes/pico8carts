@@ -1556,7 +1556,6 @@ function make_player_avatar(x, y)
   end,
   update=function(t)
    if g_health <= 0 then
-   if g_health == 0 then
     make_attack(g_player_piece.container:world_coords())
    end
   end,
