@@ -103,8 +103,11 @@ function make_title()
    end
   end,
   draw=function(t)
+   -- background
    rectfill(-t.x, 28, 124-t.x, 62, 11)
    rectfill(-t.x, 30, 124-t.x, 60, 0)
+
+   -- title text
    local root_x = 0
    for i=0,4 do
     sspr(root_x + i*8, 32, 8, 8, (root_x + i)*14, 0, 16, 16)
@@ -156,21 +159,40 @@ function make_title()
    --  t.off_left_x = rnd(4) - 2
    --  t.off_left_y = rnd(4) - 2
    -- end
-   rectfill(
+   s = 60
+   if grimace > 0.15 then
+    s = 61
+   end
+   spr(
+    s,
     24+off_pre+30+t.off_right_x,
     40+t.off_right_y,
-    24+off_pre+30+6+t.off_right_x,
-    46+t.off_right_y,
-    8
+    1,
+    1,
+    true
    )
+   -- rectfill(
+   --  24+off_pre+30+6+t.off_right_x,
+   --  46+t.off_right_y,
+   --  8
+   -- )
    local off_post = 10*sin(elapsed(t.created-21)/240)
 
-   rectfill(
+   -- rectfill(
+   --  24+off_post-30+t.off_left_x,
+   --  40+t.off_left_y,
+   --  24+off_post-30+6+t.off_left_x,
+   --  46+t.off_left_y,
+   --  8
+   -- )
+   s = 60
+   if sin(amount*1.6) > -0.2 then
+    s = 62
+   end
+   spr(
+    s,
     24+off_post-30+t.off_left_x,
-    40+t.off_left_y,
-    24+off_post-30+6+t.off_left_x,
-    46+t.off_left_y,
-    8
+    40+t.off_left_y
    )
   end
  })
@@ -179,7 +201,9 @@ function make_title()
  local speeds={1.4,2.4}
  for i=0,10 do
   local seed=flr(rnd(2))
-  add_gobjs(make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1]))
+  add_gobjs(
+   make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+  )
  end
  add_gobjs(debug_messages())
 end
@@ -813,7 +837,11 @@ function make_merge_box(col)
     offset = null_v
    end
 
-   rectfill(1+offset.x,1+offset.y,6+offset.x,6+offset.y,t.col)
+   if t.col != 8 then
+    rectfill(1+offset.x,1+offset.y,6+offset.x,6+offset.y,t.col)
+   else
+    spr(60, 0, 0)
+   end
 
    -- if t.merge_blips != nil then
    --  local amt = vecsub(t, t.from_loc)
@@ -2143,7 +2171,7 @@ __gfx__
 67676500667660006766650066676500666765006667650067676500006765006767650066676500000000000000000099999999999999999999999900000000
 67776500677765006777650067776500056765006776650067776500006765006777650005676500000000000000000089999999899999998999999900000000
 66666500666665006666650066666500006665006666550066666500006665006666650000666500000000000000000088999998889999988899999800000000
-05555500005555000555550005555500000555000555500005555500005555000555550000055500000000000000000008899980088999800889998000000000
+05555500005555000555550005555500000555000555500005555500005555000555550000055500000000000000000088899988888999888889998800000000
 33330000333330003333300033333000333300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 3bb330003b3b35003bbb35003b3b35003bb350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 3b3b30003b3b35003b3335003b3b35003bb350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
