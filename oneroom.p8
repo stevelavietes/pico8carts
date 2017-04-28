@@ -104,8 +104,8 @@ function make_title()
   end,
   draw=function(t)
    -- background
-   rectfill(-t.x, 28, 124-t.x, 62, 11)
-   rectfill(-t.x, 30, 124-t.x, 60, 0)
+   rectfill(-t.x, 33, 124-t.x, 58, 11)
+   rectfill(-t.x, 34, 124-t.x, 57, 0)
 
    -- title text
    local root_x = 0
@@ -145,11 +145,12 @@ function make_title()
     end
    end
 
-   spr(s, 24+off, 40)
+   local y_off = 43
+   spr(s, 24+off, y_off)
 
    -- green block
-   rectfill(24+off_pre+20, 40, 24+off_pre+20+6, 46, 11)
-   rectfill(24+off_post-20, 40, 24+off_post-20+6, 46, 11)
+   rectfill(24+off_pre+20, y_off, 24+off_pre+20+6, y_off+6, 11)
+   rectfill(24+off_post-20, y_off, 24+off_post-20+6, y_off+6, 11)
 
    -- red blocks
    local off_pre = 10*sin(elapsed(t.created+15)/240)
@@ -166,7 +167,7 @@ function make_title()
    spr(
     s,
     24+off_pre+30+t.off_right_x,
-    40+t.off_right_y,
+    y_off+t.off_right_y,
     1,
     1,
     true
@@ -192,7 +193,7 @@ function make_title()
    spr(
     s,
     24+off_post-30+t.off_left_x,
-    40+t.off_left_y
+    y_off+t.off_left_y
    )
   end
  })
@@ -1254,7 +1255,9 @@ function make_board(x, y)
  local speeds={0.4,1.4}
  for i=0,50 do
   local seed=flr(rnd(2))
-  add_gobjs(make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1]))
+  add_gobjs(
+   make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+  )
  end
  local all_cells = {}
  local flat_cells = {}
@@ -2028,7 +2031,8 @@ function make_menu(
    local x=min(1,e/t.e)*(w+9)/2
    if not omb then
     rectfill(-x,0,x,t.h,0)
-    rect(-x,0,x,t.h,1)
+    pal()
+    rect(-x,0,x,t.h,11)
    end
    if e<t.e then
     return
