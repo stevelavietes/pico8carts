@@ -77,7 +77,9 @@ function make_title()
  local speeds={0.4,1.4}
  for i=0,50 do
   local seed=flr(rnd(2))
-  add_gobjs(make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1]))
+  add_gobjs(
+   make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+ )
  end
  add_gobjs({
   x=30,
@@ -89,7 +91,8 @@ function make_title()
   off_left_y = -1,
   next_flash=300+flr(rnd(60)),
   update=function(t)
-   if elapsed(t.created) % t.next_flash == 0 or elapsed(t.created) % t.next_flash == 10 then
+   local flash_mod = elapsed(t.created) % t.next_flash
+   if flash_mod == 0 or flash_mod == 10 then
     g_state = st_freeze
     g_freeze_frame = g_tick
     g_freeze_framecount = rnd(3)
@@ -153,10 +156,22 @@ function make_title()
    --  t.off_left_x = rnd(4) - 2
    --  t.off_left_y = rnd(4) - 2
    -- end
-   rectfill(24+off_pre+30+t.off_right_x, 40+t.off_right_y, 24+off_pre+30+6+t.off_right_x, 46+t.off_right_y, 8)
+   rectfill(
+    24+off_pre+30+t.off_right_x,
+    40+t.off_right_y,
+    24+off_pre+30+6+t.off_right_x,
+    46+t.off_right_y,
+    8
+   )
    local off_post = 10*sin(elapsed(t.created-21)/240)
 
-   rectfill(24+off_post-30+t.off_left_x, 40+t.off_left_y, 24+off_post-30+6+t.off_left_x, 46+t.off_left_y, 8)
+   rectfill(
+    24+off_post-30+t.off_left_x,
+    40+t.off_left_y,
+    24+off_post-30+6+t.off_left_x,
+    46+t.off_left_y,
+    8
+   )
   end
  })
  local cols={6, 6}
