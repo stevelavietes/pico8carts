@@ -250,7 +250,6 @@ function _init()
    end
   )
  )
- add_gobjs(make_lightning())
 end
 
 function _update60()
@@ -1257,37 +1256,6 @@ function shift_push_buffer(t, push_buffer, x_dir, y_dir)
  end
 
  return did_shift
-end
-
-function make_lightning()
- points = {
-  vecmake(20+flr(rnd(80)), 0),
- }
- local nodes=4
- local length = 100 / nodes
- for i=1, nodes do
-  add(points, vecmake((points[#points].x + rnd(128))%128, i*length))
- end
- return {
-  x=0,
-  y=0,
-  points=points,
-  craeted=g_tick,
-  update=function(t)
-   if elapsed(t.craeted) > 10 then
-    del(g_objs, t)
-   end
-  end,
-  draw=function(t)
-   for i=2,#points do
-    local p = points[i]
-    local p_last = points[i-1]
-    for l=0,(nodes-i+2)*4 do
-     line(p.x+l, p.y, p_last.x+(l-1), p_last.y)
-    end
-   end
-  end
- }
 end
 
 function make_squish(thing, last_squish)
