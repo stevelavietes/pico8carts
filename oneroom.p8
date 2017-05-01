@@ -13,7 +13,6 @@ alphabet = "abcdefghijklmnopqrstuvwxyz "
 -- clear_scores()
 
 -- todo:
--- - right pupil on goon is transparent
 -- - juice when getting hit
 --     - facial expression on goon
 --     - red flash (instead of white flash)
@@ -868,6 +867,7 @@ function make_merge_box(col)
    else
     spr(g_goon_sprite, 0, 0)
    end
+   palt(0, true)
 
    -- if t.merge_blips != nil then
    --  local amt = vecsub(t, t.from_loc)
