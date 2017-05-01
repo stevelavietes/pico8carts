@@ -250,10 +250,28 @@ function _init()
    end
   )
  )
+ add_gobjs(make_lightning())
 end
 
 function _update60()
  stdupdate()
+end
+
+function color_opaque_pixels(tgt_color)
+ for i=0,123 do
+  for j=0,123 do
+   local c = pget(i, j)
+   if c != 0 then
+    pset(i, j, tgt_color)
+
+    -- c = pget(i+1, j+1)
+    -- if c == 0 then
+    --  pset(i+1, j+1, 1)
+    -- end
+
+   end
+  end
+ end
 end
 
 function _draw()
@@ -262,22 +280,15 @@ function _draw()
   targetc = 2
  end
  if g_state == st_freeze then
-  for i=0,123 do
-   for j=0,123 do
-    local c = pget(i, j)
-    if c != 0 and c != 1 then
-     pset(i, j, targetc)
-
-     c = pget(i+1, j+1)
-     if c == 0 then
-      pset(i+1, j+1, 1)
-     end
-
-    end
-   end
-  end
+  color_opaque_pixels(targetc)
  else
   stddraw()
+  if g_being_attacked then
+   color_opaque_pixels(8)
+   if elapsed(g_being_attacked) > 3 then
+    g_being_attacked = false
+   end
+  end
  end
 end
 
@@ -480,7 +491,7 @@ function compute_path(from_cell, to_cell)
  return came_from, cost_so_far
 end
 
-function make_attack(t)
+function make_lose(t)
  -- freeze the screen -- make trans back to menu?
  -- @todo: better feedback that game is over
  g_state = st_freeze
@@ -724,14 +735,23 @@ function make_retry()
  )
 end
 
+function attack_player()
+ g_being_attacked = g_tick
+--  g_freeze_frame = g_tick
+--  g_state = st_freeze
+--  g_freeze_framecount = 3
+ shake_screen(15, 10)
+ g_health -= 1
+end
+
 function br_move_at_player(t)
  if t.attacking != nil and elapsed(t.attacking) % 30 == 0 then
   -- @todo: attack juice?
-  g_health -= 1
+  attack_player(t)
  end
 --  if t.attacking != nil and elapsed(t.attacking) > 90 then
 --   -- trigger attack
---   add_gobjs(make_attack(g_player_piece.container:world_coords()))
+--   add_gobjs(make_lose(g_player_piece.container:world_coords()))
 --   t.attacking = nil
 --  end
 
@@ -1239,7 +1259,39 @@ function shift_push_buffer(t, push_buffer, x_dir, y_dir)
  return did_shift
 end
 
+function make_lightning()
+ points = {
+  vecmake(20+flr(rnd(80)), 0),
+ }
+ local nodes=4
+ local length = 100 / nodes
+ for i=1, nodes do
+  add(points, vecmake((points[#points].x + rnd(128))%128, i*length))
+ end
+ return {
+  x=0,
+  y=0,
+  points=points,
+  craeted=g_tick,
+  update=function(t)
+   if elapsed(t.craeted) > 10 then
+    del(g_objs, t)
+   end
+  end,
+  draw=function(t)
+   for i=2,#points do
+    local p = points[i]
+    local p_last = points[i-1]
+    for l=0,(nodes-i+2)*4 do
+     line(p.x+l, p.y, p_last.x+(l-1), p_last.y)
+    end
+   end
+  end
+ }
+end
+
 function make_squish(thing, last_squish)
+ shake_screen(6, 6)
  local center = thing.container:world_coords(true)
  del(g_board.watch_cells, thing)
  thing.container.containing = nil
@@ -1549,6 +1601,22 @@ function make_scoreboard()
   }
  end
 
+function make_shake_scope()
+ return {
+  x=0,
+  y=0,
+  update=function(t)
+   if g_shake_end and g_tick < g_shake_end then
+    vecset(t, vecrand(g_shake_mag, true))
+   else
+    g_shake_end = nil
+    g_shake_mag = nil
+    vecset(t, vecmake())
+   end
+  end
+ }
+end
+
 function make_camera()
  return {
   x=0,
@@ -1577,7 +1645,7 @@ end
 -- @}
 
 -- @{ vector library
-function vecrand(scale,center)
+function vecrand(scale, center)
  local result = vecmake(rnd(scale), rnd(scale))
  if center then
   result = vecsub(result, vecmake(scale/2))
@@ -1719,7 +1787,7 @@ function make_player_avatar(x, y)
   end,
   update=function(t)
    if g_health <= 0 then
-    make_attack(g_player_piece.container:world_coords())
+    make_lose(g_player_piece.container:world_coords())
    end
   end,
   draw=function (t)
@@ -1839,6 +1907,11 @@ function game_start()
  g_health = 10
 end
 
+function shake_screen(duration, magnitude)
+ g_shake_end = g_tick + duration
+ g_shake_mag = magnitude
+end
+
 function make_level()
 --  local children = {}
 --  for i=1,10 do
@@ -1846,6 +1919,7 @@ function make_level()
 --  end
 --  g_board = add_gobjs(make_board(2,2))
  g_goon_count = 0
+ g_shake_scope = add_gobjs(make_shake_scope())
  g_board = add_gobjs(make_board(7,7))
  g_score = add_gobjs(make_scoreboard())
 
@@ -1939,7 +2013,15 @@ end
 
 function stddraw()
  cls()
+ if g_shake_scope then
+  pushc(g_shake_scope.x, g_shake_scope.y)
+ end
+
  drawobjs(g_objs)
+
+ if g_shake_scope then
+  popc()
+ end
 end
 
 function drawobjs(objs)
