@@ -15,13 +15,9 @@ alphabet = "abcdefghijklmnopqrstuvwxyz "
 -- todo:
 -- - juice when getting hit
 --     - facial expression on goon
---     - red flash (instead of white flash)
---     - some juice to indicate how much health you have left
 --     - some way to get health back (heart box)
 --     - death animation (red bar coming over the screen) instead of going red
 --     - busted :( on lose 
---     - camera shake when crunching or being attacked
--- - title screen guards instead of green blocks
 
 
 function repr(arg)
@@ -747,7 +743,7 @@ function attack_player()
 --  g_freeze_frame = g_tick
 --  g_state = st_freeze
 --  g_freeze_framecount = 3
---  shake_screen(15, 10)
+ shake_screen(15, 10, 3)
  g_health -= 1
 end
 
@@ -1267,7 +1263,7 @@ function shift_push_buffer(t, push_buffer, x_dir, y_dir)
 end
 
 function make_squish(thing, last_squish)
- shake_screen(6, 6)
+ shake_screen(8, 6, 2)
  local center = thing.container:world_coords(true)
  del(g_board.watch_cells, thing)
  thing.container.containing = nil
@@ -1583,10 +1579,16 @@ function make_shake_scope()
   y=0,
   update=function(t)
    if g_shake_end and g_tick < g_shake_end then
-    vecset(g_cam, vecrand(g_shake_mag, true))
+    if (
+     not g_shake_frequency 
+     or (g_shake_end - g_tick) % g_shake_frequency == 0
+    ) then
+     vecset(g_cam, vecrand(g_shake_mag, true))
+    end
    else
     g_shake_end = nil
     g_shake_mag = nil
+    g_shake_frequency = nil
     vecset(g_cam, vecmake())
    end
   end
@@ -1894,9 +1896,10 @@ function game_start()
  g_health = 5
 end
 
-function shake_screen(duration, magnitude)
- g_shake_end = g_tick + duration
+function shake_screen(duration, magnitude, frequency)
+ g_shake_end = g_tick + duration + 1
  g_shake_mag = magnitude
+ g_shake_frequency = frequency
 end
 
 function make_level()
