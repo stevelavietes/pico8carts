@@ -14,8 +14,10 @@ alphabet = "abcdefghijklmnopqrstuvwxyz "
 
 -- todo:
 -- - juice when getting hit
---     - facial expression on goon
+--     - [tabled] facial expression on goon
 --     - some way to get health back (heart box)
+--     - super pellet?
+--     - better scoreboard
 --     - death animation (red bar coming over the screen) instead of going red
 --     - busted :( on lose 
 
@@ -164,8 +166,8 @@ function make_title()
 
    -- green block
    -- @todo: these shouldbe the dudes
-   spr(43,24+off_pre+20, y_off)
-   spr(43,24+off_post-20, y_off)
+   spr(g_pusher_sprite,24+off_pre+20, y_off)
+   spr(g_pusher_sprite,24+off_post-20, y_off)
    -- rectfill(24+off_pre+20, y_off, 24+off_pre+20+6, y_off+6, 11)
    -- rectfill(24+off_post-20, y_off, 24+off_post-20+6, y_off+6, 11)
 
@@ -821,8 +823,8 @@ ss_inert     = 0
 ss_shiftable = 1
 ss_pushable  = 2
 
-g_goon_sprite = 60
-g_pusher_sprite = 43
+g_goon_sprite = 70
+g_pusher_sprite = 74
 
 function make_merge_box(col)
  return {
@@ -884,13 +886,15 @@ function make_merge_box(col)
     offset = null_v
    end
 
-   palt(0, false)
    if t.col != 8 then
     spr(g_pusher_sprite, 0, 0)
    else
-    spr(g_goon_sprite, 0, 0)
+    local spr_offset=0
+    if g_tick % 10 <= 5 then 
+     spr_offset=2
+    end
+    spr(g_goon_sprite+spr_offset, -4, -4,2,2)
    end
-   palt(0, true)
 
    -- if t.merge_blips != nil then
    --  local amt = vecsub(t, t.from_loc)
