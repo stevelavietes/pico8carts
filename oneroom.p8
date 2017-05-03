@@ -12,14 +12,18 @@ alphabet = "abcdefghijklmnopqrstuvwxyz "
 -- end
 -- clear_scores()
 
--- todo:
--- - juice when getting hit
+-- next iteration:
 --     - [tabled] facial expression on goon
 --     - some way to get health back (heart box)
 --     - super pellet?
---     - better scoreboard
+
+
+-- todo:
+-- - juice when getting hit
 --     - death animation (red bar coming over the screen) instead of going red
+--     - enemy move at you when a* presents no path, just get closer (if possible)
 --     - busted :( on lose 
+--     - better scoreboard
 
 
 function repr(arg)
@@ -65,9 +69,9 @@ function make_rain(x, y, angle, length, col, speed)
   draw=function(t)
    local offset=t.speed*elapsed(start_rain)
 
-   -- local x=(offset+t.x)%123
+   -- local x=(offset+t.x)%128
    local x=t.x
-   local y=(offset+t.y)%123
+   local y=(offset+t.y)%128
 
    line(
     x,
@@ -90,7 +94,7 @@ function make_title()
  for i=0,50 do
   local seed=flr(rnd(2))
   add_gobjs(
-   make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+   make_rain(rnd(128), rnd(128), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
  )
  end
  add_gobjs({
@@ -223,10 +227,10 @@ function make_title()
  for i=0,10 do
   local seed=flr(rnd(2))
   add_gobjs(
-   make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+   make_rain(rnd(128), rnd(128), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
   )
  end
- add_gobjs(debug_messages())
+--  add_gobjs(debug_messages())
 end
 
 function _init()
@@ -263,17 +267,17 @@ function _update60()
 end
 
 function color_opaque_pixels(tgt_color)
- for i=0,123 do
-  for j=0,123 do
+ local lines_to_color = 127
+ local frames_elapsed = 0
+ if g_dying and g_freeze_frame then
+  frames_elapsed = elapsed(g_freeze_frame)
+  lines_to_color = rescale(frames_elapsed, 0, g_freeze_framecount, 0, 127)
+ end
+ for i=0,127 do
+  for j=0,lines_to_color do
    local c = pget(i, j)
    if c != 0 then
     pset(i, j, tgt_color)
-
-    -- c = pget(i+1, j+1)
-    -- if c == 0 then
-    --  pset(i+1, j+1, 1)
-    -- end
-
    end
   end
  end
@@ -284,10 +288,10 @@ function _draw()
  if g_dying then
   targetc = 2
  end
+ stddraw()
  if g_state == st_freeze then
   color_opaque_pixels(targetc)
  else
-  stddraw()
   if g_being_attacked then
    color_opaque_pixels(8)
    if elapsed(g_being_attacked) > 3 then
@@ -295,6 +299,7 @@ function _draw()
    end
   end
  end
+ drawobjs(g_frozen_objs)
 end
 
 -- coordinate systems
@@ -501,10 +506,24 @@ function make_lose(t)
  -- @todo: better feedback that game is over
  g_state = st_freeze
  g_freeze_frame = g_tick
- g_freeze_framecount = 40
+ g_freeze_framecount = 240
  g_dying = true
 
+ add(g_frozen_objs,make_text(16, 7))
  add_gobjs(make_trans(function() _game_over() end))
+end
+
+function rescale(current, from_low, from_hi, to_low, to_hi)
+ if not to_hi then
+  to_hi = 1
+ end
+ if not to_low then
+  to_low = 0
+ end
+
+ clamp(current, from_low, from_hi)
+
+ return (((current - from_low) / (from_hi - from_low)) * (to_hi - to_low) + to_low)
 end
 
 function make_game_over_screen(score)
@@ -1151,36 +1170,29 @@ function make_level_transition()
 --  make_level()
 end
 
-function make_clear()
-  return {
-   x=-14,
-   y=-4,
-   space=sp_screen_center,
-   start=g_tick,
-   update=function(t)
-   end,
-   draw=function(t)
-    off_func = function(i)
-     return 8*sin((elapsed(t.start+2*i)%90)/90)
-    end
-    local offset = off_func(0)
-    spr(32, 1,  offset) -- c
-    local offset = off_func(1)
-    spr(33, 6,  offset) -- l 
-    local offset = off_func(2)
-    spr(34, 11, offset)-- e
-    local offset = off_func(3)
-    spr(35, 16, offset)-- a
-    local offset = off_func(4)
-    spr(36, 22, offset)-- r
-    local offset = off_func(5)
-    spr(37, 28, offset)-- !
+function make_text(nspr, nchars)
+ return {
+  x=-(7*nchars)/2,
+  y=-4,
+  space=sp_screen_center,
+  start=g_tick,
+  draw=function(t)
+   -- cls()
+   -- print("here_2", 0,0)
+   -- stop()
+   off_func = function(i)
+    return 8*sin((elapsed(t.start+2*i)%90)/90)
    end
-  }
+   for i=0,nchars do
+    local offset = off_func(i)
+    spr(nspr+i, i*6,  offset) -- c
+   end
+  end
+ }
 end
 
 function make_level_complete()
- add_gobjs(make_clear())
+ add_gobjs(make_text(32, 6))
  add_gobjs(make_scoreboard())
  add_gobjs(
   make_menu(
@@ -1302,6 +1314,17 @@ function make_squish(thing, last_squish)
  }
 end
 
+function make_center_circle()
+ return {
+  x=64,
+  y=64,
+  -- space=sp_screen_native,
+  draw=function(t)
+   circfill(0,0,32)
+  end
+ }
+end
+
 function make_board(x, y)
  local cols={1, 1}
 --  local cols={1,6}
@@ -1309,7 +1332,7 @@ function make_board(x, y)
  for i=0,50 do
   local seed=flr(rnd(2))
   add_gobjs(
-   make_rain(rnd(123), rnd(123), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+   make_rain(rnd(128), rnd(128), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
   )
  end
  local all_cells = {}
@@ -1333,7 +1356,7 @@ function make_board(x, y)
 --  other = add_gobjs(make_merge_box(4,4,8))
 --  all_cells[4][4]:mark_for_contain(other, 1)
 
- local s_x = 8*x+1+x+1
+ local s_x = 8*(x+1)+1
  local s_y = 8*y+1+y+1
 
  return {
@@ -1768,7 +1791,7 @@ function make_player_avatar(x, y)
    add(g_board.blast_queue, {t, other, x_dir, y_dir})
   end,
   update=function(t)
-   if g_health <= 0 then
+   if g_health <= 0 and not g_dying then
     make_lose(g_player_piece.container:world_coords())
    end
   end,
@@ -1885,6 +1908,7 @@ function reset(constants)
  g_objs = {
   -- make_mouse_ptr(),
  }
+ g_frozen_objs = {}
  g_cam= add_gobjs(make_camera())
 
  if constants then
@@ -1916,6 +1940,7 @@ function make_level()
  g_shake_scope = add_gobjs(make_shake_scope())
  g_board = add_gobjs(make_board(7,7))
  g_score = add_gobjs(make_scoreboard())
+--  add_gobjs(make_center_circle())
 
 --  for b in all(g_board.flat_cells) do
 --   add_gobjs(make_blip(b:world_coords(true)))
@@ -1978,6 +2003,7 @@ function stdinit()
  g_ctl=0     --last controllers
  g_cs = {}   --camera stack 
  g_objs = {} --objects
+ g_frozen_objs = {}
 end
 
 function stdupdate()
@@ -1995,6 +2021,7 @@ function stdupdate()
  else
   updateobjs(g_objs)
  end
+ updateobjs(g_frozen_objs)
 end
 
 function updateobjs(objs)
@@ -2253,14 +2280,14 @@ __gfx__
 67777650677765006777650006765000677650006776650067666765000020000000000000000000000000000000000000000000000000000000000000000000
 66666650666665006666650006665000666650006666550066656665000000000000000000000000000000000000000000000000000000000000000000000000
 05555550055555000555550000555000055550000555500005550555000000000000000000000000000000000000000000000000000000000000000000000000
-66660000666000006666000066666000666600006660000000000000000000000000000000000000776666773333333300000000000000000000000000000000
-67765000676500006776500067776500677660006765000000000000000000000000000000000000788288273bbbbbb300000000000000000000000000000000
-676650006765000067665000676765006767650067650000000000000000000000000000000000008788788233b33b3300000000000000000000000000000000
-676550006765000067765000676765006767650067650000000000000000000000000000000000008888888203b3bb3000000000000000000000000000000000
-676600006766000067665000677765006776650066650000000000000000000000000000000000006888882603bb3b3000000000000000000000000000000000
-677650006776500067765000676765006767650067650000000000000000000000000000000000006688826633b33b3300000000000000000000000000000000
-66665000666650006666500066666500666665006665000000000000000000000000000000000000766826673bbbbbb300000000000000000000000000000000
-05555000055550000555500005555500055555000555000000000000000000000000000000000000776666773333333300000000000000000000000000000000
+00066660006660000666600066666000666600006660000000000000000000000000000000000000776666773333333300000000000000000000000000000000
+00067765006765000677650067776500677660006765000000000000000000000000000000000000788288273bbbbbb300000000000000000000000000000000
+000676650067650006766500676765006767650067650000000000000000000000000000000000008788788233b33b3300000000000000000000000000000000
+000675550067650006776500676765006767650067650000000000000000000000000000000000008888888203b3bb3000000000000000000000000000000000
+000676600067660006766500677765006776650066650000000000000000000000000000000000006888882603bb3b3000000000000000000000000000000000
+000677650067765006776500676765006767650067650000000000000000000000000000000000006688826633b33b3300000000000000000000000000000000
+00066665006666500666650066666500666665006665000000000000000000000000000000000000766826673bbbbbb300000000000000000000000000000000
+00005555000555500055550005555500055555000555000000000000000000000000000000000000776666773333333300000000000000000000000000000000
 66666000066600006666600066666000666660006666600066666000666660006666600066666000777666506666666699999999999999999999999900000000
 67776500667650006777650067776500676765006777650067776500677765006777650067776500073335000000000088888888877787779999999900000000
 67676500677650006667650066676500676765006766650067666500666765006767650067676500076365000775077587708770877087708888888800000000
