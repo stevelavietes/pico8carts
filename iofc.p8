@@ -223,13 +223,15 @@ function make_lesson(lnum)
  return {
   x=0,
   y=0,
-  main_color=0,
-  bg_color=0,
+  main_color=1,
+  top_bg=2,
+  bottom_bg=3,
   changed=false,
   last_color = 0,
   last_bg = 0,
+  last_bg_bottom=0,
   update=function(t)
-   if not t.changed then
+   -- if not t.changed then
     if btnn(0) then
      t.main_color -= 1
     end
@@ -237,28 +239,43 @@ function make_lesson(lnum)
      t.main_color += 1
     end
     if btnn(2) then
-     t.bg_color -=1 
+     t.top_bg +=1 
     end
     if btnn(3) then
-     t.bg_color += 1
+     t.bottom_bg += 1
     end
-    t.main_color = min(max(t.main_color, 0), 15)
-    t.bg_color = min(max(t.bg_color, 0), 15)
-   end
-   if t.last_color != t.main_color or t.last_bg != t.bg_color then
+    -- omit black (0)
+    t.main_color = (t.main_color % 14)
+    t.top_bg = (t.top_bg % 14)
+    t.bottom_bg = (t.bottom_bg % 14)
+   -- end
+   if (
+    t.last_color != t.main_color 
+    or t.last_bg != t.top_bg 
+    or t.last_bg_bottom != t.bottom_bg 
+   ) then
     t.changed = g_tick
    end
    t.last_color = t.main_color
-   t.last_bg = t.bg_color
+   t.last_bg = t.top_bg
+   t.last_bg_bottom = t.bottom_bg
    if t.changed and elapsed(t.changed) > 30 then
     t.changed = nil
    end
   end,
   draw=function(t)
-   if not t.changed then
-    rectfill(0,0,128,128,t.bg_color)
-    rectfill(54,54,74,74,t.main_color)
-   end
+   -- if not t.changed then
+   -- upper 
+    rectfill(0,0,128,64,t.top_bg + 1)
+    rectfill(44,12,84,54,t.main_color + 1)
+    rectfill(54,22,74,44,t.top_bg + 1)
+
+
+    -- lower
+    rectfill(0,64,128,128,t.bottom_bg + 1)
+    rectfill(44,74,84,118,t.main_color + 1)
+    rectfill(54,84,74,108,t.bottom_bg + 1)
+   -- end
   end
  }
 end
