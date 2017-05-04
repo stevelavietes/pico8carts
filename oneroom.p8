@@ -111,7 +111,7 @@ function make_title()
    if flash_mod == 0 or flash_mod == 10 then
     g_state = st_freeze
     g_freeze_frame = g_tick
-    g_freeze_framecount = rnd(3)
+    g_freeze_framecount = rnd(6)
 
     if elapsed(t.created) % t.next_flash == 10 then
      t.next_flash = 300 + flr(rnd(60))
@@ -223,7 +223,7 @@ function make_title()
  })
  local cols={6, 6}
 --  local cols={1,6}
- local speeds={1.4,2.4}
+ local speeds={2.4,4.4}
  for i=0,10 do
   local seed=flr(rnd(2))
   add_gobjs(
@@ -509,7 +509,7 @@ function make_lose(t)
  g_freeze_framecount = 240
  g_dying = true
 
- add(g_frozen_objs,make_text(16, 7))
+ add(g_frozen_objs,make_text(16, 6))
  add_gobjs(make_trans(function() _game_over() end))
 end
 
@@ -1192,7 +1192,7 @@ function make_text(nspr, nchars)
 end
 
 function make_level_complete()
- add_gobjs(make_text(32, 6))
+ add_gobjs(make_text(32, 5))
  add_gobjs(make_scoreboard())
  add_gobjs(
   make_menu(
@@ -2244,7 +2244,7 @@ function make_trans(f,d,i)
   x=0,
   y=0,
   update=function(t,s)
-   if elapsed(t.e)>10 then
+   if elapsed(t.e)>20 then
     if (t.f) t:f(s)
     del(s,t)
     if not t.i then
@@ -2254,7 +2254,7 @@ function make_trans(f,d,i)
    end
   end,
   draw=function(t)
-   local x=flr(elapsed(t.e)/2)
+   local x=flr(elapsed(t.e)/4)
    if t.i then
     x=5-x
    end
