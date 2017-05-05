@@ -1,6 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- pushback
+-- v 0.5
+-- push the red monsters back into the walls to defeat them, don't let them
+-- get close to you in the middle!
 
 cartdata("pushback_high_scores")
 alphabet = "abcdefghijklmnopqrstuvwxyz "
