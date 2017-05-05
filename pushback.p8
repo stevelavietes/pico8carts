@@ -69,9 +69,7 @@ function make_title()
   update=function(t)
    local flash_mod = elapsed(t.created) % t.next_flash
    if flash_mod == 0 or flash_mod == 10 then
-    g_state = st_freeze
-    g_freeze_frame = g_tick
-    g_freeze_framecount = rnd(6)
+    set_freeze_frame(rnd(6))
 
     if elapsed(t.created) % t.next_flash == 10 then
      t.next_flash = 300 + flr(rnd(60))
@@ -365,9 +363,7 @@ end
 function make_lose(t)
  -- freeze the screen -- make trans back to menu?
  -- @todo: better feedback that game is over
- g_state = st_freeze
- g_freeze_frame = g_tick
- g_freeze_framecount = 240
+ set_freeze_frame(240)
  g_dying = true
 
  add(g_frozen_objs,make_text(16, 6))
@@ -822,10 +818,6 @@ function make_player_controller(player)
    end
    -- @}
 
-   -- if did_shift and rnd(3) < 1  then
-   --  add_merge_block_to_edge(dir)
-   -- end
-
    if did_shift then
     local eye_dir = 12
     if dir.x == 1 then
@@ -842,13 +834,16 @@ function make_player_controller(player)
  }
 end
 
--- @todo: alternate version that only spawns on edges for goons
 function empty_cells_on_edges(valid_edges)
  local empty_cells = {}
  for i=1,g_board.size_x do
   for j=1,g_board.size_y do
    -- only check border cells
-   if (not valid_edges) or i==1 or i==g_board.size_x or j==1 or j==g_board.size_y then
+   if (
+    not valid_edges 
+    or i==1 or i==g_board.size_x 
+    or j==1 or j==g_board.size_y 
+   ) then
     if (
      not valid_edges
      or (valid_edges.x ~= 0 and i == valid_edges.x) 
@@ -868,27 +863,7 @@ end
 function random_empty_cell(valid_edges)
  local empty_cells = empty_cells_on_edges(valid_edges)
  local num_empty_cells = #empty_cells
- if num_empty_cells == 0 then
-  cls()
-  print("you lose!")
-  stop()
- end
  return empty_cells[flr(rnd(num_empty_cells))+1]
-end
-
-function add_merge_block_to_edge(dir)
- local valid=vecmake(0,0)
- if dir then
-  if dir.x > 0 then 
-   valid.x = g_board.size_x 
-  elseif dir.x < 0 then
-   valid.x = 1
-  elseif dir.y > 0 then
-   valid.y = g_board.size_y
-  elseif dir.y < 0 then
-   valid.y = 1
-  end
- end
 end
 
 function cell_is_not_empty(cell)
@@ -896,9 +871,6 @@ function cell_is_not_empty(cell)
 end
 
 function make_dust(loc)
- if loc.x == 0 or loc.y == 0 then
-  return nil
- end
  local offsets={}
  for i=1,3 do
   add(offsets, {rnd(7), rnd(7)})
@@ -934,7 +906,6 @@ function make_level_transition()
  g_current_level += 1
  g_state = st_menu
  make_level_complete()
---  make_level()
 end
 
 function make_text(nspr, nchars)
@@ -944,15 +915,9 @@ function make_text(nspr, nchars)
   space=sp_screen_center,
   start=g_tick,
   draw=function(t)
-   -- cls()
-   -- print("here_2", 0,0)
-   -- stop()
-   off_func = function(i)
-    return 8*sin((elapsed(t.start+2*i)%90)/90)
-   end
    for i=0,nchars do
-    local offset = off_func(i)
-    spr(nspr+i, i*6,  offset) -- c
+    local offset = 8*sin((elapsed(t.start+2*i)%90)/90)
+    spr(nspr+i, i*6,  offset)
    end
   end
  }
@@ -1011,6 +976,7 @@ function blocks_to_edge(dim, dir, axis)
  -- blocks_to_edge(4, -1) -> 3
  -- blocks_to_edge(5, -1) -> 4
  local size = 1
+
  if dir > 0 then
   size = g_board.size_x
   if axis == 'y' then
@@ -1021,18 +987,8 @@ function blocks_to_edge(dim, dir, axis)
  return dir * (size - dim) 
 end
 
-function make_blip(loc)
- return {
-  x=loc.x,
-  y=loc.y,
-  space=sp_world,
-  draw=function(t)
-   circfill(0,0,3,8)
-  end
- }
-end
-
 function shift_push_buffer(t, push_buffer, x_dir, y_dir)
+ local did_shift = false
  if #push_buffer > 0 then
   for pb=#push_buffer, 1, -1 do
    local elem = push_buffer[pb]
@@ -1052,9 +1008,7 @@ function make_squish(thing, last_squish)
  thing.container.containing = nil
  g_goon_count -= 1
  local n_goons = g_goon_count
- g_state = st_freeze
- g_freeze_frame = g_tick
- g_freeze_framecount = 1
+ set_freeze_frame(1)
  g_player_piece.squished=g_tick
 
  g_current_score += 1
@@ -1646,6 +1600,12 @@ function game_start()
  g_health = 5
 end
 
+function set_freeze_frame(nframes)
+ g_state = st_freeze
+ g_freeze_frame = g_tick
+ g_freeze_framecount = nframes 
+end
+
 function shake_screen(duration, magnitude, frequency)
  g_shake_end = g_tick + duration + 1
  g_shake_mag = magnitude
@@ -1663,10 +1623,6 @@ function make_level()
  g_board = add_gobjs(make_board(7,7))
  g_score = add_gobjs(make_scoreboard())
 --  add_gobjs(make_center_circle())
-
---  for b in all(g_board.flat_cells) do
---   add_gobjs(make_blip(b:world_coords(true)))
---  end
 
  -- add neighbor lists
  for i=1,g_board.size_x do
