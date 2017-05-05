@@ -64,12 +64,13 @@ function make_rain(x, y, angle, length, col, speed)
   to_y = length*sin(angle),
   col=col,
   speed=speed,
+  offset=0
+  update=function(t)
+   t.offset=t.speed*elapsed(start_rain)
+  end,
   draw=function(t)
-   local offset=t.speed*elapsed(start_rain)
-
-   -- local x=(offset+t.x)%128
    local x=t.x
-   local y=(offset+t.y)%128
+   local y=(t.offset+t.y)%128
 
    line(
     x,
