@@ -5,6 +5,36 @@ __lua__
 cartdata("pushback_high_scores")
 alphabet = "abcdefghijklmnopqrstuvwxyz "
 
+-- constants {
+-- coordinate systems
+sp_world = 0
+sp_local = 1
+sp_screen_native = 2
+sp_screen_center = 3
+
+-- block kinds
+bk_goon = 8
+bk_pushable_box = 11
+
+-- shiftable
+ss_inert     = 0
+ss_shiftable = 1
+ss_pushable  = 2
+
+g_goon_sprite = 70
+g_pusher_sprite = 74
+
+g_current_level = 1
+g_current_score = 0
+
+st_playing = 0
+st_menu = 2
+st_freeze = 3
+
+g_freeze_frame = nil
+g_freeze_framecount = nil
+-- }
+
 -- function clear_scores()
 --  for i=0,63 do
 --   dset(i, 1)
@@ -217,12 +247,6 @@ function _draw()
  drawobjs(g_frozen_objs)
 end
 
--- coordinate systems
-sp_world = 0
-sp_local = 1
-sp_screen_native = 2
-sp_screen_center = 3
-
 -- @{ useful utility function for getting started
 function add_gobjs(thing)
  add(g_objs, thing)
@@ -258,10 +282,6 @@ function make_cell(x,y)
   end
  }
 end
-
--- block kinds
-bk_goon = 8
-bk_pushable_box = 11
 
 function make_goon(x, y)
  -- goons are red for now
@@ -331,11 +351,6 @@ function compute_path(from_cell, to_cell)
   local current_cell = _pop_lowest_rank_in(frontier)
 
   if current_cell == to_cell then
-   if came_from[to_cell] == nil then
-    cls()
-    print("bad_path")
-    asdf()
-   end
    return came_from, cost_so_far
   end
 
@@ -686,15 +701,6 @@ function mark_for_move(t, to_cell, amt)
  t.grid_x = to_cell.grid_x
  t.grid_y = to_cell.grid_y
 end
-
--- shiftable
-ss_inert     = 0
-ss_shiftable = 1
-ss_pushable  = 2
-
-g_goon_sprite = 70
-g_pusher_sprite = 74
-
 function draw_goon()
  local spr_offset=0
  if g_tick % 10 <= 5 then 
@@ -1357,7 +1363,6 @@ function make_player_avatar(x, y)
   y=0,
   space=sp_local,
   shiftable=ss_inert,
-  chargeable=true,
   grid_x=x,
   grid_y=y,
   eye_dir=15,
@@ -1370,7 +1375,6 @@ function make_player_avatar(x, y)
   end,
   draw=function (t)
    rectfill(1,1,6,6,2)
-   -- spr(6, 0,0)
 
    local s = 9
 
@@ -1442,9 +1446,6 @@ function make_player_avatar(x, y)
  return obj
 end
 
-g_current_level = 1
-g_current_score = 0
-
 function reset(constants)
  g_objs = {
   -- make_mouse_ptr(),
@@ -1478,16 +1479,10 @@ function shake_screen(duration, magnitude, frequency)
 end
 
 function make_level()
---  local children = {}
---  for i=1,10 do
---   add(children, make_test_obj(5,12*i,sp_local,"child"..i))
---  end
---  g_board = add_gobjs(make_board(2,2))
  g_goon_count = 0
  g_shake_scope = add_gobjs(make_shake_scope())
  g_board = add_gobjs(make_board(7,7))
  g_score = add_gobjs(make_scoreboard())
---  add_gobjs(make_center_circle())
 
  -- add neighbor lists
  for i=1,g_board.size_x do
@@ -1497,9 +1492,9 @@ function make_level()
   end
  end
 
+ -- player stuff
  g_player_piece = make_player_avatar(4,4)
  add(g_board.watch_cells, (g_player_piece))
---  add_gobjs(make_test_obj(0,0,sp_world,"root",children))
  g_p1 = add_gobjs(make_player_controller(0))
 
  -- add goons
@@ -1526,16 +1521,8 @@ function make_level()
   new_box:update()
  end
 
---  add_gobjs(debug_messages())
  g_state = st_playing
 end
-
-st_playing = 0
-st_menu = 2
-st_freeze = 3
-
-g_freeze_frame = nil
-g_freeze_framecount = nil
 
 ------------------------------
 
