@@ -1007,11 +1007,15 @@ function make_squish(thing, last_squish)
  del(g_board.watch_cells, thing)
  thing.container.containing = nil
  g_goon_count -= 1
+ -- make a closure for the current state of n_goons so if multiple goons
+ -- get crushed at the end of the level only one of the end level transitions
+ -- gets added to the objects
+
  local n_goons = g_goon_count
  set_freeze_frame(1)
  g_player_piece.squished=g_tick
-
  g_current_score += 1
+
  return {
   x=center.x,
   y=center.y,
@@ -1035,26 +1039,11 @@ function make_squish(thing, last_squish)
  }
 end
 
-function make_center_circle()
- return {
-  x=64,
-  y=64,
-  -- space=sp_screen_native,
-  draw=function(t)
-   circfill(0,0,32)
-  end
- }
-end
-
 function make_board(x, y)
- local cols={1, 1}
---  local cols={1,6}
  local speeds={0.4,1.4}
  for i=0,50 do
-  local seed=flr(rnd(2))
-  add_gobjs(
-   make_rain(rnd(128), rnd(128), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
-  )
+  local speed=rnd(1) + speeds[flr(rnd(2))+1]
+  add_gobjs(make_rain(rnd(128), rnd(128), 0.25, 4, 1, speed))
  end
  local all_cells = {}
  local flat_cells = {}
@@ -1082,7 +1071,6 @@ function make_board(x, y)
   all_cells=all_cells,
   flat_cells=flat_cells,
   watch_cells=watch_cells,
-  lastgoon = g_tick,
   dust={},
   shift_cells=function(t, x_dir, y_dir)
    local first_x = 1
@@ -1111,14 +1099,6 @@ function make_board(x, y)
     y_inc = 1
    end
 
-   -- assert that you're never moving it diagonally
-   if x_dir != 0 and y_dir != 0 then
-    cls()
-    print("should never see this.")
-    stop()
-   end
-
-   local did_shift = false
 
    local outer_loop_start = first_x
    local outer_loop_final = final_x
@@ -1138,6 +1118,8 @@ function make_board(x, y)
     inner_loop_inc = x_inc
     inner_loop = "x"
    end
+
+   local did_shift = false
 
    for outer=outer_loop_start,outer_loop_final,outer_loop_inc do
     push_buffer = {}
@@ -1176,9 +1158,9 @@ function make_board(x, y)
       end
      end
     end
+
     -- check to see if the last block is a pushable, if is, squish it and shift
     -- the rest
-    -- @todo: squish here
     if (
      #push_buffer > 0 and push_buffer[#push_buffer].shiftable == ss_pushable 
     ) then
@@ -1226,30 +1208,11 @@ function make_board(x, y)
   mark_cell_for_contain=function(t, x, y, c, amt)
    t.all_cells[x][y]:mark_for_contain(c, amt)
   end,
-  _compute_paths=function (t)
-   if not g_enemy then
-    return
-   end
-
-   local path, dists = compute_path(
-    g_enemy.container,
-    g_player_piece.container
-   )
-
-   local current = g_player_piece.container
-   while path != {} and path[current] != nil do
-    current = path[current]
-    del(path, current)
-   end
-  end,
   update=function(t)
-   t:_compute_paths()
-
    updateobjs(t.flat_cells)
    updateobjs(t.watch_cells)
    updateobjs(t.dust)
   end,
-
   draw=function(t)
    drawobjs(t.flat_cells)
    drawobjs(t.dust)
@@ -1269,7 +1232,14 @@ function make_scoreboard()
   space=sp_screen_native,
   draw=function(t)
    -- @todo: handle multipe digits in the scoreboard...
-   rect(50, 0, 88, 20, 7)
+   local digits = 0
+   if g_current_score > 9 or g_current_level > 9 then
+    digits += 1
+   end
+   if g_current_score > 99 or g_current_level > 9999999999 then
+    digits += 1
+   end
+   rect(50, 0, 80+4*digits, 20, 7)
    cursor(52, 2)
    color(6)
    print("level: "..g_current_level)
@@ -1305,14 +1275,6 @@ function make_camera()
  return {
   x=0,
   y=0,
-  update=function(t)
-   -- if g_p1 then
-   --  t.x=g_p1.x
-   --  t.y=g_p1.y
-   -- end
-  end,
-  draw=function(t)
-  end
  }
 end
 -- @}
@@ -1337,14 +1299,6 @@ function vecrand(scale, center)
  return result
 end
 
-function vecstr(v)
- return ""..v.x..", "..v.y
-end
-
-function gvecstr(v)
- return ""..v.grid_x..", "..v.grid_y
-end
-
 function vecmake(xf, yf)
  if not xf then
   xf = 0
@@ -1352,27 +1306,8 @@ function vecmake(xf, yf)
  return {x=xf, y=(yf or xf)}
 end
 
-function vecdistsq(a, b, sf)
- if sf then
-  a = vecscale(a, sf)
-  b = vecscale(b, sf)
- end
- 
- local distsq = (b.x-a.x)^2 + (b.y-a.y)^2
- 
- if sf then
-  distsq = distsq/sf
- end
- 
- return distsq
-end
-
 -- global null vector
-null_v = vecmake(0)
-
-function vecnorm(v) 
- return vecscale(v, 1/sqrt(vecdistsq(null_v,v)) )
-end
+null_v = vecmake()
 
 function vecscale(v, m)
  return {x=v.x*m, y=v.y*m}
@@ -1401,7 +1336,6 @@ function vecsub(a, b)
  return {x=a.x-b.x, y=a.y-b.y}
 end
 
-
 function vecset(target, source)
  target.x = source.x
  target.y = source.y
@@ -1416,43 +1350,6 @@ function veclerp(v1, v2, amount, clamp)
  return result
 end
 -- @}
-
-function debug_messages()
- return {
-  x=0,
-  y=0,
-  space=sp_screen_native,
-  draw=function(t)
-   cursor(0, 0)
-   color(8)
-   print("cpu: ".. stat(1))
-
-   if g_state == st_playing and stat(1) > 1 then
-    -- cls()
-    -- print("cpu cost exceeded 100%")
-    -- stop()
-   end
-   print("mem: ".. stat(2))
-   print("g_tick: "..g_tick)
-   if g_enemy then
-    print("enemy_pos: "..gvecstr(g_enemy.container))
-    if g_enemy.attacking then
-     print("attacking... "..g_enemy.attacking)
-    end
-   end
-   if g_goon_count then
-    print("goons: "..g_goon_count)
-   end
-   if g_player_piece then
-    -- print(g_player_piece.x)
-    -- print(g_player_piece.y)
-   end
-   if g_cs and #g_cs > 0 then
-    print(#g_cs)
-   end
-  end
- }
-end
 
 function make_player_avatar(x, y)
  local obj={
@@ -1545,38 +1442,6 @@ function make_player_avatar(x, y)
  return obj
 end
 
-function make_test_obj(x, y, space, label, children)
- return {
-  x=x,
-  y=y,
-  space=space,
-  label=label,
-  children=children,
-  update=function (t)
-   if label == "root" then
-    if btnn(0) then
-     t.x -= 5
-    end
-    if btnn(1) then
-     t.x += 5
-    end
-    if btnn(2) then
-     t.y += -5
-    end
-    if btnn(3) then
-     t.y += 5
-    end
-   end
-  end,
-  draw=function(t)
-   rect(-2,-2,2,2, 4)
-   circfill(0,0,1,7)
-   print(label.." "..vecstr(t), -6*#label/2, 10)
-   drawobjs(t.children)
-  end
- }
-end
-
 g_current_level = 1
 g_current_score = 0
 
@@ -1648,7 +1513,7 @@ function make_level()
     break
    end
   end
-   g_enemy = make_goon(empty[1], empty[2])
+  make_goon(empty[1], empty[2])
  end
 
  -- add merge boxes
