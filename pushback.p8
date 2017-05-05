@@ -17,41 +17,6 @@ alphabet = "abcdefghijklmnopqrstuvwxyz "
 --     - some way to get health back (heart box)
 --     - super pellet?
 
-
--- todo:
--- - juice when getting hit
---     - enemy move at you when a* presents no path, just get closer (if possible)
---     - better scoreboard
-
-
-function repr(arg)
- -- turn any thing into a string (table, boolean, whatever)
- if arg == nil then
-  return "nil"
- end
- if type(arg) == "boolean" then
-  return arg and "true" or "false"
- end
- if type(arg) == "table" then 
-  if arg[1] then
-   -- hackity hack hac
-   local retval = " list[ "
-   for _, v in pairs(arg) do
-    retval = retval .. repr(v) .. ","
-   end
-   retval = retval .. "] "
-   return retval
-  end
-  local retval = " table{ "
-  for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. repr(v).. ","
-  end
-  retval = retval .. "} "
-  return retval
- end
- return ""..arg
-end
-
 function make_rain(x, y, angle, length, col, speed)
  local start=g_tick
  return {
@@ -64,7 +29,7 @@ function make_rain(x, y, angle, length, col, speed)
   to_y = length*sin(angle),
   col=col,
   speed=speed,
-  offset=0
+  offset=0,
   update=function(t)
    t.offset=t.speed*elapsed(start_rain)
   end,
@@ -85,13 +50,11 @@ end
 
 function make_title()
  start_rain = g_tick
- local cols={1, 1}
---  local cols={1,6}
  local speeds={0.4,1.4}
  for i=0,50 do
-  local seed=flr(rnd(2))
+  local speed=speeds[flr(rnd(2))+1]
   add_gobjs(
-   make_rain(rnd(128), rnd(128), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+   make_rain(rnd(128), rnd(128), 0.25, 4, 1, rnd(1)+speed)
  )
  end
  add_gobjs({
@@ -121,12 +84,9 @@ function make_title()
    rectfill(-t.x, 34, 124-t.x, 57, 0)
 
    -- title text
-   local root_x = 0
    for i=0,4 do
-    sspr(root_x + i*8, 32, 8, 8, (root_x + i)*14, 0, 16, 16)
-   end
-   for i=0,4 do
-    sspr(root_x + i*8, 40, 8, 8, (root_x + i)*14, 16, 16, 16)
+    sspr(i*8, 32, 8, 8, i*14, 0, 16, 16)
+    sspr(i*8, 40, 8, 8, i*14, 16, 16, 16)
    end
 
    local amount = elapsed(t.created) / 240
@@ -166,52 +126,28 @@ function make_title()
    pal()
 
    -- green block
-   -- @todo: these shouldbe the dudes
    spr(g_pusher_sprite,24+off_pre+20, y_off)
    spr(g_pusher_sprite,24+off_post-20, y_off)
-   -- rectfill(24+off_pre+20, y_off, 24+off_pre+20+6, y_off+6, 11)
-   -- rectfill(24+off_post-20, y_off, 24+off_post-20+6, y_off+6, 11)
 
    -- goons
    local off_pre = 10*sin(elapsed(t.created+15)/240)
-   -- if elapsed(t.created) % 60 == 0 then
-   --  t.off_right_x = rnd(4) - 2
-   --  t.off_right_y = rnd(4) - 2
-   --  t.off_left_x = rnd(4) - 2
-   --  t.off_left_y = rnd(4) - 2
-   -- end
    pushc(-(24+off_pre+30+t.off_right_x), -(y_off+t.off_right_y))
    draw_goon()
    popc()
-   -- rectfill(
-   --  24+off_pre+30+6+t.off_right_x,
-   --  46+t.off_right_y,
-   --  8
-   -- )
-   local off_post = 10*sin(elapsed(t.created-21)/240)
 
-   -- rectfill(
-   --  24+off_post-30+t.off_left_x,
-   --  40+t.off_left_y,
-   --  24+off_post-30+6+t.off_left_x,
-   --  46+t.off_left_y,
-   --  8
-   -- )
+   local off_post = 10*sin(elapsed(t.created-21)/240)
    pushc(-(24+off_post-30+t.off_left_x),- (y_off+t.off_left_y))
    draw_goon()
    popc()
   end
  })
- local cols={6, 6}
---  local cols={1,6}
  local speeds={2.4,4.4}
  for i=0,10 do
-  local seed=flr(rnd(2))
+  local speed=speeds[flr(rnd(2))+1]
   add_gobjs(
-   make_rain(rnd(128), rnd(128), 0.25, 4, cols[seed+1], rnd(1)+speeds[seed+1])
+   make_rain(rnd(128), rnd(128), 0.25, 4, 6, rnd(1)+speed)
   )
  end
---  add_gobjs(debug_messages())
 end
 
 function _init()
@@ -265,12 +201,12 @@ function color_opaque_pixels(tgt_color)
 end
 
 function _draw()
- targetc = 7
- if g_dying then
-  targetc = 2
- end
  stddraw()
  if g_state == st_freeze then
+  targetc = 7
+  if g_dying then
+   targetc = 2
+  end
   color_opaque_pixels(targetc)
  else
   if g_being_attacked then
@@ -280,6 +216,8 @@ function _draw()
    end
   end
  end
+
+ -- frozen objects draw after color operations
  drawobjs(g_frozen_objs)
 end
 
@@ -296,58 +234,14 @@ function add_gobjs(thing)
 end
 -- @}
 
--- @{ mouse support
-poke(0x5f2d, 1)
-
-function make_mouse_ptr()
- return {
-  x=0,
-  y=0,
-  button_down={false,false,false},
-  space=sp_screen_native,
-  update=function(t)
-   -- if you have the vector functions
-   -- vecset(t, vecmake(stat(32), stat(33)))
-   t.x = stat(32)
-   t.y = stat(33)
-
-   local mbtn=stat(34)
-   for i,mask in pairs({1,2,4}) do
-    t.button_down[i] = band(mbtn, mask) == mask and true or false
-   end
-  end,
-  draw=function(t)
-   -- chang the color if you have one of the buttons down
-   if t.button_down[1] then
-    pal(3, 11)
-   end
-   if t.button_down[2] then
-    pal(3, 12)
-   end
-   if t.button_down[3] then
-    pal(3, 10)
-   end
-   spr(3, t.x-3, t.y-3)
-   if t.button_down[1] or t.button_down[2] or t.button_down[3] then
-    pal(3,3)
-   end
-  end
- }
-end
--- @}
-
--- @{ built in diagnostic stuff
 function make_cell(x,y)
  return {
   x=1+9*(x-1)+1,
   y=1+9*(y-1)+1,
-  -- x=0,
-  -- y=0,
   space=sp_local,
   grid_x=x,
   grid_y=y,
   containing=nil,
-  distance_to_goal=nil,
   world_coords=function(t, from_center)
    local result = vecadd(g_board, t)
    if from_center == true then
@@ -363,27 +257,17 @@ function make_cell(x,y)
    mark_for_move(c, t, amt)
    c.container = t
   end,
-  update=function(t)
-  end,
   draw=function(t)
    rect(0,0,7,7, 5)
-   if t.distance_to_goal ~= "*" then
-    print(t.distance_to_goal, 2, 2, 7)
-   else
-    print(t.distance_to_goal, 2, 2, 12)
-   end
   end
  }
 end
-
--- num_merge_blips = 4
 
 function make_goon(x, y)
  -- goons are red for now
  local newgoon = make_merge_box(8)
  g_board:mark_cell_for_contain(x, y, newgoon, 1)
  add(g_board.watch_cells, newgoon)
- newgoon.container:update()
  newgoon.time_last_move = g_tick
  newgoon.shiftable = ss_pushable
  newgoon.brain = br_move_at_player
@@ -794,7 +678,6 @@ function br_move_at_player(t)
     and current != g_player_piece.container 
    ) then
     current:mark_for_contain(t)
-    current:update()
     return
    end
   end
@@ -1542,45 +1425,26 @@ function make_board(x, y)
     return
    end
 
-   local path, dists = compute_path(g_enemy.container, g_player_piece.container)
-   if path == {}  then
-    cls()
-    print("null path")
-    stop()
-   end
-
-   -- reset all the cells
-   for i=1,t.size_x do
-    for j=1,t.size_y do
-     local cell = g_board.all_cells[i][j]
-     cell.distance_to_goal = ""
-    end
-   end
+   local path, dists = compute_path(
+    g_enemy.container,
+    g_player_piece.container
+   )
 
    local current = g_player_piece.container
    while path != {} and path[current] != nil do
     current = path[current]
-    -- current.distance_to_goal = '*'
     del(path, current)
    end
   end,
   update=function(t)
-   -- make goons
-   -- if elapsed(t.lastgoon) > 150 then
-   --  local empty = random_empty_cell()
-   --  make_goon(empty[1], empty[2])
-   --  t.lastgoon = g_tick
-   -- end
-
-   -- compute paths
    t:_compute_paths()
+
    updateobjs(t.flat_cells)
    updateobjs(t.watch_cells)
    updateobjs(t.dust)
   end,
 
   draw=function(t)
-
    drawobjs(t.flat_cells)
    drawobjs(t.dust)
    drawobjs(t.watch_cells)
