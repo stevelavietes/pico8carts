@@ -882,6 +882,26 @@ function make_merge_box(col)
      t.to_loc = nil
      t.merge_blips = nil
     end
+
+    if t.col == 11 then
+     t.shake_offset = nil
+     for x_dir = -1, 1, 2 do
+      if blocks_to_edge(t.container.grid_x, x_dir, 'x') == 1 then
+       local next_block = g_board:block(t.container.grid_x + x_dir, t.container.grid_y)
+       if next_block and next_block.col == 8 then
+        t.shake_offset = vecrand(2, true)
+       end
+      end
+     end
+     for y_dir = -1, 1, 2 do
+      if blocks_to_edge(t.container.grid_y, y_dir, 'y') == 1 then
+       local next_block = g_board:block(t.container.grid_x, t.container.grid_y + y_dir)
+       if next_block and next_block.col == 8 then
+        t.shake_offset = vecrand(2, true)
+       end
+      end
+     end
+    end
    end
   end,
   kick=function(t, kick_dir)
