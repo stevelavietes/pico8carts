@@ -185,15 +185,13 @@ end
 
 function color_opaque_pixels(tgt_color)
  local lines_to_color = 127
- local frames_elapsed = 0
  if g_dying and g_freeze_frame then
-  frames_elapsed = elapsed(g_freeze_frame)
+  local frames_elapsed = elapsed(g_freeze_frame)
   lines_to_color = rescale(frames_elapsed, 0, g_freeze_framecount, 0, 127)
  end
  for i=0,127 do
   for j=0,lines_to_color do
-   local c = pget(i, j)
-   if c != 0 then
+   if pget(i, j) != 0 then
     pset(i, j, tgt_color)
    end
   end
@@ -322,12 +320,6 @@ function distance_to_player_heuristic(from_cell)
  return (dx+dy)
 end
 
-function tprint(str)
- local tcurrent = time()
- print(str..": "..tcurrent-tlast)
- tlast = tcurrent
-end
-
 function compute_path(from_cell, to_cell)
  local frontier = {{cell=from_cell, rank=0}}
  local came_from = {}
@@ -392,9 +384,12 @@ function rescale(current, from_low, from_hi, to_low, to_hi)
 
  clamp(current, from_low, from_hi)
 
- return (((current - from_low) / (from_hi - from_low)) * (to_hi - to_low) + to_low)
+ return (
+  ((current - from_low) / (from_hi - from_low)) * (to_hi - to_low) + to_low
+ )
 end
 
+-- todo: could use a bit more sauce
 function make_game_over_screen(score)
  return {
   x=-20,
@@ -630,23 +625,14 @@ end
 
 function attack_player()
  g_being_attacked = g_tick
---  g_freeze_frame = g_tick
---  g_state = st_freeze
---  g_freeze_framecount = 3
  shake_screen(15, 10, 3)
  g_health -= 1
 end
 
 function br_move_at_player(t)
  if t.attacking != nil and elapsed(t.attacking) % 60 == 0 then
-  -- @todo: attack juice?
   attack_player(t)
  end
---  if t.attacking != nil and elapsed(t.attacking) > 90 then
---   -- trigger attack
---   add_gobjs(make_lose(g_player_piece.container:world_coords()))
---   t.attacking = nil
---  end
 
  local path, _ = compute_path(t.container, g_player_piece.container)
 
@@ -692,7 +678,7 @@ end
 this needs to be refactored.  instead a "want to move" buffer, then sweep and
 resolve approach should be used.
 ]]--
-mark_for_move=function(t, to_cell, amt)
+function mark_for_move(t, to_cell, amt)
  if amt and amt == 1 then
   vecset(t, to_cell)
  else
@@ -729,7 +715,6 @@ function make_merge_box(block_kind)
   container=nil,
   to_amount=1,
   block_kind = block_kind,
-  merge_blips=nil,
   shiftable=ss_shiftable,
   brain=nil,
   neighbor=function(t, inc_x, inc_y)
@@ -747,14 +732,6 @@ function make_merge_box(block_kind)
    end
 
    if t.from_loc and t.to_loc then
-    -- if not t.merge_blips then
-    --  t.merge_blips = {}
-    --  for i=0,num_merge_blips-1 do
-    --   local rnd_x = (rnd(2)-1)
-    --   local rnd_y = (rnd(2)-1)
-    --   add(t.merge_blips, vecmake(rnd_x, rnd_y))
-    --  end
-    -- end
     t.to_amount += 0.1
 
     local interp_amount = smootherstep(0, 1, t.to_amount)
@@ -763,32 +740,34 @@ function make_merge_box(block_kind)
     if t.to_amount == 1 then
      t.from_loc = nil
      t.to_loc = nil
-     t.merge_blips = nil
     end
+   end
 
-    if t.block_kind == bk_pushable_box then
-     t.shake_offset = nil
-     for x_dir = -1, 1, 2 do
-      if blocks_to_edge(t.container.grid_x, x_dir, 'x') == 1 then
-       local next_block = g_board:block(t.container.grid_x + x_dir, t.container.grid_y)
-       if next_block and next_block.block_kind == bk_goon then
-        t.shake_offset = vecrand(2, true)
-       end
+   if t.block_kind == bk_pushable_box then
+    t.shake_offset = nil
+    for x_dir = -1, 1, 2 do
+     if blocks_to_edge(t.container.grid_x, x_dir, 'x') == 1 then
+      local next_block = g_board:block(
+       t.container.grid_x + x_dir,
+       t.container.grid_y
+      )
+      if next_block and next_block.block_kind == bk_goon then
+       t.shake_offset = vecrand(2, true)
       end
      end
-     for y_dir = -1, 1, 2 do
-      if blocks_to_edge(t.container.grid_y, y_dir, 'y') == 1 then
-       local next_block = g_board:block(t.container.grid_x, t.container.grid_y + y_dir)
-       if next_block and next_block.block_kind == bk_goon then
-        t.shake_offset = vecrand(2, true)
-       end
+    end
+    for y_dir = -1, 1, 2 do
+     if blocks_to_edge(t.container.grid_y, y_dir, 'y') == 1 then
+      local next_block = g_board:block(
+       t.container.grid_x,
+       t.container.grid_y + y_dir
+      )
+      if next_block and next_block.block_kind == bk_goon then
+       t.shake_offset = vecrand(2, true)
       end
      end
     end
    end
-  end,
-  kick=function(t, kick_dir)
-   t.kick_dir = kick_dir
   end,
   draw=function(t)
    local offset = t.shake_offset
@@ -804,15 +783,7 @@ function make_merge_box(block_kind)
     spr(g_pusher_sprite, 0, 0)
    end
 
-   popc(offset.x, offset.y)
-
-   -- if t.merge_blips != nil then
-   --  local amt = vecsub(t, t.from_loc)
-   --  for b in all(t.merge_blips) do
-   --   local new_loc = vecadd(amt, b)
-   --   line(b.x, b.y, new_loc.x, new_loc.y)
-   --  end
-   -- end
+   popc()
   end
  }
 end
@@ -917,18 +888,6 @@ function add_merge_block_to_edge(dir)
   elseif dir.y < 0 then
    valid.y = 1
   end
- end
- if false then
-  -- 'wide' palette
-  -- local palette = {12, 10, 11, 14}
-  -- just green for now
- --  local palette = {11}
-  local c = random_empty_cell(valid)
- --  local col = palette[flr(rnd(#palette))+1]
-  local new_box = make_merge_box(bk_pushable_box)
-  add(g_board.watch_cells, new_box)
-  g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
-  new_box:update()
  end
 end
 
