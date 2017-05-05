@@ -263,9 +263,13 @@ function make_cell(x,y)
  }
 end
 
+-- block kinds
+bk_goon = 8
+bk_pushable_box = 11
+
 function make_goon(x, y)
  -- goons are red for now
- local newgoon = make_merge_box(8)
+ local newgoon = make_merge_box(bk_goon)
  g_board:mark_cell_for_contain(x, y, newgoon, 1)
  add(g_board.watch_cells, newgoon)
  newgoon.time_last_move = g_tick
@@ -717,14 +721,14 @@ function draw_goon()
  spr(g_goon_sprite+spr_offset, -4, -4,2,2)
 end
 
-function make_merge_box(col)
+function make_merge_box(block_kind)
  return {
   x=0,
   y=0,
   space=sp_local,
   container=nil,
   to_amount=1,
-  col = col,
+  block_kind = block_kind,
   merge_blips=nil,
   shiftable=ss_shiftable,
   brain=nil,
@@ -736,11 +740,6 @@ function make_merge_box(col)
      t.container.grid_y+inc_y
     ].containing
   )
-  end,
-  merge_with=function(t, other, x_dir, y_dir)
-   if other.chargeable then
-    other:charge_with(t, x_dir, y_dir)
-   end
   end,
   update=function(t)
    if t.brain then
@@ -767,12 +766,12 @@ function make_merge_box(col)
      t.merge_blips = nil
     end
 
-    if t.col == 11 then
+    if t.block_kind == bk_pushable_box then
      t.shake_offset = nil
      for x_dir = -1, 1, 2 do
       if blocks_to_edge(t.container.grid_x, x_dir, 'x') == 1 then
        local next_block = g_board:block(t.container.grid_x + x_dir, t.container.grid_y)
-       if next_block and next_block.col == 8 then
+       if next_block and next_block.block_kind == bk_goon then
         t.shake_offset = vecrand(2, true)
        end
       end
@@ -780,7 +779,7 @@ function make_merge_box(col)
      for y_dir = -1, 1, 2 do
       if blocks_to_edge(t.container.grid_y, y_dir, 'y') == 1 then
        local next_block = g_board:block(t.container.grid_x, t.container.grid_y + y_dir)
-       if next_block and next_block.col == 8 then
+       if next_block and next_block.block_kind == bk_goon then
         t.shake_offset = vecrand(2, true)
        end
       end
@@ -799,10 +798,10 @@ function make_merge_box(col)
 
    pushc(offset.x, offset.y)
 
-   if t.col != 8 then
-    spr(g_pusher_sprite, 0, 0)
-   else
+   if t.block_kind == bk_goon then
     draw_goon()
+   else
+    spr(g_pusher_sprite, 0, 0)
    end
 
    popc(offset.x, offset.y)
@@ -814,56 +813,6 @@ function make_merge_box(col)
    --   line(b.x, b.y, new_loc.x, new_loc.y)
    --  end
    -- end
-  end
- }
-end
-
-function make_blast(start_block, color_block, x_dir, y_dir)
- return {
-  x=start_block.x,
-  y=start_block.y,
-  col=color_block.col,
-  start_frame=g_tick,
-  space=sp_local,
-  update=function(t)
-   if elapsed(t.start_frame) > 60 then
-    color_block.container.containing = nil
-    color_block.controller = nil
-    del(g_board.watch_cells, t)
-    g_state = st_playing
-   end
-  end,
-  draw=function(t)
-   local start = vecmake(0,0)
-   local vstop = vecmake(1, 1)
-
-   -- four options
-   if x_dir < 0 then
-    start = vecmake(8, -1)
-    vstop = vecmake(9+8*blocks_to_edge(start_block.grid_x, x_dir, 'x')+2, 8)
-   elseif x_dir > 0 then
-    start = vecmake(-1, -1)
-    vstop = vecmake(-1-8*blocks_to_edge(start_block.grid_x, x_dir, 'x')-3, 8)
-   elseif y_dir > 0 then
-    start = vecmake(-1, -1)
-    vstop = vecmake(8, -1-8*blocks_to_edge(start_block.grid_y, y_dir, 'y')-3)
-   elseif y_dir < 0 then
-    start = vecmake(-1, 8)
-    vstop = vecmake(8, 9+8*blocks_to_edge(start_block.grid_y, y_dir, 'y')+2)
-   end
-
-   -- @todo: make this animate out after a short wait for juice
-   --
-   -- local interp_amount = smootherstep(0, 1, 1-elapsed(t.start_frame)/40)
-   -- local vstop_2 = veclerp(vstop, vstart, interp_amount)
-   --
-   -- if x_dir ~= 0 then
-   --  vstop.x = vstop_2.x
-   -- elseif y_dir ~= 0 then
-   --  vstop.y = vstop_2.y
-   -- end
-
-   rectfill(start.x, start.y, vstop.x, vstop.y, t.col)
   end
  }
 end
@@ -887,51 +836,18 @@ function make_player_controller(player)
    local dir = vecmake(0,0)
    local did_shift = false
 
-   if not btn(4, t.player) then
-    if btnn(0, t.player) then
-     did_shift = g_board:shift_cells(1, 0)
-     dir.x=1
-    elseif btnn(1, t.player) then
-     did_shift = g_board:shift_cells(-1, 0)
-     dir.x = -1
-    elseif btnn(2, t.player) then
-     did_shift = g_board:shift_cells(0,1)
-     dir.y = 1
-    elseif btnn(3, t.player) then
-     did_shift = g_board:shift_cells(0,-1)
-     dir.y = -1
-    end
-   else
-    kick_dir = vecmake()
-    local did_kick = false
-    if btnn(0, t.player) then
-     did_kick = true
-     kick_dir.x = -1
-    elseif btnn(1, t.player) then
-     did_kick = true
-     kick_dir.x = 1
-    elseif btnn(2, t.player) then
-     did_kick = true
-     kick_dir.y = -1
-    elseif btnn(3, t.player) then
-     did_kick = true
-     kick_dir.y = 1
-    end
-    if did_kick then
-     local kick_block = vecadd(
-      kick_dir,
-      vecmake(
-       g_player_piece.grid_x,
-       g_player_piece.grid_y
-      )
-     )
-     local kicked_block = g_board:block(kick_block.x, kick_block.y)
-     -- if g_board.all_cells[
-     if kicked_block then
-      kicked_block.col = 10
-      kicked_block:kick(kick_dir)
-     end
-    end
+   if btnn(0, t.player) then
+    did_shift = g_board:shift_cells(1, 0)
+    dir.x=1
+   elseif btnn(1, t.player) then
+    did_shift = g_board:shift_cells(-1, 0)
+    dir.x = -1
+   elseif btnn(2, t.player) then
+    did_shift = g_board:shift_cells(0,1)
+    dir.y = 1
+   elseif btnn(3, t.player) then
+    did_shift = g_board:shift_cells(0,-1)
+    dir.y = -1
    end
    -- @}
 
@@ -1009,7 +925,7 @@ function add_merge_block_to_edge(dir)
  --  local palette = {11}
   local c = random_empty_cell(valid)
  --  local col = palette[flr(rnd(#palette))+1]
-  local new_box = make_merge_box(11)
+  local new_box = make_merge_box(bk_pushable_box)
   add(g_board.watch_cells, new_box)
   g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
   new_box:update()
@@ -1239,14 +1155,6 @@ function make_board(x, y)
   end
  end
  local watch_cells = {}
---  local watch_cells = {make_merge_box(11)}
---  all_cells[3][1]:mark_for_contain(watch_cells[1], 1)
---
---  local other = add_gobjs(make_merge_box(1,3,11))
---  all_cells[1][3]:mark_for_contain(other, 1)
---
---  other = add_gobjs(make_merge_box(4,4,8))
---  all_cells[4][4]:mark_for_contain(other, 1)
 
  local s_x = 8*(x+1)+1
  local s_y = 8*y+1+y+1
@@ -1263,15 +1171,7 @@ function make_board(x, y)
   watch_cells=watch_cells,
   lastgoon = g_tick,
   dust={},
-  blast_queue = nil,
-  blast=function(t, start_block, color_block, x_dir, y_dir)
-   g_state = st_blasting
-   add(t.watch_cells, make_blast(start_block, color_block, x_dir, y_dir))
-   del(t.watch_cells, color_block)
-  end,
   shift_cells=function(t, x_dir, y_dir)
-   t.blast_queue = {}
-
    local first_x = 1
    local final_x = t.size_x
 
@@ -1373,13 +1273,6 @@ function make_board(x, y)
      add_gobjs(make_squish(push_buffer[#push_buffer]))
      del(push_buffer, push_buffer[#push_buffer])
      did_shift = shift_push_buffer(t, push_buffer, x_dir, y_dir)
-    end
-   end
-
-   -- check the blast queue
-   if #(t.blast_queue) > 0 then
-    for blst_opts in all(t.blast_queue) do
-     g_board:blast(blst_opts[1], blst_opts[2], blst_opts[3], blst_opts[4])
     end
    end
 
@@ -1660,9 +1553,6 @@ function make_player_avatar(x, y)
   eye_dir=15,
   attacked=nil,
   squished=nil,
-  charge_with=function(t, other, x_dir, y_dir)
-   add(g_board.blast_queue, {t, other, x_dir, y_dir})
-  end,
   update=function(t)
    if g_health <= 0 and not g_dying then
     make_lose(g_player_piece.container:world_coords())
@@ -1850,7 +1740,7 @@ function make_level()
  local numboxes = flr(8+rnd(3))
  for i=1,numboxes do
   local c = random_empty_cell()
-  local new_box = make_merge_box(11)
+  local new_box = make_merge_box(bk_pushable_box)
   add(g_board.watch_cells, new_box)
   g_board:mark_cell_for_contain(c[1], c[2], new_box, 1.0)
   new_box:update()
@@ -1861,7 +1751,6 @@ function make_level()
 end
 
 st_playing = 0
-st_blasting = 1
 st_menu = 2
 st_freeze = 3
 
