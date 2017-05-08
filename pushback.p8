@@ -1459,6 +1459,7 @@ function reset(constants)
   g_current_level = 1
   g_current_score = 0
   g_state = st_menu
+  g_dying = false
  end
 end
 
