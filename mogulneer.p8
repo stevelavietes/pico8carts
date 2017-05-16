@@ -265,9 +265,8 @@ function make_player(p)
   pose=4,
   vel=vecmake(0),
   update=function(t)
-   local m_x = 0
-   local m_y = 0
    if btnn(0, t.p) then
+    -- right
     if t.pose == 4 then
      t.pose = -4
     elseif t.pose > -4 then
@@ -275,16 +274,37 @@ function make_player(p)
     end
    end 
    if btnn(1, t.p) then
-    m_x = 1
+    -- left
+    if t.pose == -4 then
+     t.pose = 4
+    elseif t.pose < 4 then
+     t.pose += 1
+    end
    end
    if btnn(2, t.p) then
-    m_y = -1
+    -- up
+    if abs(t.pose) > 0 and abs(t.pose) < 4 then
+     local dir = 1
+     if t.pose < 0 then
+      dir = -1
+     end
+     t.pose += dir
+    end
    end
    if btnn(3, t.p) then
-    m_y = 1
+    -- down
+    if abs(t.pose) > 0 then
+     local dir = -1
+     if t.pose < 0 then
+      dir = 1
+     end
+     t.pose += dir
+    end
    end
-   t.x += m_x
-   t.y += m_y
+
+   -- apply velocity and acceleration
+   -- vecadd(t.vel, t:current_acceleration())
+   -- vecadd(t, t.vel)
    updateobjs(t.c_objs)
   end,
   draw=function(t)
@@ -292,10 +312,12 @@ function make_player(p)
    palt(3, true)
    spr(17+abs(t.pose)*2, -4, -4, 2, 2, t.pose < 0)
    palt()
+   -- hit box stuff (might need it later)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
-   local str = "world: " .. t.x .. ", " .. t.y
-   print(str, -(#str)*2, 12, 8)
+   -- print(str, -(#str)*2, 12, 8)
+   print_cent("world: " .. t.x .. ", " .. t.y, 12, 8)
+   print_cent("pose: " .. t.pose, 18, 8)
    drawobjs(t.c_objs)
   end
  }
@@ -423,6 +445,10 @@ function make_tree(loc)
    spr(14, -2, -2, 1, 2)
   end
  }
+end
+
+function print_cent(str, y, col)
+ print(str, -(#str)*2, y, col)
 end
 
 ------------------------------
