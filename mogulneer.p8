@@ -192,6 +192,67 @@ function add_gobjs(thing)
 end
 -- @}
 
+-- @{ vector library
+function vecrand(scale, center, yscale)
+ local result = vecmake(rnd(scale), rnd(yscale or scale))
+ if center then
+  result = vecsub(result, vecmake(scale/2, (yscale or scale)/2))
+ end
+ return result
+end
+
+function vecmake(xf, yf)
+ if not xf then
+  xf = 0
+ end
+ return {x=xf, y=(yf or xf)}
+end
+
+-- global null vector
+null_v = vecmake()
+
+function vecscale(v, m)
+ return {x=v.x*m, y=v.y*m}
+end
+
+function vecmagsq(v)
+ return v.x*v.x+v.y*v.y
+end
+
+function vecmag(v, sf)
+ if sf then
+  v = vecscale(v, sf)
+ end
+ local result=sqrt(vecmagsq(v))
+ if sf then
+  result=result/sf
+ end
+ return result
+end
+
+function vecadd(a, b)
+ return {x=a.x+b.x, y=a.y+b.y}
+end
+
+function vecsub(a, b)
+ return {x=a.x-b.x, y=a.y-b.y}
+end
+
+function vecset(target, source)
+ target.x = source.x
+ target.y = source.y
+end
+
+function veclerp(v1, v2, amount, clamp)
+ -- tokens: can compress this with ternary
+ local result = vecadd(vecscale(vecsub(v2,v1),amount),v1)
+ if clamp and vecmag((vecsub(result,v2))) < clamp then
+  result = v2
+ end
+ return result
+end
+-- @}
+
 -- @{ built in diagnostic stuff
 function make_player(p)
  return {
@@ -220,8 +281,12 @@ function make_player(p)
    updateobjs(t.c_objs)
   end,
   draw=function(t)
-   spr(2, -3, -3)
-   rect(-3,-3, 3,3, 8)
+   palt(0, false)
+   palt(3, true)
+   spr(17, -4, -4, 2, 2)
+   palt()
+   -- spr(2, -3, -3)
+   -- rect(-3,-3, 3,3, 8)
    local str = "world: " .. t.x .. ", " .. t.y
    print(str, -(#str)*2, 12, 8)
    drawobjs(t.c_objs)
@@ -277,6 +342,7 @@ end
 
 function game_start()
  g_objs = {
+  make_bg(),
   make_mountain()
  }
 
@@ -288,6 +354,68 @@ function game_start()
 --  add(g_objs, g_brd)
 --  g_tgt = make_tgt(0,0)
 --  add(g_objs,g_tgt)
+end
+
+function make_bg()
+ return {
+  x=0,
+  y=0,
+  space=sp_screen_native,
+  draw=function(t)
+   rectfill(0,0,128,128, 7)
+  end
+ }
+end
+
+function make_mountain()
+ local starter_objects = {}
+ for i=0,10 do
+  local rndloc = vecrand(128, true)
+  add(starter_objects, make_tree(rndloc))
+ end
+ return {
+  x=0,
+  y=0,
+  sp=sp_world,
+  c_objs=starter_objects,
+  p_objs={make_boundary(-96,96)},
+  update=function(t)
+   updateobjs(t.p_objs)
+   updateobjs(t.c_objs)
+  end,
+  draw=function(t)
+   drawobjs(t.p_objs)
+   drawobjs(t.c_objs)
+  end
+ }
+end
+
+function make_boundary(xmin, xmax)
+ return {
+  x=0,
+  y=0,
+  space=sp_world,
+  xmin=xmin,
+  xmax=xmax,
+  draw=function(t)
+   -- min line
+   line(t.xmin, g_cam.y-64, t.xmin, g_cam.y+64, 8)
+   -- max line
+   line(t.xmax, g_cam.y-64, t.xmax, g_cam.y+64, 8)
+  end
+ }
+end
+
+function make_tree(loc)
+ return {
+  x=loc.x,
+  y=loc.y,
+  space=sp_world,
+  draw=function(t)
+   -- spr(-2,-2,1,2,10)
+   spr(10, -2, -2, 1, 2)
+  end
+ }
 end
 
 ------------------------------
