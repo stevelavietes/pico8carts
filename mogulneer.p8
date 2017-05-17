@@ -70,6 +70,8 @@ function process_particles()
  end -- while
 end
 
+g_mogulneer_accel = 1
+
 collision_objects = {
  {
   x=50,
@@ -106,7 +108,7 @@ function repr(arg)
  if type(arg) == "table" then 
   local retval = " table{ "
   for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. table_to_string(v).. ","
+   retval = retval .. k .. ": ".. repr(v).. ","
   end
   retval = retval .. "} "
   return retval
@@ -251,6 +253,13 @@ function veclerp(v1, v2, amount, clamp)
  end
  return result
 end
+
+function vecclamp(v, min_v, max_v)
+ return vecmake(
+  min(max(v.x, min_v.x), max_v.x),
+  min(max(v.y, min_v.y), max_v.y)
+ )
+end
 -- @}
 
 -- @{ built in diagnostic stuff
@@ -303,9 +312,17 @@ function make_player(p)
    end
 
    -- apply velocity and acceleration
-   -- vecadd(t.vel, t:current_acceleration())
-   -- vecadd(t, t.vel)
+   t.vel = vecadd(t.vel, t:current_acceleration())
+   t.vel = drag_and_clamp(t.vel)
+   vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
+  end,
+  current_acceleration=function(t)
+   local dir = 1
+   if t.pose < 0 then
+    dir = -1
+   end
+   return veclerp(vecmake(0, g_mogulneer_accel), vecmake(0, 0), abs(t.pose)/4)
   end,
   draw=function(t)
    palt(0, false)
@@ -318,9 +335,16 @@ function make_player(p)
    -- print(str, -(#str)*2, 12, 8)
    print_cent("world: " .. t.x .. ", " .. t.y, 12, 8)
    print_cent("pose: " .. t.pose, 18, 8)
+   print_cent("vel: " .. repr(t.vel), 24, 8)
+   print_cent("accel: " .. repr(t:current_acceleration()), 30, 8)
    drawobjs(t.c_objs)
   end
  }
+end
+
+function drag_and_clamp(vel)
+ vel = vecscale(vel, 0.8)
+ return vecclamp(vel, vecmake(0), vecmake(g_mogulneer_accel))
 end
 
 function make_grid(space, spacing)
