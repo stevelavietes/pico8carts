@@ -318,11 +318,19 @@ function make_player(p)
    updateobjs(t.c_objs)
   end,
   current_acceleration=function(t)
+   if abs(t.pose) >= 3 then
+    return null_v
+   end
+
    local dir = 1
    if t.pose < 0 then
     dir = -1
    end
-   return veclerp(vecmake(0, g_mogulneer_accel), vecmake(0, 0), abs(t.pose)/4)
+   return veclerp(
+    vecmake(0, g_mogulneer_accel),
+    vecmake(dir*sqrt(g_mogulneer_accel), sqrt(g_mogulneer_accel)),
+    abs(t.pose)/3
+   )
   end,
   draw=function(t)
    palt(0, false)
@@ -342,9 +350,21 @@ function make_player(p)
  }
 end
 
+g_epsilon = 0.001
+
 function drag_and_clamp(vel)
  vel = vecscale(vel, 0.8)
- return vecclamp(vel, vecmake(0), vecmake(g_mogulneer_accel))
+ local result = vecclamp(
+  vel,
+  vecmake(-g_mogulneer_accel), vecmake(g_mogulneer_accel)
+ )
+
+ for i in all({'x','y'}) do
+  if abs(result[i]) < g_epsilon then
+   result[i] = 0
+  end
+ end
+ return result
 end
 
 function make_grid(space, spacing)
@@ -384,11 +404,30 @@ function make_camera()
   x=0,
   y=0,
   update=function(t)
-   t.x=g_p1.x
-   t.y=g_p1.y
+   -- t.x=g_p1.x
+   -- t.y=g_p1.y
+   vecset(t,veclerp(t,g_p1,0.5,0.3))
   end,
-  draw=function(t)
-  end
+  is_visible=function(t, o)
+   -- uses a circle based visibility check
+   if not o.vis_r or 
+    (
+     (
+      t.x - 64 - o.vis_r < o.x 
+      and t.x + 64 + o.vis_r > o.x
+     ) 
+     and 
+     (
+      t.y - 64 - o.vis_r < o.y 
+      and t.y + 64 + o.vis_r > o.y
+     )
+    ) 
+   then
+    return true
+   end
+
+   return false
+  end,
  }
 end
 -- @}
@@ -422,8 +461,8 @@ end
 
 function make_mountain()
  local starter_objects = {}
- for i=0,10 do
-  local rndloc = vecrand(128, true)
+ for i=0,60 do
+  local rndloc = vecmake(rnd(128)-64, rnd(600)-300)
   add(starter_objects, make_tree(rndloc))
  end
  return {
@@ -435,6 +474,13 @@ function make_mountain()
   update=function(t)
    updateobjs(t.p_objs)
    updateobjs(t.c_objs)
+
+   -- check to see if we need to bump the tree down
+   for o in all(t.c_objs) do
+    if g_cam.y - o.y > 300 then
+     vecset(o, vecmake(rnd(128)-64, g_cam.y + 300))
+    end
+   end
   end,
   draw=function(t)
    drawobjs(t.p_objs)
