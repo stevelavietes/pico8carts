@@ -510,11 +510,19 @@ function make_tree(loc)
   x=loc.x,
   y=loc.y,
   space=sp_world,
+  radius=3,
+  bound_cent=vecmake(0, 9),
   draw=function(t)
    -- spr(-2,-2,1,2,10)
-   spr(14, -2, -2, 1, 2)
+   spr(14, -4, -4, 1, 2)
+   -- rect(-4,-4,4,4,11)
+   draw_bound_circ(t, 11)
   end
  }
+end
+
+function draw_bound_circ(obj, col)
+ circ(obj.bound_cent.x, obj.bound_cent.y, obj.radius,col)
 end
 
 function print_cent(str, y, col)
