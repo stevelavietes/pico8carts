@@ -22,9 +22,130 @@ function repr(arg)
  return ""..arg
 end
 
+function make_debugmsg()
+ return {
+  space=sp_screen_native,
+  draw=function(t)
+   color(14)
+   cursor(1,1)
+   print("cpu: ".. stat(1))
+   print("mem: ".. stat(2))
+  end
+ }
+end
+
 function print_stdout(msg)
  -- print 'msg' to the terminal, whatever it might be
  printh("["..repr(g_tick).."] "..repr(msg))
+end
+-- }
+
+-- { particle stuff
+function add_particle(x, y, dx, dy, life, color, ddy)
+ particle_array_length += 1
+
+ -- grow if needed
+ if (#particle_array < particle_array_length) add(particle_array, 0)
+ 
+ -- insert into the next available spot
+ particle_array[particle_array_length] = {x = x, y = y, dx = dx, dy = dy, life = life or 8, color = color or 6, ddy = ddy or 0.0625}
+end
+
+
+function process_particles(at_scope)
+ -- @casualeffects particle system
+ -- http://casual-effects.com
+
+ -- simulate particles during rendering for efficiency
+ local p = 1
+ local off = {0,0}
+ if at_scope == sp_world and g_cam != nil then
+  off = {-g_cam.x + 64, -g_cam.y + 64}
+  -- off = {g_cam.x + 64, -g_cam.y + 64}
+ end
+ while p <= particle_array_length do
+  local particle = particle_array[p]
+  
+  -- the bitwise expression will have the high (negative) bit set
+  -- if either coordinate is negative or greater than 127, or life < 0
+  if bor(band(0x8000, particle.life), band(bor(off[1]+particle.x, off[2]+particle.y), 0xff80)) != 0 then
+
+   -- delete dead particles efficiently. pico8 doesn't support
+   -- table.setn, so we have to maintain an explicit length variable
+   particle_array[p], particle_array[particle_array_length] = particle_array[particle_array_length], nil
+   particle_array_length -= 1
+
+  else
+
+   -- draw the particle by directly manipulating the
+   -- correct nibble on the screen
+   local addr = bor(0x6000, bor(shr(off[1]+particle.x, 1), shl(band(off[2]+particle.y, 0xffff), 6)))
+   local pixel_pair = peek(addr)
+   if band(off[1]+particle.x, 1) == 1 then
+    -- even x; we're writing to the high bits
+    pixel_pair = bor(band(pixel_pair, 0x0f), shl(particle.color, 4))
+   else
+    -- odd x; we're writing to the low bits
+    pixel_pair = bor(band(pixel_pair, 0xf0), particle.color)
+   end
+   poke(addr, pixel_pair)
+   
+   -- acceleration
+   particle.dy += particle.ddy
+  
+   -- advance state
+   particle.x += particle.dx
+   particle.y += particle.dy
+   particle.life -= 1
+
+   for _, c in pairs(collision_objects) do
+    local collision_result = c:collides(particle)
+    if collision_result != nil then
+     particle.x += collision_result[1]
+     particle.y += collision_result[2]
+     particle.dy = 0
+     particle.dx = 0
+    end
+   end
+
+   p += 1
+  end -- if alive
+ end -- while
+end
+
+collision_objects = {
+ {
+  x=50,
+  y=80,
+  width=27,
+  height=14,
+  collides=function(t, part)
+   if (
+    part.x > t.x 
+    and part.x - t.x < t.width 
+    and part.y > t.y and
+    part.y - t.y < t.height
+   ) then
+    -- particle sits on top of the collider
+    return {0, - 1}
+   end
+  end,
+  draw=function(t)
+   rectfill(t.x, t.y, t.x + t.width, t.y + t.height, 11)
+  end
+ }
+}
+
+function make_particle_manager()
+ particle_array, particle_array_length = {}, 0
+
+ return {
+  x=0,
+  y=0,
+  draw=function(t)
+   process_particles(sp_world)
+  end
+ }
 end
 -- }
 
@@ -95,6 +216,7 @@ function make_mouse_ptr()
    -- chang the color if you have one of the buttons down
    if t.button_down[1] then
     pal(3, 11)
+    add_particle(0, 0, 0, 1, 60, 11, 1)
    end
    if t.button_down[2] then
     pal(3, 12)
@@ -106,7 +228,7 @@ function make_mouse_ptr()
    if t.button_down[1] or t.button_down[2] or t.button_down[3] then
     pal(3,3)
    end
-   print("("..t.x..","..t.y..")")
+   print("("..t.x..","..t.y..")", 1, 13)
   end
  }
 end
@@ -200,6 +322,8 @@ function game_start()
   make_mouse_ptr(),
   make_grid(sp_world, 128),
   make_grid(sp_screen_center, 128),
+  make_particle_manager(),
+  make_debugmsg(),
  }
 
  g_cam= add_gobjs(make_camera())
@@ -220,6 +344,7 @@ function stdinit()
  g_ctl=0     --last controllers
  g_cs = {}   --camera stack 
  g_objs = {} --objects
+
 end
 
 function stdupdate()
