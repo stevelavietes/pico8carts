@@ -356,7 +356,7 @@ function drag_and_clamp(vel)
  vel = vecscale(vel, 0.8)
  local result = vecclamp(
   vel,
-  vecmake(-g_mogulneer_accel), vecmake(g_mogulneer_accel)
+  vecmake(-3*g_mogulneer_accel), vecmake(3*g_mogulneer_accel)
  )
 
  for i in all({'x','y'}) do
