@@ -205,7 +205,7 @@ function _init()
  stdinit()
 
  add_gobjs(make_title())
- add_gobjs(particle_manager())
+ add_gobjs(snow_particles())
  add_gobjs(
    make_menu(
    {
