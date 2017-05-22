@@ -102,6 +102,18 @@ collision_objects = {
 -- }
 
 -- { debug stuff can be deleted
+function make_debugmsg()
+ return {
+  space=sp_screen_native,
+  draw=function(t)
+   color(14)
+   cursor(1,1)
+   print("cpu: ".. stat(1))
+   print("mem: ".. stat(2))
+  end
+ }
+end
+
 function repr(arg)
  -- turn any thing into a string (table, boolean, whatever)
  if arg == nil then
@@ -475,7 +487,8 @@ end
 function game_start()
  g_objs = {
   make_bg(),
-  make_mountain()
+  make_mountain(),
+  make_debugmsg(),
  }
 
  g_partm = add_gobjs(spray_particles())
