@@ -127,7 +127,7 @@ function print_stdout(msg)
 end
 -- }
 
-function particle_manager()
+function snow_particles()
  return {
   x=0,y=0,
   update=function(t)
@@ -141,6 +141,41 @@ function particle_manager()
   end
  }
 end
+
+function spray_particles()
+ return {
+  x=0,
+  y=0,
+  v_last = vecmake(0),
+  update=function(t)
+   -- add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
+   d_v = vecsub(t.v_last, g_p1.vel)
+   if vecmagsq(d_v) < 0.01 then
+    return
+   end
+   for i=0,25 do
+    local off=vecrand(6, true)
+     add_particle(
+      g_p1.x+off.x+rnd(6)-3+g_p1.bound_min.x,
+      g_p1.y+off.y+rnd(6)-3+g_p1.bound_min.y,
+      d_v.x/2+rnd(1),
+      d_v.y/2+rnd(1),
+      10,
+      6,
+      0.5 
+     )
+   end
+   t.v_last = g_p1.vel
+  end,
+  draw=function(t)
+   process_particles(sp_world)
+   -- for _, o in pairs(collision_objects) do
+   --  o:draw()
+   -- end
+  end
+ }
+end
+
 
 function make_title()
  return {
@@ -442,6 +477,8 @@ function game_start()
   make_bg(),
   make_mountain()
  }
+
+ g_partm = add_gobjs(spray_particles())
 
  g_cam= add_gobjs(make_camera())
  g_p1 = add_gobjs(make_player(0))
