@@ -325,6 +325,8 @@ function make_player(p)
   -- pose goes from -4 to +4
   pose=4,
   vel=vecmake(0),
+  bound_min=vecmake(2, 4),
+  bound_max=vecmake(6,8),
   update=function(t)
    if btnn(0, t.p) then
     -- right
@@ -389,6 +391,7 @@ function make_player(p)
    palt(3, true)
    spr(17+abs(t.pose)*2, -4, -4, 2, 2, t.pose < 0)
    palt()
+   -- draw_bound_rect(t, 11)
    -- hit box stuff (might need it later)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
