@@ -580,6 +580,16 @@ function draw_bound_circ(obj, col)
  circ(obj.bound_cent.x, obj.bound_cent.y, obj.radius,col)
 end
 
+function draw_bound_rect(obj, col)
+ rect(
+  obj.bound_min.x,
+  obj.bound_min.y,
+  obj.bound_max.x,
+  obj.bound_max.y,
+  col
+ )
+end
+
 function print_cent(str, y, col)
  print(str, -(#str)*2, y, col)
 end
