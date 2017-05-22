@@ -14,18 +14,23 @@ function add_particle(x, y, dx, dy, life, color, ddy)
 end
 
 
-function process_particles()
+function process_particles(at_scope)
  -- @casualeffects particle system
  -- http://casual-effects.com
 
  -- simulate particles during rendering for efficiency
  local p = 1
+ local off = {0,0}
+ if at_scope == sp_world and g_cam != nil then
+  off = {-g_cam.x + 64, -g_cam.y + 64}
+  -- off = {g_cam.x + 64, -g_cam.y + 64}
+ end
  while p <= particle_array_length do
   local particle = particle_array[p]
   
   -- the bitwise expression will have the high (negative) bit set
   -- if either coordinate is negative or greater than 127, or life < 0
-  if bor(band(0x8000, particle.life), band(bor(particle.x, particle.y), 0xff80)) != 0 then
+  if bor(band(0x8000, particle.life), band(bor(off[1]+particle.x, off[2]+particle.y), 0xff80)) != 0 then
 
    -- delete dead particles efficiently. pico8 doesn't support
    -- table.setn, so we have to maintain an explicit length variable
@@ -36,9 +41,9 @@ function process_particles()
 
    -- draw the particle by directly manipulating the
    -- correct nibble on the screen
-   local addr = bor(0x6000, bor(shr(particle.x, 1), shl(band(particle.y, 0xffff), 6)))
+   local addr = bor(0x6000, bor(shr(off[1]+particle.x, 1), shl(band(off[2]+particle.y, 0xffff), 6)))
    local pixel_pair = peek(addr)
-   if band(particle.x, 1) == 1 then
+   if band(off[1]+particle.x, 1) == 1 then
     -- even x; we're writing to the high bits
     pixel_pair = bor(band(pixel_pair, 0x0f), shl(particle.color, 4))
    else
