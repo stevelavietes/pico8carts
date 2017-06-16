@@ -75,7 +75,7 @@ function process_particles(at_scope)
  end -- while
 end
 
-g_mogulneer_accel = 3
+g_mogulneer_accel = 0.8
 
 collision_objects = {
  {
@@ -347,11 +347,12 @@ function make_player(p)
   bound_min=vecmake(2, 4),
   bound_max=vecmake(6,8),
   angle=0, -- ski angle
-  speed=0,
   density_and_drag_c = 0.05,
-  loaded_ski=g_ski_none,
   load_left=0,
   load_right=0,
+  turnyness=0,
+  brakyness=0,
+  wedge=false,
   update=function(t)
    local loaded_ski = g_ski_none
    if btn(0, t.p) then
@@ -407,28 +408,27 @@ function make_player(p)
 
    if btn(4, t.p) then
     -- z
-    -- t.speed += 0.1
-    -- t.speed = min(4, t.speed)
    end
    if btn(5, t.p) then
     -- x
-    -- t.speed -= 0.1
-    -- t.speed = max(0, t.speed)
    end
 
    t.vel = t:loaded_ski(t.vel, loaded_ski)
 
    -- apply velocity and acceleration
    local grav_accel = t:gravity_acceleration()
-   local drag_accel = t:drag_acceleration()
-   local total_accel = vecadd(grav_accel, drag_accel)
+   -- local drag_accel = t:drag_acceleration()
+   -- local total_accel = vecadd(grav_accel, drag_accel)
+   local total_accel = grav_accel
 
-   t.vel = vecadd(t.vel, total_accel)
-   t.vel = clamp_velocity(t.vel)
-   vecset(t, vecadd(t, t.vel))
+   -- t.vel = vecadd(t.vel, total_accel)
+   -- t.vel = clamp_velocity(t.vel)
+   -- vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
   end,
   loaded_ski=function(t, vel, loaded_ski)
+   t.wedge = false
+
    -- if neither ski is loaded, then nothing to do
    if loaded_ski == g_ski_none then
     t.load_left = 0
@@ -440,7 +440,13 @@ function make_player(p)
    if loaded_ski == g_ski_both then
     t.load_left = 0
     t.load_right = 0
-    return vecscale(vel, -0.2)
+    t.wedge = true
+    local brake_amt = -0.3
+    if vecmagsq(vel) > brake_amt*brake_amt then
+     return vecscale(vel, brake_amt)
+    else
+     return vecscale(vel, -1)
+    end
    end
 
    if (
@@ -455,7 +461,7 @@ function make_player(p)
    local turn_dir = 0
    local load_var = 0
    if loaded_ski == g_ski_right then
-    t.load_right += 1/60 
+    t.load_right += 1/120 
     t.load_right = min(t.load_right, 1)
     load_var = t.load_right
     target_angle = 0
@@ -473,17 +479,20 @@ function make_player(p)
    local turnyness = smootherstep(load_var)
    local brakyness = 1-turnyness
 
-   local vel_mag = vecmag(vel)
+   local vel_mag = brakyness*vecmag(vel)
 
-   t.angle += turn_dir * turnyness*0.1
+   -- t.angle += turn_dir * turnyness*0.2
+   t.angle += turn_dir * 0.012
    t.angle = min(0.0, max(t.angle, -0.5))
+   t.turnyness=turnyness
+   t.brakyness=brakyness
    return vecfromangle(t.angle, vel_mag)
   end,
   gravity_acceleration=function(t)
    -- components of acceleration
    -- gravity
    -- drag
-   -- Fd = 0.5 * density * velocity squared * Drag Coefficient * Area
+   -- fd = 0.5 * density * velocity squared * drag coefficient * area
    -- load (rotation force)
    -- if abs(t.pose) >= 3 then
    --  return null_v
@@ -510,7 +519,7 @@ function make_player(p)
    if mag_vec > 0 then
     drag_accel = vecscale(
      t.vel,
-     -0.5 * t.density_and_drag_c * mag_vec * facing_ratio
+     -0.2 * t.density_and_drag_c * mag_vec * facing_ratio
     )
    end
 
@@ -533,26 +542,46 @@ function make_player(p)
     palt()
    end
 
-   if true then
+   for x_off in all({-1, 1}) do
+   -- for x_off in all({1}) do
     -- draw the skis
-    local first_p = vecmake(4 * cos(t.angle), 4* sin(t.angle))
+    local ang = t.angle
+    if t.wedge then
+     ang = -0.25-0.06*x_off
+     -- x_off *= 2
+    end
+
+    local turn_off = vecscale(vecmake(cos(ang+0.25*x_off), sin(ang+0.25*x_off)), 1)
+
+    local first_p = vecscale(vecmake(cos(ang), sin(ang)),4)
     local last_p  = vecscale(first_p, -1)
+
+    -- if not t.wedge then
+     first_p = vecadd(first_p, turn_off)
+     last_p = vecadd(last_p, turn_off)
+    -- end
+
     line(first_p.x, first_p.y, last_p.x, last_p.y, 4)
     -- line(first_p.x, first_p.y, 0, 0, 4)
     circfill(first_p.x, first_p.y, 1, 8)
    end
+
+   circfill(0, 0, 1, 11)
 
    -- draw_bound_rect(t, 11)
    -- hit box stuff (might need it later)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
    -- print(str, -(#str)*2, 12, 8)
-   print_cent("world: " .. t.x .. ", " .. t.y, 12, 8)
-   print_cent("pose: " .. t.pose, 18, 8)
-   print_cent("vel: " .. repr(t.vel), 24, 8)
-   print_cent("drag acceleration: " .. repr(t:drag_acceleration()), 30, 8)
-   print_cent("angle: " .. t.angle, 36, 8)
-   print_cent("speed: " .. t.speed, 42, 8)
+   g_cursor_y=12
+   print_cent("world: " .. t.x .. ", " .. t.y, 8)
+   -- print_cent("pose: " .. t.pose, 8)
+   -- print_cent("vel: " .. vecmag(t.vel), 8)
+   -- print_cent("drag acceleration: " .. repr(t:drag_acceleration()), 8)
+   -- print_cent("angle: " .. t.angle, 8)
+   -- print_cent("cos: "..cos(t.angle+0.25)
+   -- print_cent("tness: " .. t.turnyness, 8)
+   -- print_cent("bness: " .. t.brakyness, 8)
    drawobjs(t.c_objs)
   end
  }
@@ -563,7 +592,7 @@ g_epsilon = 0.001
 function clamp_velocity(vel)
  local result = vecclamp(
   vel,
-  vecmake(-3*g_mogulneer_accel), vecmake(3*g_mogulneer_accel)
+  vecmake(-9*g_mogulneer_accel), vecmake(9*g_mogulneer_accel)
  )
 
  for i in all({'x','y'}) do
@@ -745,8 +774,9 @@ function draw_bound_rect(obj, col)
  )
 end
 
-function print_cent(str, y, col)
- print(str, -(#str)*2, y, col)
+function print_cent(str, col)
+ print(str, -(#str)*2, g_cursor_y, col)
+ g_cursor_y += 6
 end
 
 ------------------------------
