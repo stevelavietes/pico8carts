@@ -1,334 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- Easing function gallery with an automatic graph of the function over 0,1
 
--- { debug stuff can be deleted
-function repr(arg)
- -- turn any thing into a string (table, boolean, whatever)
- if arg == nil then
-  return "nil"
- end
- if type(arg) == "boolean" then
-  return arg and "true" or "false"
- end
- if type(arg) == "table" then 
-  local retval = " table{ "
-  for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. repr(v).. ","
-  end
-  retval = retval .. "} "
-  return retval
- end
- return ""..arg
-end
-
-function make_debugmsg()
- return {
-  space=sp_screen_native,
-  draw=function(t)
-   color(14)
-   cursor(1,1)
-   print("cpu: ".. stat(1))
-   print("mem: ".. stat(2))
-  end
- }
-end
-
-function print_stdout(msg)
- -- print 'msg' to the terminal, whatever it might be
- printh("["..repr(g_tick).."] "..repr(msg))
-end
--- }
-
--- { particle stuff
-function add_particle(x, y, dx, dy, life, color, ddy)
- particle_array_length += 1
-
- -- grow if needed
- if (#particle_array < particle_array_length) add(particle_array, 0)
- 
- -- insert into the next available spot
- particle_array[particle_array_length] = {x = x, y = y, dx = dx, dy = dy, life = life or 8, color = color or 6, ddy = ddy or 0.0625}
-end
-
-
-function process_particles(at_scope)
- -- @casualeffects particle system
- -- http://casual-effects.com
-
- -- simulate particles during rendering for efficiency
- local p = 1
- local off = {0,0}
- if at_scope == sp_world and g_cam != nil then
-  off = {-g_cam.x + 64, -g_cam.y + 64}
-  -- off = {g_cam.x + 64, -g_cam.y + 64}
- end
- while p <= particle_array_length do
-  local particle = particle_array[p]
-  
-  -- the bitwise expression will have the high (negative) bit set
-  -- if either coordinate is negative or greater than 127, or life < 0
-  if bor(band(0x8000, particle.life), band(bor(off[1]+particle.x, off[2]+particle.y), 0xff80)) != 0 then
-
-   -- delete dead particles efficiently. pico8 doesn't support
-   -- table.setn, so we have to maintain an explicit length variable
-   particle_array[p], particle_array[particle_array_length] = particle_array[particle_array_length], nil
-   particle_array_length -= 1
-
-  else
-
-   -- draw the particle by directly manipulating the
-   -- correct nibble on the screen
-   local addr = bor(0x6000, bor(shr(off[1]+particle.x, 1), shl(band(off[2]+particle.y, 0xffff), 6)))
-   local pixel_pair = peek(addr)
-   if band(off[1]+particle.x, 1) == 1 then
-    -- even x; we're writing to the high bits
-    pixel_pair = bor(band(pixel_pair, 0x0f), shl(particle.color, 4))
-   else
-    -- odd x; we're writing to the low bits
-    pixel_pair = bor(band(pixel_pair, 0xf0), particle.color)
-   end
-   poke(addr, pixel_pair)
-   
-   -- acceleration
-   particle.dy += particle.ddy
-  
-   -- advance state
-   particle.x += particle.dx
-   particle.y += particle.dy
-   particle.life -= 1
-
-   for _, c in pairs(collision_objects) do
-    local collision_result = c:collides(particle)
-    if collision_result != nil then
-     particle.x += collision_result[1]
-     particle.y += collision_result[2]
-     particle.dy = 0
-     particle.dx = 0
-    end
-   end
-
-   p += 1
-  end -- if alive
- end -- while
-end
-
-collision_objects = {
- {
-  x=50,
-  y=80,
-  width=27,
-  height=14,
-  collides=function(t, part)
-   if (
-    part.x > t.x 
-    and part.x - t.x < t.width 
-    and part.y > t.y and
-    part.y - t.y < t.height
-   ) then
-    -- particle sits on top of the collider
-    return {0, - 1}
-   end
-  end,
-  draw=function(t)
-   rectfill(t.x, t.y, t.x + t.width, t.y + t.height, 11)
-  end
- }
-}
-
-function make_particle_manager()
- particle_array, particle_array_length = {}, 0
-
- return {
-  x=0,
-  y=0,
-  draw=function(t)
-   process_particles(sp_world)
-  end
- }
-end
--- }
-
-function _init()
- stdinit()
-
- game_start()
---  add_gobjs(
---    make_menu(
---    {
---     'go',
---    },
---    function (t, i, s)
---     add (
---      s,
---      make_trans(
---      function()
---       game_start()
---      end
---      )
---     )
---    end
---   )
---  )
-end
-
-function _update60()
- stdupdate()
-end
-
-function _draw()
- stddraw()
-end
-
--- coordinate systems
-sp_world = 0
-sp_local = 1
-sp_screen_native = 2
-sp_screen_center = 3
-
--- @{ useful utility function for getting started
-function add_gobjs(thing)
- add(g_objs, thing)
- return thing
-end
--- @}
-
--- @{ mouse support
-poke(0x5f2d, 1)
-
-function make_mouse_ptr()
- return {
-  x=0,
-  y=0,
-  button_down={false,false,false},
-  space=sp_screen_native,
-  update=function(t)
-   -- if you have the vector functions
-   -- vecset(t, makev(stat(32), stat(33)))
-   t.x = stat(32)
-   t.y = stat(33)
-
-   local mbtn=stat(34)
-   for i,mask in pairs({1,2,4}) do
-    t.button_down[i] = band(mbtn, mask) == mask and true or false
-   end
-  end,
-  draw=function(t)
-   -- chang the color if you have one of the buttons down
-   if t.button_down[1] then
-    pal(3, 11)
-    add_particle(0, 0, 0, 1, 60, 11, 1)
-   end
-   if t.button_down[2] then
-    pal(3, 12)
-   end
-   if t.button_down[3] then
-    pal(3, 10)
-   end
-   spr(3, t.x-3, t.y-3)
-   if t.button_down[1] or t.button_down[2] or t.button_down[3] then
-    pal(3,3)
-   end
-   print("("..t.x..","..t.y..")", 1, 13)
-  end
- }
-end
--- @}
-
--- @{ built in diagnostic stuff
-function make_player(p)
- return {
-  x=0,
-  y=0,
-  p=p,
-  space=sp_world,
-  c_objs={make_grid(sp_local, 64)},
-  update=function(t)
-   -- local m_x = 0
-   -- local m_y = 0
-   -- if btn(0, t.p) then
-   --  m_x =-1
-   -- end 
-   -- if btn(1, t.p) then
-   --  m_x = 1
-   -- end
-   -- if btn(2, t.p) then
-   --  m_y = -1
-   -- end
-   -- if btn(3, t.p) then
-   --  m_y = 1
-   -- end
-   -- t.x += m_x
-   -- t.y += m_y
-   -- updateobjs(t.c_objs)
-  end,
-  draw=function(t)
-   -- spr(2, -3, -3)
-   -- rect(-3,-3, 3,3, 8)
-   -- local str = "world: " .. t.x .. ", " .. t.y
-   -- print(str, -(#str)*2, 12, 8)
-   -- drawobjs(t.c_objs)
-  end
- }
-end
-
-function make_grid(space, spacing)
- return {
-  x=0,
-  y=0,
-  space=space,
-  spacing=spacing,
-  update=function(t) end,
-  draw=function(t) 
-   local space_label = "local"
-   if t.space == sp_world then
-    space_label = "world" 
-   elseif t.space == sp_screen_center then
-    space_label = "screen_center"
-   elseif t.space == sp_screen_native then
-    space_label = "screen_native"
-   end
-
-   for x=0,3 do
-    for y=0,3 do
-     local col = y*4+x
-     local xc =(x-1.5)*t.spacing 
-     local yc = (y-1.5)*t.spacing
-     rect(xc-1, yc-1,xc+1, yc+1, col)
-     circ(xc, yc, 7, col)
-     local str = space_label .. ": " .. xc .. ", ".. yc
-     print(str, xc-#str*2, yc+9, col)
-    end
-   end
-  end
- }
-end
-
-function make_camera()
- return {
-  x=0,
-  y=0,
-  update=function(t)
-   t.x=g_p1.x
-   t.y=g_p1.y
-  end,
-  draw=function(t)
-  end
- }
-end
--- @}
-
-function make_easing_function(name, func)
- local plot_vals = {}
- for i = 0, 60 do
-  add(plot_vals, func(i/60))
- end
- return {
-  name=name,
-  ef=func,
-  plot_vals = plot_vals
- }
-end
+-- Dev note: if you want to add your own function, add an ef_ function
+--           as below here, then find the gc_easing_functions list and
+--           add it there, following the pattern.
 
 -- @{ easing functions
 function ef_linear(amount)
@@ -347,14 +24,47 @@ function ef_out_cubic(amount)
  local t = amount - 1
  return (t*t*t+1)
 end
+
+local function ef_out_quart(amount)
+ local t = amount - 1
+ return -1 * (t*t*t*t- 1)
+end
+
+crop = 0.30
+
+function ef_out_quart_cropped(amount)
+ local amount_cropped = min(amount, crop)
+ local t = amount_cropped - 1
+ local result = -1 * (t*t*t*t- 1)
+ if amount >= crop then
+  amount = amount - 0.3
+  return (result * (1.0 - amount) + 1.0 * (amount))
+ end
+ return result
+end
 -- @}
 
+function make_easing_function(name, func)
+ local plot_vals = {}
+ for i = 0, 60 do
+  add(plot_vals, func(i/60))
+ end
+ return {
+  name=name,
+  ef=func,
+  plot_vals = plot_vals
+ }
+end
 
+
+-- !!!! Add to this list if you want to add a new easing function !!!!
 gc_easing_functions = {
  make_easing_function("smootherstep", ef_smootherstep),
  make_easing_function("linear", ef_linear),
  make_easing_function("out quadratic", ef_out_quad),
  make_easing_function("out cubic", ef_out_cubic),
+ make_easing_function("out quart", ef_out_quart),
+ make_easing_function("out quart cropped", ef_out_quart_cropped),
 }
 
 function make_ef_ui_single()
@@ -454,6 +164,84 @@ function make_ef_ui_single()
  }
 end
 
+
+function _init()
+ stdinit()
+
+ game_start()
+--  add_gobjs(
+--    make_menu(
+--    {
+--     'go',
+--    },
+--    function (t, i, s)
+--     add (
+--      s,
+--      make_trans(
+--      function()
+--       game_start()
+--      end
+--      )
+--     )
+--    end
+--   )
+--  )
+end
+
+function _update60()
+ stdupdate()
+end
+
+function _draw()
+ stddraw()
+end
+
+-- coordinate systems
+sp_world = 0
+sp_local = 1
+sp_screen_native = 2
+sp_screen_center = 3
+
+-- @{ useful utility function for getting started
+function add_gobjs(thing)
+ add(g_objs, thing)
+ return thing
+end
+-- @}
+
+function make_player(p)
+ return {
+  x=0,
+  y=0,
+  p=p,
+  space=sp_world,
+  c_objs={make_grid(sp_local, 64)},
+  update=function(t)
+  end,
+  draw=function(t)
+   -- spr(2, -3, -3)
+   -- rect(-3,-3, 3,3, 8)
+   -- local str = "world: " .. t.x .. ", " .. t.y
+   -- print(str, -(#str)*2, 12, 8)
+   -- drawobjs(t.c_objs)
+  end
+ }
+end
+
+function make_camera()
+ return {
+  x=0,
+  y=0,
+  update=function(t)
+   -- t.x=g_p1.x
+   -- t.y=g_p1.y
+  end,
+  draw=function(t)
+  end
+ }
+end
+-- @}
+
 function game_start()
  g_objs = {
   make_ef_ui_single(),
@@ -465,7 +253,7 @@ function game_start()
  }
 
  g_cam= add_gobjs(make_camera())
- g_p1 = add_gobjs(make_player(0))
+--  g_p1 = add_gobjs(make_player(0))
 
 end
 
