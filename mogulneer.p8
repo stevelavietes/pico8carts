@@ -2,6 +2,22 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 
+function ef_linear(amount)
+ return amount
+end
+
+crop = 0.3
+function ef_out_quart_cropped(amount)
+ local amount_cropped = min(amount, crop)
+ local t = amount_cropped - 1
+ local result = -1 * (t*t*t*t- 1)
+ if amount >= crop then
+  amount = amount - 0.3
+  return (result * (1.0 - amount) + 1.0 * (amount))
+ end
+ return result
+end
+
 -- { particle stuff
 function add_particle(x, y, dx, dy, life, color, ddy)
  particle_array_length += 1
@@ -449,6 +465,8 @@ function make_player(p)
     end
    end
 
+   -- if switching skis - 
+   -- @TODO: turn linking pop
    if (
      (loaded_ski == g_ski_right and t.load_left != 0) or
      (loaded_ski == g_ski_left and t.load_right != 0) 
@@ -461,9 +479,10 @@ function make_player(p)
    local turn_dir = 0
    local load_var = 0
    if loaded_ski == g_ski_right then
-    t.load_right += 1/120 
+    t.load_right += 1/60
     t.load_right = min(t.load_right, 1)
-    load_var = t.load_right
+    -- load_var = t.load_right
+    load_var = 1
     target_angle = 0
     turn_dir = -1
    end
@@ -471,18 +490,21 @@ function make_player(p)
    if loaded_ski == g_ski_left then
     t.load_left += 1/60 
     t.load_left = min(t.load_left, 1)
-    load_var = t.load_left
+    -- load_var = t.load_left
+    load_var = 1
     target_angle = 0.5
     turn_dir = 1
    end
 
-   local turnyness = smootherstep(load_var)
+   local turnyness = ef_linear(load_var)
+   -- local turnyness = ef_out_quart_cropped(load_var)
    local brakyness = 1-turnyness
 
    local vel_mag = brakyness*vecmag(vel)
 
    -- t.angle += turn_dir * turnyness*0.2
-   t.angle += turn_dir * 0.012
+   -- t.angle += turn_dir * 0.1 * turnyness
+   t.angle += turn_dir * turnyness/60
    t.angle = min(0.0, max(t.angle, -0.5))
    t.turnyness=turnyness
    t.brakyness=brakyness
@@ -575,10 +597,12 @@ function make_player(p)
    -- print(str, -(#str)*2, 12, 8)
    g_cursor_y=12
    print_cent("world: " .. t.x .. ", " .. t.y, 8)
+   -- print_cent("load_left: " .. t.load_left, 8)
+   -- print_cent("load_right: " .. t.load_right, 8)
    -- print_cent("pose: " .. t.pose, 8)
    -- print_cent("vel: " .. vecmag(t.vel), 8)
    -- print_cent("drag acceleration: " .. repr(t:drag_acceleration()), 8)
-   -- print_cent("angle: " .. t.angle, 8)
+   print_cent("angle: " .. t.angle, 8)
    -- print_cent("cos: "..cos(t.angle+0.25)
    -- print_cent("tness: " .. t.turnyness, 8)
    -- print_cent("bness: " .. t.brakyness, 8)
