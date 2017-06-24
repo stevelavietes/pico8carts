@@ -369,6 +369,7 @@ function make_player(p)
   turnyness=0,
   brakyness=0,
   wedge=false,
+  trail_points={},
   update=function(t)
    local loaded_ski = g_ski_none
    if btn(0, t.p) then
@@ -547,7 +548,16 @@ function make_player(p)
 
    if t.angle == 0 or t.angle == 1 then
     return vecscale(t.vel, -0.25)
+   for i=#t.trail_points,1,-1 do
+    -- if t.y - t.trail_points[i].y < 60 then
+    --  break
+    -- end
+    if (t.y - t.trail_points[i].y > 100) then
+     del(t.trail_points, t.trail_points[i])
+    end
    end
+
+   t:add_new_trail_point(t)
 
    return drag_accel
    -- return veclerp(
@@ -562,6 +572,12 @@ function make_player(p)
     palt(3, true)
     spr(17+abs(t.pose)*2, -4, -4, 2, 2, t.pose < 0)
     palt()
+   end
+
+   -- trail renderer
+   for i=1,#t.trail_points do
+    local p = vecsub(t.trail_points[i], t)
+    rectfill(p.x-1, p.y-1, p.x+2, p.y+2, 6)
    end
 
    for x_off in all({-1, 1}) do
@@ -607,6 +623,16 @@ function make_player(p)
    -- print_cent("tness: " .. t.turnyness, 8)
    -- print_cent("bness: " .. t.brakyness, 8)
    drawobjs(t.c_objs)
+  end,
+  add_new_trail_point=function(t, p)
+   p = vecmake(flr(p.x), flr(p.y))
+   if (
+     t.trail_points[#t.trail_points] == nil or
+     t.trail_points[#t.trail_points].x != p.x or
+     t.trail_points[#t.trail_points].y != p.y
+   ) then
+    add(t.trail_points, p)
+   end
   end
  }
 end
