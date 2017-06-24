@@ -268,6 +268,16 @@ end
 -- @}
 
 -- @{ vector library
+function vecdraw(v, c, o)
+ if not o then
+  o = vecmake()
+ end
+--  local end_point = vecadd(o, vecscale(vecnormalized(v), 5))
+ local end_point = vecadd(o, vecscale(v, 30))
+ line(o.x, o.y, end_point.x, end_point.y, c)
+ return
+end
+
 function vecrand(scale, center, yscale)
  local result = vecmake(rnd(scale), rnd(yscale or scale))
  if center then
@@ -305,6 +315,10 @@ function vecmag(v, sf)
  return result
 end
 
+function vecnormalized(v)
+ return vecscale(v, vecmag(v))
+end
+
 function vecdot(a, b)
  return (a.x*b.x+a.y*b.y)
 end
@@ -320,6 +334,18 @@ end
 function vecset(target, source)
  target.x = source.x
  target.y = source.y
+end
+
+function vecminvec(target, minvec)
+ target.x = min(target.x, minvec.x)
+ target.y = min(target.y, minvec.y)
+ return target
+end
+
+function vecmaxvec(target, maxvec)
+ target.x = max(target.x, maxvec.x)
+ target.y = max(target.y, maxvec.y)
+ return target
 end
 
 function vecfromangle(angle, mag)
@@ -430,17 +456,21 @@ function make_player(p)
     -- x
    end
 
-   t.vel = t:loaded_ski(t.vel, loaded_ski)
+   -- sets up the current direction of the skis, "brakes"
+   t:loaded_ski(t.vel, loaded_ski)
 
    -- apply velocity and acceleration
    local grav_accel = t:gravity_acceleration()
-   -- local drag_accel = t:drag_acceleration()
-   -- local total_accel = vecadd(grav_accel, drag_accel)
-   local total_accel = grav_accel
+   t.grav_accel = grav_accel
+   local drag_accel = t:drag_acceleration()
+   t.drag_accel = drag_accel
+   local total_accel = vecadd(grav_accel, drag_accel)
+   t.total_accel = total_accel
+   -- local total_accel = grav_accel
 
-   -- t.vel = vecadd(t.vel, total_accel)
-   -- t.vel = clamp_velocity(t.vel)
-   -- vecset(t, vecadd(t, t.vel))
+   t.vel = vecadd(t.vel, total_accel)
+   t.vel = clamp_velocity(t.vel)
+   vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
   end,
   loaded_ski=function(t, vel, loaded_ski)
@@ -509,7 +539,8 @@ function make_player(p)
    t.angle = min(0.0, max(t.angle, -0.5))
    t.turnyness=turnyness
    t.brakyness=brakyness
-   return vecfromangle(t.angle, vel_mag)
+   return
+   -- return vecfromangle(t.angle, vel_mag)
   end,
   gravity_acceleration=function(t)
    -- components of acceleration
@@ -527,27 +558,60 @@ function make_player(p)
    -- end
 
    -- gravity
-   return vecfromangle(t.angle, vecdot(
-     vecmake(0, g_mogulneer_accel),
-     vecfromangle(t.angle)
-    ) 
-   )
+   return vecfromangle(t.angle, g_mogulneer_accel*sin(t.angle))
   end,
   drag_acceleration=function(t)
    -- drag
    local mag_vec = vecmagsq(t.vel)
    local drag_accel = vecmake()
-   -- local facing_ratio = cos(t.angle)+1
-   local facing_ratio = 1
-   if mag_vec > 0 then
-    drag_accel = vecscale(
-     t.vel,
-     -0.2 * t.density_and_drag_c * mag_vec * facing_ratio
-    )
+   -- normal drag -- along the velocity
+   drag_accel = vecscale(
+    vecnormalized(t.vel),
+    -0.2 * t.density_and_drag_c * mag_vec
+   )
+
+   -- additional drag is on the current velocity that is 
+   local vel_angle = atan2(t.vel.x, t.vel.y)-1
+   -- interesting behavior here
+   if vel_angle == -0.75 then
+    vel_angle = -0.25
    end
 
-   if t.angle == 0 or t.angle == 1 then
-    return vecscale(t.vel, -0.25)
+   -- 0-1 scale of the difference between the vel angle and ski angle
+   t.vel_angle = 4*(min(abs(t.angle - vel_angle), 0.25))
+   local perpendicular = t.angle - 0.25
+   if t.angle > -0.25 then
+    perpendicular = t.angle + 0.25
+   end
+
+   t.vel_angle = 0.3 * mag_vec * sin(t.vel_angle)
+
+   -- drag_accel = vecadd(
+   --  drag_accel,
+   --  vecfromangle(perpendicular, 0.3 * mag_vec * sin(t.vel_angle))
+   -- )
+   drag_accel = vecscale(
+    vecnormalized(t.vel),
+    -0.2 * t.density_and_drag_c * mag_vec --  - 0.3 * mag_vec * sin(t.vel_angle)
+
+   )
+
+   -- drag_accel = vecfromangle(
+   --  t.angle,
+   --  -0.2 * t.density_and_drag_c * mag_vec
+   -- )
+
+   -- vecadd(
+   --  drag_accel,
+   --  vecfromangle(
+   --   8t.angle,
+   --   -0.2 * t.density_and_drag_c * mag_vec
+   --  )
+   -- )
+
+   -- todo: cap the acceleration by the velocity in a coponent.
+   -- drag_accel = vecminvec(drag_accel, vecscale(t.vel, -1))
+
    for i=#t.trail_points,1,-1 do
     -- if t.y - t.trail_points[i].y < 60 then
     --  break
@@ -618,7 +682,26 @@ function make_player(p)
    -- print_cent("pose: " .. t.pose, 8)
    -- print_cent("vel: " .. vecmag(t.vel), 8)
    -- print_cent("drag acceleration: " .. repr(t:drag_acceleration()), 8)
-   print_cent("angle: " .. t.angle, 8)
+   -- print_cent("angle: " .. t.angle, 8)
+
+   -- @{ acceleration components
+   if t.grav_accel != nil then
+    print_cent("v_a: " .. vecmag(t.grav_accel), 2)
+    print_cent("v_d: " .. vecmag(t.drag_accel), 12)
+    print_cent("v_t: " .. vecmag(t.total_accel), 9)
+    -- print_cent("vel_ang: " .. t.vel_angle, 8)
+    -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
+    vecdraw(t.grav_accel, 2)
+    vecdraw(t.drag_accel, 12)
+    vecdraw(t.total_accel, 9)
+   end
+   -- print_cent("v_a: " .. t.angle, 8)
+   -- print_cent("v_b: " .. t.angle, 8)
+   -- print_cent("v_d: " .. t.angle, 8)
+   -- @}
+
+   print_cent("v: " .. vecmag(t.vel), 8)
+
    -- print_cent("cos: "..cos(t.angle+0.25)
    -- print_cent("tness: " .. t.turnyness, 8)
    -- print_cent("bness: " .. t.brakyness, 8)
