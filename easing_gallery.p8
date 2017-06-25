@@ -129,10 +129,14 @@ function make_ef_ui_single()
    end
   end,
   draw=function(t)
+   -- header
    local ind = "‹ "..t.current_index.." ‘"
    print(ind, -2*#ind, -58, 6)
 
+   -- the current easing function handle
    local efo = gc_easing_functions[t.current_index]
+
+   -- plot
    line(-30, -30, 30, -30, 6)
    for i=0, 60 do
     local xval = i-30
@@ -145,6 +149,7 @@ function make_ef_ui_single()
    local yval = -20 * t.current_position - 30
    circ(xval, yval, 3)
 
+   -- text at the bottom of the screen
    local name = "name: " .. efo.name
    circfill(-30+60*t.current_position, 0, 10, 6)
    print(name, -2*#name, 30, 6)
