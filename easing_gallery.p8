@@ -149,9 +149,11 @@ function make_ef_ui_single()
    local yval = -20 * t.current_position - 30
    circ(xval, yval, 3)
 
+   -- Main circle
+    circfill(-30+60*t.current_position, 0, 10, 6)
+
    -- text at the bottom of the screen
    local name = "name: " .. efo.name
-   circfill(-30+60*t.current_position, 0, 10, 6)
    print(name, -2*#name, 30, 6)
    local v = flr(t.current_position*100)
    if t.current_position < 0.05 then
