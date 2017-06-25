@@ -433,7 +433,11 @@ function make_player(p)
     --  end
     --  t.pose += dir
     -- end
-    t.angle = 0
+    if abs(t.angle) < 0.25 then
+     t.angle = 0
+    else
+     t.angle = -0.5
+    end
     loaded_ski = g_ski_both
    end
    if btnn(3, t.p) then
