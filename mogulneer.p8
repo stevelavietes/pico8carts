@@ -463,8 +463,7 @@ function make_player(p)
    local grav_accel = t:gravity_acceleration()
    t.grav_accel = grav_accel
    local drag_accel = t:drag_acceleration()
-   t.drag_accel = drag_accel
-   local total_accel = vecadd(grav_accel, drag_accel)
+   local total_accel = vecscale(vecadd(grav_accel, drag_accel), 0.5)
    t.total_accel = total_accel
    -- local total_accel = grav_accel
 
@@ -472,6 +471,14 @@ function make_player(p)
    t.vel = clamp_velocity(t.vel)
    vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
+
+   for i=#t.trail_points,1,-1 do
+    if (t.y - t.trail_points[i].y > 100) then
+     del(t.trail_points, t.trail_points[i])
+    end
+   end
+
+   t:add_new_trail_point(t)
   end,
   loaded_ski=function(t, vel, loaded_ski)
    t.wedge = false
@@ -558,77 +565,95 @@ function make_player(p)
    -- end
 
    -- gravity
-   return vecfromangle(t.angle, g_mogulneer_accel*sin(t.angle))
+   -- return vecfromangle(t.angle, g_mogulneer_accel*sin(t.angle))
+   return vecmake(0, g_mogulneer_accel)
   end,
   drag_acceleration=function(t)
    -- drag
-   local mag_vec = vecmagsq(t.vel)
-   local drag_accel = vecmake()
-   -- normal drag -- along the velocity
-   drag_accel = vecscale(
-    vecnormalized(t.vel),
-    -0.2 * t.density_and_drag_c * mag_vec
+   -- local drag_accel = vecmake()
+
+   local ski_vec = vecfromangle(t.angle)
+
+   -- drag along the ski
+   t.drag_accel_along = vecscale(
+    ski_vec,
+    -1*0.2 * t.density_and_drag_c* vecdot(ski_vec, t.vel)
    )
 
-   -- additional drag is on the current velocity that is 
-   local vel_angle = atan2(t.vel.x, t.vel.y)-1
-   -- interesting behavior here
-   if vel_angle == -0.75 then
-    vel_angle = -0.25
-   end
-
-   -- 0-1 scale of the difference between the vel angle and ski angle
-   t.vel_angle = 4*(min(abs(t.angle - vel_angle), 0.25))
+   -- drag against
    local perpendicular = t.angle - 0.25
    if t.angle > -0.25 then
     perpendicular = t.angle + 0.25
    end
-
-   t.vel_angle = 0.3 * mag_vec * sin(t.vel_angle)
-
-   -- drag_accel = vecadd(
-   --  drag_accel,
-   --  vecfromangle(perpendicular, 0.3 * mag_vec * sin(t.vel_angle))
-   -- )
-   drag_accel = vecscale(
-    vecnormalized(t.vel),
-    -0.2 * t.density_and_drag_c * mag_vec --  - 0.3 * mag_vec * sin(t.vel_angle)
-
+   local ski_vec_perp = vecfromangle(perpendicular)
+   t.drag_accel_against = vecadd(
+    vecscale(
+     ski_vec_perp,
+     -1 * t.density_and_drag_c* vecdot(ski_vec_perp, t.vel)
+    ),
+    vecscale(
+     ski_vec_perp,
+     vecdot(vecmake(0, -g_mogulneer_accel), ski_vec_perp)
+    )
    )
 
-   -- drag_accel = vecfromangle(
-   --  t.angle,
+   return vecadd(t.drag_accel_along, t.drag_accel_against)
+
+   -- normal drag -- along the velocity
+   -- drag_accel = vecscale(
+   --  vecnormalized(t.vel),
    --  -0.2 * t.density_and_drag_c * mag_vec
    -- )
-
-   -- vecadd(
-   --  drag_accel,
-   --  vecfromangle(
-   --   8t.angle,
-   --   -0.2 * t.density_and_drag_c * mag_vec
-   --  )
+   --
+   -- -- additional drag is on the current velocity that is 
+   -- local vel_angle = atan2(t.vel.x, t.vel.y)-1
+   -- -- interesting behavior here
+   -- if vel_angle == -0.75 then
+   --  vel_angle = -0.25
+   -- end
+   --
+   -- -- 0-1 scale of the difference between the vel angle and ski angle
+   -- t.vel_angle = 4*(min(abs(t.angle - vel_angle), 0.25))
+   -- local perpendicular = t.angle - 0.25
+   -- if t.angle > -0.25 then
+   --  perpendicular = t.angle + 0.25
+   -- end
+   --
+   -- t.vel_angle = 0.3 * mag_vec * sin(t.vel_angle)
+   --
+   -- -- drag_accel = vecadd(
+   -- --  drag_accel,
+   -- --  vecfromangle(perpendicular, 0.3 * mag_vec * sin(t.vel_angle))
+   -- -- )
+   -- drag_accel = vecscale(
+   --  vecnormalized(t.vel),
+   --  -0.2 * t.density_and_drag_c * mag_vec --  - 0.3 * mag_vec * sin(t.vel_angle)
+   --
    -- )
-
-   -- todo: cap the acceleration by the velocity in a coponent.
-   -- drag_accel = vecminvec(drag_accel, vecscale(t.vel, -1))
-
-   for i=#t.trail_points,1,-1 do
-    -- if t.y - t.trail_points[i].y < 60 then
-    --  break
-    -- end
-    if (t.y - t.trail_points[i].y > 100) then
-     del(t.trail_points, t.trail_points[i])
-    end
-   end
-
-   t:add_new_trail_point(t)
-
-   return drag_accel
-   -- return veclerp(
-   --  vecmake(0, g_mogulneer_accel),
-   --  vecmake(dir*sqrt(g_mogulneer_accel), sqrt(g_mogulneer_accel)),
-   --  abs(t.pose)/3
-   -- )
+   --
+   -- -- drag_accel = vecfromangle(
+   -- --  t.angle,
+   -- --  -0.2 * t.density_and_drag_c * mag_vec
+   -- -- )
+   --
+   -- -- vecadd(
+   -- --  drag_accel,
+   -- --  vecfromangle(
+   -- --   8t.angle,
+   -- --   -0.2 * t.density_and_drag_c * mag_vec
+   -- --  )
+   -- -- )
+   --
+   -- -- todo: cap the acceleration by the velocity in a coponent.
+   -- -- drag_accel = vecminvec(drag_accel, vecscale(t.vel, -1))
+   --
+   --
+   -- return drag_accel
+   -- -- return veclerp(
+   -- --  vecmake(0, g_mogulneer_accel),
+   -- --  vecmake(dir*sqrt(g_mogulneer_accel), sqrt(g_mogulneer_accel)),
+   -- --  abs(t.pose)/3
+   -- -- )
   end,
   draw=function(t)
    if false then
@@ -639,9 +664,12 @@ function make_player(p)
    end
 
    -- trail renderer
-   for i=1,#t.trail_points do
-    local p = vecsub(t.trail_points[i], t)
-    rectfill(p.x-1, p.y-1, p.x+2, p.y+2, 6)
+   for i=2,#t.trail_points do
+    for x_off in all({-1, 1}) do
+     local p1 = vecsub(t.trail_points[i-1], t)
+     local p2 = vecsub(t.trail_points[i], t)
+     line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
+    end
    end
 
    for x_off in all({-1, 1}) do
@@ -686,21 +714,24 @@ function make_player(p)
 
    -- @{ acceleration components
    if t.grav_accel != nil then
-    print_cent("v_a: " .. vecmag(t.grav_accel), 2)
-    print_cent("v_d: " .. vecmag(t.drag_accel), 12)
+    print_cent("v_g: " .. vecmag(t.grav_accel), 2)
+    print_cent("v_d_along: " .. vecmag(t.drag_accel_along), 12)
+    print_cent("v_d_against: " .. vecmag(t.drag_accel_against), 1)
     print_cent("v_t: " .. vecmag(t.total_accel), 9)
     -- print_cent("vel_ang: " .. t.vel_angle, 8)
     -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
-    vecdraw(t.grav_accel, 2)
-    vecdraw(t.drag_accel, 12)
+    vecdraw(t.drag_accel_along, 12)
+    vecdraw(t.drag_accel_against, 1)
     vecdraw(t.total_accel, 9)
+    vecdraw(t.vel, 2)
+    -- vecdraw(t.vel, 11)
    end
    -- print_cent("v_a: " .. t.angle, 8)
    -- print_cent("v_b: " .. t.angle, 8)
    -- print_cent("v_d: " .. t.angle, 8)
    -- @}
 
-   print_cent("v: " .. vecmag(t.vel), 8)
+   -- print_cent("v: " .. vecmag(t.vel), 8)
 
    -- print_cent("cos: "..cos(t.angle+0.25)
    -- print_cent("tness: " .. t.turnyness, 8)
@@ -775,7 +806,12 @@ function make_camera()
   update=function(t)
    -- t.x=g_p1.x
    -- t.y=g_p1.y
-   vecset(t,veclerp(t,g_p1,0.5,0.3))
+   local target_point = g_p1 
+
+   if g_p1.vel then
+    target_point = vecadd(g_p1, vecmake(0, g_p1.vel.y*6))
+   end
+   vecset(t,veclerp(t,target_point,0.5,0.3))
   end,
   is_visible=function(t, o)
    -- uses a circle based visibility check
@@ -834,7 +870,7 @@ end
 function make_mountain()
  local starter_objects = {}
  for i=0,60 do
-  local rndloc = vecmake(rnd(128)-64, rnd(600)-300)
+  local rndloc = vecmake(rnd(128)-64, i*10-300)
   add(starter_objects, make_tree(rndloc))
  end
  return {
