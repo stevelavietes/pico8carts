@@ -399,8 +399,8 @@ function make_player(p)
   -- pose goes from -4 to +4
   pose=4,
   vel=vecmake(0),
-  bound_min=vecmake(2, 4),
-  bound_max=vecmake(6,8),
+  bound_min=vecmake(-3, -4),
+  bound_max=vecmake(2,0),
   angle=0, -- ski angle
   density_and_drag_c = 0.05,
   load_left=0,
@@ -409,7 +409,13 @@ function make_player(p)
   brakyness=0,
   wedge=false,
   trail_points={},
+  crashed=false,
   update=function(t)
+   if t.crashed then
+    t.vel = vecscale(t.vel, 0.9)
+    vecset(t, vecadd(t, t.vel))
+    return
+   end
    local loaded_ski = g_ski_none
    if btn(0, t.p) then
     -- right
@@ -694,29 +700,31 @@ function make_player(p)
     end
    end
 
-   for x_off in all({-1, 1}) do
-   -- for x_off in all({1}) do
-    -- draw the skis
-    local ang = t.angle
-    local offset = 1
-    if t.wedge then
-     ang = t.angle-0.06*x_off
-     offset = 2
+   if not t.crashed then
+    for x_off in all({-1, 1}) do
+    -- for x_off in all({1}) do
+     -- draw the skis
+     local ang = t.angle
+     local offset = 1
+     if t.wedge then
+      ang = t.angle-0.06*x_off
+      offset = 2
+     end
+
+     local turn_off = vecscale(vecmake(cos(ang+0.25*x_off), sin(ang+0.25*x_off)), offset)
+
+     local first_p = vecscale(vecmake(cos(ang), sin(ang)),4)
+     local last_p  = vecscale(first_p, -1)
+
+     -- if not t.wedge then
+      first_p = vecadd(first_p, turn_off)
+      last_p = vecadd(last_p, turn_off)
+     -- end
+
+     line(first_p.x, first_p.y, last_p.x, last_p.y, 4)
+     -- line(first_p.x, first_p.y, 0, 0, 4)
+     circfill(first_p.x, first_p.y, 1, 8)
     end
-
-    local turn_off = vecscale(vecmake(cos(ang+0.25*x_off), sin(ang+0.25*x_off)), offset)
-
-    local first_p = vecscale(vecmake(cos(ang), sin(ang)),4)
-    local last_p  = vecscale(first_p, -1)
-
-    -- if not t.wedge then
-     first_p = vecadd(first_p, turn_off)
-     last_p = vecadd(last_p, turn_off)
-    -- end
-
-    line(first_p.x, first_p.y, last_p.x, last_p.y, 4)
-    -- line(first_p.x, first_p.y, 0, 0, 4)
-    circfill(first_p.x, first_p.y, 1, 8)
    end
 
    -- circfill(0, 0, 1, 11)
@@ -765,15 +773,19 @@ function make_player(p)
     else
      palt(14, true)
     end
-    spr(17+abs(pose)*2, -8, -11, 2, 2, pose < 0)
+    local sprn = 17+abs(pose)*2
+    if t.crashed then
+     sprn = 29
+    end
+
+    spr(sprn, -8, -11, 2, 2, pose < 0)
     palt()
     pal()
    end
 
-   -- print_cent("cos: "..cos(t.angle+0.25)
-   -- print_cent("tness: " .. t.turnyness, 8)
-   -- print_cent("bness: " .. t.brakyness, 8)
    drawobjs(t.c_objs)
+
+   -- draw_bound_rect(t, 11)
   end,
   add_new_trail_point=function(t, p)
    p = vecmake(flr(p.x), flr(p.y))
@@ -928,6 +940,10 @@ function make_mountain()
    for o in all(t.c_objs) do
     if g_cam.y - o.y > 300 then
      vecset(o, vecmake(rnd(128)-64, g_cam.y + 300))
+    else
+     if overlaps_bounds(o, g_p1) then
+      g_p1.crashed = true
+     end
     end
    end
   end,
@@ -960,12 +976,13 @@ function make_tree(loc)
   y=loc.y,
   space=sp_world,
   radius=3,
-  bound_cent=vecmake(0, 9),
+  bound_min=vecmake(-2,9),
+  bound_max=vecmake(1,12),
   draw=function(t)
    -- spr(-2,-2,1,2,10)
    spr(15, -4, -4, 1, 2)
    -- rect(-4,-4,4,4,11)
-   -- draw_bound_circ(t, 11)
+   -- draw_bound_rect(t, 11)
   end
  }
 end
@@ -996,6 +1013,46 @@ function draw_bound_rect(obj, col)
   obj.bound_max.y,
   col
  )
+end
+
+function overlaps_bounds(fst, snd)
+ if fst == snd then
+  return false
+ end
+ if not fst or not snd then
+  return false
+ end
+ if not fst.bound_min or not snd.bound_min or 
+   not fst.bound_max or not snd.bound_max then
+  return false
+ end
+ -- hb: x0, y0, x1, y1
+ 
+ local fst_pos = {fst.x, fst.y}
+ local snd_pos = {snd.x, snd.y}
+ local fst_bmin = {fst.bound_min.x, fst.bound_min.y}
+ local fst_bmax = {fst.bound_max.x, fst.bound_max.y}
+ local snd_bmin = {snd.bound_min.x, snd.bound_min.y}
+ local snd_bmax = {snd.bound_max.x, snd.bound_max.y}
+ for dim=1,2 do
+  fst_dim = {
+   fst_bmin[dim] + fst_pos[dim],
+   fst_bmax[dim] + fst_pos[dim]
+  }
+  snd_dim = {
+   snd_bmin[dim] + snd_pos[dim],
+   snd_bmax[dim] + snd_pos[dim]
+  }
+  if (
+   (fst_dim[2] < snd_dim[1])
+   or
+   (fst_dim[1] > snd_dim[2])
+  ) then
+   return false
+  end 
+ end
+ 
+ return true
 end
 
 function print_cent(str, col)
