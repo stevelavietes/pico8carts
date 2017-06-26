@@ -1,6 +1,17 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- skiiiii
+
+-- TODO:
+-- tune speed
+-- add gates and race mode
+-- add moguls
+-- add weight system
+-- some kind of 2nd order system
+-- braking syste
+-- "z-sorted" tree drawing system
+-- camera system should always track player, but still lerp to target point
 
 function ef_linear(amount)
  return amount
