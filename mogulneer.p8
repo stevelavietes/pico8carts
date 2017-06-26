@@ -467,7 +467,11 @@ function make_player(p)
    local grav_accel = t:gravity_acceleration()
    t.grav_accel = grav_accel
    local drag_accel = t:drag_acceleration()
-   local total_accel = vecscale(vecadd(grav_accel, drag_accel), 0.5)
+   local brake_force = t:brake_force()
+   local total_accel = vecscale(
+    vecadd(vecadd(grav_accel, drag_accel), brake_force),
+    0.8
+   )
    t.total_accel = total_accel
    -- local total_accel = grav_accel
 
@@ -659,13 +663,16 @@ function make_player(p)
    -- --  abs(t.pose)/3
    -- -- )
   end,
-  draw=function(t)
-   if false then
-    palt(0, false)
-    palt(3, true)
-    spr(17+abs(t.pose)*2, -4, -4, 2, 2, t.pose < 0)
-    palt()
+  brake_force=function(t)
+   if not t.wedge then
+    return vecmake()
    end
+
+   local result = vecscale(t.vel, -0.3)
+   return result
+  end,
+  draw=function(t)
+   local pose = flr((t.angle + 0.25)*16)
 
    -- trail renderer
    for i=2,#t.trail_points do
@@ -680,12 +687,13 @@ function make_player(p)
    -- for x_off in all({1}) do
     -- draw the skis
     local ang = t.angle
+    local offset = 1
     if t.wedge then
-     ang = -0.25-0.06*x_off
-     -- x_off *= 2
+     ang = t.angle-0.06*x_off
+     offset = 2
     end
 
-    local turn_off = vecscale(vecmake(cos(ang+0.25*x_off), sin(ang+0.25*x_off)), 1)
+    local turn_off = vecscale(vecmake(cos(ang+0.25*x_off), sin(ang+0.25*x_off)), offset)
 
     local first_p = vecscale(vecmake(cos(ang), sin(ang)),4)
     local last_p  = vecscale(first_p, -1)
@@ -736,6 +744,19 @@ function make_player(p)
    -- @}
 
    -- print_cent("v: " .. vecmag(t.vel), 8)
+   if true then
+    palt(0, false)
+    palt(3, true)
+    if t.wedge then
+     palt(14, false)
+     pal(14, 11)
+    else
+     palt(14, true)
+    end
+    spr(17+abs(pose)*2, -8, -11, 2, 2, pose < 0)
+    palt()
+    pal()
+   end
 
    -- print_cent("cos: "..cos(t.angle+0.25)
    -- print_cent("tness: " .. t.turnyness, 8)
