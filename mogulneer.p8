@@ -92,6 +92,8 @@ function process_particles(at_scope)
 end
 
 g_mogulneer_accel = 0.8
+g_mogulneer_accel = 0.4
+g_mogulneer_accel = 0.3
 
 collision_objects = {
  {
@@ -834,9 +836,9 @@ function make_camera()
    local target_point = g_p1 
 
    if g_p1.vel then
-    target_point = vecadd(g_p1, vecmake(0, g_p1.vel.y*6))
+    target_point = vecadd(g_p1, vecmake(0, g_p1.vel.y*10))
    end
-   vecset(t,veclerp(t,target_point,0.5,0.3))
+   vecset(t,veclerp(t,target_point,0.2,0.7))
   end,
   is_visible=function(t, o)
    -- uses a circle based visibility check
