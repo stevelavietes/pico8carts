@@ -65,6 +65,7 @@ gc_easing_functions = {
  make_easing_function("out cubic", ef_out_cubic),
  make_easing_function("out quart", ef_out_quart),
  make_easing_function("out quart cropped", ef_out_quart_cropped),
+ make_easing_function("kaneda", ef_out_quart),
 }
 
 function make_ef_ui_single()
@@ -78,6 +79,7 @@ function make_ef_ui_single()
   direction=1,
   current_position=0,
   loop = "once",
+  smoke={},
   update=function(t)
    local ef = gc_easing_functions[t.current_index].ef
    local amount = t.frame / t.current_loop_duration
@@ -150,7 +152,35 @@ function make_ef_ui_single()
    circ(xval, yval, 3)
 
    -- Main circle
+   if t.current_index != 7 then
     circfill(-30+60*t.current_position, 0, 10, 6)
+   else
+    if t.current_position == 0 then
+     t.smoke = {}
+    end
+
+    local cp = t.current_position
+    if t.current_position < 0.75 then
+     angle = 0.35
+    else
+     angle = 0.35 - 0.1*ef_linear((t.current_position-0.75)/0.25)
+     cp = 0.75
+    end
+    p1 = {-30+60*cp, 0}
+    p2 = {
+     p1[1] + 20*cos(angle),
+     p1[2] + 20*sin(angle)
+    }
+    -- dust clouds
+    r=1
+    for i=p1[1],-30,-1 do
+     circfill(i+rnd(6)-3, p1[2]-rnd(8)-r/1.5, r+rnd(2), 6+flr(rnd(2)))
+     r+=0.25
+    end
+    for i=1,12 do
+     line(p1[1]+i, p1[2], p2[1]+i, p2[2], 8)
+    end
+   end
 
    -- text at the bottom of the screen
    local name = "name: " .. efo.name
