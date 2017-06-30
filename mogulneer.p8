@@ -104,7 +104,7 @@ end
 
 g_mogulneer_accel = 0.8
 g_mogulneer_accel = 0.4
-g_mogulneer_accel = 0.3
+-- g_mogulneer_accel = 0.3
 
 collision_objects = {
  {
@@ -861,6 +861,15 @@ function make_camera()
     target_point = vecadd(g_p1, vecmake(0, g_p1.vel.y*10))
    end
    vecset(t,veclerp(t,target_point,0.2,0.7))
+
+   if g_shake_end and g_tick < g_shake_end then
+    if (
+     not g_shake_frequency
+     or ((g_shake_end - g_tick) % g_shake_frequency) == 0
+    ) then
+     vecset(t, vecadd(t, vecrand(g_shake_mag, true)))
+    end
+   end
   end,
   is_visible=function(t, o)
    -- uses a circle based visibility check
@@ -941,8 +950,10 @@ function make_mountain()
     if g_cam.y - o.y > 300 then
      vecset(o, vecmake(rnd(128)-64, g_cam.y + 300))
     else
-     if overlaps_bounds(o, g_p1) then
+     if overlaps_bounds(o, g_p1) and not g_p1.crashed then
       g_p1.crashed = true
+      shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+      flash_screen(4, 8)
      end
     end
    end
@@ -952,6 +963,17 @@ function make_mountain()
    drawobjs(t.c_objs)
   end
  }
+end
+
+function flash_screen(duration, c)
+ g_flash_end = g_tick + duration + 1
+ g_flash_color = c
+end
+
+function shake_screen(duration, magnitude, frequency)
+ g_shake_end = g_tick + duration + 1
+ g_shake_mag = magnitude
+ g_shake_frequency = frequency
 end
 
 function make_boundary(xmin, xmax)
@@ -1089,6 +1111,19 @@ end
 function stddraw()
  cls()
  drawobjs(g_objs)
+
+ if g_flash_end and g_tick < g_flash_end then
+  for i=1,128 do
+   for j=1,128 do
+    local col = pget(i, j)
+    if col != 7 then
+     pset(i, j, g_flash_color)
+    end
+   end
+  end
+ else
+  g_flash_end = nil
+ end
 end
 
 function drawobjs(objs)
