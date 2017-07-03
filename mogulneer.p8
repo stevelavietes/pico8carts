@@ -139,6 +139,9 @@ function make_debugmsg()
    cursor(1,1)
    print("cpu: ".. stat(1))
    print("mem: ".. stat(2))
+   if g_p1 then
+    print("vel: ".. vecmag(g_p1.vel))
+   end
   end
  }
 end
@@ -913,17 +916,75 @@ function make_camera()
 end
 -- @}
 
+ge_gate_start = 0
+ge_gate_left = 1
+ge_gate_right = 2
+ge_gate_end = 3
+
+-- gate settings
+gate_height = 10 
+gate_stem_color = 5
+gate_flag_height = 4
+gate_flag_width = 4
+gate_flag_height_offset = 6
+
+-- track data
 tracks = {
- { vecmake(30, 96) },
- { vecmake(60, 45) }
+ { 
+  sel = vecmake(30, 96),
+  course = {
+   {vecmake(32, 0),  32, ge_gate_start},
+   {vecmake(16, 40), 0,  ge_gate_left},
+   {vecmake(16, 60), 0,  ge_gate_right},
+   {vecmake(16, 80), 16, ge_gate_end},
+  }
+ },
+ { 
+  sel = vecmake(60, 45),
+  course = {}
+ }
 }
+
+function make_gate(gate_data, accum_y)
+ local result = {
+  x=gate_data[1].x,
+  y=accum_y,
+  radius=gate_data[2],
+  gate_kind=gate_data[3],
+  space=sp_world,
+  draw=function(t)
+    if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
+     -- stem -left
+     line(-t.radius, 0, -t.radius, -gate_height, gate_stem_color)
+
+     -- stem-right
+     line(t.radius, 0, t.radius, -gate_height, gate_stem_color)
+
+     -- flag
+     for i=1,gate_flag_height do
+      for xdir=-1,1,2 do
+       line(
+        xdir*t.radius, -gate_flag_height_offset - i,
+        xdir*t.radius + xdir*gate_flag_width, -gate_flag_height_offset - i,
+        8
+       )
+      end
+     end
+   else
+    -- stem -left
+    line(0, 0, 0, -gate_height, gate_stem_color)
+   end
+  end
+ }
+ return result
+end
 
 function make_track_mark(track_data)
  return {
-  x=track_data[1].x,
-  y=track_data[1].y,
+  x=track_data["sel"].x,
+  y=track_data["sel"].y,
   draw=function()
-   circfill(0, 0, 4, 11)
+   circfill(0, 0, 5, 11)
   end
  }
 end
@@ -981,10 +1042,10 @@ function make_selector()
     )
 
     -- selection box
-    local target_location = tracks[t.current_selection][1]
+    local target_location = tracks[t.current_selection]["sel"]
     local last_location = START_BOX
     if t.last_selection != 0 then
-     last_location = tracks[t.last_selection][1]
+     last_location = tracks[t.last_selection]["sel"]
     end
 
     t.box_location = veclerp(last_location, target_location, t.progress)
@@ -1053,10 +1114,10 @@ function slalom_course_menu()
 --  add(g_objs,g_tgt)
 end
 
-function slalom_start()
+function slalom_start(track_ind)
  g_objs = {
   make_bg(),
-  make_mountain("slalom"),
+  make_mountain("slalom", track_ind),
   make_debugmsg(),
  }
 
@@ -1103,7 +1164,7 @@ function make_bg()
  }
 end
 
-function make_mountain(kind)
+function make_mountain(kind, track_ind)
  local starter_objects = {}
  for i=0,60 do
   local rndloc = vecmake(rnd(128)-64, i*10-300)
@@ -1115,7 +1176,13 @@ function make_mountain(kind)
  end
  if kind == "slalom" then
   starter_objects = {}
+
   -- @TODO: add flags and route here
+  local accum_y = 0
+  for gate in all(tracks[track_ind]["course"]) do
+   accum_y += gate[1].y
+   add(starter_objects, make_gate(gate, accum_y))
+  end
  end
  return {
   x=0,
