@@ -207,7 +207,7 @@ function make_ef_ui_single()
     if t.current_position < 0.75 then
      angle = 0.35
      --             x               y            r  c
-     add(t.smoke, {p1[1]+rnd(6)-3, p1[2]-rnd(8), 1, 6+flr(rnd(2))})
+     add(t.smoke, {p1[1]+rnd(6)-3, p1[2]-rnd(8)+8, 1, 6+flr(rnd(2))})
     else
      angle = 0.35 - 0.1*ef_linear((t.current_position-0.75)/0.25)
      cp = 0.75
@@ -270,6 +270,21 @@ function make_ef_ui_single()
       }
       -- print("offset: "..offset)
      line(p1[1]+i, p1[2], p2[1]+i, p2[2], 8)
+
+     -- wheel
+     if i>3 and i < 10 then
+      local len = 7
+      local p2 = {
+       p1[1] + len*cos(angle),
+       p1[2] + len*sin(angle)
+      }
+      len = -5
+      local p1 = {
+       p1[1] + len*cos(angle),
+       p1[2] + len*sin(angle)
+      }
+      line(p1[1]+i, p1[2], p2[1]+i, p2[2], 5)
+     end
     end
 
     circfill(p_light[1], p_light[2], 4, 9)
