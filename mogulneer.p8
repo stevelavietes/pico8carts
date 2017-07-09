@@ -952,6 +952,8 @@ tracks = {
    {vecmake(-2, 100),  0,  ge_gate_next},
    {vecmake(12,  80),  0,  ge_gate_next},
    {vecmake(62,  80),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
    {vecmake(0,   80), 16,  ge_gate_end},
   }
  },
@@ -1294,14 +1296,16 @@ function make_mountain(kind, track_ind)
    updateobjs(t.c_objs)
 
    -- check to see if we need to bump the tree down
-   for o in all(t.c_objs) do
-    if g_cam.y - o.y > 300 then
-     vecset(o, vecmake(rnd(128)-64, g_cam.y + 300))
-    else
-     if overlaps_bounds(o, g_p1) and not g_p1.crashed then
-      g_p1.crashed = true
-      shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
-      flash_screen(4, 8)
+   if kind != "slalom" then
+    for o in all(t.c_objs) do
+     if g_cam.y - o.y > 300 then
+      vecset(o, vecmake(rnd(128)-64, g_cam.y + 300))
+     else
+      if overlaps_bounds(o, g_p1) and not g_p1.crashed then
+       g_p1.crashed = true
+       shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+       flash_screen(4, 8)
+      end
      end
     end
    end
