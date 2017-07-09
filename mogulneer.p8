@@ -498,6 +498,7 @@ function make_player(p)
     -- z
    end
    if btn(5, t.p) then
+    loaded_ski = g_ski_both
     -- x
    end
 
