@@ -444,6 +444,7 @@ function make_player(p)
     return
    end
    local loaded_ski = g_ski_none
+   local brake = false
    if btn(0, t.p) then
     -- right
     -- t.angle -= 0.01
@@ -484,7 +485,6 @@ function make_player(p)
     else
      t.angle = -0.5
     end
-    loaded_ski = g_ski_both
    end
    if btnn(3, t.p) then
     -- down
@@ -503,12 +503,13 @@ function make_player(p)
     -- z
    end
    if btn(5, t.p) then
-    loaded_ski = g_ski_both
+    -- loaded_ski = g_ski_both
+    brake = true
     -- x
    end
 
    -- sets up the current direction of the skis, "brakes"
-   t:loaded_ski(t.vel, loaded_ski)
+   t:loaded_ski(t.vel, loaded_ski, brake)
 
    -- apply velocity and acceleration
    local grav_accel = t:gravity_acceleration()
@@ -535,8 +536,11 @@ function make_player(p)
 
    t:add_new_trail_point(t)
   end,
-  loaded_ski=function(t, vel, loaded_ski)
+  loaded_ski=function(t, vel, loaded_ski, brake)
    t.wedge = false
+   if brake then
+    t.wedge = true
+   end
 
    -- if neither ski is loaded, then nothing to do
    if loaded_ski == g_ski_none then
