@@ -872,14 +872,14 @@ end
 function make_camera()
  return {
   x=0,
-  y=0,
+  y=30,
   update=function(t)
    -- t.x=g_p1.x
    -- t.y=g_p1.y
-   local target_point = g_p1 
+   local target_point = vecadd(g_p1, vecmake(0, 20))
 
    if g_p1.vel then
-    target_point = vecadd(g_p1, vecmake(0, g_p1.vel.y*10))
+    target_point = vecadd(target_point, vecmake(0, g_p1.vel.y*10))
    end
    vecset(t,veclerp(t,target_point,0.2,0.7))
 
