@@ -108,10 +108,10 @@ g_mogulneer_accel = 0.4
 
 collision_objects = {
  {
-  x=50,
+  x=30,
   y=80,
-  width=27,
-  height=14,
+  width=67,
+  height=24,
   collides=function(t, part)
    if (
     part.x > t.x 
