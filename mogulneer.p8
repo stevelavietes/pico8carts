@@ -262,7 +262,8 @@ function _init()
      function()
       if i==0 then
        -- slalom
-       slalom_course_menu()
+       -- slalom_course_menu()
+       slalom_start(1)
       elseif i==1 then
        -- back country
        game_start()
