@@ -291,6 +291,17 @@ function make_ef_ui_single()
     circfill(p_light[1], p_light[2], 2, 10)
     add(t.light_particles, p_light)
     -- circ(p_light[1]+6, p_light[2], 8, 9)
+
+    -- light trail
+    if t.light_particles then
+     for i=2, #t.light_particles do
+      local p1 = t.light_particles[i-1]
+      local p2 = t.light_particles[i]
+      for i=-2,2 do
+       line(p1[1], p1[2]+i, p2[1], p2[2]+i, 10)
+      end
+     end
+    end
    end
 
    -- text at the bottom of the screen
@@ -334,16 +345,6 @@ function make_ef_ui_single()
    --  line(p1[1], p1[2], p2[1], p2[2], 11)
    -- end
 
-   -- light trail
-   if t.light_particles then
-    for i=2, #t.light_particles do
-     local p1 = t.light_particles[i-1]
-     local p2 = t.light_particles[i]
-     for i=-2,2 do
-      line(p1[1], p1[2]+i, p2[1], p2[2]+i, 10)
-     end
-    end
-   end
   end
  }
 end
