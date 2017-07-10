@@ -207,8 +207,8 @@ function spray_particles()
      add_particle(
       g_p1.x+off.x+rnd(6)-3+g_p1.bound_min.x,
       g_p1.y+off.y+rnd(6)-3+g_p1.bound_min.y,
-      d_v.x/2+rnd(1),
-      d_v.y/2+rnd(1),
+      d_v.x/1.5+rnd(1),
+      d_v.y/1.5+rnd(1),
       10,
       6,
       0.5 
@@ -248,6 +248,12 @@ function make_title()
 end
 
 function _init()
+ g_shake_end = nil
+ g_shake_mag = nil
+ g_shake_frequency = nil
+ g_flash_end = nil
+ g_flash_color =nil 
+
  particle_array, particle_array_length = {}, 0
  stdinit()
 
@@ -441,6 +447,9 @@ function make_player(p)
    if t.crashed then
     t.vel = vecscale(t.vel, 0.9)
     vecset(t, vecadd(t, t.vel))
+    if vecmagsq(t.vel) < 0.1 then
+     _init()
+    end
     return
    end
    local loaded_ski = g_ski_none
@@ -768,6 +777,7 @@ function make_player(p)
    -- print(str, -(#str)*2, 12, 8)
    g_cursor_y=12
    -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
+   -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
    -- print_cent("load_left: " .. t.load_left, 8)
    -- print_cent("load_right: " .. t.load_right, 8)
    -- print_cent("pose: " .. t.pose, 8)
@@ -934,6 +944,14 @@ ge_gate_left = 2
 ge_gate_right = 3
 ge_gate_next = 4
 
+gate_str_map = {
+ "start",
+ "end",
+ "left",
+ "right",
+ "next",
+}
+
 -- gate settings
 gate_height = 10 
 gate_stem_color = 5
@@ -954,6 +972,39 @@ tracks = {
    {vecmake(62,  80),  0,  ge_gate_next},
    {vecmake(62,  100),  0,  ge_gate_next},
    {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(42, 80),  0,  ge_gate_next},
+   {vecmake(16, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(-32, 50),  0,  ge_gate_right},
+   {vecmake(-66, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(12,  80),  0,  ge_gate_next},
+   {vecmake(62,  80),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(42, 80),  0,  ge_gate_next},
+   {vecmake(16, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(-32, 50),  0,  ge_gate_right},
+   {vecmake(-66, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(12,  80),  0,  ge_gate_next},
+   {vecmake(62,  80),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(42, 80),  0,  ge_gate_next},
+   {vecmake(16, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(-32, 50),  0,  ge_gate_right},
+   {vecmake(-66, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(12,  80),  0,  ge_gate_next},
+   {vecmake(62,  80),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(42, 80),  0,  ge_gate_next},
+   {vecmake(16, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
    {vecmake(0,   80), 16,  ge_gate_end},
   }
  },
@@ -1032,14 +1083,32 @@ function make_gate(gate_data, accum_y, starter_objects)
   space=sp_world,
   overlaps = false,
   update=function(t)
+   local flash = false
    -- @TODO: This collision math needs to be worked out
-   if g_p1.y == t.y then
+   if abs(g_p1.y - t.y) < 0.5 then
     t.overlaps = true
-   elseif t.overlaps then
-    if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
+    -- if t.gate_kind == ge_gate_left then
+    --  stop()
+    -- end
+   elseif t.overlaps or (g_p1.y < t.y and g_p1.y + g_p1.vel.y > t.y) then
+    if t.gate_kind == ge_gate_start then
      g_timer:start()
-     t.overlaps = false
+    elseif t.gate_kind == ge_gate_end then
+     g_timer:stop()
+    elseif t.gate_kind == ge_gate_left and g_p1.x > t.x then
+     flash = true
+     -- stop()
+    elseif t.gate_kind == ge_gate_right and g_p1.x < t.x then
+     flash = true
+    else
     end
+    t.overlaps = false
+   end
+
+   if flash then
+    -- g_timer:inc_missed_gate()
+    shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+    flash_screen(4, 8)
    end
   end,
   draw=function(t)
@@ -1061,20 +1130,25 @@ function make_gate(gate_data, accum_y, starter_objects)
       end
      end
    else
+    local offset=0
     -- stem -left
     -- line(0, 0, 0, -gate_height, gate_stem_color)
     local flip = false
     if t.gate_kind == ge_gate_left then
      flip = true
+     offset = -7
      pal(12, 8)
      pal(1, 2)
     end
-    spr(68, 0, 0, 1, 2, flip)
+    spr(68, offset, -16, 1, 2, flip)
     if flip then
      pal()
     end
    end
-   print(index, 8, 0, 11)
+   -- print(index, 8, 0, 11)
+   -- print(gate_str_map[t.gate_kind+1], 8, 8, 11)
+   -- print("d: "..abs(g_p1.y - t.y), 8, 16, 11)
+   -- print(t.overlaps, 8, 24, 11)
   end
  }
  return result
