@@ -1339,6 +1339,27 @@ function make_bg()
  }
 end
 
+function make_line(g1, g2)
+ return {
+  x=0, 
+  y=0, 
+  space=sp_world,
+  g1=g1,
+  g2=g2,
+  draw=function(t)
+   local colors = {8,8,1,2}
+   for offset=-1,1,2 do
+    for i=0,3 do
+     local mult = 50+i
+     local c = colors[i+1]
+     line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
+     line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
+    end
+   end
+  end
+ }
+end
+
 function make_mountain(kind, track_ind)
  local starter_objects = {}
  for i=0,60 do
@@ -1350,13 +1371,27 @@ function make_mountain(kind, track_ind)
   add(starter_objects, make_rock(rndloc))
  end
  if kind == "slalom" then
+  local lines = {}
+  local gates = {}
   starter_objects = {}
 
   -- @TODO: add flags and route here
   local accum_y = 0
   for gate in all(tracks[track_ind]["course"]) do
    accum_y += gate[1].y
-   add(starter_objects, make_gate(gate, accum_y, starter_objects))
+   add(gates, make_gate(gate, accum_y, gates))
+  end
+  for i=2,#gates do
+   local p1 = gates[i-1]
+   local p2 = gates[i]
+
+   add(lines, make_line(gates[i-1], gates[i]))
+  end
+  for l_obj in all(lines) do
+   add(starter_objects, l_obj)
+  end
+  for g_obj in all(gates) do
+   add(starter_objects, g_obj)
   end
  end
  return {
@@ -1364,7 +1399,8 @@ function make_mountain(kind, track_ind)
   y=0,
   sp=sp_world,
   c_objs=starter_objects,
-  p_objs={make_boundary(-96,96)},
+  -- p_objs={make_boundary(-96,96)},
+  p_objs={},
   update=function(t)
    updateobjs(t.p_objs)
    updateobjs(t.c_objs)
