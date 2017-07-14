@@ -18,6 +18,10 @@ __lua__
 -- rocks don't cause crashes at the moment 
 -- strip out the selection screen. That can come later.
 
+-- missed gate indicator
+-- draw the hat when you crash
+-- skis skitter down the mountain
+
 function ef_linear(amount)
  return amount
 end
