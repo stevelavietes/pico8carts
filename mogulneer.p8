@@ -38,6 +38,59 @@ function ef_out_quart_cropped(amount)
  return result
 end
 
+-- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
+-- 1 euro filter parameters, tuned to make the effect visible
+beta = 0.0001
+mincutoff = 0.0001
+-- mincutoff = 0.0003
+
+function make_one_euro_filt(beta, mincutoff)
+ return {
+  first_time = true,
+  dx = 0,
+  rate = 1/60,
+  mincutoff = mincutoff, -- hz
+  beta = beta, -- cutoff slope
+  d_cutoff = 0, -- derivative cutoff
+  xfilt = make_low_pass_filter(),
+  dxfilt = make_low_pass_filter(),
+  filter=function(t, x)
+   if t.first_time then
+    t.dx = 0
+   else
+    t.dx = (x - t.xfilt.hatxprev) * t.rate
+   end
+   local edx = t.dxfilt:filter(t.dx, t:alpha(t.rate, t.d_cutoff))
+   local cutoff = mincutoff + beta * abs(edx)
+
+   return t.xfilt:filter(x, t:alpha(t.rate, cutoff))
+  end,
+  alpha = function(t, rate, cutoff)
+   local tau = 1.0 / (2 * 3.14159 * cutoff)
+   local te = 1.0 / rate
+   return (1.0 / (1.0 + tau/te))
+  end
+ }
+end
+
+function make_low_pass_filter()
+ return {
+  first_time = true,
+  hat_x_prev = nil,
+  hat_x = nil,
+  filter = function(t, x, alpha)
+   if t.first_time then
+    t.first_time = false
+    t.hat_x_prev = x
+   end
+   t.hat_x = alpha * x + (1 - alpha) * t.hat_x_prev
+   t.hat_x_prev = t.hat_x
+   return t.hat_x
+  end
+ }
+end
+-- @}
+
 -- { particle stuff
 function add_particle(x, y, dx, dy, life, color, ddy)
  particle_array_length += 1
@@ -150,6 +203,7 @@ function make_debugmsg()
    print("mem: ".. stat(2))
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
+    print("d_o: ".. g_cam.delta_offset)
    end
   end
  }
@@ -898,14 +952,18 @@ function make_camera()
  return {
   x=0,
   y=30,
+  low_pass=make_one_euro_filt(beta, mincutoff),
+  delta_offset = 0,
   update=function(t)
-   -- t.x=g_p1.x
-   -- t.y=g_p1.y
-   local target_point = vecadd(g_p1, vecmake(0, 20))
+   local offset = 20
 
    if g_p1.vel then
-    target_point = vecadd(target_point, vecmake(0, g_p1.vel.y*10))
+    offset += g_p1.vel.y*10
    end
+
+   local new_offset = t.low_pass:filter(offset)
+   t.delta_offset = new_offset - offset
+   local target_point = vecadd(g_p1, vecmake(0, new_offset))
    vecset(t,veclerp(t,target_point,0.2,0.7))
 
    if g_shake_end and g_tick < g_shake_end then
@@ -1297,7 +1355,7 @@ function slalom_start(track_ind)
  g_objs = {
   make_bg(),
   make_mountain("slalom", track_ind),
-  -- make_debugmsg(),
+  make_debugmsg(),
  }
 
  g_partm = add_gobjs(spray_particles())
@@ -1353,7 +1411,7 @@ function make_line(g1, g2)
   draw=function(t)
    local colors = {8,8,1,2}
    for offset=-1,1,2 do
-    for i=0,3 do
+    for i=0,1 do
      local mult = 50+i
      local c = colors[i+1]
      line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
