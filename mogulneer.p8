@@ -1192,7 +1192,7 @@ function make_gate(gate_data, accum_y, starter_objects)
    end
   end,
   draw=function(t)
-   if abs(t.y - g_p1.y) > 150 then
+   if abs(t.y - g_cam.y) > 70 then
     return
    end
    if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
@@ -1434,7 +1434,7 @@ function make_line(g1, g2)
   g1=g1,
   g2=g2,
   draw=function(t)
-   if abs(g2.y - g_p1.y) > 250 then
+   if abs(g2.y - g_cam.y) > 70 and abs(g1.y - g_cam.y) > 70 then
     return
    end
    local colors = {8,8,1,2}
