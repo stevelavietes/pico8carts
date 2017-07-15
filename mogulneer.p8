@@ -1192,23 +1192,26 @@ function make_gate(gate_data, accum_y, starter_objects)
    end
   end,
   draw=function(t)
-    if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
-     -- stem -left
-     line(-t.radius, 0, -t.radius, -gate_height, gate_stem_color)
+   if abs(t.y - g_p1.y) > 150 then
+    return
+   end
+   if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
+    -- stem -left
+    line(-t.radius, 0, -t.radius, -gate_height, gate_stem_color)
 
-     -- stem-right
-     line(t.radius, 0, t.radius, -gate_height, gate_stem_color)
+    -- stem-right
+    line(t.radius, 0, t.radius, -gate_height, gate_stem_color)
 
-     -- flag
-     for i=1,gate_flag_height do
-      for xdir=-1,1,2 do
-       line(
-        xdir*t.radius, -gate_flag_height_offset - i,
-        xdir*t.radius + xdir*gate_flag_width, -gate_flag_height_offset - i,
-        8
-       )
-      end
+    -- flag
+    for i=1,gate_flag_height do
+     for xdir=-1,1,2 do
+      line(
+      xdir*t.radius, -gate_flag_height_offset - i,
+      xdir*t.radius + xdir*gate_flag_width, -gate_flag_height_offset - i,
+      8
+      )
      end
+    end
    else
     if t.missed then
      circ(0, 0, 4, 8)
@@ -1431,9 +1434,12 @@ function make_line(g1, g2)
   g1=g1,
   g2=g2,
   draw=function(t)
+   if abs(g2.y - g_p1.y) > 250 then
+    return
+   end
    local colors = {8,8,1,2}
    for offset=-1,1,2 do
-    for i=0,1 do
+    for i=0,3 do
      local mult = 50+i
      local c = colors[i+1]
      line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
