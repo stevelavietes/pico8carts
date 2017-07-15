@@ -1083,11 +1083,12 @@ ge_timerstate_running = 1
 -- from picotris attack
 function make_clock()
  return {
-  x=47,
+  x=64,
   y=2,
   c=0,
   m=0,
   s=0,
+  misses=0,
   state=ge_timerstate_stopped,
   start=function(t)
    t.state = ge_timerstate_running
@@ -1096,7 +1097,7 @@ function make_clock()
    t.state = ge_timerstate_stopped
   end,
   draw=function(t)
-   rectfill(-1,-1,31,5,6)
+   rectfill(-16,-1,16,5,6)
    local mp,sp,cp = '','',''
    if t.m<10 then
     mp=0
@@ -1107,8 +1108,20 @@ function make_clock()
    if t.c < 10 then
     cp=0
    end
-   print(mp..t.m..':'..sp..t.s.."."..cp..t.c,
-     0,0,0)
+   print(mp..t.m..':'..sp..t.s.."."..cp..t.c, -15,0,0)
+
+   local ndigits=6
+   if t.misses > 9 then
+    ndigits +=1
+   end
+   if t.misses > 99 then
+    ndigits += 1
+   end
+
+   local half_len = ndigits/2
+
+   rectfill(-half_len*4, 7, half_len*4, 13, 6)
+   print("miss:"..t.misses, -half_len*4+1, 8, 0)
   end,
   update=function(t)
    if t.state == ge_timerstate_stopped then
@@ -1127,6 +1140,11 @@ function make_clock()
      t.m+=1
     end
    end
+  end,
+  inc_missed_gate = function(t)
+   t.misses += 1
+   shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+   flash_screen(4, 8)
   end
  }
 end
@@ -1144,6 +1162,7 @@ function make_gate(gate_data, accum_y, starter_objects)
   gate_kind=gate_kind,
   space=sp_world,
   overlaps = false,
+  missed=false,
   update=function(t)
    local flash = false
    -- @TODO: This collision math needs to be worked out
@@ -1167,10 +1186,9 @@ function make_gate(gate_data, accum_y, starter_objects)
     t.overlaps = false
    end
 
-   if flash then
-    -- g_timer:inc_missed_gate()
-    shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
-    flash_screen(4, 8)
+   if flash and not t.missed then
+    g_timer:inc_missed_gate()
+    t.missed = true
    end
   end,
   draw=function(t)
@@ -1192,6 +1210,10 @@ function make_gate(gate_data, accum_y, starter_objects)
       end
      end
    else
+    if t.missed then
+     circ(0, 0, 4, 8)
+     -- circ(0, 0, 5, 8)
+    end
     local offset=0
     -- stem -left
     -- line(0, 0, 0, -gate_height, gate_stem_color)
