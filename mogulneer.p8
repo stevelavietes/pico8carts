@@ -1379,9 +1379,10 @@ end
 function slalom_start(track_ind)
  g_objs = {
   make_bg(),
-  make_mountain("slalom", track_ind),
   make_debugmsg(),
  }
+
+ g_mountain = add_gobjs(make_mountain("slalom", track_ind))
 
  g_partm = add_gobjs(spray_particles())
 
@@ -1433,8 +1434,26 @@ function make_line(g1, g2)
   space=sp_world,
   g1=g1,
   g2=g2,
+  slope=nil,
+  offset=nil,
+  compute_slope=function(t)
+   return (t.g2.y - t.g1.y) / (t.g2.x - t.g1.x)
+  end,
+  compute_offset=function(t)
+   -- t.slope * (x - g1.x) =  (y - g1.y)
+   -- t.slope * x - t.slope * g1.x =  (y - g1.y)
+   -- x = y / t.slope - g1.y / t.slope + g1.x
+   return g1.x - g1.y / t.slope
+  end,
+  x_coordinte=function(t, y_coordinate)
+   if t.slope == nil then
+    t.slope = t:compute_slope()
+    t.offset = t:compute_offset()
+   end
+   return  y_coordinate / t.slope + t.offset
+  end,
   draw=function(t)
-   if abs(g2.y - g_cam.y) > 70 and abs(g1.y - g_cam.y) > 70 then
+   if abs(t.g2.y - g_cam.y) > 70 and abs(t.g1.y - g_cam.y) > 70 then
     return
    end
    local colors = {8,8,1,2}
@@ -1451,17 +1470,11 @@ function make_line(g1, g2)
 end
 
 function make_mountain(kind, track_ind)
+ local trees = {}
  local starter_objects = {}
- for i=0,60 do
-  local rndloc = vecmake(rnd(128)-64, i*10-300)
-  add(starter_objects, make_tree(rndloc))
- end
- for i=0,5 do
-  local rndloc = vecmake(rnd(128)-64, i*120-300)
-  add(starter_objects, make_rock(rndloc))
- end
+ local lines = {}
+
  if kind == "slalom" then
-  local lines = {}
   local gates = {}
   starter_objects = {}
 
@@ -1484,13 +1497,52 @@ function make_mountain(kind, track_ind)
    add(starter_objects, g_obj)
   end
  end
+
+ local current_line = 1
+ -- I want to place trees 80 units back and 80 units forward
+ for i=0,16 do
+  local y_c = i*10-80
+  local l = lines[current_line]
+  if y_c > l.g2.y then
+   current_line += 1
+   l = lines[current_line]
+  end
+  -- if i > l.g2 then
+  --  current_line =+ 1 
+  -- end
+  -- get the boundaries for the height
+  for off=-1,1,2 do
+   for j=1,4 do
+    -- local off_x = off*30
+    local off_x = off*90
+    local rndloc = vecmake(
+     rnd(40)-20 + off_x + l:x_coordinte(y_c),
+     rnd(12)-6 + y_c
+    )
+    add(trees, make_tree(rndloc))
+   end
+  end
+ end
+--  for i=0,5 do
+--   local rndloc = vecmake(rnd(128)-64, i*120-300)
+--   add(trees, make_rock(rndloc))
+--  end
  return {
   x=0,
   y=0,
   sp=sp_world,
   c_objs=starter_objects,
   -- p_objs={make_boundary(-96,96)},
-  p_objs={},
+  p_objs=trees,
+  lines=lines,
+  line_for_height=function(t, y)
+   for i=1,#lines do
+    if t.lines[i].g2.y > y then
+     return t.lines[i] 
+    end
+   end
+   return t.lines[#lines]
+  end,
   update=function(t)
    updateobjs(t.p_objs)
    updateobjs(t.c_objs)
@@ -1552,7 +1604,21 @@ function make_tree(loc)
   radius=3,
   bound_min=vecmake(-2,9),
   bound_max=vecmake(1,12),
+  update=function(t)
+   if g_cam.y - t.y > 80 then
+    t.y += 160
+    local flip = 110
+    local rnd_off = rnd(80) - 40
+    if rnd(1) > 0.5 then
+     flip *= -1
+    end
+    t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
+   end
+  end,
   draw=function(t)
+   -- if abs(t.y - g_cam.y) > 70 then
+   --  return
+   -- end
    -- spr(-2,-2,1,2,10)
    spr(15, -4, -4, 1, 2)
    -- rect(-4,-4,4,4,11)
