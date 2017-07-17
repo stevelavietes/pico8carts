@@ -18,9 +18,9 @@ __lua__
 -- rocks don't cause crashes at the moment 
 -- strip out the selection screen. that can come later.
 
--- missed gate indicator
 -- draw the hat when you crash
 -- skis skitter down the mountain
+-- repair back country mode
 
 function ef_linear(amount)
  return amount
@@ -433,6 +433,10 @@ end
 
 function vecsub(a, b)
  return {x=a.x-b.x, y=a.y-b.y}
+end
+
+function vecflr(a)
+ return vecmake(flr(a.x), flr(a.y))
 end
 
 function vecset(target, source)
@@ -974,6 +978,11 @@ function make_camera()
      vecset(t, vecadd(t, vecrand(g_shake_mag, true)))
     end
    end
+
+   -- Fix floating point math on the camera  -> integer position
+   -- removes "sizzles" in the position of all the objects esp. after
+   -- filtering the position of the camera.
+   vecset(t, vecflr(t))
   end,
   is_visible=function(t, o)
    -- uses a circle based visibility check
@@ -1166,8 +1175,8 @@ function make_gate(gate_data, accum_y, starter_objects)
   passed=nil,
   spr_ind=68,
   update=function(t)
+   -- @TODO: left (red) gates are offset from their origin, this messes up the missed/calculation)
    local flash = false
-   -- @todo: this collision math needs to be worked out
    if abs(g_p1.y - t.y) < 0.5 then
     t.overlaps = true
     -- if t.gate_kind == ge_gate_left then
