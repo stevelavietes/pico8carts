@@ -43,11 +43,96 @@ function ef_out_cubic(amount)
  return (t*t*t+1)
 end
 
-local function ef_out_quart(amount)
+function ef_out_quart(amount)
  local t = amount - 1
  return -1 * (t*t*t*t- 1)
 end
 
+last_vel = 1/120
+function ef_spring_overdamped(amount)
+--  local ang_freq = 2 * 3.14159 * 0.5
+ local ang_freq = 2 * 3.14159 * 16
+ local damping_ratio = 2.012237624838491
+ local result, thing = spring_function(amount, last_vel, 1, damping_ratio, ang_freq, 1/60)
+--  local result, thing = spring_function(amount, last_vel, 1, 0.23, 16*3.14, 1/60)
+ last_vel = thing
+ return result
+end
+
+-- function ef_spring_criticallydamped(amount)
+-- --  local ang_freq = 2 * 3.14159 * 0.5
+--  local ang_freq = 2 * 3.14159 * 16
+--  local damping_ratio = 1
+--  local result, thing = spring_function(amount, last_vel, 1, damping_ratio, ang_freq, 1/60)
+--  last_vel = thing
+--  return result
+-- end
+
+function ef_spring_criticallydamped(amount)
+ local delta_t = 1/120
+ local vel = last_vel
+ local G = 1
+ local omega = 12
+
+ local vel_next = (
+  vel - omega * omega * delta_t * (amount - G)
+ ) / (
+  (1 + omega * delta_t) * (1 + omega* delta_t)
+ )
+ local x_next = amount + delta_t * vel_next
+
+ last_vel = vel_next
+
+ return x_next
+end
+
+function spring_function(
+ current,
+ vel,
+ target,
+ damping_ratio,
+ angular_frequency,
+ time_step
+)
+ local f = 1.0 + 2.0 * time_step * damping_ratio * angular_frequency
+ local ang_sq = angular_frequency * angular_frequency
+ local time_ang_fac = time_step * ang_sq
+ local time_ang_fac_time_step_sq = time_step * time_ang_fac
+ local det_inv = 1.0 / (f + time_ang_fac_time_step_sq)
+ local det_x = f * current + time_step * vel + time_ang_fac_time_step_sq * target
+ local det_v = vel + time_ang_fac * (target - current)
+
+ -- ignoring v for *now*
+
+ return det_x * det_inv, det_v * det_inv
+end
+
+
+-- /*
+--   x     - value             (input/output)
+--   v     - velocity          (input/output)
+--   xt    - target value      (input)
+--   zeta  - damping ratio     (input)
+--   omega - angular frequency (input)
+--   h     - time step         (input)
+-- */
+-- void Spring
+-- (
+--   float &x, float &v, float xt, 
+--   float zeta, float omega, float h
+-- )
+-- {
+--   const float f = 1.0f + 2.0f * h * zeta * omega;
+--   const float oo = omega * omega;
+--   const float hoo = h * oo;
+--   const float hhoo = h * hoo;
+--   const float detInv = 1.0f / (f + hhoo);
+--   const float detX = f * x + h * v + hhoo * xt;
+--   const float detV = v + hoo * (xt - x);
+--   x = detX * detInv;
+--   v = detV * detInv;
+-- }
+--
 crop = 0.30
 
 
@@ -98,6 +183,8 @@ gc_easing_functions = {
  make_easing_function("out quart", ef_out_quart),
  make_easing_function("out quart cropped", ef_out_quart_cropped),
  make_easing_function("kaneda", ef_out_quart),
+ make_easing_function("spring_overdamped", ef_spring_overdamped),
+ make_easing_function("spring critically damped", ef_spring_criticallydamped),
 }
 
 function make_ef_ui_single()
@@ -110,7 +197,7 @@ function make_ef_ui_single()
   current_loop_duration=120,
   direction=1,
   current_position=0,
-  loop = "once",
+  loop = "loop",
   smoke={},
   -- lightning={},
   update=function(t)
