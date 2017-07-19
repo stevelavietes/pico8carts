@@ -329,7 +329,10 @@ function _init()
     'back country',
    },
    function (t, i, s)
-    add_gobjs(make_snow_trans(slalom_start, 6))
+    function done_func()
+     slalom_start(1)
+    end
+    add_gobjs(make_snow_trans(done_func, 7))
     add_gobjs(make_debugmsg())
     -- add (
     --  s,
@@ -962,8 +965,8 @@ end
 
 function make_camera()
  return {
-  x=0,
-  y=30,
+  x=30,
+  y=60,
   low_pass=make_one_euro_filt(beta, mincutoff),
   delta_offset = 0,
   drift = false,
@@ -2044,8 +2047,9 @@ function make_snow_trans(done_func, final_color)
    -- if elapsed(g_tick) > 10 then
    --  del(g_objs, t)
    -- end
-   if elapsed(t.start) > 75 then
+   if elapsed(t.start) > 32 then
     del(g_objs, t)
+    done_func()
    end
    updateobjs(t.snow)
   end,
