@@ -238,7 +238,9 @@ function make_snow_particles()
  return {
   x=0,y=0,
   update=function(t)
-   add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
+   if g_state == ge_menu then
+    add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
+   end
   end,
   draw=function(t)
    process_particles()
@@ -312,6 +314,8 @@ function _init()
  g_flash_end = nil
  g_flash_color =nil 
 
+ g_state = ge_menu
+
  particle_array, particle_array_length = {}, 0
  stdinit()
 
@@ -325,21 +329,25 @@ function _init()
     'back country',
    },
    function (t, i, s)
-    add (
-     s,
-     make_trans(
-     function()
-      if i==0 then
-       -- slalom
-       -- slalom_course_menu()
-       slalom_start(1)
-      elseif i==1 then
-       -- back country
-       game_start()
-      end
-     end
-     )
-    )
+    add_gobjs(make_snow_trans(slalom_start, 6))
+    add_gobjs(make_debugmsg())
+    -- add (
+    --  s,
+    --  make_trans(
+    --  function()
+    --   if i==0 then
+    --    -- slalom
+    --    -- slalom_course_menu()
+    --    -- slalom_start(1)
+    --    slalom_start(1)
+    --    -- add_gobjs(make_snow_trans())
+    --   elseif i==1 then
+    --    -- back country
+    --    game_start()
+    --   end
+    --  end
+    --  )
+    -- )
    end
   )
  )
@@ -958,6 +966,8 @@ function make_camera()
   y=30,
   low_pass=make_one_euro_filt(beta, mincutoff),
   delta_offset = 0,
+  drift = false,
+  last_target_point = nil,
   update=function(t)
    local offset = 20
 
@@ -968,6 +978,16 @@ function make_camera()
    local new_offset = t.low_pass:filter(offset)
    t.delta_offset = new_offset - offset
    local target_point = vecadd(g_p1, vecmake(0, new_offset))
+
+   if not t.drift then
+    t.last_target_point = target_point
+    t.last_vel = g_p1.vel
+   else
+    target_point = t.last_target_point
+    vecset(t.last_target_point, vecadd(t.last_target_point, vecscale(t.last_vel, 0.2)))
+   end
+   -- vecset(t,target_point)
+
    vecset(t,veclerp(t,target_point,0.2,0.7))
 
    if g_shake_end and g_tick < g_shake_end then
@@ -1015,6 +1035,9 @@ ge_gate_left = 2
 ge_gate_right = 3
 ge_gate_next = 4
 
+ge_menu = 0
+ge_menu_trans = 1
+
 gate_str_map = {
  "start",
  "end",
@@ -1039,43 +1062,43 @@ tracks = {
    {vecmake(-32, 50),  0,  ge_gate_right},
    {vecmake(-66, 90),  0,  ge_gate_next},
    {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(12,  80),  0,  ge_gate_next},
-   {vecmake(62,  80),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(42, 80),  0,  ge_gate_next},
-   {vecmake(16, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(-32, 50),  0,  ge_gate_right},
-   {vecmake(-66, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(12,  80),  0,  ge_gate_next},
-   {vecmake(62,  80),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(42, 80),  0,  ge_gate_next},
-   {vecmake(16, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(-32, 50),  0,  ge_gate_right},
-   {vecmake(-66, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(12,  80),  0,  ge_gate_next},
-   {vecmake(62,  80),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(42, 80),  0,  ge_gate_next},
-   {vecmake(16, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(-32, 50),  0,  ge_gate_right},
-   {vecmake(-66, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(12,  80),  0,  ge_gate_next},
-   {vecmake(62,  80),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(42, 80),  0,  ge_gate_next},
-   {vecmake(16, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(12,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(42, 80),  0,  ge_gate_next},
+   -- {vecmake(16, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(-32, 50),  0,  ge_gate_right},
+   -- {vecmake(-66, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(12,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(42, 80),  0,  ge_gate_next},
+   -- {vecmake(16, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(-32, 50),  0,  ge_gate_right},
+   -- {vecmake(-66, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(12,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(42, 80),  0,  ge_gate_next},
+   -- {vecmake(16, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(-32, 50),  0,  ge_gate_right},
+   -- {vecmake(-66, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(12,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  80),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(62,  100),  0,  ge_gate_next},
+   -- {vecmake(42, 80),  0,  ge_gate_next},
+   -- {vecmake(16, 90),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
    {vecmake(0,   80), 16,  ge_gate_end},
   }
  },
@@ -1187,6 +1210,7 @@ function make_gate(gate_data, accum_y, starter_objects)
      g_timer:start()
     elseif t.gate_kind == ge_gate_end then
      g_timer:stop()
+     g_cam.drift = true
     elseif t.gate_kind == ge_gate_left then
      if g_p1.x > t.x  then
       flash = true
@@ -1962,6 +1986,73 @@ function trans(s)
   end
   b+=s*64
  end
+end
+
+function make_snow_chunk(src, tgt, col, size, nframes)
+ g_state = ge_menu_trans
+ return {
+  x=src.x,
+  y=src.y,
+  tgt=tgt,
+  col=col,
+  size=size,
+  start=g_tick,
+  nframes=nframes,
+  update=function(t)
+   vecset(t, veclerp(t, t.tgt, elapsed(t.start)/t.nframes))
+  end,
+  draw=function(t)
+   -- rectfill(0,0, t.size, t.size, t.col)
+   -- if t.col != 7 then
+    circfill(0, 0, t.size, t.col)
+   -- else
+   -- rectfill(-t.size-4, -t.size-4, t.size, t.size, t.col)
+   -- rectfill(-t.size, -t.size, t.size, t.size, t.col)
+   -- end
+   -- rectfill(t.x, t.y, t.x+t.size, t.y+t.size, 11)
+  end
+ }
+end
+
+function make_snow_trans(done_func, final_color)
+ local snow = {}
+ local topsnow = {}
+ local topsize =  16
+ for i=1,128/topsize do
+  for j=1,128/topsize do
+   local tgt = vecscale(vecmake(i,j), topsize)
+   local src = vecsub(
+    tgt,
+    vecsub(vecmake(256), vecflr(vecscale(vecrand(16), 8)))
+   )
+   local size = topsize+rnd(topsize/4)--+ topsize/2
+   local col = flr(rnd(2))+6
+   add(snow, make_snow_chunk(src, tgt, col, size, 30 + rnd(15)))
+   if col != final_color then
+    add(snow, make_snow_chunk(vecsub(src, vecmake(128)), tgt, final_color, size, 60 + rnd(15)))
+   end
+  end
+ end
+
+ return {
+  x=0,
+  y=0,
+  start=g_tick,
+  space=sp_screen_native,
+  snow=snow,
+  update=function(t)
+   -- if elapsed(g_tick) > 10 then
+   --  del(g_objs, t)
+   -- end
+   if elapsed(t.start) > 75 then
+    del(g_objs, t)
+   end
+   updateobjs(t.snow)
+  end,
+  draw=function(t)
+   drawobjs(t.snow)
+  end,
+ }
 end
 
 function make_trans(f,d,i)
