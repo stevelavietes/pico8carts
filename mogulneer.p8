@@ -238,7 +238,7 @@ function make_snow_particles()
  return {
   x=0,y=0,
   update=function(t)
-   if g_state == ge_menu then
+   if g_state == ge_state_menu then
     add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
    end
   end,
@@ -314,7 +314,7 @@ function _init()
  g_flash_end = nil
  g_flash_color =nil 
 
- g_state = ge_menu
+ g_state = ge_state_menu
 
  particle_array, particle_array_length = {}, 0
  stdinit()
@@ -1038,8 +1038,9 @@ ge_gate_left = 2
 ge_gate_right = 3
 ge_gate_next = 4
 
-ge_menu = 0
-ge_menu_trans = 1
+ge_state_menu = 0
+ge_state_menu_trans = 1
+ge_state_playing = 2
 
 gate_str_map = {
  "start",
@@ -1451,6 +1452,7 @@ function slalom_course_menu()
 end
 
 function slalom_start(track_ind)
+ g_state = ge_state_playing
  g_objs = {
   make_bg(),
   make_debugmsg(),
@@ -1801,7 +1803,7 @@ function updateobjs(objs)
 end
 
 function stddraw()
- if g_state != ge_menu_trans then
+ if g_state != ge_state_menu_trans then
   cls()
  end
  drawobjs(g_objs)
@@ -2016,22 +2018,23 @@ function trans(s)
 end
 
 function make_snow_chunk(src, tgt, col, size, nframes)
- g_state = ge_menu_trans
+ g_state = ge_state_menu_trans
+ local start = g_tick
  return {
   x=src.x,
   y=src.y,
-  tgt=tgt,
-  col=col,
-  size=size,
-  start=g_tick,
-  nframes=nframes,
+  -- tgt=tgt,
+  -- col=col,
+  -- size=size,
+  -- start=g_tick,
+  -- nframes=nframes,
   update=function(t)
-   vecset(t, veclerp(t, t.tgt, elapsed(t.start)/t.nframes))
+   vecset(t, veclerp(t, tgt, elapsed(start)/nframes))
   end,
   draw=function(t)
    -- rectfill(0,0, t.size, t.size, t.col)
    -- if t.col != 7 then
-    circfill(0, 0, t.size, t.col)
+    circfill(0, 0, size, col)
    -- else
    -- rectfill(-t.size-4, -t.size-4, t.size, t.size, t.col)
    -- rectfill(-t.size, -t.size, t.size, t.size, t.col)
@@ -2042,6 +2045,9 @@ function make_snow_chunk(src, tgt, col, size, nframes)
 end
 
 function make_snow_trans(done_func, final_color)
+ if g_state == ge_state_menu_trans then
+  return
+ end
  local snow = {}
  local topsize =  16
  for i=1,128,topsize do
@@ -2069,21 +2075,21 @@ function make_snow_trans(done_func, final_color)
   end
  end
 
+ local start=g_tick
  return {
   x=0,
   y=0,
-  start=g_tick,
   space=sp_screen_native,
   snow=snow,
   update=function(t)
-   if elapsed(t.start) > 32 then
+   if elapsed(start) > 32 then
     del(g_objs, t)
     done_func()
    end
-   updateobjs(t.snow)
+   updateobjs(snow)
   end,
   draw=function(t)
-   drawobjs(t.snow)
+   drawobjs(snow)
   end,
  }
 end
