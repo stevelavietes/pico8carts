@@ -1184,6 +1184,24 @@ function make_clock()
  }
 end
 
+function make_score_display()
+ return {
+  x=0,
+  y=0,
+  draw=function(t)
+   print("score", 64, 64, 5)
+  end
+ }
+end
+
+function make_score_screen(timer)
+ g_objs = {
+  make_bg(),
+  make_score_display(),
+  timer,
+ }
+end
+
 function make_gate(gate_data, accum_y, starter_objects)
  local index = #starter_objects + 1
  local gate_kind = gate_data[3]
@@ -1214,6 +1232,10 @@ function make_gate(gate_data, accum_y, starter_objects)
     elseif t.gate_kind == ge_gate_end then
      g_timer:stop()
      g_cam.drift = true
+     function done_func()
+      make_score_screen(g_timer)
+     end
+     add_gobjs(make_snow_trans(done_func, 7))
     elseif t.gate_kind == ge_gate_left then
      if g_p1.x > t.x  then
       flash = true
@@ -1779,7 +1801,9 @@ function updateobjs(objs)
 end
 
 function stddraw()
- cls()
+ if g_state != ge_menu_trans then
+  cls()
+ end
  drawobjs(g_objs)
 
  if g_flash_end and g_tick < g_flash_end then
@@ -2019,20 +2043,28 @@ end
 
 function make_snow_trans(done_func, final_color)
  local snow = {}
- local topsnow = {}
  local topsize =  16
- for i=1,128/topsize do
-  for j=1,128/topsize do
-   local tgt = vecscale(vecmake(i,j), topsize)
+ for i=1,128,topsize do
+  for j=1,128,topsize do
+   local tgt = vecmake(i,j)
    local src = vecsub(
     tgt,
     vecsub(vecmake(256), vecflr(vecscale(vecrand(16), 8)))
    )
-   local size = topsize+rnd(topsize/4)--+ topsize/2
+   local size = topsize+rnd(topsize/4)
    local col = flr(rnd(2))+6
    add(snow, make_snow_chunk(src, tgt, col, size, 30 + rnd(15)))
    if col != final_color then
-    add(snow, make_snow_chunk(vecsub(src, vecmake(128)), tgt, final_color, size, 60 + rnd(15)))
+    add(
+     snow,
+     make_snow_chunk(
+      vecsub(src, vecmake(128)),
+      tgt,
+      final_color,
+      size,
+      60 + rnd(15)
+     )
+    )
    end
   end
  end
@@ -2044,9 +2076,6 @@ function make_snow_trans(done_func, final_color)
   space=sp_screen_native,
   snow=snow,
   update=function(t)
-   -- if elapsed(g_tick) > 10 then
-   --  del(g_objs, t)
-   -- end
    if elapsed(t.start) > 32 then
     del(g_objs, t)
     done_func()
