@@ -971,7 +971,12 @@ function make_camera()
   delta_offset = 0,
   drift = false,
   last_target_point = nil,
+  drift_start = nil,
   update=function(t)
+   if g_state != ge_state_playing then
+    return
+   end
+
    local offset = 20
 
    if g_p1.vel then
@@ -986,8 +991,19 @@ function make_camera()
     t.last_target_point = target_point
     t.last_vel = g_p1.vel
    else
+    if not t.drift_start then
+     t.drift_start = g_tick
+    end
     target_point = t.last_target_point
-    vecset(t.last_target_point, vecadd(t.last_target_point, vecscale(t.last_vel, 0.2)))
+    if elapsed(t.drift_start) < 20 then
+     vecset(
+      t.last_target_point,
+      vecadd(
+       t.last_target_point,
+       veclerp(t.last_vel, null_v, elapsed(t.drift_start)/10)
+      )
+     )
+    end
    end
    -- vecset(t,target_point)
 
@@ -1185,22 +1201,94 @@ function make_clock()
  }
 end
 
-function make_score_display()
+function make_score_display(base_timer)
+ local timer = {
+  m=base_timer.m,
+  c=base_timer.c,
+  s=base_timer.s
+ }
  return {
   x=0,
-  y=0,
+  y=-192,
+  start=vecmake(0, -192),
+  target=vecmake(0, -4),
+  frame=15,
+  duration=25,
+  space=sp_world,
+  update=function(t)
+   if t.frame < t.duration then
+    vecset(t, veclerp(t.start, t.target, smootherstep(t.frame/t.duration)))
+   end
+
+   if t.frame < t.duration + 0 then
+    t.frame += 1
+    for j=-32,32,8 do
+     for i=0,30 do
+      local off=vecrand(6, true)
+      add_particle(
+       j+t.x + off.x+rnd(6)-3,
+       t.y + off.y+rnd(6)-3,
+       0 + rnd(6)-3,
+       3+rnd(1),
+       8,
+       6,
+       0.5 
+      )
+     end
+    end
+   end
+  end,
   draw=function(t)
-   print("score", 64, 64, 5)
+   -- minutes
+   local gratz_str = "congratulations!"
+   local msg_str = "your final time was:"
+   g_cursor_y = -12 
+   print_cent(gratz_str, 14)
+   print_cent(msg_str, 14)
+
+   local m_t = 0
+   if timer.m > 10 then
+    m_t = min(9, flr(timer.m/10))
+   end
+   local m_o = timer.m - 10*flr(timer.m/10)
+   -- seconds
+   local s_t = 0
+   if timer.s > 10 then
+    s_t = min(9, flr(timer.s/10))
+   end
+   local s_o = timer.s - 10*flr(timer.s/10)
+   -- centoseconds
+   local c_t = 0
+   if timer.c > 10 then
+    c_t = min(9, flr(timer.c/10))
+   end
+   local c_o = timer.c - 10*flr(timer.c/10)
+   local x_off = -8*4
+   palt(3, true)
+   palt(0, false)
+   pal(7, 2)
+   pal(6, 14)
+   for i in all({m_t, m_o, 10, s_t, s_o, 10, c_t, c_o}) do
+    spr(196+i, x_off, 0, 1, 1, false, false)
+    x_off += 8
+   end
+   pal()
+   palt()
+   -- print("p: "..t.x.." "..t.y, -12, 12, 11)
+   process_particles(sp_world)
   end
  }
 end
 
 function make_score_screen(timer)
  g_objs = {
-  make_bg(),
-  make_score_display(),
-  timer,
+  make_bg(7),
+  make_score_display(timer),
+  -- make_debugmsg(),
  }
+ g_cam= nil
+ g_p1 = nil
+ g_cam = vecmake()
 end
 
 function make_gate(gate_data, accum_y, starter_objects)
@@ -1219,6 +1307,7 @@ function make_gate(gate_data, accum_y, starter_objects)
   missed=false,
   passed=nil,
   spr_ind=68,
+  celebrate = false,
   update=function(t)
    -- @TODO: left (red) gates are offset from their origin, this messes up the missed/calculation)
    local flash = false
@@ -1236,7 +1325,8 @@ function make_gate(gate_data, accum_y, starter_objects)
      function done_func()
       make_score_screen(g_timer)
      end
-     add_gobjs(make_snow_trans(done_func, 7))
+     add_gobjs(make_snow_trans(done_func, 7, 45))
+     t.celebrate = g_tick
     elseif t.gate_kind == ge_gate_left then
      if g_p1.x > t.x  then
       flash = true
@@ -1273,6 +1363,19 @@ function make_gate(gate_data, accum_y, starter_objects)
     -- flag
     for i=1,gate_flag_height do
      for xdir=-1,1,2 do
+      for j=1,2 do
+       if t.celebrate then
+        add_particle(
+         t.x + xdir * t.radius,
+         t.y,
+         rnd(4)-2,
+         -rnd(3)-1,
+         10,
+         rnd(14)+2,
+         0.5
+        )
+       end
+      end
       line(
       xdir*t.radius, -gate_flag_height_offset - i,
       xdir*t.radius + xdir*gate_flag_width, -gate_flag_height_offset - i,
@@ -1454,7 +1557,7 @@ end
 function slalom_start(track_ind)
  g_state = ge_state_playing
  g_objs = {
-  make_bg(),
+  make_bg(7),
   make_debugmsg(),
  }
 
@@ -1475,7 +1578,7 @@ end
 
 function game_start()
  g_objs = {
-  make_bg(),
+  make_bg(7),
   make_mountain("back_country"),
   make_debugmsg(),
  }
@@ -1492,13 +1595,14 @@ function game_start()
 --  add(g_objs,g_tgt)
 end
 
-function make_bg()
+function make_bg(col)
+ if col == nil then
+  col = 7
+ end
  return {
-  x=0,
-  y=0,
   space=sp_screen_native,
   draw=function(t)
-   rectfill(0,0,128,128, 7)
+   rectfill(0,0,128,128, col)
   end
  }
 end
@@ -2017,9 +2121,8 @@ function trans(s)
  end
 end
 
-function make_snow_chunk(src, tgt, col, size, nframes)
- g_state = ge_state_menu_trans
- local start = g_tick
+function make_snow_chunk(src, tgt, col, size, nframes, delay)
+ local start = g_tick+delay
  return {
   x=src.x,
   y=src.y,
@@ -2044,9 +2147,12 @@ function make_snow_chunk(src, tgt, col, size, nframes)
  }
 end
 
-function make_snow_trans(done_func, final_color)
+function make_snow_trans(done_func, final_color, delay)
  if g_state == ge_state_menu_trans then
   return
+ end
+ if not delay then
+  delay = 0
  end
  local snow = {}
  local topsize =  16
@@ -2059,7 +2165,7 @@ function make_snow_trans(done_func, final_color)
    )
    local size = topsize+rnd(topsize/4)
    local col = flr(rnd(2))+6
-   add(snow, make_snow_chunk(src, tgt, col, size, 30 + rnd(15)))
+   add(snow, make_snow_chunk(src, tgt, col, size, 30 + rnd(15), delay))
    if col != final_color then
     add(
      snow,
@@ -2068,7 +2174,8 @@ function make_snow_trans(done_func, final_color)
       tgt,
       final_color,
       size,
-      60 + rnd(15)
+      60 + rnd(15),
+      delay
      )
     )
    end
@@ -2082,14 +2189,19 @@ function make_snow_trans(done_func, final_color)
   space=sp_screen_native,
   snow=snow,
   update=function(t)
-   if elapsed(start) > 32 then
-    del(g_objs, t)
-    done_func()
+   if elapsed(start) > delay then
+    g_state = ge_state_menu_trans
+    if elapsed(start) - delay > 28 then
+     del(g_objs, t)
+     done_func()
+    end
+    updateobjs(snow)
    end
-   updateobjs(snow)
   end,
   draw=function(t)
-   drawobjs(snow)
+   if elapsed(start) > delay then
+    drawobjs(snow)
+   end
   end,
  }
 end
@@ -2219,14 +2331,14 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-cccccccccccccccccccccccccccccccc377777733377773337777773377777733777777337777773377777733777777300000000000000000000000000000000
-cccccccccccccccccccccccccccccccc376666733376673337666673376666733767767337666673376666733766667300000000000000000000000000000000
-cccccccccccccccccccccccccccccccc376776733377673337777673377776733767767337677773376777733777767300000000000000000000000000000000
-cccccccccccccccccccccccccccccccc376776733307673337666673307666733766667337666673376666733000767300000000000000000000000000000000
-cccccccccccccccccccccccccccccccc376776733337673337677773377776733777767337777673376776733333767300000000000000000000000000000000
-ccccccccccccccc1111ccccccccccccc376666733337673337666673376666733000767337666673376666733333767300000000000000000000000000000000
-cccccccccccccc117711cccccccccccc377777733337773337777773377777733333777337777773377777733333777300000000000000000000000000000000
-cccccccccccccc177771cccccccccccc300000033330003330000003300000033333000330000003300000033333000300000000000000000000000000000000
+cccccccccccccccccccccccccccccccc377777733377773337777773377777733777777337777773377777733777777337777773377777733333333300000000
+cccccccccccccccccccccccccccccccc376666733376673337666673376666733767767337666673376666733766667337666673376666733337773300000000
+cccccccccccccccccccccccccccccccc376776733377673337777673377776733767767337677773376777733777767337677673376776733337673300000000
+cccccccccccccccccccccccccccccccc376776733307673337666673307666733766667337666673376666733000767337666673376666733337773300000000
+cccccccccccccccccccccccccccccccc376776733337673337677773377776733777767337777673376776733333767337677673377776733337673300000000
+ccccccccccccccc1111ccccccccccccc376666733337673337666673376666733000767337666673376666733333767337666673300076733337773300000000
+cccccccccccccc117711cccccccccccc377777733337773337777773377777733333777337777773377777733333777337777773333377733330003300000000
+cccccccccccccc177771cccccccccccc300000033330003330000003300000033333000330000003300000033333000330000003333300033333333300000000
 ccccccccccccc11777711ccccccccccc377777733777777300000000000000000000000000000000000000000000000000000000000000000000000000000000
 ccc777ccccccc17777771ccccccccccc376666733766667300000000000000000000000000000000000000000000000000000000000000000000000000000000
 cc77777ccccc117777771ccccccccccc376776733767767300000000000000000000000000000000000000000000000000000000000000000000000000000000
