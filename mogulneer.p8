@@ -1403,7 +1403,7 @@ function make_gate(gate_data, accum_y, starter_objects)
     -- circ(0, 0, 0, 11)
     if t.missed then
      -- @TODO: add more juice?
-     circ(-offset, 0, 4, 8)
+     circ(0, 0, 4, 8)
      -- circ(0, 0, 5, 8)
     end
     if t.passed != nil and not t.missed then
