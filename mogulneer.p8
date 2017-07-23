@@ -1081,7 +1081,7 @@ tracks = {
    {vecmake(0,    0), 32, ge_gate_start},
    {vecmake(-32, 50),  0,  ge_gate_right},
    {vecmake(-66, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
+   -- {vecmake(-2, 100),  0,  ge_gate_next},
    -- {vecmake(12,  80),  0,  ge_gate_next},
    -- {vecmake(62,  80),  0,  ge_gate_next},
    -- {vecmake(62,  100),  0,  ge_gate_next},
@@ -1295,7 +1295,11 @@ function make_gate(gate_data, accum_y, starter_objects)
  local index = #starter_objects + 1
  local gate_kind = gate_data[3]
  if gate_kind == ge_gate_next then
-  gate_kind = ge_gate_right - starter_objects[#starter_objects].gate_kind + ge_gate_left
+  gate_kind = (
+   ge_gate_right 
+   - starter_objects[#starter_objects].gate_kind 
+   + ge_gate_left
+  )
  end
  local result = {
   x=gate_data[1].x,
@@ -1354,15 +1358,12 @@ function make_gate(gate_data, accum_y, starter_objects)
     return
    end
    if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
-    -- stem -left
-    line(-t.radius, 0, -t.radius, -gate_height, gate_stem_color)
-
-    -- stem-right
-    line(t.radius, 0, t.radius, -gate_height, gate_stem_color)
-
     -- flag
-    for i=1,gate_flag_height do
-     for xdir=-1,1,2 do
+    for xdir=-1,1,2 do
+     -- stem
+     line(xdir * t.radius, 0, xdir*t.radius, -gate_height, gate_stem_color)
+     for i=1,gate_flag_height do
+      -- confetti
       for j=1,2 do
        if t.celebrate then
         add_particle(
@@ -1375,26 +1376,32 @@ function make_gate(gate_data, accum_y, starter_objects)
          0.5
         )
        end
-      end
+      -- 
       line(
-      xdir*t.radius, -gate_flag_height_offset - i,
-      xdir*t.radius + xdir*gate_flag_width, -gate_flag_height_offset - i,
-      8
+       xdir*t.radius, -gate_flag_height_offset - i,
+       xdir*t.radius + xdir*gate_flag_width, -gate_flag_height_offset - i,
+       8
       )
+      end
      end
     end
    else
     local offset=0
-    -- stem -left
-    -- line(0, 0, 0, -gate_height, gate_stem_color)
     local flip = false
     if t.gate_kind == ge_gate_left then
      flip = true
-     offset = -7
+
+     -- because the sprite is on the left pixel of a 16 wide sprite
+     offset = -15  
      pal(12, 8)
      pal(1, 2)
     end
+    -- for debugging gate location
+    -- circ(0, 0, 5, 9)
+    -- circ(0, 0, 1, 9)
+    -- circ(0, 0, 0, 11)
     if t.missed then
+     -- @TODO: add more juice?
      circ(-offset, 0, 4, 8)
      -- circ(0, 0, 5, 8)
     end
