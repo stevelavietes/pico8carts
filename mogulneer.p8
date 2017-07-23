@@ -1313,13 +1313,9 @@ function make_gate(gate_data, accum_y, starter_objects)
   spr_ind=68,
   celebrate = false,
   update=function(t)
-   -- @TODO: left (red) gates are offset from their origin, this messes up the missed/calculation)
    local flash = false
    if abs(g_p1.y - t.y) < 0.5 then
     t.overlaps = true
-    -- if t.gate_kind == ge_gate_left then
-    --  stop()
-    -- end
    elseif t.overlaps or (g_p1.y < t.y and g_p1.y + g_p1.vel.y > t.y) then
     if t.gate_kind == ge_gate_start then
      g_timer:start()
