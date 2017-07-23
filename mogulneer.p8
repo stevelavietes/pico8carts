@@ -194,13 +194,18 @@ collision_objects = {
 
 -- { debug stuff can be deleted
 function make_debugmsg()
+ local maxmem=stat(2)
+ local minmem=stat(2)
  return {
   space=sp_screen_native,
   draw=function(t)
+   maxmem = max(maxmem, stat(0)/1024)
+   -- minmem = min(minmem, stat(2))
    color(14)
    cursor(1,1)
    print("cpu: ".. stat(1))
-   print("mem: ".. stat(2))
+   print("mem: ".. stat(0)/1024)
+   print(" max:" ..maxmem)
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
     print("d_o: ".. g_cam.delta_offset)
