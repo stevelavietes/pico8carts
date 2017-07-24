@@ -290,16 +290,6 @@ function spray_particles()
  }
 end
 
-function make_title_bg()
- return {
-  x=0,
-  y=0,
-  draw=function()
-   rectfill(0,0,127,127,6)
-  end,
- }
-end
-
 function make_title()
  return {
   x=7,
@@ -324,7 +314,7 @@ function _init()
  particle_array, particle_array_length = {}, 0
  stdinit()
 
- add_gobjs(make_title_bg())
+ add_gobjs(make_bg(6))
  add_gobjs(make_title())
  add_gobjs(make_snow_particles())
  add_gobjs(
@@ -335,7 +325,11 @@ function _init()
    },
    function (t, i, s)
     function done_func()
-     slalom_start(1)
+     if i==0 then
+      slalom_start(1)
+     else
+      game_start()
+     end
     end
     add_gobjs(make_snow_trans(done_func, 7))
     add_gobjs(make_debugmsg())
@@ -1610,7 +1604,7 @@ function make_bg(col)
  return {
   space=sp_screen_native,
   draw=function(t)
-   rectfill(0,0,128,128, col)
+   stdclscol(col)
   end
  }
 end
@@ -1914,10 +1908,16 @@ function updateobjs(objs)
  end)
 end
 
+-- use whatever the current optimal method is for drawing this stuff
+function stdcls()
+ rectfill(127,127,0,0,0)
+end
+
+function stdclscol(col)
+ rectfill(127,127,0,0,col)
+end
+
 function stddraw()
- if g_state != ge_state_menu_trans then
-  cls()
- end
  drawobjs(g_objs)
 
  if g_flash_end and g_tick < g_flash_end then
