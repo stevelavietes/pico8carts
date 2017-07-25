@@ -1579,6 +1579,7 @@ end
 
 
 function backcountry_start()
+ g_state = ge_state_playing
  g_objs = {
   make_bg(7),
   make_mountain("back_country"),
