@@ -328,7 +328,7 @@ function _init()
      if i==0 then
       slalom_start(1)
      else
-      game_start()
+      backcountry_start()
      end
     end
     add_gobjs(make_snow_trans(done_func, 7))
@@ -345,7 +345,7 @@ function _init()
     --    -- add_gobjs(make_snow_trans())
     --   elseif i==1 then
     --    -- back country
-    --    game_start()
+    --    backcountry_start()
     --   end
     --  end
     --  )
@@ -1578,7 +1578,7 @@ function slalom_start(track_ind)
 end
 
 
-function game_start()
+function backcountry_start()
  g_objs = {
   make_bg(7),
   make_mountain("back_country"),
