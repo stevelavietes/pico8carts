@@ -206,6 +206,7 @@ function make_debugmsg()
    print("cpu: ".. stat(1))
    print("mem: ".. stat(0)/1024)
    print(" max:" ..maxmem)
+   print("gst: "..state_map[g_state])
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
     print("d_o: ".. g_cam.delta_offset)
@@ -316,6 +317,7 @@ function _init()
 
  add_gobjs(make_bg(6))
  add_gobjs(make_title())
+ add_gobjs(make_debugmsg())
  add_gobjs(make_snow_particles())
  add_gobjs(
    make_menu(
@@ -1057,6 +1059,11 @@ ge_state_menu = 0
 ge_state_menu_trans = 1
 ge_state_playing = 2
 
+state_map = {}
+state_map[0] = "menu"
+state_map[1] = "menu_trans"
+state_map[2] = "playing"
+
 gate_str_map = {
  "start",
  "end",
@@ -1283,7 +1290,7 @@ function make_score_screen(timer)
  g_objs = {
   make_bg(7),
   make_score_display(timer),
-  -- make_debugmsg(),
+  make_debugmsg(),
  }
  g_cam= nil
  g_p1 = nil
@@ -2130,6 +2137,7 @@ function trans(s)
  end
 end
 
+-- @TODO: switch to a table approach instead of object based 
 function make_snow_chunk(src, tgt, col, size, nframes, delay)
  local start = g_tick+delay
  return {
