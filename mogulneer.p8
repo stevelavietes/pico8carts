@@ -807,6 +807,7 @@ function make_player(p)
    local pose = flr((t.angle + 0.25)*16)
 
    -- trail renderer
+   -- @TODO: make this render behind the trees
    for i=2,#t.trail_points do
     for x_off in all({-1, 1}) do
      local p1 = vecsub(t.trail_points[i-1], t)
@@ -1219,6 +1220,7 @@ function make_score_display(base_timer)
   start=vecmake(0, -192),
   target=vecmake(0, -4),
   frame=15,
+  made=g_tick,
   duration=25,
   space=sp_world,
   update=function(t)
@@ -1242,6 +1244,28 @@ function make_score_display(base_timer)
       )
      end
     end
+   end
+   if t.made and elapsed(t.made) > 45 then
+    t.made = nil
+    add_gobjs(
+     make_menu(
+      {
+       'try slalom again',
+       'main menu',
+      },
+      function (t, i, s)
+       local function done_func()
+        if i==0 then
+         slalom_start(1)
+        else
+         _init()
+        end
+       end
+       add_gobjs(make_snow_trans(done_func, 7))
+       add_gobjs(make_debugmsg())
+      end
+     )
+    )
    end
   end,
   draw=function(t)
@@ -1295,6 +1319,7 @@ function make_score_screen(timer)
  g_cam= nil
  g_p1 = nil
  g_cam = vecmake()
+ g_state = ge_state_menu
 end
 
 function make_gate(gate_data, accum_y, starter_objects)
@@ -2165,7 +2190,8 @@ function make_snow_chunk(src, tgt, col, size, nframes, delay)
 end
 
 function make_snow_trans(done_func, final_color, delay)
- if g_state == ge_state_menu_trans then
+ -- if there is already a transition, don't create a new one.
+ if g_trans then
   return
  end
  if not delay then
@@ -2200,7 +2226,7 @@ function make_snow_trans(done_func, final_color, delay)
  end
 
  local start=g_tick
- return {
+ g_trans = {
   x=0,
   y=0,
   space=sp_screen_native,
@@ -2210,6 +2236,7 @@ function make_snow_trans(done_func, final_color, delay)
     g_state = ge_state_menu_trans
     if elapsed(start) - delay > 28 then
      del(g_objs, t)
+     g_trans = nil
      done_func()
     end
     updateobjs(snow)
@@ -2221,6 +2248,7 @@ function make_snow_trans(done_func, final_color, delay)
    end
   end,
  }
+ return g_trans
 end
 
 function make_trans(f,d,i)
