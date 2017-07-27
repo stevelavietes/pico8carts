@@ -1684,6 +1684,15 @@ function make_line(g1, g2)
  }
 end
 
+function backcountry_random_tree_loc(y_loc)
+ local off = vecmake()
+ if g_cam then
+  off = g_cam
+ end
+
+ return vecmake(off.x + rnd(192)-96, y_loc)
+end
+
 function make_mountain(kind, track_ind)
  local trees = {}
  local starter_objects = {}
@@ -1711,37 +1720,43 @@ function make_mountain(kind, track_ind)
   for g_obj in all(gates) do
    add(starter_objects, g_obj)
   end
- end
 
- local current_line = 1
- -- i want to place trees 80 units back and 80 units forward
- for i=0,16 do
-  local y_c = i*10-80
-  local l = lines[current_line]
-  if y_c > l.g2.y then
-   current_line += 1
-   l = lines[current_line]
-  end
-  -- if i > l.g2 then
-  --  current_line =+ 1 
-  -- end
-  -- get the boundaries for the height
-  for off=-1,1,2 do
-   for j=1,4 do
-    -- local off_x = off*30
-    local off_x = off*90
-    local rndloc = vecmake(
-     rnd(40)-20 + off_x + l:x_coordinte(y_c),
-     rnd(12)-6 + y_c
-    )
-    add(trees, make_tree(rndloc))
+  local current_line = 1
+  -- i want to place trees 80 units back and 80 units forward
+  for i=0,16 do
+   local y_c = i*10-80
+   local l = lines[current_line]
+   if y_c > l.g2.y then
+    current_line += 1
+    l = lines[current_line]
+   end
+   -- if i > l.g2 then
+   --  current_line =+ 1 
+   -- end
+   -- get the boundaries for the height
+   for off=-1,1,2 do
+    for j=1,4 do
+     -- local off_x = off*30
+     local off_x = off*90
+     local rndloc = vecmake(
+      rnd(40)-20 + off_x + l:x_coordinte(y_c),
+      rnd(12)-6 + y_c
+     )
+     add(trees, make_tree(rndloc))
+    end
    end
   end
+ else
+  -- backcountry mode
+  for i=0,25 do
+   local rndloc = backcountry_random_tree_loc(i*12-300)
+   add(trees, make_tree(rndloc, true))
+  end
+  for i=0,5 do
+   local rndloc = vecmake(rnd(128)-64, i*120-300)
+   add(trees, make_rock(rndloc))
+  end
  end
---  for i=0,5 do
---   local rndloc = vecmake(rnd(128)-64, i*120-300)
---   add(trees, make_rock(rndloc))
---  end
  return {
   x=0,
   y=0,
@@ -1764,9 +1779,12 @@ function make_mountain(kind, track_ind)
 
    -- check to see if we need to bump the tree down
    if kind != "slalom" then
-    for o in all(t.c_objs) do
+    for o in all(t.p_objs) do
      if g_cam.y - o.y > 300 then
-      vecset(o, vecmake(rnd(128)-64, g_cam.y + 300))
+      vecset(o, backcountry_random_tree_loc(g_cam.y))
+     elseif abs(g_cam.x - o.x) > 60 then
+      -- vecset(o, backcountry_random_tree_loc(5))
+      -- vecset(o, backcountry_random_tree_loc(g_cam.y))
      else
       if overlaps_bounds(o, g_p1) and not g_p1.crashed then
        g_p1.crashed = true
@@ -1811,7 +1829,7 @@ function make_boundary(xmin, xmax)
  }
 end
 
-function make_tree(loc)
+function make_tree(loc, anywhere)
  return {
   x=loc.x,
   y=loc.y,
@@ -1822,12 +1840,16 @@ function make_tree(loc)
   update=function(t)
    if g_cam.y - t.y > 80 then
     t.y += 160
-    local flip = 110
-    local rnd_off = rnd(80) - 40
-    if rnd(1) > 0.5 then
-     flip *= -1
+    if anywhere then
+     t.x = rnd(128)-64
+    else
+     local flip = 110
+     local rnd_off = rnd(80) - 40
+     if rnd(1) > 0.5 then
+      flip *= -1
+     end
+     t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
     end
-    t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
    end
   end,
   draw=function(t)
