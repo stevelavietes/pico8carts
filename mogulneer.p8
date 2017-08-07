@@ -209,7 +209,8 @@ function make_debugmsg()
    print("gst: "..state_map[g_state])
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
-    print("d_o: ".. g_cam.delta_offset)
+    print("ang: ".. g_p1.angle)
+    -- print("d_o: ".. g_cam.delta_offset)
    end
   end
  }
@@ -530,39 +531,26 @@ function make_player(p)
    local brake = false
    if btn(0, t.p) then
     -- right
-    -- t.angle -= 0.01
-    -- max(t.angle, -0.5)
-    -- if t.pose == 4 then
-    --  t.pose = -4
-    -- elseif t.pose > -4 then
-    --  t.pose -= 1
-    -- end
     loaded_ski = g_ski_right
+    if t.angle == -0.5 then
+     -- push right
+     t.vel = vecadd(t.vel, vecmake(-0.5, 0))
+    end
    end 
    if btn(1, t.p) then
     -- left
-    -- t.angle += 0.01
-    -- min(t.angle, -0.5)
-    -- if t.pose == -4 then
-    --  t.pose = 4
-    -- elseif t.pose < 4 then
-    --  t.pose += 1
-    -- end
     if loaded_ski != g_ski_none then
      loaded_ski = g_ski_both
     else
      loaded_ski = g_ski_left
     end
+    if t.angle == 0 then
+     -- push right
+     t.vel = vecadd(t.vel, vecmake(0.5, 0))
+    end
    end
    if btnn(2, t.p) then
     -- up
-    -- if abs(t.pose) > 0 and abs(t.pose) < 4 then
-    --  local dir = 1
-    --  if t.pose < 0 then
-    --   dir = -1
-    --  end
-    --  t.pose += dir
-    -- end
     if abs(t.angle) < 0.25 then
      t.angle = 0
     else
@@ -571,13 +559,6 @@ function make_player(p)
    end
    if btnn(3, t.p) then
     -- down
-    -- if abs(t.pose) > 0 then
-    --  local dir = -1
-    --  if t.pose < 0 then
-    --   dir = 1
-    --  end
-    --  t.pose += dir
-    -- end
     t.angle = -0.25
     loaded_ski = g_ski_none
    end
@@ -1786,11 +1767,11 @@ function make_mountain(kind, track_ind)
       -- vecset(o, backcountry_random_tree_loc(5))
       -- vecset(o, backcountry_random_tree_loc(g_cam.y))
      else
-      if overlaps_bounds(o, g_p1) and not g_p1.crashed then
-       g_p1.crashed = true
-       shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
-       flash_screen(4, 8)
-      end
+      -- if overlaps_bounds(o, g_p1) and not g_p1.crashed then
+      --  g_p1.crashed = true
+      --  shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+      --  flash_screen(4, 8)
+      -- end
      end
     end
    end
@@ -1993,6 +1974,7 @@ function drawobjs(objs)
  foreach(objs, function(t)
   if t.draw then
    local cam_stack = 0
+   local t_t = vecflr(t)
 
    -- i think the idea here is that if you're only drawing local,
    -- then you only need to push -t.x, -t.y
@@ -2003,11 +1985,11 @@ function drawobjs(objs)
     pushc(-64, -64)
     cam_stack += 1
    elseif t.space == sp_world and g_cam  then
-    pushc(g_cam.x - 64, g_cam.y - 64)
-    pushc(-t.x, -t.y)
+    pushc(flr(g_cam.x) - 64, flr(g_cam.y) - 64)
+    pushc(-t_t.x, -t_t.y)
     cam_stack += 2
    elseif not t.space or t.space == sp_local then
-    pushc(-t.x, -t.y)
+    pushc(-t_t.x, -t_t.y)
     cam_stack += 1
    elseif t.space == sp_screen_native then
    end
@@ -2190,23 +2172,11 @@ function make_snow_chunk(src, tgt, col, size, nframes, delay)
  return {
   x=src.x,
   y=src.y,
-  -- tgt=tgt,
-  -- col=col,
-  -- size=size,
-  -- start=g_tick,
-  -- nframes=nframes,
   update=function(t)
    vecset(t, veclerp(t, tgt, elapsed(start)/nframes))
   end,
   draw=function(t)
-   -- rectfill(0,0, t.size, t.size, t.col)
-   -- if t.col != 7 then
-    circfill(0, 0, size, col)
-   -- else
-   -- rectfill(-t.size-4, -t.size-4, t.size, t.size, t.col)
-   -- rectfill(-t.size, -t.size, t.size, t.size, t.col)
-   -- end
-   -- rectfill(t.x, t.y, t.x+t.size, t.y+t.size, 11)
+   circfill(0, 0, size, col)
   end
  }
 end
