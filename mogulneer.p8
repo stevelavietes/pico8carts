@@ -210,6 +210,11 @@ function make_debugmsg()
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
     print("ang: ".. g_p1.angle)
+    print("df:  ".. repr(g_p1.perp_dot))
+    if not g_p1.svp then
+     g_p1.svp = null_v
+    end
+    -- print("v_d:  ".. repr(vecdot(g_p1.svp, g_p1.vel)))
     -- print("d_o: ".. g_cam.delta_offset)
    end
   end
@@ -510,7 +515,6 @@ function make_player(p)
   bound_min=vecmake(-3, -4),
   bound_max=vecmake(2,0),
   angle=0, -- ski angle
-  density_and_drag_c = 0.05,
   load_left=0,
   load_right=0,
   turnyness=0,
@@ -570,19 +574,11 @@ function make_player(p)
    -- sets up the current direction of the skis, "brakes"
    t:loaded_ski(t.vel, loaded_ski, brake)
 
-   -- apply velocity and acceleration
-   local grav_accel = t:gravity_acceleration()
-   t.grav_accel = grav_accel
-   local drag_accel = t:drag_acceleration()
-   local brake_force = t:brake_force()
-   local total_accel = vecscale(
-    vecadd(vecadd(grav_accel, drag_accel), brake_force),
-    0.8
-   )
-   t.total_accel = total_accel
-   -- local total_accel = grav_accel
+   -- compute the acceleration
+   t.total_accel = t:acceleration()
 
-   t.vel = vecadd(t.vel, total_accel)
+   -- euler integration for now
+   t.vel = vecadd(t.vel, t.total_accel)
    t.vel = clamp_velocity(t.vel)
    vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
@@ -665,111 +661,29 @@ function make_player(p)
    return
    -- return vecfromangle(t.angle, vel_mag)
   end,
-  gravity_acceleration=function(t)
-   -- components of acceleration
-   -- gravity
-   -- drag
-   -- fd = 0.5 * density * velocity squared * drag coefficient * area
-   -- load (rotation force)
-   -- if abs(t.pose) >= 3 then
-   --  return null_v
-   -- end
-   --
-   -- local dir = 1
-   -- if t.pose < 0 then
-   --  dir = -1
-   -- end
+  acceleration=function(t)
+   local brake_force = t:brake_force()
 
-   -- gravity
-   -- return vecfromangle(t.angle, g_mogulneer_accel*sin(t.angle))
-   return vecmake(0, g_mogulneer_accel)
-  end,
-  drag_acceleration=function(t)
-   -- drag
-   -- local drag_accel = vecmake()
-
+   -- ski direction unit vector
    local ski_vec = vecfromangle(t.angle)
-
-   -- drag along the ski
-   t.drag_accel_along = vecscale(
-    ski_vec,
-    -1*0.2 * t.density_and_drag_c* vecdot(ski_vec, t.vel)
-   )
-
-   -- drag against
    local perpendicular = t.angle - 0.25
    if t.angle > -0.25 then
     perpendicular = t.angle + 0.25
    end
    local ski_vec_perp = vecfromangle(perpendicular)
-   t.drag_accel_against = vecadd(
-    vecscale(
-     ski_vec_perp,
-     -1 * t.density_and_drag_c* vecdot(ski_vec_perp, t.vel)
-    ),
-    vecscale(
-     ski_vec_perp,
-     vecdot(vecmake(0, -g_mogulneer_accel), ski_vec_perp)
-    )
-   )
+   t.svp = ski_vec_perp
 
-   return vecadd(t.drag_accel_along, t.drag_accel_against)
 
-   -- normal drag -- along the velocity
-   -- drag_accel = vecscale(
-   --  vecnormalized(t.vel),
-   --  -0.2 * t.density_and_drag_c * mag_vec
-   -- )
-   --
-   -- -- additional drag is on the current velocity that is 
-   -- local vel_angle = atan2(t.vel.x, t.vel.y)-1
-   -- -- interesting behavior here
-   -- if vel_angle == -0.75 then
-   --  vel_angle = -0.25
-   -- end
-   --
-   -- -- 0-1 scale of the difference between the vel angle and ski angle
-   -- t.vel_angle = 4*(min(abs(t.angle - vel_angle), 0.25))
-   -- local perpendicular = t.angle - 0.25
-   -- if t.angle > -0.25 then
-   --  perpendicular = t.angle + 0.25
-   -- end
-   --
-   -- t.vel_angle = 0.3 * mag_vec * sin(t.vel_angle)
-   --
-   -- -- drag_accel = vecadd(
-   -- --  drag_accel,
-   -- --  vecfromangle(perpendicular, 0.3 * mag_vec * sin(t.vel_angle))
-   -- -- )
-   -- drag_accel = vecscale(
-   --  vecnormalized(t.vel),
-   --  -0.2 * t.density_and_drag_c * mag_vec --  - 0.3 * mag_vec * sin(t.vel_angle)
-   --
-   -- )
-   --
-   -- -- drag_accel = vecfromangle(
-   -- --  t.angle,
-   -- --  -0.2 * t.density_and_drag_c * mag_vec
-   -- -- )
-   --
-   -- -- vecadd(
-   -- --  drag_accel,
-   -- --  vecfromangle(
-   -- --   8t.angle,
-   -- --   -0.2 * t.density_and_drag_c * mag_vec
-   -- --  )
-   -- -- )
-   --
-   -- -- todo: cap the acceleration by the velocity in a coponent.
-   -- -- drag_accel = vecminvec(drag_accel, vecscale(t.vel, -1))
-   --
-   --
-   -- return drag_accel
-   -- -- return veclerp(
-   -- --  vecmake(0, g_mogulneer_accel),
-   -- --  vecmake(dir*sqrt(g_mogulneer_accel), sqrt(g_mogulneer_accel)),
-   -- --  abs(t.pose)/3
-   -- -- )
+   -- component of gravity along the skis (acceleration)
+   local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
+
+   -- drag along the ski is against the component of velocity along the ski
+   t.drag_along = vecscale(ski_vec, -0.1 * vecdot(ski_vec, t.vel))
+
+   -- drag against
+   t.drag_against = vecscale(ski_vec_perp, -1 * vecdot(ski_vec_perp, t.vel))
+
+   return vecadd(g, vecadd(t.drag_along, t.drag_against))
   end,
   brake_force=function(t)
    if not t.wedge then
@@ -845,22 +759,22 @@ function make_player(p)
    -- print_cent("load_right: " .. t.load_right, 8)
    -- print_cent("pose: " .. t.pose, 8)
    -- print_cent("vel: " .. vecmag(t.vel), 8)
-   -- print_cent("drag acceleration: " .. repr(t:drag_acceleration()), 8)
+   -- print_cent("drag acceleration: " .. repr(t:drageration()), 8)
    -- print_cent("angle: " .. t.angle, 8)
 
    -- @{ acceleration components
    if t.grav_accel != nil then
     -- print_cent("v_g: " .. vecmag(t.grav_accel), 2)
-    -- print_cent("v_d_along: " .. vecmag(t.drag_accel_along), 12)
-    -- print_cent("v_d_against: " .. vecmag(t.drag_accel_against), 1)
+    -- print_cent("v_d_along: " .. vecmag(t.drag_along), 12)
+    -- print_cent("v_d_against: " .. vecmag(t.drag_against), 1)
     -- print_cent("v_t: " .. vecmag(t.total_accel), 9)
     -- print_cent("vel_ang: " .. t.vel_angle, 8)
     -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
-    -- vecdraw(t.drag_accel_along, 12)
-    -- vecdraw(t.drag_accel_against, 1)
-    -- vecdraw(t.total_accel, 9)
-    -- vecdraw(t.vel, 2)
-    -- vecdraw(t.vel, 11)
+    vecdraw(t.drag_along, 12)
+    vecdraw(t.drag_against, 1)
+    vecdraw(t.total_accel, 9)
+    vecdraw(t.vel, 2)
+    vecdraw(t.vel, 11)
    end
    -- print_cent("angle: " .. t.angle, 8)
    -- print_cent("pose: ".. pose, 8)
@@ -1081,24 +995,24 @@ tracks = {
    {vecmake(0,    0), 32, ge_gate_start},
    {vecmake(-32, 50),  0,  ge_gate_right},
    {vecmake(-66, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   -- {vecmake(12,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(42, 80),  0,  ge_gate_next},
-   -- {vecmake(16, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   -- {vecmake(-32, 50),  0,  ge_gate_right},
-   -- {vecmake(-66, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   -- {vecmake(12,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(42, 80),  0,  ge_gate_next},
-   -- {vecmake(16, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(12,  80),  0,  ge_gate_next},
+   {vecmake(62,  80),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(42, 80),  0,  ge_gate_next},
+   {vecmake(16, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(-32, 50),  0,  ge_gate_right},
+   {vecmake(-66, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(12,  80),  0,  ge_gate_next},
+   {vecmake(62,  80),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(62,  100),  0,  ge_gate_next},
+   {vecmake(42, 80),  0,  ge_gate_next},
+   {vecmake(16, 90),  0,  ge_gate_next},
+   {vecmake(-2, 100),  0,  ge_gate_next},
    -- {vecmake(-32, 50),  0,  ge_gate_right},
    -- {vecmake(-66, 90),  0,  ge_gate_next},
    -- {vecmake(-2, 100),  0,  ge_gate_next},
