@@ -523,6 +523,8 @@ function make_player(p)
   trail_points={},
   crashed=false,
   last_push=g_tick,
+  c_drag_along=0.01,
+  c_drag_against=0.1,
   update=function(t)
    if t.crashed then
     t.vel = vecscale(t.vel, 0.9)
@@ -678,10 +680,16 @@ function make_player(p)
    local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
 
    -- drag along the ski is against the component of velocity along the ski
-   t.drag_along = vecscale(ski_vec, -0.1 * vecdot(ski_vec, t.vel))
+   t.drag_along = vecscale(
+    ski_vec,
+    -t.c_drag_along * vecdot(ski_vec, t.vel)
+   )
 
    -- drag against
-   t.drag_against = vecscale(ski_vec_perp, -1 * vecdot(ski_vec_perp, t.vel))
+   t.drag_against = vecscale(
+    ski_vec_perp,
+    -t.c_drag_against * vecdot(ski_vec_perp, t.vel)
+   )
 
    return vecadd(g, vecadd(t.drag_along, t.drag_against))
   end,
