@@ -536,19 +536,26 @@ function make_player(p)
    end
    local loaded_ski = g_ski_none
    local brake = false
+   local tgt_dir = nil
    if btn(0, t.p) then
     -- left
-    loaded_ski = g_ski_right
+    tgt_dir = -0.5
+
     t:horizontal_push(0)
    end 
    if btn(1, t.p) then
     -- right
-    if loaded_ski != g_ski_none then
-     loaded_ski = g_ski_both
+
+    if tgt_dir != nil then
+     brake = true
     else
-     loaded_ski = g_ski_left
+     tgt_dir = 0
     end
     t:horizontal_push(1)
+   end
+   if btn(3, t.p) then
+    -- down
+    tgt_dir = -0.25
    end
    if btnn(2, t.p) then
     -- up
@@ -558,14 +565,9 @@ function make_player(p)
      t.angle = -0.5
     end
    end
-   if btnn(3, t.p) then
-    -- down
-    t.angle = -0.25
-    loaded_ski = g_ski_none
-   end
-
    if btn(4, t.p) then
     -- z
+    -- @TODO: jump
    end
    if btn(5, t.p) then
     -- loaded_ski = g_ski_both
@@ -574,7 +576,17 @@ function make_player(p)
    end
 
    -- sets up the current direction of the skis, "brakes"
-   t:loaded_ski(t.vel, loaded_ski, brake)
+   if tgt_dir then
+    if tgt_dir > t.angle then
+     t.angle = min(t.angle + 0.015, 0)
+    elseif tgt_dir < t.angle then
+     t.angle = max(t.angle - 0.015, -0.5)
+    end
+
+    if tgt_dir == -0.25 and abs(t.angle +0.25) < 0.015 then
+     t.angle = -0.25
+    end
+   end
 
    -- compute the acceleration
    t.total_accel = t:acceleration()
