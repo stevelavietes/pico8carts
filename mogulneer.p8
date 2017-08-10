@@ -535,7 +535,7 @@ function make_player(p)
     return
    end
    local loaded_ski = g_ski_none
-   local brake = false
+   t.wedge = false
    local tgt_dir = nil
    if btn(0, t.p) then
     -- left
@@ -547,7 +547,7 @@ function make_player(p)
     -- right
 
     if tgt_dir != nil then
-     brake = true
+     t.wedge = true
     else
      tgt_dir = 0
     end
@@ -571,7 +571,7 @@ function make_player(p)
    end
    if btn(5, t.p) then
     -- loaded_ski = g_ski_both
-    brake = true
+    t.wedge = true
     -- x
    end
 
@@ -703,15 +703,14 @@ function make_player(p)
     -t.c_drag_against * vecdot(ski_vec_perp, t.vel)
    )
 
-   return vecadd(g, vecadd(t.drag_along, t.drag_against))
+   return vecadd(vecadd(g, vecadd(t.drag_along, t.drag_against)), brake_force)
   end,
   brake_force=function(t)
    if not t.wedge then
     return vecmake()
    end
 
-   local result = vecscale(t.vel, -0.3)
-   return result
+   return vecscale(t.vel, -0.3)
   end,
   horizontal_push=function(t, dir)
    if (
