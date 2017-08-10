@@ -605,76 +605,6 @@ function make_player(p)
 
    t:add_new_trail_point(t)
   end,
-  loaded_ski=function(t, vel, loaded_ski, brake)
-   t.wedge = false
-   if brake then
-    t.wedge = true
-   end
-
-   -- if neither ski is loaded, then nothing to do
-   if loaded_ski == g_ski_none then
-    t.load_left = 0
-    t.load_right = 0
-    return vel
-   end
-
-   -- if its both, then just slow the current rate (brakes)
-   if loaded_ski == g_ski_both then
-    t.load_left = 0
-    t.load_right = 0
-    t.wedge = true
-    local brake_amt = -0.3
-    if vecmagsq(vel) > brake_amt*brake_amt then
-     return vecscale(vel, brake_amt)
-    else
-     return vecscale(vel, -1)
-    end
-   end
-
-   -- if switching skis - 
-   -- @todo: turn linking pop
-   if (
-     (loaded_ski == g_ski_right and t.load_left != 0) or
-     (loaded_ski == g_ski_left and t.load_right != 0) 
-   ) then
-    t.load_left = 0
-    t.load_right = 0
-   end
-
-   local turn_dir = 0
-   local load_var = 0
-   if loaded_ski == g_ski_right then
-    t.load_right += 1/60
-    t.load_right = min(t.load_right, 1)
-    -- load_var = t.load_right
-    load_var = 1
-    turn_dir = -1
-   end
-
-   if loaded_ski == g_ski_left then
-    t.load_left += 1/60 
-    t.load_left = min(t.load_left, 1)
-    -- load_var = t.load_left
-    load_var = 1
-    turn_dir = 1
-   end
-
-   local turnyness = ef_linear(load_var)
-   -- local turnyness = ef_out_quart_cropped(load_var)
-   local brakyness = 1-turnyness
-
-   local vel_mag = brakyness*vecmag(vel)
-
-   -- t.angle += turn_dir * turnyness*0.2
-   -- t.angle += turn_dir * 0.1 * turnyness
-   t.angle += turn_dir * turnyness/60
-   t.angle = min(0.0, max(t.angle, -0.5))
-   t.turnyness=turnyness
-   t.brakyness=brakyness
-
-   return
-   -- return vecfromangle(t.angle, vel_mag)
-  end,
   acceleration=function(t)
    local brake_force = t:brake_force()
 
@@ -691,16 +621,16 @@ function make_player(p)
    -- component of gravity along the skis (acceleration)
    local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
 
+   local vel_mag_sq  = vecmagsq(t.vel)
+   local vel_against = vecdot(ski_vec_perp, t.vel)
+
    -- drag along the ski is against the component of velocity along the ski
-   t.drag_along = vecscale(
-    ski_vec,
-    -t.c_drag_along * vecdot(ski_vec, t.vel)
-   )
+   t.drag_along = vecscale(ski_vec, -t.c_drag_along * vel_mag_sq)
 
    -- drag against
    t.drag_against = vecscale(
     ski_vec_perp,
-    -t.c_drag_against * vecdot(ski_vec_perp, t.vel)
+    -t.c_drag_against * vel_against * abs(vel_against)
    )
 
    return vecadd(vecadd(g, vecadd(t.drag_along, t.drag_against)), brake_force)
