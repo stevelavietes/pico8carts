@@ -210,7 +210,12 @@ function make_debugmsg()
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
     print("ang: ".. g_p1.angle)
-    print("df:  ".. repr(g_p1.perp_dot))
+    -- print("g:  ".. repr(g_p1.perp_dot))
+    print("d_al:  ".. vecmag(g_p1.drag_along))
+    print("d_ag:  ".. vecmag(g_p1.drag_against))
+    print("t_a:  ".. vecmag(g_p1.total_accel))
+    print("g:  ".. vecmag(g_p1.g))
+    print("b:  ".. vecmag(g_p1:brake_force()))
     if not g_p1.svp then
      g_p1.svp = null_v
     end
@@ -387,6 +392,25 @@ function smootherstep(x)
  -- assumes x in [0, 1]
  return x*x*x*(x*(x*6 - 15) + 10);
 end
+
+function remap(
+ val,
+ i_min, 
+ i_max,
+ o_min,
+ o_max
+)
+ return (
+  (
+   o_min 
+   + (
+    (val - i_min) 
+    * (o_max-o_min)
+    /(i_max-i_min)
+   )
+  )
+ )
+end
 -- @}
 
 -- @{ vector library
@@ -512,9 +536,13 @@ function make_player(p)
   -- pose goes from -4 to +4
   pose=4,
   vel=vecmake(0),
+  vel_along=0,
+  vel_against=0,
   bound_min=vecmake(-3, -4),
   bound_max=vecmake(2,0),
   angle=0, -- ski angle
+  ski_vec=vecmake(),
+  ski_vec_perp=vecmake(),
   load_left=0,
   load_right=0,
   turnyness=0,
@@ -523,8 +551,14 @@ function make_player(p)
   trail_points={},
   crashed=false,
   last_push=g_tick,
+  -- c_drag_along=1,
   c_drag_along=0.01,
   c_drag_against=0.1,
+  drag_along=vecmake(),
+  g=vecmake(),
+  total_accel=vecmake(),
+  drag_against=vecmake(),
+  -- c_drag_against=1,
   update=function(t)
    if t.crashed then
     t.vel = vecscale(t.vel, 0.9)
@@ -565,7 +599,7 @@ function make_player(p)
      t.angle = -0.5
     end
    end
-   if btn(4, t.p) then
+   if btnn(4, t.p) then
     -- z
     -- @TODO: jump
    end
@@ -593,7 +627,7 @@ function make_player(p)
 
    -- euler integration for now
    t.vel = vecadd(t.vel, t.total_accel)
-   t.vel = clamp_velocity(t.vel)
+   -- t.vel = clamp_velocity(t.vel)
    vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
 
@@ -610,28 +644,46 @@ function make_player(p)
 
    -- ski direction unit vector
    local ski_vec = vecfromangle(t.angle)
+   t.ski_vec = ski_vec
    local perpendicular = t.angle - 0.25
    if t.angle > -0.25 then
     perpendicular = t.angle + 0.25
    end
    local ski_vec_perp = vecfromangle(perpendicular)
-   t.svp = ski_vec_perp
-
+   t.ski_vec_perp = ski_vec_perp
 
    -- component of gravity along the skis (acceleration)
-   local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
+   -- local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
+   local g = vecmake(0, g_mogulneer_accel)
 
-   local vel_mag_sq  = vecmagsq(t.vel)
+   -- drag against @{ 
+   -- velocity adjustment 
+   -- 1 1 1 1       0.5     0.0
+   --      0.5  --- 1.0  -- 1.5
+   -- t.g = g
+   t.g = vecsub(
+    g,
+    vecmake(
+       0, 
+       g_mogulneer_accel *  vecdot(vecmake(0, -1), ski_vec_perp)
+    )
+   )
+   g = t.g
+
+   local vel_along  = vecdot(ski_vec, t.vel)
+   t.vel_along = vel_along
+   -- local vel_mag_sq  = vecmagsq(t.vel)
    local vel_against = vecdot(ski_vec_perp, t.vel)
+   t.vel_against = vel_against
 
    -- drag along the ski is against the component of velocity along the ski
-   t.drag_along = vecscale(ski_vec, -t.c_drag_along * vel_mag_sq)
+   t.drag_along = vecscale(ski_vec, -t.c_drag_along * vel_along*abs(vel_along))
 
-   -- drag against
    t.drag_against = vecscale(
     ski_vec_perp,
-    -t.c_drag_against * vel_against * abs(vel_against)
+    -t.c_drag_against * (vel_against * abs(vel_against))
    )
+   -- @}
 
    return vecadd(vecadd(g, vecadd(t.drag_along, t.drag_against)), brake_force)
   end,
