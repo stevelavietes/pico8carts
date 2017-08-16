@@ -215,7 +215,9 @@ function make_debugmsg()
     print("d_ag:  ".. vecmag(g_p1.drag_against))
     print("t_a:  ".. vecmag(g_p1.total_accel))
     print("g:  ".. vecmag(g_p1.g))
-    print("b:  ".. vecmag(g_p1:brake_force()))
+    if g_p1.amount then
+     print("amt:  ".. g_p1.amount)
+    end
     if not g_p1.svp then
      g_p1.svp = null_v
     end
@@ -273,25 +275,106 @@ function spray_particles()
   x=0,
   y=0,
   v_last = vecmake(0),
-  update=function(t)
-   -- add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
-   d_v = vecsub(t.v_last, g_p1.vel)
-   if vecmagsq(d_v) < 0.01 then
+  angle_last = 0,
+  add_trail_spray=function(t)
+   local velmag = vecmag(g_p1.vel)
+   if velmag < 2 then
     return
    end
+
+   local amount = min(max(remap(velmag, 3, 5, 0, 1), 0.0), 1.0)
+   g_p1.amount = amount
+
+
    for i=0,25 do
-    local off=vecrand(6, true)
+    if rnd() < amount or amount > 0.95 then
+     local pos = vecscale(g_p1.ski_vec, rnd(10)-5)
      add_particle(
-      g_p1.x+off.x+rnd(6)-3+g_p1.bound_min.x,
-      g_p1.y+off.y+rnd(6)-3+g_p1.bound_min.y,
-      d_v.x/1.5+rnd(1),
-      d_v.y/1.5+rnd(1),
-      10,
-      6,
-      0.5 
+      g_p1.x+pos.x, g_p1.y+pos.y,
+      rnd(0.5)-0.25, 0.5+rnd(0.3),
+      270,
+      12,
+      0
      )
+    end
    end
-   t.v_last = g_p1.vel
+  end,
+  add_brake_spray=function(t)
+   if not (btn(0) or btn(1) or btn(5) or btn(2) or btn(3)) then
+    return
+   end
+
+   local v_ag = g_p1.vel_against
+   -- local amt = abs(v_ag) / 5
+   local amt = 1
+
+   -- compute the spray angle
+   local d_angle = g_p1.angle - t.angle_last
+   t.angle_last = g_p1.angle
+   local tgt_angle = g_p1.angle
+   if d_angle > 0 then
+    -- increasing to the right
+    tgt_angle -= 0.10
+   elseif d_angle < 0 then
+    -- decreasing to the left
+    tgt_angle += 0.10
+   end
+
+   if abs(d_angle) > 0 or t.tgt_angle == nil then
+    t.tgt_angle = tgt_angle
+   else
+    return
+   end
+
+
+   -- vecscale(g_p1.ski_vec_perp, -vecmag(g_p1.vel))
+   for i=0,25 do
+    local ski_vec = vecfromangle(t.tgt_angle+rnd(0.1)-0.05, vecmag(g_p1.vel)) --+ rnd(0.20) - 0.1, 2+rnd(1)-0.5)
+    local off=vecrand(6, true)
+    -- local off=vecmake()
+    local origin = g_p1
+    if rnd() < amt then
+      add_particle(
+       g_p1.x+off.x,
+       -- g_p1.x+off.x-3-g_p1.bound_min.x,
+       -- g_p1.x+off.x+rnd(6)-3+g_p1.bound_min.x,
+       g_p1.y+off.y,
+       -- g_p1.y+off.y-3-g_p1.bound_min.y,
+       -- g_p1.y+off.y+rnd(6)-3+g_p1.bound_min.y,
+       ski_vec.x,--+rnd(1),
+       ski_vec.y,--+rnd(1),
+       -- ski_vec.x/1.5,--+rnd(1),
+       -- ski_vec.y/1.5,--+rnd(1),
+       10,
+       6,
+       1
+      )
+     end
+   end
+
+
+   -- take the velocity magnitude and project it along the perpendicular
+   -- local vel_along_perp = vecscale(g_p1.ski_vec_perp, (rnd(0.5)+0.5) * vecmag(g_p1.vel))
+   -- vel_along_perp = vecscale(vecadd(vel_along_perp, g_p1.vel), rnd(0.5)+0.5)
+   --
+   -- local amount = 1
+   --
+   -- for i=0,25 do
+   --  if rnd() < amount or amount > 0.95 then
+   --   local pos = vecscale(g_p1.ski_vec, rnd(10)-5)
+   --   add_particle(
+   --    g_p1.x+pos.x, g_p1.y+pos.y,
+   --    vel_along_perp.x + rnd(3)-1.5, vel_along_perp.y + rnd(3)-1.5,
+   --    270,
+   --    12,
+   --    g_mogulneer_accel
+   --   )
+   --  end
+   -- end
+  end,
+  update=function(t)
+   t:add_trail_spray()
+   t:add_brake_spray()
   end,
   draw=function(t)
    process_particles(sp_world)
@@ -764,7 +847,8 @@ function make_player(p)
    -- print_cent("angle: " .. t.angle, 8)
 
    -- @{ acceleration components
-   if t.grav_accel != nil then
+   -- if t.drag_against != nil then
+   if false then
     -- print_cent("v_g: " .. vecmag(t.grav_accel), 2)
     -- print_cent("v_d_along: " .. vecmag(t.drag_along), 12)
     -- print_cent("v_d_against: " .. vecmag(t.drag_against), 1)
