@@ -748,7 +748,7 @@ function make_player(p)
     g,
     vecmake(
        0, 
-       g_mogulneer_accel *  vecdot(vecmake(0, -1), ski_vec_perp)
+       vecdot(vecmake(0, -g_mogulneer_accel), ski_vec_perp)
     )
    )
    g = t.g
