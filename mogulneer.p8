@@ -883,14 +883,18 @@ function make_player(p)
    -- @}
 
    -- if false then
+   local offset = 0
    if true then
     palt(0, false)
     palt(3, true)
     if t.wedge then
      palt(14, false)
      pal(14, 11)
+     pal(13, 11)
     else
      palt(14, true)
+     palt(13, true)
+     offset = 2
     end
     local sprn = 17+abs(pose)*2
     if t.crashed then
@@ -902,7 +906,7 @@ function make_player(p)
      sprn = 27
     end
 
-    spr(sprn, -8, -11, 2, 2, pose < 0)
+    spr(sprn, -8, -11 + offset, 2, 2, pose < 0)
     palt()
     pal()
    end
