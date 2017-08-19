@@ -5,22 +5,21 @@ __lua__
 
 -- todo:
 -- tune speed
--- add gates and race mode
 -- add moguls
 -- add weight system
 -- some kind of 2nd order system
--- braking system -- move it to a key instead of left+right (keep both)
 -- "z-sorted" tree drawing system
--- camera system should always track player, but still lerp to target point
 -- tune the snow on the menu screen to start halfway down the screen
--- slalom mode needs a timer.  gates need a "trigger" system
 -- back country mode should have a tracker for how far you've gone
 -- rocks don't cause crashes at the moment 
--- strip out the selection screen. that can come later.
 
 -- draw the hat when you crash
 -- skis skitter down the mountain
 -- repair back country mode
+
+-- today:
+-- don't spawn trees near the player
+-- add a point counter for back country mode
 
 function ef_linear(amount)
  return amount
@@ -1701,7 +1700,13 @@ function backcountry_random_tree_loc(y_loc)
   off = g_cam
  end
 
- return vecmake(off.x + rnd(192)-96, y_loc)
+--  local new_loc = nil
+ local new_loc = nil
+ repeat
+  new_loc = vecmake(off.x + rnd(192)-96, y_loc)
+ until (abs(new_loc.x) > 90)
+
+ return new_loc
 end
 
 function make_mountain(kind, track_ind)
@@ -1797,11 +1802,11 @@ function make_mountain(kind, track_ind)
       -- vecset(o, backcountry_random_tree_loc(5))
       -- vecset(o, backcountry_random_tree_loc(g_cam.y))
      else
-      -- if overlaps_bounds(o, g_p1) and not g_p1.crashed then
-      --  g_p1.crashed = true
-      --  shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
-      --  flash_screen(4, 8)
-      -- end
+      if overlaps_bounds(o, g_p1) and not g_p1.crashed then
+       g_p1.crashed = true
+       shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+       flash_screen(4, 8)
+      end
      end
     end
    end
@@ -1853,6 +1858,11 @@ function make_tree(loc, anywhere)
     t.y += 160
     if anywhere then
      t.x = rnd(128)-64
+     if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
+      repeat
+       t.x = rnd(128) - 64
+      until (abs(t.x) > 30)
+     end
     else
      local flip = 110
      local rnd_off = rnd(80) - 40
