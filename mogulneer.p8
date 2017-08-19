@@ -635,8 +635,8 @@ function make_player(p)
   crashed=false,
   last_push=g_tick,
   -- c_drag_along=1,
-  c_drag_along=0.01,
-  c_drag_against=0.1,
+  c_drag_along=0.02,
+  c_drag_against=0.2,
   drag_along=vecmake(),
   g=vecmake(),
   total_accel=vecmake(),
@@ -652,7 +652,7 @@ function make_player(p)
     return
    end
    local loaded_ski = g_ski_none
-   t.wedge = false
+   t.wedge = true
    local tgt_dir = nil
    if btn(0, t.p) then
     -- left
@@ -673,6 +673,9 @@ function make_player(p)
    if btn(3, t.p) then
     -- down
     tgt_dir = -0.25
+    if t.angle == -0.25 then
+     t.wedge = false
+    end
    end
    if btnn(2, t.p) then
     -- up
@@ -688,7 +691,7 @@ function make_player(p)
    end
    if btn(5, t.p) then
     -- loaded_ski = g_ski_both
-    t.wedge = true
+    t.wedge = false
     -- x
    end
 
@@ -735,23 +738,31 @@ function make_player(p)
    local ski_vec_perp = vecfromangle(perpendicular)
    t.ski_vec_perp = ski_vec_perp
 
+   local drag_multiplier = 1
+   if t.wedge then
+    drag_multiplier = 5
+   end
+
+
    -- component of gravity along the skis (acceleration)
    -- local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
-   local g = vecmake(0, g_mogulneer_accel)
+   -- local g = vecmake(0, g_mogulneer_accel)
 
    -- drag against @{ 
    -- velocity adjustment 
    -- 1 1 1 1       0.5     0.0
    --      0.5  --- 1.0  -- 1.5
    -- t.g = g
-   t.g = vecsub(
-    g,
-    vecmake(
-       0, 
-       vecdot(vecmake(0, -g_mogulneer_accel), ski_vec_perp)
-    )
-   )
-   g = t.g
+   -- t.g = vecsub(
+   --  g,
+   --  vecmake(
+   --     0, 
+   --     vecdot(vecmake(0, -g_mogulneer_accel), ski_vec_perp)
+   --  )
+   -- )
+   -- g = t.g
+   g = vecscale(ski_vec, ski_vec.y * g_mogulneer_accel)
+   t.g = g
 
    local vel_along  = vecdot(ski_vec, t.vel)
    t.vel_along = vel_along
@@ -760,18 +771,22 @@ function make_player(p)
    t.vel_against = vel_against
 
    -- drag along the ski is against the component of velocity along the ski
-   t.drag_along = vecscale(ski_vec, -t.c_drag_along * vel_along*abs(vel_along))
+   t.drag_along = vecscale(ski_vec, -t.c_drag_along * drag_multiplier * vel_along*abs(vel_along))
 
    t.drag_against = vecscale(
     ski_vec_perp,
-    -t.c_drag_against * (vel_against * abs(vel_against))
+    -t.c_drag_against * drag_multiplier * (vel_against * abs(vel_against))
    )
    -- @}
 
-   return vecadd(vecadd(g, vecadd(t.drag_along, t.drag_against)), brake_force)
+   return vecadd(
+    vecadd(g, vecadd(t.drag_along, t.drag_against)),
+    brake_force
+   )
   end,
   brake_force=function(t)
-   if not t.wedge then
+   -- if not t.wedge then
+   if true then
     return vecmake()
    end
 
