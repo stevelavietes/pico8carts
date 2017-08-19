@@ -18,8 +18,9 @@ __lua__
 -- repair back country mode
 
 -- today:
--- don't spawn trees near the player
+-- don't spawn trees near the player [x]
 -- add a point counter for back country mode
+-- make trees spawn to the left and right as well as up and down
 
 function ef_linear(amount)
  return amount
@@ -1857,10 +1858,10 @@ function make_tree(loc, anywhere)
    if g_cam.y - t.y > 80 then
     t.y += 160
     if anywhere then
-     t.x = rnd(128)-64
+     t.x = rnd(192) - 92
      if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
       repeat
-       t.x = rnd(128) - 64
+       t.x = rnd(192) - 92
       until (abs(t.x) > 30)
      end
     else
@@ -1870,6 +1871,16 @@ function make_tree(loc, anywhere)
       flip *= -1
      end
      t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
+    end
+   end
+
+   if anywhere then
+    if abs(g_cam.x - t.x) > 80 then
+     if g_cam.x > t.x then
+      t.x += 160
+     else
+      t.x -= 160
+     end
     end
    end
   end,
