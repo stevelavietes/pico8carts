@@ -647,7 +647,12 @@ function make_player(p)
     t.vel = vecscale(t.vel, 0.9)
     vecset(t, vecadd(t, t.vel))
     if vecmagsq(t.vel) < 0.1 then
-     _init()
+     g_cam.drift = true
+     function done_func()
+      make_score_screen(g_bc_score, true)
+     end
+     add_gobjs(make_snow_trans(done_func, 7, 45))
+     -- t.celebrate = g_tick
     end
     return
    end
@@ -1219,12 +1224,16 @@ function make_clock()
  }
 end
 
-function make_score_display(base_timer)
- local timer = {
-  m=base_timer.m,
-  c=base_timer.c,
-  s=base_timer.s
- }
+-- final score display
+function make_score_display(base_timer, score_mode)
+ local timer = nil
+ if score_mode != true then
+  local timer = {
+   m=base_timer.m,
+   c=base_timer.c,
+   s=base_timer.s
+  }
+ end
  return {
   x=0,
   y=-192,
@@ -1279,14 +1288,7 @@ function make_score_display(base_timer)
     )
    end
   end,
-  draw=function(t)
-   -- minutes
-   local gratz_str = "congratulations!"
-   local msg_str = "your final time was:"
-   g_cursor_y = -12 
-   print_cent(gratz_str, 14)
-   print_cent(msg_str, 14)
-
+  timer_score=function(t)
    local m_t = 0
    if timer.m > 10 then
     m_t = min(9, flr(timer.m/10))
@@ -1304,12 +1306,49 @@ function make_score_display(base_timer)
     c_t = min(9, flr(timer.c/10))
    end
    local c_o = timer.c - 10*flr(timer.c/10)
-   local x_off = -8*4
+   return {m_t, m_o, 10, s_t, s_o, 10, c_t, c_o}
+  end,
+  backcountry_score=function(t)
+   -- pull each digit out and store it
+   local score = base_timer.score
+   local result = {}
+   repeat
+    add(result, score % 10)
+    score /= 10
+   until flr(score) == 0
+
+   -- ugly array flip
+   local flipped_result = {}
+   for i=#result,1,-1 do
+    add(flipped_result, result[i])
+   end
+
+   return flipped_result
+  end,
+  draw=function(t)
+   -- minutes
+   local gratz_str = "congratulations!"
+   local msg_str = "your final time was:"
+   if score_mode == true then
+    msg_str = "your final score was:"
+   end
+   g_cursor_y = -12 
+   print_cent(gratz_str, 14)
+   print_cent(msg_str, 14)
+
+   local char_array = {}
+   if score_mode == false then 
+    char_array = t:timer_score()
+   else
+    char_array = t:backcountry_score()
+   end
+
+   local x_off = -#char_array*4
    palt(3, true)
    palt(0, false)
    pal(7, 2)
    pal(6, 14)
-   for i in all({m_t, m_o, 10, s_t, s_o, 10, c_t, c_o}) do
+   for i in all(char_array) do
     spr(196+i, x_off, 0, 1, 1, false, false)
     x_off += 8
    end
@@ -1321,10 +1360,10 @@ function make_score_display(base_timer)
  }
 end
 
-function make_score_screen(timer)
+function make_score_screen(timer, backcountry_mode)
  g_objs = {
   make_bg(7),
-  make_score_display(timer),
+  make_score_display(timer, backcountry_mode),
   make_debugmsg(),
  }
  g_cam= nil
@@ -1652,8 +1691,9 @@ function backcountry_start()
   make_bg(7),
   make_mountain("back_country"),
   make_debugmsg(),
-  make_backcountry_points(),
  }
+
+ g_bc_score = add_gobjs(make_backcountry_points())
 
  g_partm = add_gobjs(spray_particles())
 
