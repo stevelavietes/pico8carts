@@ -1227,8 +1227,8 @@ end
 -- final score display
 function make_score_display(base_timer, score_mode)
  local timer = nil
- if score_mode != true then
-  local timer = {
+ if not score_mode then
+  timer = {
    m=base_timer.m,
    c=base_timer.c,
    s=base_timer.s
@@ -1267,16 +1267,24 @@ function make_score_display(base_timer, score_mode)
    end
    if t.made and elapsed(t.made) > 45 then
     t.made = nil
+    local event_str = "slalom"
+    if score_mode then
+     event_str = "backcountry mode"
+    end
     add_gobjs(
      make_menu(
       {
-       'try slalom again',
+       'try '.. event_str.. ' again',
        'main menu',
       },
       function (t, i, s)
        local function done_func()
         if i==0 then
-         slalom_start(1)
+         if score_mode then
+          backcountry_start()
+         else
+          slalom_start(1)
+         end
         else
          _init()
         end
@@ -1337,10 +1345,10 @@ function make_score_display(base_timer, score_mode)
    print_cent(msg_str, 14)
 
    local char_array = {}
-   if score_mode == false then 
-    char_array = t:timer_score()
-   else
+   if score_mode  then 
     char_array = t:backcountry_score()
+   else
+    char_array = t:timer_score()
    end
 
    local x_off = -#char_array*4
