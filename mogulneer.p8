@@ -1831,7 +1831,7 @@ function make_mountain(kind, track_ind)
   end
  else
   -- backcountry mode
-  for i=0,25 do
+  for i=0,50 do
    local rndloc = backcountry_random_tree_loc(i*12-300)
    add(trees, make_tree(rndloc, true))
   end
