@@ -9,23 +9,38 @@ __lua__
 -- add weight system
 -- some kind of 2nd order system
 -- "z-sorted" tree drawing system
--- tune the snow on the menu screen to start halfway down the screen
--- back country mode should have a tracker for how far you've gone
 -- rocks don't cause crashes at the moment 
 
+-- cool flavor:
 -- draw the hat when you crash
 -- skis skitter down the mountain
--- repair back country mode
+-- upgrading the draw order
 
 -- today:
 -- don't spawn trees near the player [x]
 -- make trees spawn to the left and right as well as up and down [x]
 -- add a point counter for back country mode [x]
 -- token pass [x]
+-- add music [x]
+-- rock spawn location
+-- overflow bug
 -- make the camera focus on the finish line when you cross it instead of the player in slalom mode
 -- fix the player standing back up after crashing
--- add music
+-- add a button prompt with the "dash" button
+-- better backcountry score display
+-- kill downarrow hunker down mode
+-- increase the top speed as the level goes on
+-- maybe cheering crowds in slalom mode?  Something else to help cue you for your progress in the level!
+-- moguls
+-- a jump system
+-- refined movement mechanics (I miss the slidey ness of the old system, plus the new system has some quirks - you can slide up the mountain for example).
+-- retune camera filter
 -- add sfx
+ -- turn 
+ -- gate hit
+ -- gate miss
+ -- end of the slalom
+ -- menu select
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -1722,6 +1737,37 @@ function make_boundary(xmin, xmax)
  }
 end
 
+function respawn_object(t, anywhere)
+ if g_cam.y - t.y > 80 then
+  t.y += 160
+  if anywhere then
+   t.x = rnd(192) - 92
+   if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
+    repeat
+     t.x = rnd(192) - 92
+    until (abs(t.x) > 30)
+   end
+  else
+   local flip = 110
+   local rnd_off = rnd(80) - 40
+   if rnd(1) > 0.5 then
+    flip *= -1
+   end
+   t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
+  end
+ end
+
+ if anywhere then
+  if abs(g_cam.x - t.x) > 80 then
+   if g_cam.x > t.x then
+    t.x += 160
+   else
+    t.x -= 160
+   end
+  end
+ end
+end
+
 function make_tree(loc, anywhere)
  return {
   x=loc.x,
@@ -1732,34 +1778,7 @@ function make_tree(loc, anywhere)
   bound_max=vecmake(1,12),
   flip=rnd(1) > 0.5,
   update=function(t)
-   if g_cam.y - t.y > 80 then
-    t.y += 160
-    if anywhere then
-     t.x = rnd(192) - 92
-     if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
-      repeat
-       t.x = rnd(192) - 92
-      until (abs(t.x) > 30)
-     end
-    else
-     local flip = 110
-     local rnd_off = rnd(80) - 40
-     if rnd(1) > 0.5 then
-      flip *= -1
-     end
-     t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
-    end
-   end
-
-   if anywhere then
-    if abs(g_cam.x - t.x) > 80 then
-     if g_cam.x > t.x then
-      t.x += 160
-     else
-      t.x -= 160
-     end
-    end
-   end
+   respawn_object(t, anywhere)
   end,
   draw=function(t)
    -- if abs(t.y - g_cam.y) > 70 then
@@ -1781,6 +1800,9 @@ function make_rock(loc)
   radius=3,
   index=flr(rnd(4)),
   bound_cent=vecmake(0, 9),
+  update=function(t)
+   respawn_object(t, true)
+  end,
   draw=function(t)
    spr(96+t.index, -4, -4, 1, 2)
   end
