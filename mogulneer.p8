@@ -24,8 +24,8 @@ __lua__
 -- add music [x]
 -- rock spawn location [x]
 -- make the camera focus on the finish line when you cross it instead of the player in slalom mode [x]
+-- fix the player standing back up after crashing [x]
 -- overflow bug
--- fix the player standing back up after crashing
 -- add a button prompt with the "dash" button
 -- better backcountry score display
 -- kill downarrow hunker down mode
@@ -769,7 +769,10 @@ function make_player(p)
    t.vel_against = vel_against
 
    -- drag along the ski is against the component of velocity along the ski
-   t.drag_along = vecscale(ski_vec, -t.c_drag_along * drag_multiplier * vel_along*abs(vel_along))
+   t.drag_along = vecscale(
+    ski_vec,
+    -t.c_drag_along * drag_multiplier * vel_along*abs(vel_along)
+   )
 
    t.drag_against = vecscale(
     ski_vec_perp,
