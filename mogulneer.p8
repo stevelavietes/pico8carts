@@ -22,9 +22,9 @@ __lua__
 -- add a point counter for back country mode [x]
 -- token pass [x]
 -- add music [x]
--- rock spawn location
+-- rock spawn location [x]
+-- make the camera focus on the finish line when you cross it instead of the player in slalom mode [x]
 -- overflow bug
--- make the camera focus on the finish line when you cross it instead of the player in slalom mode
 -- fix the player standing back up after crashing
 -- add a button prompt with the "dash" button
 -- better backcountry score display
@@ -605,11 +605,6 @@ end
 -- @}
 
 -- @{ built in diagnostic stuff
--- g_ski_none = 0
--- g_ski_left = 1
--- g_ski_right = 2
--- g_ski_both = 3
-
 function make_player(p)
  return {
   x=0,
@@ -627,22 +622,18 @@ function make_player(p)
   angle=0, -- ski angle
   ski_vec=null_v,
   ski_vec_perp=null_v,
-  -- load_left=0,
-  -- load_right=0,
-  -- turnyness=0,
-  -- brakyness=0,
   wedge=false,
   trail_points={},
   crashed=false,
   last_push=g_tick,
-  -- c_drag_along=1,
   c_drag_along=0.02,
   c_drag_against=0.2,
-  drag_along=null_v,
+
+  -- debug variables
   g=null_v,
   total_accel=null_v,
+  drag_along=null_v,
   drag_against=null_v,
-  -- c_drag_against=1,
   update=function(t)
    -- crash case
    if t.crashed then
@@ -826,6 +817,7 @@ function make_player(p)
     end
    end
 
+   -- skis are in the sprite for the crash case
    if not t.crashed then
     for x_off in all({-1, 1}) do
     -- for x_off in all({1}) do
@@ -860,12 +852,12 @@ function make_player(p)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
    -- print(str, -(#str)*2, 12, 8)
-   -- g_cursor_y=12
+   g_cursor_y=12
+   print_cent("pose: " .. pose, 8)
    -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
    -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
    -- print_cent("load_left: " .. t.load_left, 8)
    -- print_cent("load_right: " .. t.load_right, 8)
-   -- print_cent("pose: " .. t.pose, 8)
    -- print_cent("vel: " .. vecmag(t.vel), 8)
    -- print_cent("drag acceleration: " .. repr(t:drageration()), 8)
    -- print_cent("angle: " .. t.angle, 8)
@@ -908,10 +900,8 @@ function make_player(p)
    local sprn = 17+abs(pose)*2
    if t.crashed then
     sprn = 29
-   end
-
-   -- @TODO: do something with the hood when you're not moving... celeste?
-   if sprn == 25 and elapsed(t.last_push) < 5 or vecmag(t.vel) < 0.1 then
+   elseif sprn == 25 and elapsed(t.last_push) < 5 or vecmag(t.vel) < 0.1 then
+    -- @TODO: do something with the hood when you're not moving... celeste?
     sprn = 27
    end
 
@@ -920,6 +910,7 @@ function make_player(p)
    pal()
 
    drawobjs(t.c_objs)
+   print_cent("sprn: ".. sprn, 8)
 
    -- draw_bound_rect(t, 11)
   end,
