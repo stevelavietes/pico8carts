@@ -852,8 +852,8 @@ function make_player(p)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
    -- print(str, -(#str)*2, 12, 8)
-   g_cursor_y=12
-   print_cent("pose: " .. pose, 8)
+   -- g_cursor_y=12
+   -- print_cent("pose: " .. pose, 8)
    -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
    -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
    -- print_cent("load_left: " .. t.load_left, 8)
@@ -910,7 +910,7 @@ function make_player(p)
    pal()
 
    drawobjs(t.c_objs)
-   print_cent("sprn: ".. sprn, 8)
+   -- print_cent("sprn: ".. sprn, 8)
 
    -- draw_bound_rect(t, 11)
   end,
