@@ -650,6 +650,7 @@ function make_player(p)
     vecset(t, vecadd(t, t.vel))
     if vecmagsq(t.vel) < 0.1 then
      g_cam.drift = true
+     g_cam.last_target_point = t
      function done_func()
       make_score_screen(g_bc_score, true)
      end
@@ -1368,6 +1369,7 @@ function make_gate(gate_data, accum_y, starter_objects)
     elseif t.gate_kind == ge_gate_end then
      g_timer:stop()
      g_cam.drift = true
+     g_cam.last_target_point = t
      function done_func()
       make_score_screen(g_timer)
      end
