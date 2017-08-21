@@ -20,23 +20,12 @@ __lua__
 -- today:
 -- don't spawn trees near the player [x]
 -- make trees spawn to the left and right as well as up and down [x]
--- add a point counter for back country mode
-
-function ef_linear(amount)
- return amount
-end
-
-crop = 0.3
-function ef_out_quart_cropped(amount)
- local amount_cropped = min(amount, crop)
- local t = amount_cropped - 1
- local result = -1 * (t*t*t*t- 1)
- if amount >= crop then
-  amount = amount - 0.3
-  return (result * (1.0 - amount) + 1.0 * (amount))
- end
- return result
-end
+-- add a point counter for back country mode [x]
+-- token pass [x]
+-- make the camera focus on the finish line when you cross it instead of the player in slalom mode
+-- fix the player standing back up after crashing
+-- add music
+-- add sfx
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -186,7 +175,7 @@ collision_objects = {
    end
   end,
   draw=function(t)
-   rectfill(t.x, t.y, t.x + t.width, t.y + t.height, 11)
+   -- rectfill(t.x, t.y, t.x + t.width, t.y + t.height, 11)
   end
  }
 }
@@ -218,9 +207,9 @@ function make_debugmsg()
     if g_p1.amount then
      print("amt:  ".. g_p1.amount)
     end
-    if not g_p1.svp then
-     g_p1.svp = null_v
-    end
+    -- if not g_p1.svp then
+    --  g_p1.svp = null_v
+    -- end
     -- print("v_d:  ".. repr(vecdot(g_p1.svp, g_p1.vel)))
     -- print("d_o: ".. g_cam.delta_offset)
    end
@@ -228,35 +217,32 @@ function make_debugmsg()
  }
 end
 
-function repr(arg)
- -- turn any thing into a string (table, boolean, whatever)
- if arg == nil then
-  return "nil"
- end
- if type(arg) == "boolean" then
-  return arg and "true" or "false"
- end
- if type(arg) == "table" then 
-  local retval = " table{ "
-  for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. repr(v).. ","
-  end
-  retval = retval .. "} "
-  return retval
- end
- return ""..arg
-end
-
-function print_stdout(msg)
- -- print 'msg' to the terminal, whatever it might be
- printh("["..repr(g_tick).."] "..repr(msg))
-end
+-- dead code
+-- function repr(arg)
+--  -- turn any thing into a string (table, boolean, whatever)
+--  if arg == nil then
+--   return "nil"
+--  end
+--  if type(arg) == "boolean" then
+--   return arg and "true" or "false"
+--  end
+--  if type(arg) == "table" then 
+--   local retval = " table{ "
+--   for k, v in pairs(arg) do
+--    retval = retval .. k .. ": ".. repr(v).. ","
+--   end
+--   retval = retval .. "} "
+--   return retval
+--  end
+--  return ""..arg
+-- end
 -- }
 
 function make_snow_particles()
  local mksnow=function(y)
   add_particle(rnd(128), y, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
  end
+
  for i=1,100 do
   mksnow(rnd(128))
  end
@@ -270,9 +256,6 @@ function make_snow_particles()
   end,
   draw=function(t)
    process_particles()
-   for _, o in pairs(collision_objects) do
-    o:draw()
-   end
   end
  }
 end
@@ -281,7 +264,6 @@ function spray_particles()
  return {
   x=0,
   y=0,
-  v_last = vecmake(0),
   angle_last = 0,
   add_trail_spray=function(t)
    local velmag = vecmag(g_p1.vel)
@@ -291,7 +273,6 @@ function spray_particles()
 
    local amount = min(max(remap(velmag, 3, 5, 0, 1), 0.0), 1.0)
    g_p1.amount = amount
-
 
    for i=0,25 do
     if rnd() < amount or amount > 0.95 then
@@ -307,13 +288,13 @@ function spray_particles()
    end
   end,
   add_brake_spray=function(t)
+   -- CBB
    if not (btn(0) or btn(1) or btn(5) or btn(2) or btn(3)) then
     return
    end
 
-   local v_ag = g_p1.vel_against
+   -- local v_ag = g_p1.vel_against
    -- local amt = abs(v_ag) / 5
-   local amt = 1
 
    -- compute the spray angle
    local d_angle = g_p1.angle - t.angle_last
@@ -336,11 +317,11 @@ function spray_particles()
 
    -- vecscale(g_p1.ski_vec_perp, -vecmag(g_p1.vel))
    for i=0,25 do
-    local ski_vec = vecfromangle(t.tgt_angle+rnd(0.1)-0.05, vecmag(g_p1.vel)) --+ rnd(0.20) - 0.1, 2+rnd(1)-0.5)
+    local ski_vec = vecfromangle(t.tgt_angle+rnd(0.1)-0.05, vecmag(g_p1.vel)) 
+    --+ rnd(0.20) - 0.1, 2+rnd(1)-0.5)
     local off=vecrand(6, true)
     -- local off=vecmake()
-    local origin = g_p1
-    if rnd() < amt then
+    if rnd() < 1 then
       add_particle(
        g_p1.x+off.x,
        -- g_p1.x+off.x-3-g_p1.bound_min.x,
@@ -385,14 +366,12 @@ function spray_particles()
   end,
   draw=function(t)
    process_particles(sp_world)
-   -- for _, o in pairs(collision_objects) do
-   --  o:draw()
-   -- end
   end
  }
 end
 
 function make_title()
+ -- CBB
  return {
   x=7,
   y=20,
@@ -421,7 +400,7 @@ function _init()
  add_gobjs(make_debugmsg())
  add_gobjs(make_snow_particles())
  add_gobjs(
-   make_menu(
+  make_menu(
    {
     'slalom',
     'back country',
@@ -504,15 +483,15 @@ end
 -- @}
 
 -- @{ vector library
-function vecdraw(v, c, o)
- if not o then
-  o = vecmake()
- end
---  local end_point = vecadd(o, vecscale(vecnormalized(v), 5))
- local end_point = vecadd(o, vecscale(v, 30))
- line(o.x, o.y, end_point.x, end_point.y, c)
- return
-end
+-- function vecdraw(v, c, o)
+--  if not o then
+--   o = vecmake()
+--  end
+-- --  local end_point = vecadd(o, vecscale(vecnormalized(v), 5))
+--  local end_point = vecadd(o, vecscale(v, 30))
+--  line(o.x, o.y, end_point.x, end_point.y, c)
+--  return
+-- end
 
 function vecrand(scale, center, yscale)
  local result = vecmake(rnd(scale), rnd(yscale or scale))
@@ -523,9 +502,8 @@ function vecrand(scale, center, yscale)
 end
 
 function vecmake(xf, yf)
- if not xf then
-  xf = 0
- end
+ xf = xf or 0
+
  return {x=xf, y=(yf or xf)}
 end
 
@@ -551,9 +529,9 @@ function vecmag(v, sf)
  return result
 end
 
-function vecnormalized(v)
- return vecscale(v, vecmag(v))
-end
+-- function vecnormalized(v)
+--  return vecscale(v, 1/vecmag(v))
+-- end
 
 function vecdot(a, b)
  return (a.x*b.x+a.y*b.y)
@@ -576,17 +554,17 @@ function vecset(target, source)
  target.y = source.y
 end
 
-function vecminvec(target, minvec)
- target.x = min(target.x, minvec.x)
- target.y = min(target.y, minvec.y)
- return target
-end
+-- function vecminvec(target, minvec)
+--  target.x = min(target.x, minvec.x)
+--  target.y = min(target.y, minvec.y)
+--  return target
+-- end
 
-function vecmaxvec(target, maxvec)
- target.x = max(target.x, maxvec.x)
- target.y = max(target.y, maxvec.y)
- return target
-end
+-- function vecmaxvec(target, maxvec)
+--  target.x = max(target.x, maxvec.x)
+--  target.y = max(target.y, maxvec.y)
+--  return target
+-- end
 
 function vecfromangle(angle, mag)
  mag = mag or 1.0
@@ -602,19 +580,19 @@ function veclerp(v1, v2, amount, clamp)
  return result
 end
 
-function vecclamp(v, min_v, max_v)
- return vecmake(
-  min(max(v.x, min_v.x), max_v.x),
-  min(max(v.y, min_v.y), max_v.y)
- )
-end
+-- function vecclamp(v, min_v, max_v)
+--  return vecmake(
+--   min(max(v.x, min_v.x), max_v.x),
+--   min(max(v.y, min_v.y), max_v.y)
+--  )
+-- end
 -- @}
 
 -- @{ built in diagnostic stuff
-g_ski_none = 0
-g_ski_left = 1
-g_ski_right = 2
-g_ski_both = 3
+-- g_ski_none = 0
+-- g_ski_left = 1
+-- g_ski_right = 2
+-- g_ski_both = 3
 
 function make_player(p)
  return {
@@ -631,12 +609,12 @@ function make_player(p)
   bound_min=vecmake(-3, -4),
   bound_max=vecmake(2,0),
   angle=0, -- ski angle
-  ski_vec=vecmake(),
-  ski_vec_perp=vecmake(),
-  load_left=0,
-  load_right=0,
-  turnyness=0,
-  brakyness=0,
+  ski_vec=null_v,
+  ski_vec_perp=null_v,
+  -- load_left=0,
+  -- load_right=0,
+  -- turnyness=0,
+  -- brakyness=0,
   wedge=false,
   trail_points={},
   crashed=false,
@@ -644,12 +622,13 @@ function make_player(p)
   -- c_drag_along=1,
   c_drag_along=0.02,
   c_drag_against=0.2,
-  drag_along=vecmake(),
-  g=vecmake(),
-  total_accel=vecmake(),
-  drag_against=vecmake(),
+  drag_along=null_v,
+  g=null_v,
+  total_accel=null_v,
+  drag_against=null_v,
   -- c_drag_against=1,
   update=function(t)
+   -- crash case
    if t.crashed then
     t.vel = vecscale(t.vel, 0.9)
     vecset(t, vecadd(t, t.vel))
@@ -663,7 +642,7 @@ function make_player(p)
     end
     return
    end
-   local loaded_ski = g_ski_none
+
    t.wedge = true
    local tgt_dir = nil
    if btn(0, t.p) then
@@ -725,7 +704,6 @@ function make_player(p)
 
    -- euler integration for now
    t.vel = vecadd(t.vel, t.total_accel)
-   -- t.vel = clamp_velocity(t.vel)
    vecset(t, vecadd(t, t.vel))
    updateobjs(t.c_objs)
 
@@ -738,7 +716,8 @@ function make_player(p)
    t:add_new_trail_point(t)
   end,
   acceleration=function(t)
-   local brake_force = t:brake_force()
+   -- cbb
+   -- local brake_force = t:brake_force()
 
    -- ski direction unit vector
    local ski_vec = vecfromangle(t.angle)
@@ -754,7 +733,6 @@ function make_player(p)
    if t.wedge then
     drag_multiplier = 5
    end
-
 
    -- component of gravity along the skis (acceleration)
    -- local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
@@ -791,19 +769,21 @@ function make_player(p)
    )
    -- @}
 
-   return vecadd(
-    vecadd(g, vecadd(t.drag_along, t.drag_against)),
-    brake_force
-   )
+   -- if brake force is a thing
+   -- return vecadd(
+   --  vecadd(g, vecadd(t.drag_along, t.drag_against)),
+   --  brake_force
+   -- )
+   return vecadd(g, vecadd(t.drag_along, t.drag_against))
   end,
-  brake_force=function(t)
-   -- if not t.wedge then
-   if true then
-    return vecmake()
-   end
-
-   return vecscale(t.vel, -0.3)
-  end,
+  -- brake_force=function(t)
+  --  -- if not t.wedge then
+  --  if true then
+  --   return vecmake()
+  --  end
+  --
+  --  return vecscale(t.vel, -0.3)
+  -- end,
   horizontal_push=function(t, dir)
    if (
     btnn(dir, t.p) 
@@ -822,7 +802,7 @@ function make_player(p)
    -- trail renderer
    -- @TODO: make this render behind the trees
    for i=2,#t.trail_points do
-    for x_off in all({-1, 1}) do
+    for x_off=-1,1,2 do
      local p1 = vecsub(t.trail_points[i-1], t)
      local p2 = vecsub(t.trail_points[i], t)
      line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
@@ -863,7 +843,7 @@ function make_player(p)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
    -- print(str, -(#str)*2, 12, 8)
-   g_cursor_y=12
+   -- g_cursor_y=12
    -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
    -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
    -- print_cent("load_left: " .. t.load_left, 8)
@@ -875,19 +855,19 @@ function make_player(p)
 
    -- @{ acceleration components
    -- if t.drag_against != nil then
-   if false then
+   -- if false then
     -- print_cent("v_g: " .. vecmag(t.grav_accel), 2)
     -- print_cent("v_d_along: " .. vecmag(t.drag_along), 12)
     -- print_cent("v_d_against: " .. vecmag(t.drag_against), 1)
     -- print_cent("v_t: " .. vecmag(t.total_accel), 9)
     -- print_cent("vel_ang: " .. t.vel_angle, 8)
     -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
-    vecdraw(t.drag_along, 12)
-    vecdraw(t.drag_against, 1)
-    vecdraw(t.total_accel, 9)
-    vecdraw(t.vel, 2)
-    vecdraw(t.vel, 11)
-   end
+    -- vecdraw(t.drag_along, 12)
+    -- vecdraw(t.drag_against, 1)
+    -- vecdraw(t.total_accel, 9)
+    -- vecdraw(t.vel, 2)
+    -- vecdraw(t.vel, 11)
+   -- end
    -- print_cent("angle: " .. t.angle, 8)
    -- print_cent("pose: ".. pose, 8)
    -- print_cent("v_b: " .. t.angle, 8)
@@ -896,43 +876,43 @@ function make_player(p)
 
    -- if false then
    local offset = 0
-   if true then
-    palt(0, false)
-    palt(3, true)
-    if t.wedge then
-     palt(14, false)
-     pal(14, 11)
-     pal(13, 11)
-    else
-     palt(14, true)
-     palt(13, true)
-     offset = 2
-    end
-    local sprn = 17+abs(pose)*2
-    if t.crashed then
-     sprn = 29
-    end
 
-    -- @TODO: do something with the hood when you're not moving... celeste?
-    if sprn == 25 and elapsed(t.last_push) < 5 or vecmag(t.vel) < 0.1 then
-     sprn = 27
-    end
-
-    spr(sprn, -8, -11 + offset, 2, 2, pose < 0)
-    palt()
-    pal()
+   palt(0, false)
+   palt(3, true)
+   if t.wedge then
+    palt(14, false)
+    pal(14, 11)
+    pal(13, 11)
+   else
+    palt(14, true)
+    palt(13, true)
+    offset = 2
    end
+   local sprn = 17+abs(pose)*2
+   if t.crashed then
+    sprn = 29
+   end
+
+   -- @TODO: do something with the hood when you're not moving... celeste?
+   if sprn == 25 and elapsed(t.last_push) < 5 or vecmag(t.vel) < 0.1 then
+    sprn = 27
+   end
+
+   spr(sprn, -8, -11 + offset, 2, 2, pose < 0)
+   palt()
+   pal()
 
    drawobjs(t.c_objs)
 
    -- draw_bound_rect(t, 11)
   end,
   add_new_trail_point=function(t, p)
-   p = vecmake(flr(p.x), flr(p.y))
+   p = vecflr(p)
+   local last_point = t.trail_points[#t.trail_points]
    if (
-     t.trail_points[#t.trail_points] == nil or
-     t.trail_points[#t.trail_points].x != p.x or
-     t.trail_points[#t.trail_points].y != p.y
+     last_point == nil or
+     last_point.x != p.x or
+     last_point.y != p.y
    ) then
     add(t.trail_points, p)
    end
@@ -941,52 +921,6 @@ function make_player(p)
 end
 
 g_epsilon = 0.001
-
-function clamp_velocity(vel)
- local result = vecclamp(
-  vel,
-  vecmake(-9*g_mogulneer_accel), vecmake(9*g_mogulneer_accel)
- )
-
- for i in all({'x','y'}) do
-  if abs(result[i]) < g_epsilon then
-   result[i] = 0
-  end
- end
- return result
-end
-
-function make_grid(space, spacing)
- return {
-  x=0,
-  y=0,
-  space=space,
-  spacing=spacing,
-  update=function(t) end,
-  draw=function(t) 
-   local space_label = "local"
-   if t.space == sp_world then
-    space_label = "world" 
-   elseif t.space == sp_screen_center then
-    space_label = "screen_center"
-   elseif t.space == sp_screen_native then
-    space_label = "screen_native"
-   end
-
-   for x=0,3 do
-    for y=0,3 do
-     local col = y*4+x
-     local xc =(x-1.5)*t.spacing 
-     local yc = (y-1.5)*t.spacing
-     rect(xc-1, yc-1,xc+1, yc+1, col)
-     circ(xc, yc, 7, col)
-     local str = space_label .. ": " .. xc .. ", ".. yc
-     print(str, xc-#str*2, yc+9, col)
-    end
-   end
-  end
- }
-end
 
 function make_camera()
  return {
@@ -1088,13 +1022,13 @@ state_map[0] = "menu"
 state_map[1] = "menu_trans"
 state_map[2] = "playing"
 
-gate_str_map = {
- "start",
- "end",
- "left",
- "right",
- "next",
-}
+-- gate_str_map = {
+--  "start",
+--  "end",
+--  "left",
+--  "right",
+--  "next",
+-- }
 
 -- gate settings
 gate_height = 10 
@@ -1108,27 +1042,27 @@ tracks = {
  { 
   sel = vecmake(30, 96),
   course = {
-   {vecmake(0,    0), 32, ge_gate_start},
+   {vecmake(0,    0), 32,  ge_gate_start},
    {vecmake(-32, 50),  0,  ge_gate_right},
-   {vecmake(-66, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(12,  80),  0,  ge_gate_next},
-   {vecmake(62,  80),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(42, 80),  0,  ge_gate_next},
-   {vecmake(16, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(-32, 50),  0,  ge_gate_right},
-   {vecmake(-66, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(12,  80),  0,  ge_gate_next},
-   {vecmake(62,  80),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(62,  100),  0,  ge_gate_next},
-   {vecmake(42, 80),  0,  ge_gate_next},
-   {vecmake(16, 90),  0,  ge_gate_next},
-   {vecmake(-2, 100),  0,  ge_gate_next},
+   {vecmake(-66, 90),  0},
+   {vecmake(-2, 100),  0},
+   {vecmake(12,  80),  0},
+   {vecmake(62,  80),  0},
+   {vecmake(62, 100),  0},
+   {vecmake(62, 100),  0},
+   {vecmake(42,  80),  0},
+   {vecmake(16,  90),  0},
+   {vecmake(-2, 100),  0},
+   {vecmake(-32, 50),  0},
+   {vecmake(-66, 90),  0},
+   {vecmake(-2, 100),  0},
+   {vecmake(12,  80),  0},
+   {vecmake(62,  80),  0},
+   {vecmake(62, 100),  0},
+   {vecmake(62, 100),  0},
+   {vecmake(42,  80),  0},
+   {vecmake(16,  90),  0},
+   {vecmake(-2, 100),  0},
    -- {vecmake(-32, 50),  0,  ge_gate_right},
    -- {vecmake(-66, 90),  0,  ge_gate_next},
    -- {vecmake(-2, 100),  0,  ge_gate_next},
@@ -1383,14 +1317,14 @@ function make_score_screen(timer, backcountry_mode)
  }
  g_cam= nil
  g_p1 = nil
- g_cam = vecmake()
+ g_cam = null_v
  g_state = ge_state_menu
 end
 
 function make_gate(gate_data, accum_y, starter_objects)
  local index = #starter_objects + 1
  local gate_kind = gate_data[3]
- if gate_kind == ge_gate_next then
+ if gate_kind == ge_gate_next or gate_kind == nil then
   gate_kind = (
    ge_gate_right 
    - starter_objects[#starter_objects].gate_kind 
@@ -1518,141 +1452,26 @@ function make_gate(gate_data, accum_y, starter_objects)
  return result
 end
 
-function make_track_mark(track_data)
- return {
-  x=track_data["sel"].x,
-  y=track_data["sel"].y,
-  draw=function()
-   circfill(0, 0, 5, 11)
-  end
- }
-end
-
-function make_track_marks()
- result = {}
- for tr in all(tracks) do
-  add(result, make_track_mark(tr))
- end
- return result
-end
-
-start_box = vecmake(64, 256)
-
-function make_selector()
- return {
-  x=0,
-  y=0,
-  children=make_track_marks(),
-  current_selection=1,
-  current_location=0,
-  last_selection=0,
-  progress=0,
-  box_location=start_box,
-  update=function(t)
-   if btnn(1, t.p) and t.current_selection < #tracks then
-    t.last_selection = t.current_selection
-    t.current_selection += 1
-    t.progress = 0
-   elseif btnn(0, t.p) and t.current_selection > 1 then
-    t.last_selection = t.current_selection
-    t.current_selection -= 1
-    t.progress = 0
-   end
-
-   if btnn(5, t.p) then
-    add_gobjs(
-     make_trans(
-     function()
-      slalom_start(t.current_selection)
-     end
-     )
-    )
-   end
-
-   if t.progress < 1 then
-
-    -- text
-    local target_location = 128*t.current_selection+64
-    local last_location = 128*t.last_selection+64
-
-    t.current_location = (
-     (target_location - last_location)
-     *(smootherstep(t.progress))+last_location
-    )
-
-    -- selection box
-    local target_location = tracks[t.current_selection]["sel"]
-    local last_location = start_box
-    if t.last_selection != 0 then
-     last_location = tracks[t.last_selection]["sel"]
-    end
-
-    t.box_location = veclerp(last_location, target_location, t.progress)
-
-    t.progress += 0.1
-   else
-    t.progress = 1
-   end
-  end,
-  draw=function(t)
-   drawobjs(t.children)
-
-   for i=1,#tracks do
-    print(""..i, 128*i+2*64-t.current_location, 10, 11)
-   end
-
-   -- print(t.progress .. " " .. t.current_selection .. " / " .. #tracks .. " " .. t.current_location, 5, 5, 11)
-
-   if g_tick%32 > 16 or t.progress < 1 then
-    rect(
-     t.box_location.x - 5,
-     t.box_location.y - 5,
-     t.box_location.x + 5,
-     t.box_location.y + 5,
-     8
-    )
-
-
-   end
-  end
- }
-end
-
-function make_mountain_graphic()
- return {
-  x=0, 
-  y=0,
-  draw=function()
-   sspr(0, 96, 32, 32, 0, 0, 128, 128)
-  end
- }
-end
-
-function slalom_course_menu()
- g_objs = {
-  make_title_bg(),
-  make_mountain_graphic(),
-  make_selector()
- }
-
---  g_objs = {
---   make_bg(),
---   make_mountain(),
---   make_debugmsg(),
+-- function make_track_mark(track_data)
+--  return {
+--   x=track_data["sel"].x,
+--   y=track_data["sel"].y,
+--   draw=function()
+--    circfill(0, 0, 5, 11)
+--   end
 --  }
+-- end
 --
---  g_partm = add_gobjs(spray_particles())
---
---  g_cam= add_gobjs(make_camera())
---  g_p1 = add_gobjs(make_player(0))
---
---
---  g_brd = make_board()
---  add(g_objs, g_brd)
---  g_tgt = make_tgt(0,0)
---  add(g_objs,g_tgt)
-end
+-- function make_track_marks()
+--  result = {}
+--  for tr in all(tracks) do
+--   add(result, make_track_mark(tr))
+--  end
+--  return result
+-- end
 
+
+-- constructor for slalom mode
 function slalom_start(track_ind)
  g_state = ge_state_playing
  g_objs = {
@@ -1661,17 +1480,10 @@ function slalom_start(track_ind)
  }
 
  g_mountain = add_gobjs(make_mountain("slalom", track_ind))
-
- g_partm = add_gobjs(spray_particles())
-
- g_cam= add_gobjs(make_camera())
- g_p1 = add_gobjs(make_player(0))
- g_timer = add_gobjs(make_clock())
-
---  g_brd = make_board()
---  add(g_objs, g_brd)
---  g_tgt = make_tgt(0,0)
---  add(g_objs,g_tgt)
+ g_partm    = add_gobjs(spray_particles())
+ g_cam      = add_gobjs(make_camera())
+ g_p1       = add_gobjs(make_player(0))
+ g_timer    = add_gobjs(make_clock())
 end
 
 ramp = {1, 13, 12, 6, 3, 11, 10}
@@ -1691,10 +1503,6 @@ function make_backcountry_points()
    end
   end,
   draw=function(t)
-   local col = 1
-   if t.state == "scoring" then
-    col = 11
-   end
    print(t.score, 60, 1, t.col)
   end,
  }
@@ -1709,25 +1517,15 @@ function backcountry_start()
  }
 
  g_bc_score = add_gobjs(make_backcountry_points())
-
- g_partm = add_gobjs(spray_particles())
-
- g_cam= add_gobjs(make_camera())
- g_p1 = add_gobjs(make_player(0))
-
-
---  g_brd = make_board()
---  add(g_objs, g_brd)
---  g_tgt = make_tgt(0,0)
---  add(g_objs,g_tgt)
+ g_partm    = add_gobjs(spray_particles())
+ g_cam      = add_gobjs(make_camera())
+ g_p1       = add_gobjs(make_player(0))
 end
 
 function make_bg(col)
- if col == nil then
-  col = 7
- end
+ col = col or 7
+
  return {
-  space=sp_screen_native,
   draw=function(t)
    stdclscol(col)
   end
@@ -1769,7 +1567,6 @@ function make_line(g1, g2)
      local mult = 50+i
      local c = colors[i+1]
      line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
-     line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
     end
    end
   end
@@ -1777,12 +1574,8 @@ function make_line(g1, g2)
 end
 
 function backcountry_random_tree_loc(y_loc)
- local off = vecmake()
- if g_cam then
-  off = g_cam
- end
+ local off = g_cam or null_v
 
---  local new_loc = nil
  local new_loc = nil
  repeat
   new_loc = vecmake(off.x + rnd(192)-96, y_loc)
@@ -1828,13 +1621,9 @@ function make_mountain(kind, track_ind)
     current_line += 1
     l = lines[current_line]
    end
-   -- if i > l.g2 then
-   --  current_line =+ 1 
-   -- end
    -- get the boundaries for the height
    for off=-1,1,2 do
     for j=1,4 do
-     -- local off_x = off*30
      local off_x = off*90
      local rndloc = vecmake(
       rnd(40)-20 + off_x + l:x_coordinte(y_c),
@@ -1987,7 +1776,7 @@ function make_rock(loc)
   index=flr(rnd(4)),
   bound_cent=vecmake(0, 9),
   draw=function(t)
-   spr(96, -4, -4, 1, 2)
+   spr(96+t.index, -4, -4, 1, 2)
   end
  }
 end
@@ -2007,10 +1796,7 @@ function draw_bound_rect(obj, col)
 end
 
 function overlaps_bounds(fst, snd)
- if fst == snd then
-  return false
- end
- if not fst or not snd then
+ if fst == snd or not fst or not snd then
   return false
  end
  if not fst.bound_min or not snd.bound_min or 
@@ -2050,7 +1836,6 @@ function print_cent(str, col)
  print(str, -(#str)*2, g_cursor_y, col)
  g_cursor_y += 6
 end
-
 ------------------------------
 
 function stdinit()
