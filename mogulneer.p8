@@ -25,6 +25,9 @@ __lua__
 -- rock spawn location [x]
 -- make the camera focus on the finish line when you cross it instead of the player in slalom mode [x]
 -- fix the player standing back up after crashing [x]
+-- penalty for missing gates
+-- display all gates in the score for slalom
+-- bend course to show better which way the player should go
 -- overflow bug
 -- add a button prompt with the "dash" button
 -- better backcountry score display
@@ -35,6 +38,7 @@ __lua__
 -- a jump system
 -- refined movement mechanics (I miss the slidey ness of the old system, plus the new system has some quirks - you can slide up the mountain for example).
 -- retune camera filter
+-- better spray and better trail particles
 -- add sfx
  -- turn 
  -- gate hit
@@ -523,6 +527,10 @@ function vecmake(xf, yf)
  return {x=xf, y=(yf or xf)}
 end
 
+function veccopy(tgt)
+ return vecmake(tgt.x, tgt.y)
+end
+
 -- global null vector
 null_v = vecmake()
 
@@ -641,7 +649,7 @@ function make_player(p)
     vecset(t, vecadd(t, t.vel))
     if vecmagsq(t.vel) < 0.1 then
      g_cam.drift = true
-     g_cam.last_target_point = t
+     g_cam.last_target_point = veccopy(t)
      function done_func()
       make_score_screen(g_bc_score, true)
      end
@@ -1074,6 +1082,7 @@ tracks = {
    {vecmake(42,  80),  0},
    {vecmake(16,  90),  0},
    {vecmake(-2, 100),  0},
+
    -- {vecmake(-32, 50),  0,  ge_gate_right},
    -- {vecmake(-66, 90),  0,  ge_gate_next},
    -- {vecmake(-2, 100),  0,  ge_gate_next},
@@ -1342,9 +1351,16 @@ function make_gate(gate_data, accum_y, starter_objects)
    + ge_gate_left
   )
  end
+ local gate_border_offset = 0
+ if gate_kind == ge_gate_right then
+  gate_border_offset = 30
+ elseif gate_kind == ge_gate_left then
+  gate_border_offset = -30
+ end
  local result = {
   x=gate_data[1].x,
   y=accum_y,
+  gate_border_offset = gate_data[1].x + gate_border_offset,
   radius=gate_data[2],
   gate_kind=gate_kind,
   space=sp_world,
@@ -1363,7 +1379,7 @@ function make_gate(gate_data, accum_y, starter_objects)
     elseif t.gate_kind == ge_gate_end then
      g_timer:stop()
      g_cam.drift = true
-     g_cam.last_target_point = t
+     g_cam.last_target_point = veccopy(t)
      function done_func()
       make_score_screen(g_timer)
      end
@@ -1559,13 +1575,13 @@ function make_line(g1, g2)
   slope=nil,
   offset=nil,
   compute_slope=function(t)
-   return (t.g2.y - t.g1.y) / (t.g2.x - t.g1.x)
+   return (t.g2.y - t.g1.y) / (t.g2.gate_border_offset - t.g1.gate_border_offset)
   end,
   compute_offset=function(t)
    -- t.slope * (x - g1.x) =  (y - g1.y)
    -- t.slope * x - t.slope * g1.x =  (y - g1.y)
    -- x = y / t.slope - g1.y / t.slope + g1.x
-   return g1.x - g1.y / t.slope
+   return g1.gate_border_offset - g1.y / t.slope
   end,
   x_coordinte=function(t, y_coordinate)
    if t.slope == nil then
@@ -1583,7 +1599,7 @@ function make_line(g1, g2)
     for i=0,3 do
      local mult = 50+i
      local c = colors[i+1]
-     line(g1.x + mult*offset, g1.y, g2.x + mult*offset, g2.y, c)
+     line(g1.gate_border_offset + mult*offset, g1.y, g2.gate_border_offset + mult*offset, g2.y, c)
     end
    end
   end
