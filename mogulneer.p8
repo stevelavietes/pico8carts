@@ -8,7 +8,6 @@ __lua__
 -- add moguls
 -- add weight system
 -- some kind of 2nd order system
--- "z-sorted" tree drawing system
 -- rocks don't cause crashes at the moment 
 
 -- cool flavor:
@@ -26,8 +25,9 @@ __lua__
 -- make the camera focus on the finish line when you cross it instead of the player in slalom mode [x]
 -- fix the player standing back up after crashing [x]
 -- bend course to show better which way the player should go [x]
+-- use curved lines instead of straight lines [x]
 
--- use curved lines instead of straight lines
+-- "z-sorted" tree drawing system
 -- penalty for missing gates
 -- display all gates in the score for slalom
 -- overflow bug
@@ -1548,11 +1548,10 @@ end
 
 function backcountry_start()
  g_state = ge_state_playing
- g_objs = {
-  make_bg(7),
-  make_mountain("back_country"),
-  make_debugmsg(),
- }
+ g_objs = { make_bg(7) }
+
+ g_mountain = add_gobjs(make_mountain("back_country"))
+ add_gobjs(make_debugmsg())
 
  g_bc_score = add_gobjs(make_backcountry_points())
  g_partm    = add_gobjs(spray_particles())
@@ -1805,6 +1804,9 @@ function respawn_object(t, anywhere)
    end
    t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
   end
+  -- cycle objects to end of the list, effectively z-sorting the tree list
+  del(g_mountain.p_objs, t)
+  add(g_mountain.p_objs, t)
  end
 
  if anywhere then
