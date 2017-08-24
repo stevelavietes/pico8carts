@@ -1618,16 +1618,23 @@ function make_line(before, g1, g2, after)
     t.m0, t.m1 = t:compute_tangents()
    end
 
-   for z_prime=0,150,1 do
-    local z = z_prime/150
+   local last_point = p0
+   local colors = {8,8,1,2}
+   for z_prime=0,10,1 do
+    local z = z_prime/10
     local p0_t = vecscale(p0, (2*z*z*z - 3*z*z + 1))
     local m0_t = vecscale(t.m0, (z*z*z - 2*z*z + z))
     local p1_t = vecscale(p1, (-2*z*z*z + 3*z*z))
     local m1_t = vecscale(t.m1, (z*z*z - z*z))
     local p_t = vecadd(vecadd(p0_t, m0_t), vecadd(p1_t, m1_t))
-    for offset=-50,50,100 do
-     line(p_t.x+offset, p_t.y, p_t.x+4+offset, p_t.y, 8)
+    for offset=-1,1,2 do
+     for l_ind=0,3 do
+      local i=50+l_ind
+      local c = colors[l_ind+1]
+      line(last_point.x+offset*i, last_point.y, p_t.x+offset*i, p_t.y, c)
+     end
     end
+    last_point = p_t
    end
   end
   --  local colors = {8,8,1,2}
