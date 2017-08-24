@@ -48,7 +48,7 @@ __lua__
  -- end of the slalom
  -- menu select
 
-mute_debug = true
+-- mute_debug = true
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -161,13 +161,15 @@ function process_particles(at_scope)
    particle.y += particle.dy
    particle.life -= 1
 
-   for _, c in pairs(collision_objects) do
-    local collision_result = c:collides(particle)
-    if collision_result != nil then
-     particle.x += collision_result[1]
-     particle.y += collision_result[2]
-     particle.dy = 0
-     particle.dx = 0
+   if g_state == ge_state_menu then
+    for _, c in pairs(collision_objects) do
+     local collision_result = c:collides(particle)
+     if collision_result != nil then
+      particle.x += collision_result[1]
+      particle.y += collision_result[2]
+      particle.dy = 0
+      particle.dx = 0
+     end
     end
    end
 
@@ -176,7 +178,7 @@ function process_particles(at_scope)
  end -- while
 end
 
-g_mogulneer_accel = 0.8
+-- g_mogulneer_accel = 0.8
 g_mogulneer_accel = 0.4
 -- g_mogulneer_accel = 0.3
 
@@ -197,9 +199,6 @@ collision_objects = {
     return {0, - 1}
    end
   end,
-  draw=function(t)
-   -- rectfill(t.x, t.y, t.x + t.width, t.y + t.height, 11)
-  end
  }
 }
 -- }
