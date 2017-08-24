@@ -1567,15 +1567,28 @@ function make_bg(col)
  }
 end
 
-function make_line(g1, g2)
+function make_line(before, g1, g2, after)
  return {
   x=0, 
   y=0, 
   space=sp_world,
+  before=before,
   g1=g1,
   g2=g2,
+  after=after,
   slope=nil,
   offset=nil,
+  compute_tangents=function(t)
+   local m0 = vecmake(0, 1)
+   local m1 = vecmake(0, -1)
+   if before then
+    m0 = vecsub(t.g1, t.before)
+   end
+   if after then
+    m1 = vecsub(t.after, t.g2)
+   end
+   return m0, m1
+  end,
   compute_slope=function(t)
    return (t.g2.y - t.g1.y) / (t.g2.gate_border_offset - t.g1.gate_border_offset)
   end,
@@ -1596,15 +1609,36 @@ function make_line(g1, g2)
    if abs(t.g2.y - g_cam.y) > 70 and abs(t.g1.y - g_cam.y) > 70 then
     return
    end
-   local colors = {8,8,1,2}
-   for offset=-1,1,2 do
-    for i=0,3 do
-     local mult = 50+i
-     local c = colors[i+1]
-     line(g1.gate_border_offset + mult*offset, g1.y, g2.gate_border_offset + mult*offset, g2.y, c)
+   --        p0_t                 m0_t                  p1_t              m1_t
+   -- p(t) = (2t^3 - 3t^2 +1)p0 + (t^3 - 2t^2 + t)*m0 + (-2t^3+3t^2)*p1 + (t^3-t^2)*m1
+   local p0 = vecmake(t.g1.gate_border_offset, t.g1.y)
+   local p1 = vecmake(t.g2.gate_border_offset, t.g2.y)
+
+   if not t.m0 then
+    t.m0, t.m1 = t:compute_tangents()
+   end
+
+   for z_prime=0,150,1 do
+    local z = z_prime/150
+    local p0_t = vecscale(p0, (2*z*z*z - 3*z*z + 1))
+    local m0_t = vecscale(t.m0, (z*z*z - 2*z*z + z))
+    local p1_t = vecscale(p1, (-2*z*z*z + 3*z*z))
+    local m1_t = vecscale(t.m1, (z*z*z - z*z))
+    local p_t = vecadd(vecadd(p0_t, m0_t), vecadd(p1_t, m1_t))
+    for offset=-50,50,100 do
+     line(p_t.x+offset, p_t.y, p_t.x+4+offset, p_t.y, 8)
     end
    end
   end
+  --  local colors = {8,8,1,2}
+  --  for offset=-1,1,2 do
+  --   for i=0,3 do
+  --    local mult = 50+i
+  --    local c = colors[i+1]
+  --    line(g1.gate_border_offset + mult*offset, g1.y, g2.gate_border_offset + mult*offset, g2.y, c)
+  --   end
+  --  end
+  -- end
  }
 end
 
@@ -1638,7 +1672,7 @@ function make_mountain(kind, track_ind)
    local p1 = gates[i-1]
    local p2 = gates[i]
 
-   add(lines, make_line(gates[i-1], gates[i]))
+   add(lines, make_line(gates[i-2], gates[i-1], gates[i], gates[i+1]))
   end
   for l_obj in all(lines) do
    add(starter_objects, l_obj)
