@@ -25,9 +25,11 @@ __lua__
 -- rock spawn location [x]
 -- make the camera focus on the finish line when you cross it instead of the player in slalom mode [x]
 -- fix the player standing back up after crashing [x]
+-- bend course to show better which way the player should go [x]
+
+-- use curved lines instead of straight lines
 -- penalty for missing gates
 -- display all gates in the score for slalom
--- bend course to show better which way the player should go
 -- overflow bug
 -- add a button prompt with the "dash" button
 -- better backcountry score display
