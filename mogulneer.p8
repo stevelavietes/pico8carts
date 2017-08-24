@@ -1822,6 +1822,7 @@ function make_tree(loc, anywhere)
   bound_min=vecmake(-2,9),
   bound_max=vecmake(1,12),
   flip=rnd(1) > 0.5,
+  height=flr(rnd(16)),
   update=function(t)
    respawn_object(t, anywhere)
   end,
@@ -1830,7 +1831,13 @@ function make_tree(loc, anywhere)
    --  return
    -- end
    -- spr(-2,-2,1,2,10)
-   spr(15, -4, -4, 1, 2, t.flip)
+   -- spr(15, -4, -4, 1, 2, t.flip)
+   sspr(
+    120, 0, 8, 16, 
+    -4 - t.height/8, -4 - t.height,
+    8+(t.height)/4, 16 + t.height,
+    t.flip
+   )
    -- rect(-4,-4,4,4,11)
    -- draw_bound_rect(t, 11)
   end
