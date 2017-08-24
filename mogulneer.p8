@@ -48,6 +48,8 @@ __lua__
  -- end of the slalom
  -- menu select
 
+mute_debug = true
+
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
 beta = 0.0001
@@ -209,6 +211,9 @@ function make_debugmsg()
  return {
   space=sp_screen_native,
   draw=function(t)
+   if mute_debug == true then
+    return
+   end
    maxmem = max(maxmem, stat(0)/1024)
    -- minmem = min(minmem, stat(2))
    color(14)
