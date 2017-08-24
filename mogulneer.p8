@@ -1568,65 +1568,67 @@ function make_bg(col)
 end
 
 function make_line(before, g1, g2, after)
+ local m0 = vecmake(0, 1)
+ local m1 = vecmake(0, -1)
+ if before then
+  -- m0 = vecscale(vecsub(g1, before), 0.5)
+  m0 = vecsub(g1, before)
+ end
+ if after then
+  -- m1 = vecscale(vecsub(after, g2), 0.5)
+  m1 = vecsub(after, g2)
+ end
+
+ local p0 = vecmake(g1.gate_border_offset, g1.y)
+ local p1 = vecmake(g2.gate_border_offset, g2.y)
+
+ local pts = {p0}
+
+ --        p0_t                 m0_t                  p1_t              m1_t
+ -- p(t) = (2t^3 - 3t^2 +1)p0 + (t^3 - 2t^2 + t)*m0 + (-2t^3+3t^2)*p1 + (t^3-t^2)*m1
+
+ local curve_points = 10
+ local last_point = p0
+ for z_prime=1,curve_points,1 do
+  local z = z_prime/curve_points
+  local p0_t = vecscale(p0, (2*z*z*z - 3*z*z + 1))
+  local m0_t = vecscale(m0, (z*z*z - 2*z*z + z))
+  local p1_t = vecscale(p1, (-2*z*z*z + 3*z*z))
+  local m1_t = vecscale(m1, (z*z*z - z*z))
+  local p_t = vecadd(vecadd(p0_t, m0_t), vecadd(p1_t, m1_t))
+  add(pts, p_t)
+  last_point = p_t
+ end
+
  return {
   x=0, 
   y=0, 
   space=sp_world,
-  before=before,
   g1=g1,
   g2=g2,
-  after=after,
-  slope=nil,
-  offset=nil,
-  compute_tangents=function(t)
-   local m0 = vecmake(0, 1)
-   local m1 = vecmake(0, -1)
-   if before then
-    m0 = vecsub(t.g1, t.before)
-   end
-   if after then
-    m1 = vecsub(t.after, t.g2)
-   end
-   return m0, m1
-  end,
-  compute_slope=function(t)
-   return (t.g2.y - t.g1.y) / (t.g2.gate_border_offset - t.g1.gate_border_offset)
-  end,
-  compute_offset=function(t)
-   -- t.slope * (x - g1.x) =  (y - g1.y)
-   -- t.slope * x - t.slope * g1.x =  (y - g1.y)
-   -- x = y / t.slope - g1.y / t.slope + g1.x
-   return g1.gate_border_offset - g1.y / t.slope
-  end,
   x_coordinte=function(t, y_coordinate)
-   if t.slope == nil then
-    t.slope = t:compute_slope()
-    t.offset = t:compute_offset()
+   local tgt_ind = #pts
+   for i=2,#pts do
+    if pts[i].y > y_coordinate then
+     tgt_ind = i
+     break
+    end
    end
-   return  y_coordinate / t.slope + t.offset
+   local pt1 = pts[tgt_ind-1]
+   local pt2 = pts[tgt_ind]
+   return (y_coordinate - pt1.y) * (pt2.x - pt1.x) / (pt2.y - pt1.y) + pt1.x
   end,
   draw=function(t)
    if abs(t.g2.y - g_cam.y) > 70 and abs(t.g1.y - g_cam.y) > 70 then
     return
    end
-   --        p0_t                 m0_t                  p1_t              m1_t
-   -- p(t) = (2t^3 - 3t^2 +1)p0 + (t^3 - 2t^2 + t)*m0 + (-2t^3+3t^2)*p1 + (t^3-t^2)*m1
-   local p0 = vecmake(t.g1.gate_border_offset, t.g1.y)
-   local p1 = vecmake(t.g2.gate_border_offset, t.g2.y)
-
-   if not t.m0 then
-    t.m0, t.m1 = t:compute_tangents()
-   end
 
    local last_point = p0
    local colors = {8,8,1,2}
-   for z_prime=0,10,1 do
-    local z = z_prime/10
-    local p0_t = vecscale(p0, (2*z*z*z - 3*z*z + 1))
-    local m0_t = vecscale(t.m0, (z*z*z - 2*z*z + z))
-    local p1_t = vecscale(p1, (-2*z*z*z + 3*z*z))
-    local m1_t = vecscale(t.m1, (z*z*z - z*z))
-    local p_t = vecadd(vecadd(p0_t, m0_t), vecadd(p1_t, m1_t))
+   for p_ind = 2,#pts,1 do
+    local last_point = pts[p_ind-1]
+    local p_t = pts[p_ind]
+
     for offset=-1,1,2 do
      for l_ind=0,3 do
       local i=50+l_ind
@@ -1637,15 +1639,6 @@ function make_line(before, g1, g2, after)
     last_point = p_t
    end
   end
-  --  local colors = {8,8,1,2}
-  --  for offset=-1,1,2 do
-  --   for i=0,3 do
-  --    local mult = 50+i
-  --    local c = colors[i+1]
-  --    line(g1.gate_border_offset + mult*offset, g1.y, g2.gate_border_offset + mult*offset, g2.y, c)
-  --   end
-  --  end
-  -- end
  }
 end
 
@@ -1676,9 +1669,6 @@ function make_mountain(kind, track_ind)
    add(gates, make_gate(gate, accum_y, gates))
   end
   for i=2,#gates do
-   local p1 = gates[i-1]
-   local p2 = gates[i]
-
    add(lines, make_line(gates[i-2], gates[i-1], gates[i], gates[i+1]))
   end
   for l_obj in all(lines) do
