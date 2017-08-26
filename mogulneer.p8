@@ -26,9 +26,9 @@ __lua__
 -- fix the player standing back up after crashing [x]
 -- bend course to show better which way the player should go [x]
 -- use curved lines instead of straight lines [x]
+-- penalty for missing gates [x]
 
--- "z-sorted" tree drawing system
--- penalty for missing gates
+-- animation that "pays out" the missed gates penalty on your final time
 -- display all gates in the score for slalom
 -- overflow bug
 -- add a button prompt with the "dash" button
@@ -48,7 +48,10 @@ __lua__
  -- end of the slalom
  -- menu select
 
--- mute_debug = true
+-- probably not:
+-- "z-sorted" tree drawing system
+
+mute_debug = true
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -203,6 +206,7 @@ collision_objects = {
 g_mogulneer_accel = 0.4
 -- g_mogulneer_accel = 0.3
 
+
 -- { debug stuff can be deleted
 function make_debugmsg()
  local maxmem=stat(2)
@@ -221,6 +225,10 @@ function make_debugmsg()
    print("mem: ".. stat(0)/1024)
    print(" max:" ..maxmem)
    print("gst: "..state_map[g_state])
+   -- print("shk: "..repr(g_shake_end))
+   -- print("smg: "..repr(g_shake_mag))
+   -- print("shf: "..repr(g_shake_frequency))
+   -- print("lst: "..repr(last_shake))
    if g_p1 then
     print("vel: ".. vecmag(g_p1.vel))
     print("ang: ".. g_p1.angle)
@@ -947,49 +955,50 @@ end
 
 g_epsilon = 0.001
 
-function make_camera()
+function make_camera(x,y)
  return {
-  x=30,
-  y=60,
+  x=x or 30,
+  y=y or 60,
   low_pass=make_one_euro_filt(beta, mincutoff),
   delta_offset = 0,
   drift = false,
   last_target_point = nil,
   drift_start = nil,
   update=function(t)
-   if g_state != ge_state_playing then
+   if g_state == ge_state_menu_trans then
     return
    end
 
-   local offset = 20
+   local target_point = null_v
 
-   if g_p1.vel then
-    offset += g_p1.vel.y*10
-   end
-
-   local new_offset = t.low_pass:filter(offset)
-   t.delta_offset = new_offset - offset
-   local target_point = vecadd(g_p1, vecmake(0, new_offset))
-
-   if not t.drift then
-    t.last_target_point = target_point
-    t.last_vel = g_p1.vel
-   else
-    if not t.drift_start then
-     t.drift_start = g_tick
+   if g_p1 then
+    local offset = 20
+    if g_p1.vel then
+     offset += g_p1.vel.y*10
     end
-    target_point = t.last_target_point
-    if elapsed(t.drift_start) < 20 then
-     vecset(
-      t.last_target_point,
-      vecadd(
+
+    local new_offset = t.low_pass:filter(offset)
+    t.delta_offset = new_offset - offset
+    target_point = vecadd(g_p1, vecmake(0, new_offset))
+
+    if not t.drift then
+     t.last_target_point = target_point
+     t.last_vel = g_p1.vel
+    else
+     t.drift_start = t.drift_start or g_tick
+
+     target_point = t.last_target_point
+     if elapsed(t.drift_start) < 20 then
+      vecset(
        t.last_target_point,
-       veclerp(t.last_vel, null_v, elapsed(t.drift_start)/10)
+       vecadd(
+        t.last_target_point,
+        veclerp(t.last_vel, null_v, elapsed(t.drift_start)/10)
+       )
       )
-     )
+     end
     end
    end
-   -- vecset(t,target_point)
 
    vecset(t,veclerp(t,target_point,0.2,0.7))
 
@@ -1165,23 +1174,28 @@ function make_clock()
    rectfill(-half_len*4, 7, half_len*4, 13, 6)
    print("miss:"..t.misses, -half_len*4+1, 8, 0)
   end,
+  increment=function(t, amount)
+   for i=1,amount do
+    t.c+=1
+    --fixed-point math not
+    --accurate enough for
+    --division of seconds.
+    --do addition instead
+    if t.c>=30 then
+     t.c=0
+     t.s+=1
+     if t.s>=60 then
+      t.s=0
+      t.m+=1
+     end
+    end
+   end
+  end,
   update=function(t)
    if t.state == ge_timerstate_stopped then
     return
    end
-   t.c+=1
-   --fixed-point math not
-   --accurate enough for
-   --division of seconds.
-   --do addition instead
-   if t.c>=30 then
-    t.c=0
-    t.s+=1
-    if t.s>=60 then
-     t.s=0
-     t.m+=1
-    end
-   end
+   t:increment(1)
   end,
   inc_missed_gate = function(t)
    t.misses += 1
@@ -1193,14 +1207,6 @@ end
 
 -- final score display
 function make_score_display(base_timer, score_mode)
- local timer = nil
- if not score_mode then
-  timer = {
-   m=base_timer.m,
-   c=base_timer.c,
-   s=base_timer.s
-  }
- end
  return {
   x=0,
   y=-192,
@@ -1231,13 +1237,17 @@ function make_score_display(base_timer, score_mode)
       )
      end
     end
+   elseif base_timer.misses and base_timer.misses > 0 and t.made and (elapsed(t.made) % 15) == 0 then
+    base_timer.misses -= 1
+    g_timer:increment(50)
+    shake_screen(8, 5)
+    flash_screen(4, 8)
+    -- stop()
    end
-   if t.made and elapsed(t.made) > 45 then
+
+   if t.made and elapsed(t.made) > 45 and base_timer.misses == 0 then
     t.made = nil
-    local event_str = "slalom"
-    if score_mode then
-     event_str = "backcountry mode"
-    end
+    local event_str = score_mode and "backcountry mode" or "slalom" 
     add_gobjs(
      make_menu(
       {
@@ -1265,22 +1275,22 @@ function make_score_display(base_timer, score_mode)
   end,
   timer_score=function(t)
    local m_t = 0
-   if timer.m > 10 then
-    m_t = min(9, flr(timer.m/10))
+   if base_timer.m > 10 then
+    m_t = min(9, flr(base_timer.m/10))
    end
-   local m_o = timer.m - 10*flr(timer.m/10)
+   local m_o = base_timer.m - 10*flr(base_timer.m/10)
    -- seconds
    local s_t = 0
-   if timer.s > 10 then
-    s_t = min(9, flr(timer.s/10))
+   if base_timer.s > 10 then
+    s_t = min(9, flr(base_timer.s/10))
    end
-   local s_o = timer.s - 10*flr(timer.s/10)
+   local s_o = base_timer.s - 10*flr(base_timer.s/10)
    -- centoseconds
    local c_t = 0
-   if timer.c > 10 then
-    c_t = min(9, flr(timer.c/10))
+   if base_timer.c > 10 then
+    c_t = min(9, flr(base_timer.c/10))
    end
-   local c_o = timer.c - 10*flr(timer.c/10)
+   local c_o = base_timer.c - 10*flr(base_timer.c/10)
    return {m_t, m_o, 10, s_t, s_o, 10, c_t, c_o}
   end,
   backcountry_score=function(t)
@@ -1304,9 +1314,14 @@ function make_score_display(base_timer, score_mode)
    -- minutes
    local gratz_str = "congratulations!"
    local msg_str = score_mode and "your final score was:" or "your final time was:"
+
    g_cursor_y = -12 
-   print_cent(gratz_str, 14)
-   print_cent(msg_str, 14)
+   if base_timer.misses == 0 then
+    print_cent(gratz_str, 14)
+    print_cent(msg_str, 14)
+   end
+   g_cursor_y = 9
+   print_cent("misses: "..base_timer.misses, 14)
 
    local char_array = {}
    if score_mode  then 
@@ -1566,6 +1581,7 @@ function make_bg(col)
  }
 end
 
+-- slalom track borders
 function make_line(before, g1, g2, after)
  local m0 = vecmake(0, 1)
  local m1 = vecmake(0, -1)
@@ -1728,7 +1744,7 @@ function make_mountain(kind, track_ind)
    updateobjs(t.p_objs)
    updateobjs(t.c_objs)
 
-   -- check to see if we need to bump the tree down
+   -- check to see if we need to respawn the tree
    if kind != "slalom" then
     for o in all(t.p_objs) do
      if g_cam.y - o.y > 300 then
