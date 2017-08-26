@@ -178,10 +178,6 @@ function process_particles(at_scope)
  end -- while
 end
 
--- g_mogulneer_accel = 0.8
-g_mogulneer_accel = 0.4
--- g_mogulneer_accel = 0.3
-
 collision_objects = {
  {
   x=30,
@@ -202,6 +198,10 @@ collision_objects = {
  }
 }
 -- }
+
+-- g_mogulneer_accel = 0.8
+g_mogulneer_accel = 0.4
+-- g_mogulneer_accel = 0.3
 
 -- { debug stuff can be deleted
 function make_debugmsg()
