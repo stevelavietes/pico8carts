@@ -27,17 +27,17 @@ __lua__
 -- bend course to show better which way the player should go [x]
 -- use curved lines instead of straight lines [x]
 -- penalty for missing gates [x]
+-- animation that "pays out" the missed gates penalty on your final time [x]
 
--- animation that "pays out" the missed gates penalty on your final time
--- display all gates in the score for slalom
 -- overflow bug
+-- moguls
+-- a jump system
+-- display all gates in the score for slalom
 -- add a button prompt with the "dash" button
 -- better backcountry score display
 -- kill downarrow hunker down mode
 -- increase the top speed as the level goes on
 -- maybe cheering crowds in slalom mode?  something else to help cue you for your progress in the level!
--- moguls
--- a jump system
 -- refined movement mechanics (i miss the slidey ness of the old system, plus the new system has some quirks - you can slide up the mountain for example).
 -- retune camera filter
 -- better spray and better trail particles
@@ -1237,7 +1237,11 @@ function make_score_display(base_timer, score_mode)
       )
      end
     end
-   elseif base_timer.misses and base_timer.misses > 0 and t.made and (elapsed(t.made) % 15) == 0 then
+   elseif (
+    base_timer.misses 
+    and base_timer.misses > 0 
+    and t.made and (elapsed(t.made) % 15) == 0
+   ) then
     base_timer.misses -= 1
     g_timer:increment(50)
     shake_screen(8, 5)
@@ -1245,7 +1249,11 @@ function make_score_display(base_timer, score_mode)
     -- stop()
    end
 
-   if t.made and elapsed(t.made) > 45 and base_timer.misses == 0 then
+   if (
+    t.made 
+    and elapsed(t.made) > 45 
+    and (score_mode or base_timer.misses == 0)
+   ) then
     t.made = nil
     local event_str = score_mode and "backcountry mode" or "slalom" 
     add_gobjs(
@@ -1316,12 +1324,14 @@ function make_score_display(base_timer, score_mode)
    local msg_str = score_mode and "your final score was:" or "your final time was:"
 
    g_cursor_y = -12 
-   if base_timer.misses == 0 then
+   if score_mode or base_timer.misses == 0 then
     print_cent(gratz_str, 14)
     print_cent(msg_str, 14)
    end
    g_cursor_y = 9
-   print_cent("misses: "..base_timer.misses, 14)
+   if not score_mode then
+    print_cent("misses: "..base_timer.misses, 14)
+   end
 
    local char_array = {}
    if score_mode  then 
@@ -1374,7 +1384,7 @@ function make_gate(gate_data, accum_y, starter_objects)
  elseif gate_kind == ge_gate_left then
   gate_border_offset = -30
  end
- local result = {
+ return {
   x=gate_data[1].x,
   y=accum_y,
   gate_border_offset = gate_data[1].x + gate_border_offset,
@@ -1494,7 +1504,6 @@ function make_gate(gate_data, accum_y, starter_objects)
    -- print(t.overlaps, 8, 24, 11)
   end
  }
- return result
 end
 
 -- function make_track_mark(track_data)
@@ -1836,7 +1845,7 @@ function make_tree(loc, anywhere)
    sspr(
     120, 0, 8, 16, 
     -4 - t.height/8, -4 - t.height,
-    8+(t.height)/4, 16 + t.height,
+    8+t.height/4, 16 + t.height,
     t.flip
    )
    -- rect(-4,-4,4,4,11)
