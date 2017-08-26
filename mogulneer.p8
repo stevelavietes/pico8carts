@@ -628,7 +628,7 @@ function make_player(p)
   c_objs={},
   -- pose goes from -4 to +4
   pose=4,
-  vel=vecmake(0),
+  vel=null_v,
   vel_along=0,
   vel_against=0,
   bound_min=vecmake(-3, -4),
@@ -836,7 +836,7 @@ function make_player(p)
 
    -- skis are in the sprite for the crash case
    if not t.crashed then
-    for x_off in all({-1, 1}) do
+    for x_off=-1,1,2 do
     -- for x_off in all({1}) do
      -- draw the skis
      local ang = t.angle
@@ -1215,7 +1215,7 @@ function make_score_display(base_timer, score_mode)
     vecset(t, veclerp(t.start, t.target, smootherstep(t.frame/t.duration)))
    end
 
-   if t.frame < t.duration + 0 then
+   if t.frame < t.duration then
     t.frame += 1
     for j=-32,32,8 do
      for i=0,30 do
@@ -1303,10 +1303,7 @@ function make_score_display(base_timer, score_mode)
   draw=function(t)
    -- minutes
    local gratz_str = "congratulations!"
-   local msg_str = "your final time was:"
-   if score_mode == true then
-    msg_str = "your final score was:"
-   end
+   local msg_str = score_mode and "your final score was:" or "your final time was:"
    g_cursor_y = -12 
    print_cent(gratz_str, 14)
    print_cent(msg_str, 14)
@@ -1341,9 +1338,8 @@ function make_score_screen(timer, backcountry_mode)
   make_score_display(timer, backcountry_mode),
   make_debugmsg(),
  }
- g_cam= nil
  g_p1 = nil
- g_cam = null_v
+ g_cam = add_gobjs(make_camera(0,0))
  g_state = ge_state_menu
 end
 
@@ -1718,7 +1714,6 @@ function make_mountain(kind, track_ind)
   y=0,
   sp=sp_world,
   c_objs=starter_objects,
-  -- p_objs={make_boundary(-96,96)},
   p_objs=trees,
   lines=lines,
   line_for_height=function(t, y)
@@ -1767,22 +1762,6 @@ function shake_screen(duration, magnitude, frequency)
  g_shake_end = g_tick + duration + 1
  g_shake_mag = magnitude
  g_shake_frequency = frequency
-end
-
-function make_boundary(xmin, xmax)
- return {
-  x=0,
-  y=0,
-  space=sp_world,
-  xmin=xmin,
-  xmax=xmax,
-  draw=function(t)
-   -- min line
-   line(t.xmin, g_cam.y-64, t.xmin, g_cam.y+64, 8)
-   -- max line
-   line(t.xmax, g_cam.y-64, t.xmax, g_cam.y+64, 8)
-  end
- }
 end
 
 function respawn_object(t, anywhere)
@@ -1867,19 +1846,19 @@ function make_rock(loc)
  }
 end
 
-function draw_bound_circ(obj, col)
- circ(obj.bound_cent.x, obj.bound_cent.y, obj.radius,col)
-end
-
-function draw_bound_rect(obj, col)
- rect(
-  obj.bound_min.x,
-  obj.bound_min.y,
-  obj.bound_max.x,
-  obj.bound_max.y,
-  col
- )
-end
+-- function draw_bound_circ(obj, col)
+--  circ(obj.bound_cent.x, obj.bound_cent.y, obj.radius,col)
+-- end
+--
+-- function draw_bound_rect(obj, col)
+--  rect(
+--   obj.bound_min.x,
+--   obj.bound_min.y,
+--   obj.bound_max.x,
+--   obj.bound_max.y,
+--   col
+--  )
+-- end
 
 function overlaps_bounds(fst, snd)
  if fst == snd or not fst or not snd then
@@ -1949,9 +1928,9 @@ function updateobjs(objs)
 end
 
 -- use whatever the current optimal method is for drawing this stuff
-function stdcls()
- rectfill(127,127,0,0,0)
-end
+-- function stdcls()
+--  rectfill(127,127,0,0,0)
+-- end
 
 function stdclscol(col)
  rectfill(127,127,0,0,col)
@@ -1963,8 +1942,7 @@ function stddraw()
  if g_flash_end and g_tick < g_flash_end then
   for i=1,128 do
    for j=1,128 do
-    local col = pget(i, j)
-    if col != 7 then
+    if pget(i, j) != 7 then
      pset(i, j, g_flash_color)
     end
    end
@@ -2028,18 +2006,18 @@ function btnn(i,p)
  return pr and chg
 end
 
-function getspraddr(n)
- return flr(n/16)*512+(n%16)*4
-end
+-- function getspraddr(n)
+--  return flr(n/16)*512+(n%16)*4
+-- end
 
-function sprcpy(dst,src,w,h)
- w = w or 1
- h = h or 1
- for i=0,h*8-1 do
-  memcpy(getspraddr(dst)+64*i,
-     getspraddr(src)+64*i,4*w)
- end
-end
+-- function sprcpy(dst,src,w,h)
+--  w = w or 1
+--  h = h or 1
+--  for i=0,h*8-1 do
+--   memcpy(getspraddr(dst)+64*i,
+--      getspraddr(src)+64*i,4*w)
+--  end
+-- end
 
 function pushc(x, y)
  local l=g_cs[#g_cs] or {0,0}
@@ -2148,27 +2126,27 @@ function elapsed(t)
  return 32767-t+g_tick
 end
 
-function trans(s)
- if (s<1) return
- s=2^s
- local b,m,o =
-   0x6000,
-   15,
-   s/2-1+(32*s)
-
- for y=0,128-s,s do
-  for x=0,128-s,s do
-   local a=b+x/2
-   local c=band(peek(a+o),m)
-   c=bor(c,shl(c,4))
-   for i=1,s do
-    memset(a,c,s/2)
-    a+=64
-   end
-  end
-  b+=s*64
- end
-end
+-- function trans(s)
+--  if (s<1) return
+--  s=2^s
+--  local b,m,o =
+--    0x6000,
+--    15,
+--    s/2-1+(32*s)
+--
+--  for y=0,128-s,s do
+--   for x=0,128-s,s do
+--    local a=b+x/2
+--    local c=band(peek(a+o),m)
+--    c=bor(c,shl(c,4))
+--    for i=1,s do
+--     memset(a,c,s/2)
+--     a+=64
+--    end
+--   end
+--   b+=s*64
+--  end
+-- end
 
 -- @todo: switch to a table approach instead of object based 
 function make_snow_chunk(src, tgt, col, size, nframes, delay)
@@ -2190,9 +2168,8 @@ function make_snow_trans(done_func, final_color, delay)
  if g_trans then
   return
  end
- if not delay then
-  delay = 0
- end
+ delay = delay or 0
+
  local snow = {}
  local topsize =  16
  for i=1,128,topsize do
@@ -2247,33 +2224,33 @@ function make_snow_trans(done_func, final_color, delay)
  return g_trans
 end
 
-function make_trans(f,d,i)
- return {
-  d=d,
-  e=g_tick,
-  f=f,
-  i=i,
-  x=0,
-  y=0,
-  update=function(t,s)
-   if elapsed(t.e)>10 then
-    if (t.f) t:f(s)
-    del(s,t)
-    if not t.i then
-     add(s,
-       make_trans(nil,nil,1))
-    end
-   end
-  end,
-  draw=function(t)
-   local x=flr(elapsed(t.e)/2)
-   if t.i then
-    x=5-x
-   end
-   trans(x)
-  end
- }
-end
+-- function make_trans(f,d,i)
+--  return {
+--   d=d,
+--   e=g_tick,
+--   f=f,
+--   i=i,
+--   x=0,
+--   y=0,
+--   update=function(t,s)
+--    if elapsed(t.e)>10 then
+--     if (t.f) t:f(s)
+--     del(s,t)
+--     if not t.i then
+--      add(s,
+--        make_trans(nil,nil,1))
+--     end
+--    end
+--   end,
+--   draw=function(t)
+--    local x=flr(elapsed(t.e)/2)
+--    if t.i then
+--     x=5-x
+--    end
+--    trans(x)
+--   end
+--  }
+-- end
 
 __gfx__
 0060000010122101000000003300033000666000000600000000000098899000998899000bb00000000000000000000000000000000000000000000000000000
