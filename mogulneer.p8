@@ -30,16 +30,17 @@ __lua__
 -- animation that "pays out" the missed gates penalty on your final time [x]
 
 -- overflow bug
+-- dash if you cross the gate close to the gate
+-- kill downarrow hunker down mode
 -- moguls
 -- a jump system
 -- display all gates in the score for slalom
 -- add a button prompt with the "dash" button
 -- better backcountry score display
--- kill downarrow hunker down mode
 -- increase the top speed as the level goes on
 -- maybe cheering crowds in slalom mode?  something else to help cue you for your progress in the level!
 -- refined movement mechanics (i miss the slidey ness of the old system, plus the new system has some quirks - you can slide up the mountain for example).
--- retune camera filter
+-- retune camera filter (add some x to it too?)
 -- better spray and better trail particles
 -- add sfx
  -- turn 
@@ -251,24 +252,24 @@ function make_debugmsg()
 end
 
 -- dead code
--- function repr(arg)
---  -- turn any thing into a string (table, boolean, whatever)
---  if arg == nil then
---   return "nil"
---  end
---  if type(arg) == "boolean" then
---   return arg and "true" or "false"
---  end
---  if type(arg) == "table" then 
---   local retval = " table{ "
---   for k, v in pairs(arg) do
---    retval = retval .. k .. ": ".. repr(v).. ","
---   end
---   retval = retval .. "} "
---   return retval
---  end
---  return ""..arg
--- end
+function repr(arg)
+ -- turn any thing into a string (table, boolean, whatever)
+ if arg == nil then
+  return "nil"
+ end
+ if type(arg) == "boolean" then
+  return arg and "true" or "false"
+ end
+ if type(arg) == "table" then 
+  local retval = " table{ "
+  for k, v in pairs(arg) do
+   retval = retval .. k .. ": ".. repr(v).. ","
+  end
+  retval = retval .. "} "
+  return retval
+ end
+ return ""..arg
+end
 -- }
 
 function make_snow_particles()
