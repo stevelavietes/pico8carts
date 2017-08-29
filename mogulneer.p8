@@ -1397,7 +1397,13 @@ function make_gate(gate_data, accum_y, starter_objects)
   spr_ind=68,
   celebrate = false,
   update=function(t)
+   -- already passed the gate
+   if t.passed or t.missed then
+    return
+   end
+
    local flash = false
+
    if abs(g_p1.y - t.y) < 0.5 then
     t.overlaps = true
    elseif t.overlaps or (g_p1.y < t.y and g_p1.y + g_p1.vel.y > t.y) then
