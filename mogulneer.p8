@@ -395,8 +395,10 @@ function spray_particles()
    -- end
   end,
   update=function(t)
-   t:add_trail_spray()
-   t:add_brake_spray()
+   if not g_p1.jumping then
+    t:add_trail_spray()
+    t:add_brake_spray()
+   end
   end,
   draw=function(t)
    process_particles(sp_world)
@@ -495,6 +497,10 @@ end
 function smootherstep(x)
  -- assumes x in [0, 1]
  return x*x*x*(x*(x*6 - 15) + 10);
+end
+
+function lerp(input, min_out, max_out)
+ return input * (max_out - min_out) + min_out
 end
 
 function remap(
@@ -652,6 +658,11 @@ function make_player(p)
   c_drag_along=0.02,
   c_drag_against=0.2,
 
+  -- jump
+  jumping = nil,
+  jump_velocity = 0,
+  jump_height= 0,
+
   -- debug variables
   g=null_v,
   total_accel=null_v,
@@ -709,7 +720,8 @@ function make_player(p)
    end
    if btnn(4, t.p) then
     -- z
-    -- @todo: jump
+    -- if not already jumping, then trigger a jump
+   t.jumping = t.jumping or g_tick
    end
    if btn(5, t.p) then
     -- loaded_ski = g_ski_both
@@ -717,12 +729,45 @@ function make_player(p)
     -- x
    end
 
+   if t.jumping then
+    if t.jumping == g_tick then
+     t.jump_velocity = -4
+     t.jump_height = 0
+     -- jump acceleration == mogulneer acceleration for now
+    else
+     -- apply euler integration to the jump
+     t.jump_velocity += g_mogulneer_accel
+     t.jump_height += t.jump_velocity
+
+     -- @TODO: this jumping model assumes a flat plane.
+     -- should compute the slope of the slope and then figure out when
+     -- the player crosses the plane of the snow again.  but this might
+     -- just work well enough even though it isn't correct.
+     -- Could just accumulate the y component of the velocity and then
+     -- multiply that by the slope of the slope each tick to move the target
+     -- height down each tick  As long as the player falls faster than they move down the slope, they'll hit the ground
+     if t.jump_height >= 0 then
+      -- reset the jump
+      t.jumping = nil
+      t.jump_height = 0
+      t.jump_velocity = 0
+     end
+    end
+   end
+
+   -- speed based turnability scaling
+   -- local spd = min(max(1, vecmag(t.vel)), 4)
+   -- local turn_amount = lerp((spd-1)/3, 0.02, 0.010)
+
+   -- tuck based turnability scaling
+   local turn_amount = t.wedge and 0.015 or 0.011
+
    -- sets up the current direction of the skis, "brakes"
    if tgt_dir then
     if tgt_dir > t.angle then
-     t.angle = min(t.angle + 0.015, 0)
+     t.angle = min(t.angle + turn_amount, 0)
     elseif tgt_dir < t.angle then
-     t.angle = max(t.angle - 0.015, -0.5)
+     t.angle = max(t.angle - turn_amount, -0.5)
     end
 
     if tgt_dir == -0.25 and abs(t.angle +0.25) < 0.015 then
@@ -839,7 +884,9 @@ function make_player(p)
     for x_off=-1,1,2 do
      local p1 = vecsub(t.trail_points[i-1], t)
      local p2 = vecsub(t.trail_points[i], t)
-     line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
+     if not t.trail_points[i].gap and not t.trail_points[i-1].gap then
+      line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
+     end
     end
    end
 
@@ -855,7 +902,9 @@ function make_player(p)
       offset = 2
      end
 
+     local jump_off = vecmake(0, t.jump_height)
      local turn_off = vecscale(vecmake(cos(ang+0.25*x_off), sin(ang+0.25*x_off)), offset)
+     turn_off = vecadd(turn_off, jump_off)
 
      local first_p = vecscale(vecmake(cos(ang), sin(ang)),4)
      local last_p  = vecscale(first_p, -1)
@@ -871,15 +920,22 @@ function make_player(p)
     end
    end
 
-   -- circfill(0, 0, 1, 11)
+   -- @TODO: compute the maximum height. Should be a quadratic equation.
+   if t.jumping then
+    -- @TODO: drop lerp? build it into smootherstep?
+    local shadow_size = lerp(smootherstep(-t.jump_height/18), 3, 1)
+    circfill(0, 0, shadow_size, 5)
+   end
 
    -- draw_bound_rect(t, 11)
    -- hit box stuff (might need it later)
    -- spr(2, -3, -3)
    -- rect(-3,-3, 3,3, 8)
    -- print(str, -(#str)*2, 12, 8)
-   -- g_cursor_y=12
-   -- print_cent("pose: " .. pose, 8)
+   g_cursor_y=12
+   jump_height_max = max(abs(t.jump_height), jump_height_max)
+   print_cent("jump_height: " .. t.jump_height, 8)
+   print_cent("max height: "..jump_height_max, 8)
    -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
    -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
    -- print_cent("load_left: " .. t.load_left, 8)
@@ -931,7 +987,7 @@ function make_player(p)
     sprn = 27
    end
 
-   spr(sprn, -8, -11 + offset, 2, 2, pose < 0)
+   spr(sprn, -8, -11 + offset + t.jump_height, 2, 2, pose < 0)
    palt()
    pal()
 
@@ -942,11 +998,12 @@ function make_player(p)
   end,
   add_new_trail_point=function(t, p)
    p = vecflr(p)
+   p.gap = t.jumping
    local last_point = t.trail_points[#t.trail_points]
    if (
-     last_point == nil or
-     last_point.x != p.x or
-     last_point.y != p.y
+     last_point == nil 
+     or last_point.x != p.x 
+     or last_point.y != p.y
    ) then
     add(t.trail_points, p)
    end
