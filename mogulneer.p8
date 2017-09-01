@@ -903,8 +903,11 @@ function make_player(p)
      -- draw the skis
      local ang = t.angle
      local offset = 1
-     if t.wedge then
+     if t.jumping or t.wedge then
       ang = t.angle-0.06*x_off
+      if t.jumping then
+       ang += 0.08*x_off
+      end
       offset = 2
      end
 
