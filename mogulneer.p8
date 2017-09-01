@@ -765,7 +765,7 @@ function make_player(p)
    -- local turn_amount = lerp((spd-1)/3, 0.02, 0.010)
 
    -- tuck based turnability scaling
-   local turn_amount = t.wedge and 0.015 or 0.011
+   local turn_amount = t.wedge and 0.015 or (t.jumping and 0.018) or 0.011
 
    -- sets up the current direction of the skis, "brakes"
    if tgt_dir then
