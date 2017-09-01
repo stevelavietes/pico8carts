@@ -29,6 +29,11 @@ __lua__
 -- penalty for missing gates [x]
 -- animation that "pays out" the missed gates penalty on your final time [x]
 
+-- JUMP:
+ -- jump that you can control the height of (like mario)
+ -- make you much turnier when you land a jump
+ -- make skis spread out while jumping
+ -- wedge is off while jumping
 -- overflow bug
 -- dash if you cross the gate close to the gate
 -- kill downarrow hunker down mode
@@ -731,7 +736,7 @@ function make_player(p)
 
    if t.jumping then
     if t.jumping == g_tick then
-     t.jump_velocity = -4
+     t.jump_velocity = -3
      t.jump_height = 0
      -- jump acceleration == mogulneer acceleration for now
     else
