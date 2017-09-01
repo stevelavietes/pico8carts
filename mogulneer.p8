@@ -781,7 +781,8 @@ function make_player(p)
    end
 
    -- compute the acceleration
-   t.total_accel = t:acceleration()
+   t.total_accel = t.jumping and null_v or t:acceleration()
+   -- t.total_accel = t:acceleration()
 
    -- euler integration for now
    t.vel = vecadd(t.vel, t.total_accel)
