@@ -1,8 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-sprites={}
-moved={}
+-- pico is you
+-- a demake of baba is you
+-- original by @hempuli
+-- demake by @jminor
 
 empty=0
 baba=1
@@ -26,9 +28,16 @@ kill=37
 rulelst=47
 
 is_win=false
-jitter=1.1
-normal_jitter=1.1
+
+normal_jitter=1.001
+bump_jitter=5
+kill_jitter=20
+win_jitter=20
+
 dirty=true
+
+sprites={}
+moved={}
 
 rules={}
 
@@ -80,6 +89,7 @@ function make_rules()
  end
  add(rules,{border,is,stp})
  -- do in order for robustness
+ -- but too slow...
  --for y=0,127 do
  -- for x=0,127 do
  --  for s in all(at(x,y)) do
@@ -120,23 +130,20 @@ function make_sprite(x,y,t)
  return {
   x=x,
   y=y,
+  px=rnd(128),
+  py=rnd(128),
   t=t,
   update=update_sprite,
   draw=draw_sprite
  }
 end
 
-function _mset(x,y,t)
- mset(x,y,t)
- dirty=true
-end
-
-function liftall()
+function read_map()
+ sprites={}
  for y=0,127 do
   for x=0,127 do
    local thing=mget(x,y)
    if thing!=0 then
-    --mset(x,y,empty)
     s=make_sprite(x,y,thing)
     add(sprites,s)
    end
@@ -161,6 +168,7 @@ function try_move(s,dx,dy)
  local x=s.x+dx
  local y=s.y+dy
  if x<0 or x>15 or y<0 or y>15 then
+  jitter(s,bump_jitter)
   return false
  end
 
@@ -168,22 +176,25 @@ function try_move(s,dx,dy)
  for o in all(at(x,y)) do
  
   if rule(o.t,is,stp) then
+   jitter(o,bump_jitter)
    return false
   end
   
   if rule(o.t,is,push) then
    if not try_move(o,dx,dy) then
+    jitter(o,bump_jitter)
     return false
    end
   end
   
   if rule(o.t,is,kill) then
    del(sprites,s)
-   jitter=10
+   jitter(o,kill_jitter)
   end
   
   if rule(o.t,is,win) and rule(s.t,is,you) then
    is_win=true
+   jitterall(win_jitter)
   end
  end
  
@@ -204,21 +215,41 @@ function update_sprite(s)
   if btnp(1) then dx+=1 end
   if btnp(2) then dy-=1 end
   if btnp(3) then dy+=1 end
-  try_move(s,dx,dy)
+  if dx!=0 or dy!=0 then
+   if not try_move(s,dx,dy) then
+    jitter(s,bump_jitter)
+   end
+  end
+ end
+end
+
+function jitter(s,j)
+ s.px+=rnd(j)-j/2
+ s.py+=rnd(j)-j/2
+end
+
+function jitterall(j)
+ for s in all(sprites) do
+  jitter(s,j)
  end
 end
 
 function draw_sprite(s)
- spr(s.t,s.x*8+rnd(jitter),s.y*8+rnd(jitter))
+ local t=0.5
+ local tm1=1-t
+ local j=rnd(normal_jitter)
+ s.px=s.px*t + (s.x*8+j)*tm1
+ s.py=s.py*t + (s.y*8+j)*tm1
+ spr(s.t,s.px,s.py)
 end
 
 function _init()
  test()
- liftall()
+ read_map()
  make_rules()
- for r in all(rules) do
-  print("rule:"..r[1].." "..r[2].." "..r[3])
- end
+-- for r in all(rules) do
+--  print("rule:"..r[1].." "..r[2].." "..r[3])
+-- end
 end
 
 function _update()
@@ -228,8 +259,8 @@ function _update()
  end
  if dirty then
   make_rules()
+  dirty=false
  end
- dirty=false
  -- any sprites that moved,
  -- we pop to the top
  for s in all(moved) do
@@ -247,7 +278,6 @@ function _draw()
  if is_win then
   print("win!!!",52+rnd(2),60+rnd(2),rnd(16))
  end
- jitter=jitter*0.9+normal_jitter*0.1
 end
 
 __gfx__
