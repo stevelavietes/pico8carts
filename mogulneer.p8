@@ -431,12 +431,15 @@ function _init()
  g_shake_frequency = nil
  g_flash_end = nil
  g_flash_color =nil 
-
- g_state = ge_state_menu
-
  particle_array, particle_array_length = {}, 0
- stdinit()
 
+ stdinit()
+ add_gobjs(make_snow_trans(_title_stuff, 7))
+end
+
+function _title_stuff()
+ g_state = ge_state_menu
+ stdinit()
  add_gobjs(make_bg(6))
  add_gobjs(make_title())
  add_gobjs(make_debugmsg())
@@ -725,20 +728,14 @@ function make_player(p)
     end
    end
 
-   local jmp = btn(4, t.p)
-
-   -- if btn(4, t.p) then
-    -- z
-    -- if not already jumping, then trigger a jump
-   --  jmp = true
-   -- end
-
    if btn(5, t.p) then
     -- loaded_ski = g_ski_both
     t.wedge = false
     -- x
    end
 
+   local jmp = btn(4, t.p)
+   -- jump button states
    if jmp then
     t.jumping = t.jumping or g_tick
    elseif t.jumping then
@@ -1366,7 +1363,7 @@ function make_score_display(base_timer, score_mode)
           slalom_start(1)
          end
         else
-         _init()
+         _title_stuff()
         end
        end
        add_gobjs(make_snow_trans(done_func, 7))
