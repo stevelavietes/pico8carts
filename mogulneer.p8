@@ -57,7 +57,7 @@ __lua__
 -- probably not:
 -- "z-sorted" tree drawing system
 
-mute_debug = true
+-- mute_debug = true
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -529,15 +529,15 @@ end
 -- @}
 
 -- @{ vector library
--- function vecdraw(v, c, o)
---  if not o then
---   o = vecmake()
---  end
--- --  local end_point = vecadd(o, vecscale(vecnormalized(v), 5))
---  local end_point = vecadd(o, vecscale(v, 30))
---  line(o.x, o.y, end_point.x, end_point.y, c)
---  return
--- end
+function vecdraw(v, c, o)
+ if not o then
+  o = vecmake()
+ end
+--  local end_point = vecadd(o, vecscale(vecnormalized(v), 5))
+ local end_point = vecadd(o, vecscale(v, 30))
+ line(o.x, o.y, end_point.x, end_point.y, c)
+ return
+end
 
 function vecrand(scale, center, yscale)
  local result = vecmake(rnd(scale), rnd(yscale or scale))
@@ -579,9 +579,9 @@ function vecmag(v, sf)
  return result
 end
 
--- function vecnormalized(v)
---  return vecscale(v, 1/vecmag(v))
--- end
+function vecnormalized(v)
+ return vecscale(v, 1/vecmag(v))
+end
 
 function vecdot(a, b)
  return (a.x*b.x+a.y*b.y)
@@ -661,7 +661,8 @@ function make_player(p)
   crashed=false,
   last_push=g_tick,
   c_drag_along=0.02,
-  c_drag_against=0.2,
+  -- c_drag_against=0.1,
+  c_drag_against=0.05,
 
   -- jump
   jumping = nil,
@@ -771,6 +772,12 @@ function make_player(p)
      -- t.jumping = nil
      t.jump_height = 0
      t.jump_velocity = 0
+     current_spd = vecmag(t.vel)
+     spd_along_new_angle = vecdot(t.vel, vecfromangle(t.angle))
+     remain_mag = max(current_spd - abs(spd_along_new_angle), 0)
+     remain_vel = vecscale(vecnormalized(t.vel), remain_mag)
+
+     t.vel = vecadd(vecfromangle(t.angle, current_spd), remain_vel)
     end
    end
 
@@ -862,9 +869,13 @@ function make_player(p)
     -t.c_drag_along * drag_multiplier * vel_along*abs(vel_along)
    )
 
+   -- t.drag_against = vecscale(
+   --  ski_vec_perp,
+   --  -t.c_drag_against * drag_multiplier * (vel_against * abs(vel_against))
+   -- )
    t.drag_against = vecscale(
     ski_vec_perp,
-    -t.c_drag_against * drag_multiplier * (vel_against * abs(vel_against))
+    -t.c_drag_against * drag_multiplier * (vel_against)
    )
    -- @}
 
@@ -958,7 +969,10 @@ function make_player(p)
    g_cursor_y=12
    jump_height_max = max(abs(t.jump_height), jump_height_max)
    print_cent("jump_height: " .. t.jump_height, 8)
-   print_cent("max height: "..jump_height_max, 8)
+   print_cent("jump_velocity: " .. t.jump_velocity, 8)
+   -- print_cent("max height: "..jump_height_max, 8)
+   print_cent("jumping: "..repr(t.jumping))
+   -- print_cent("remain_mag: "..repr(remain_mag), 8)
    -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
    -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
    -- print_cent("load_left: " .. t.load_left, 8)
