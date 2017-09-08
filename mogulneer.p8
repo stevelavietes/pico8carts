@@ -723,40 +723,54 @@ function make_player(p)
      t.angle = -0.5
     end
    end
-   if btnn(4, t.p) then
+
+   local jmp = btn(4, t.p)
+
+   -- if btn(4, t.p) then
     -- z
     -- if not already jumping, then trigger a jump
-   t.jumping = t.jumping or g_tick
-   end
+   --  jmp = true
+   -- end
+
    if btn(5, t.p) then
     -- loaded_ski = g_ski_both
     t.wedge = false
     -- x
    end
 
-   if t.jumping then
-    if t.jumping == g_tick then
-     t.jump_velocity = -3
-     t.jump_height = 0
-     -- jump acceleration == mogulneer acceleration for now
-    else
-     -- apply euler integration to the jump
-     t.jump_velocity += g_mogulneer_accel
-     t.jump_height += t.jump_velocity
+   if jmp then
+    t.jumping = t.jumping or g_tick
+   elseif t.jumping then
+    if t.jump_velocity < 0 then
+     t.jump_velocity = 0
+    elseif t.jump_height == 0 then
+     t.jumping = nil
+    end
+   end
 
-     -- @TODO: this jumping model assumes a flat plane.
-     -- should compute the slope of the slope and then figure out when
-     -- the player crosses the plane of the snow again.  but this might
-     -- just work well enough even though it isn't correct.
-     -- Could just accumulate the y component of the velocity and then
-     -- multiply that by the slope of the slope each tick to move the target
-     -- height down each tick  As long as the player falls faster than they move down the slope, they'll hit the ground
-     if t.jump_height >= 0 then
-      -- reset the jump
-      t.jumping = nil
-      t.jump_height = 0
-      t.jump_velocity = 0
-     end
+   if t.jumping == g_tick then
+    t.jump_velocity = -3
+    t.jump_height = 0
+    -- jump acceleration == mogulneer acceleration for now
+   end
+
+   if t.jump_height <= 0 then
+    -- apply euler integration to the jump
+    t.jump_velocity += g_mogulneer_accel
+    t.jump_height += t.jump_velocity
+
+    -- @TODO: this jumping model assumes a flat plane.
+    -- should compute the slope of the slope and then figure out when
+    -- the player crosses the plane of the snow again.  but this might
+    -- just work well enough even though it isn't correct.
+    -- Could just accumulate the y component of the velocity and then
+    -- multiply that by the slope of the slope each tick to move the target
+    -- height down each tick  As long as the player falls faster than they move down the slope, they'll hit the ground
+    if t.jump_height >= 0 then
+     -- reset the jump
+     -- t.jumping = nil
+     t.jump_height = 0
+     t.jump_velocity = 0
     end
    end
 
