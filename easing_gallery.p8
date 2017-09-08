@@ -210,6 +210,7 @@ function make_ef_ui_single()
     (t.direction > 0 and t.frame == t.current_loop_duration)
     or (t.direction < 0 and t.frame == 0)
    ) then
+    -- extcmd "video"
     if t.loop == "bounce" then
      t.direction *= -1
     else
@@ -217,6 +218,10 @@ function make_ef_ui_single()
      t.direction = 1
     end
    end
+
+   -- if t.frame == 0 then
+   --  extcmd "rec"
+   -- end
 
    if btnn(0) then
     t.current_index = (t.current_index - 1) % (#gc_easing_functions+1)
