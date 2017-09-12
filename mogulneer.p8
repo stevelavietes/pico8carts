@@ -28,17 +28,17 @@ __lua__
 -- use curved lines instead of straight lines [x]
 -- penalty for missing gates [x]
 -- animation that "pays out" the missed gates penalty on your final time [x]
+ -- jump that you can control the height of (like mario) [x]
+ -- make skis spread out while jumping [x]
+-- kill downarrow hunker down mode [x]
+-- a jump system [x]
 
 -- JUMP:
- -- jump that you can control the height of (like mario)
  -- make you much turnier when you land a jump
- -- make skis spread out while jumping
  -- wedge is off while jumping
 -- overflow bug
 -- dash if you cross the gate close to the gate
--- kill downarrow hunker down mode
 -- moguls
--- a jump system
 -- display all gates in the score for slalom
 -- add a button prompt with the "dash" button
 -- better backcountry score display
