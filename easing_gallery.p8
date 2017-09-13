@@ -1,24 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-function repr(arg)
- -- turn any thing into a string (table, boolean, whatever)
- if arg == nil then
-  return "nil"
- end
- if type(arg) == "boolean" then
-  return arg and "true" or "false"
- end
- if type(arg) == "table" then 
-  local retval = " table{ "
-  for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. repr(v).. ","
-  end
-  retval = retval .. "} "
-  return retval
- end
- return ""..arg
-end
 -- Easing function gallery with an automatic graph of the function over 0,1
 
 -- Dev note: if you want to add your own function, add an ef_ function
@@ -48,93 +30,19 @@ function ef_out_quart(amount)
  return -1 * (t*t*t*t- 1)
 end
 
-last_vel = 1/120
-function ef_spring_overdamped(amount)
---  local ang_freq = 2 * 3.14159 * 0.5
- local ang_freq = 2 * 3.14159 * 16
- local damping_ratio = 2.012237624838491
- local result, thing = spring_function(amount, last_vel, 1, damping_ratio, ang_freq, 1/60)
---  local result, thing = spring_function(amount, last_vel, 1, 0.23, 16*3.14, 1/60)
- last_vel = thing
- return result
+function e_exp_approx(f)
+ return 1 + f*(1 + f/2*(1 + f/3*(1 + f/4)))
 end
-
--- function ef_spring_criticallydamped(amount)
--- --  local ang_freq = 2 * 3.14159 * 0.5
---  local ang_freq = 2 * 3.14159 * 16
---  local damping_ratio = 1
---  local result, thing = spring_function(amount, last_vel, 1, damping_ratio, ang_freq, 1/60)
---  last_vel = thing
---  return result
--- end
 
 function ef_spring_criticallydamped(amount)
- local delta_t = 1/120
- local vel = last_vel
- local G = 1
- local omega = 12
+ local omega = 3.14159*2
+ local v0 = 0
+ local x0 = 1 
 
- local vel_next = (
-  vel - omega * omega * delta_t * (amount - G)
- ) / (
-  (1 + omega * delta_t) * (1 + omega* delta_t)
- )
- local x_next = amount + delta_t * vel_next
-
- last_vel = vel_next
-
- return x_next
+ return ( (v0 + x0 * omega) * amount + x0 )/(e_exp_approx(omega * amount))
 end
 
-function spring_function(
- current,
- vel,
- target,
- damping_ratio,
- angular_frequency,
- time_step
-)
- local f = 1.0 + 2.0 * time_step * damping_ratio * angular_frequency
- local ang_sq = angular_frequency * angular_frequency
- local time_ang_fac = time_step * ang_sq
- local time_ang_fac_time_step_sq = time_step * time_ang_fac
- local det_inv = 1.0 / (f + time_ang_fac_time_step_sq)
- local det_x = f * current + time_step * vel + time_ang_fac_time_step_sq * target
- local det_v = vel + time_ang_fac * (target - current)
-
- -- ignoring v for *now*
-
- return det_x * det_inv, det_v * det_inv
-end
-
-
--- /*
---   x     - value             (input/output)
---   v     - velocity          (input/output)
---   xt    - target value      (input)
---   zeta  - damping ratio     (input)
---   omega - angular frequency (input)
---   h     - time step         (input)
--- */
--- void Spring
--- (
---   float &x, float &v, float xt, 
---   float zeta, float omega, float h
--- )
--- {
---   const float f = 1.0f + 2.0f * h * zeta * omega;
---   const float oo = omega * omega;
---   const float hoo = h * oo;
---   const float hhoo = h * hoo;
---   const float detInv = 1.0f / (f + hhoo);
---   const float detX = f * x + h * v + hhoo * xt;
---   const float detV = v + hoo * (xt - x);
---   x = detX * detInv;
---   v = detV * detInv;
--- }
---
 crop = 0.30
-
 
 pts = {}
 lpts_max = 6
@@ -183,7 +91,6 @@ gc_easing_functions = {
  make_easing_function("out quart", ef_out_quart),
  make_easing_function("out quart cropped", ef_out_quart_cropped),
  make_easing_function("kaneda", ef_out_quart),
- make_easing_function("spring_overdamped", ef_spring_overdamped),
  make_easing_function("spring critically damped", ef_spring_criticallydamped),
 }
 
