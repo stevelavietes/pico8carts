@@ -7,6 +7,8 @@ __lua__
 --           as below here, then find the gc_easing_functions list and
 --           add it there, following the pattern.
 
+-- @TODO: could use derivatives as well
+
 -- @{ easing functions
 function ef_linear(amount)
  return amount
@@ -194,10 +196,16 @@ function make_ef_ui_single()
    if t.current_index != 6 then
     circfill(-30+60*t.current_position, 0, 10, 6)
    else
-    if t.current_position == 0 then
+    if t.frame == 0 then
      t.smoke = {}
      -- t.lightning = {}
      t.light_particles = {}
+    end
+
+    if t.frame == 0 and #t.light_particles > 0 then
+     cls()
+     print(#t.light_particles)
+     stop()
     end
     local cp = t.current_position
     p1 = {-30+60*cp, 0}
@@ -326,6 +334,9 @@ function make_ef_ui_single()
    local anim = "loop (—): " .. t.loop
    print(anim, -2*#anim, 48, 6)
 
+   local frame = "frame: "..t.frame.. " / " .. t.frame/t.current_loop_duration .. "s"
+   print(frame, -2*#anim, 54, 6)
+
    -- if t.current_position < 0.3 then
    --  spr(64, -40, -20, 4, 4)
    -- elseif t.current_position < 0.5 then
@@ -355,28 +366,12 @@ function make_ef_ui_single()
  }
 end
 
+-- @{ std lib
 
 function _init()
  stdinit()
 
  game_start()
---  add_gobjs(
---    make_menu(
---    {
---     'go',
---    },
---    function (t, i, s)
---     add (
---      s,
---      make_trans(
---      function()
---       game_start()
---      end
---      )
---     )
---    end
---   )
---  )
 end
 
 function _update60()
@@ -388,9 +383,6 @@ function _draw()
 end
 
 -- coordinate systems
-sp_world = 0
-sp_local = 1
-sp_screen_native = 2
 sp_screen_center = 3
 
 -- @{ useful utility function for getting started
@@ -400,52 +392,13 @@ function add_gobjs(thing)
 end
 -- @}
 
-function make_player(p)
- return {
-  x=0,
-  y=0,
-  p=p,
-  space=sp_world,
-  c_objs={make_grid(sp_local, 64)},
-  update=function(t)
-  end,
-  draw=function(t)
-   -- spr(2, -3, -3)
-   -- rect(-3,-3, 3,3, 8)
-   -- local str = "world: " .. t.x .. ", " .. t.y
-   -- print(str, -(#str)*2, 12, 8)
-   -- drawobjs(t.c_objs)
-  end
- }
-end
-
-function make_camera()
- return {
-  x=0,
-  y=0,
-  update=function(t)
-   -- t.x=g_p1.x
-   -- t.y=g_p1.y
-  end,
-  draw=function(t)
-  end
- }
-end
--- @}
 
 function game_start()
  g_objs = {
   make_ef_ui_single(),
-  -- make_mouse_ptr(),
-  -- make_grid(sp_world, 128),
-  -- make_grid(sp_screen_center, 128),
-  -- make_particle_manager(),
-  -- make_debugmsg(),
  }
 
- g_cam= add_gobjs(make_camera())
---  g_p1 = add_gobjs(make_player(0))
-
+ g_cam= add_gobjs({0,0})
 end
 
 ------------------------------
@@ -456,7 +409,6 @@ function stdinit()
  g_ctl=0     --last controllers
  g_cs = {}   --camera stack 
  g_objs = {} --objects
-
 end
 
 function stdupdate()
@@ -493,14 +445,6 @@ function drawobjs(objs)
    if t.space == sp_screen_center then
     pushc(-64, -64)
     cam_stack += 1
-   elseif t.space == sp_world and g_cam  then
-    pushc(g_cam.x - 64, g_cam.y - 64)
-    pushc(-t.x, -t.y)
-    cam_stack += 2
-   elseif not t.space or t.space == sp_local then
-    pushc(-t.x, -t.y)
-    cam_stack += 1
-   elseif t.space == sp_screen_native then
    end
 
    t:draw(objs)
@@ -533,19 +477,6 @@ function btnn(i,p)
  return pr and chg
 end
 
-function getspraddr(n)
- return flr(n/16)*512+(n%16)*4
-end
-
-function sprcpy(dst,src,w,h)
- w = w or 1
- h = h or 1
- for i=0,h*8-1 do
-  memcpy(getspraddr(dst)+64*i,
-     getspraddr(src)+64*i,4*w)
- end
-end
-
 function pushc(x, y)
  local l=g_cs[#g_cs] or {0,0}
  local n={l[1]+x,l[2]+y}
@@ -565,142 +496,11 @@ function popc()
  end
 end
 
-function make_menu(
- lbs, --menu lables
- fnc, --chosen callback
- x,y, --pos
- omb, --omit backdrop
- p,   --player
- cfnc --cancel callback
-)
- local m={
-  --lbs=lbs,
-  --f=fnc,
-  --fc=cfnc,
-  i=0, --item
-  s=g_tick,
-  e=5,
-  x=x or 64,
-  y=y or 80,
-  h=10*#lbs+4,
-  --omb=omb,
-  tw=0,--text width
-  p=p or -1,
-  draw=function(t)
-   local e=elapsed(t.s)
-   local w=t.tw*4+10
-   local x=min(1,e/t.e)*(w+9)/2
-   if not omb then
-    rectfill(-x,0,x,t.h,0)
-    rect(-x,0,x,t.h,1)
-   end
-   if e<t.e then
-    return
-   end
-   x=w/2+1
-   for i,l in pairs(lbs) do
-    if not t.off or i==t.i+1 then
-     local y=4+(i-1)*10
-     print(l,-x+9,y+1,0)
-     print(l,-x+9,y,7)
-    end
-   end
-   spr(0,-x,2+10*t.i)
-  end,
-  update=function(t,s)
-   if (t.off) return
-   if elapsed(t.s)<(t.e*2) then
-    return
-   end
-
-   if btnn(5,t.p) then
-    if fnc then
-     fnc(t,t.i,s)
-     --sfx(2)
-    end
-   end
-
-   --cancel
-   if btnn(4,t.p) then
-    if cfnc then
-     cfnc(t,s)
-     --sfx(2)
-    end
-   end
-
-   if btnn(2,t.p) and
-     t.i>0 then
-    t.i-=1
-    sfx(1)
-   end
-   if btnn(3,t.p) and
-     t.i<(#lbs-1) then
-    t.i+=1
-    sfx(1)
-   end
-  end
- }
- for l in all(lbs) do
-  m.tw=max(m.tw,#l)
- end
- return m
-end
-
 function elapsed(t)
  if g_tick>=t then
   return g_tick - t
  end
  return 32767-t+g_tick
-end
-
-function trans(s)
- if (s<1) return
- s=2^s
- local b,m,o =
-   0x6000,
-   15,
-   s/2-1+(32*s)
-
- for y=0,128-s,s do
-  for x=0,128-s,s do
-   local a=b+x/2
-   local c=band(peek(a+o),m)
-   c=bor(c,shl(c,4))
-   for i=1,s do
-    memset(a,c,s/2)
-    a+=64
-   end
-  end
-  b+=s*64
- end
-end
-
-function make_trans(f,d,i)
- return {
-  d=d,
-  e=g_tick,
-  f=f,
-  i=i,
-  x=0,
-  y=0,
-  update=function(t,s)
-   if elapsed(t.e)>10 then
-    if (t.f) t:f(s)
-    del(s,t)
-    if not t.i then
-     add(s,
-       make_trans(nil,nil,1))
-    end
-   end
-  end,
-  draw=function(t)
-   local x=flr(elapsed(t.e)/2)
-   if t.i then
-    x=5-x
-   end
-   trans(x)
-  end
- }
 end
 
 __gfx__
