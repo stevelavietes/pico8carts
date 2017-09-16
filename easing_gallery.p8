@@ -117,9 +117,6 @@ function make_ef_ui_single()
   smoke={},
   -- lightning={},
   update=function(t)
-   local ef = gc_easing_functions[t.current_index].ef
-   local amount = t.frame / t.current_loop_duration
-   t.current_position = ef(amount)
    t.frame = (t.frame + t.direction)
 
    if (
@@ -134,10 +131,17 @@ function make_ef_ui_single()
     if t.loop == "bounce" then
      t.direction *= -1
     else
-     t.frame = 0
-     t.direction = 1
+     if t.direction > 0 then
+      t.frame = 0
+      t.direction = 1
+     else
+      t.frame = t.current_loop_duration
+     end
     end
    end
+
+   local ef = gc_easing_functions[t.current_index].ef
+   t.current_position = ef(t.frame / t.current_loop_duration)
 
    -- @note for recording
    -- @{ 
