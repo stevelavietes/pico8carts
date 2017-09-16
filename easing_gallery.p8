@@ -1,13 +1,13 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
--- Easing function gallery with an automatic graph of the function over 0,1
+-- easing function gallery with an automatic graph of the function over 0,1
 
--- Dev note: if you want to add your own function, add an ef_ function
+-- dev note: if you want to add your own function, add an ef_ function
 --           as below here, then find the gc_easing_functions list and
 --           add it there, following the pattern.
 
--- @TODO: could use derivatives as well
+-- @todo: could use derivatives as well
 
 -- @{ easing functions
 function ef_linear(amount)
@@ -90,7 +90,7 @@ function make_easing_function(name, func)
 end
 
 
--- !!!! Add to this list if you want to add a new easing function !!!!
+-- !!!! add to this list if you want to add a new easing function !!!!
 gc_easing_functions = {
  make_easing_function("smootherstep", ef_smootherstep),
  make_easing_function("linear", ef_linear),
@@ -107,7 +107,7 @@ function make_ef_ui_single()
  return {
   x=64,
   y=64,
-  scope=sp_screen_center,
+  space=sp_screen_center,
   current_index=1,
   frame=0,
   current_loop_duration=120,
@@ -126,7 +126,11 @@ function make_ef_ui_single()
     (t.direction > 0 and t.frame == t.current_loop_duration)
     or (t.direction < 0 and t.frame == 0)
    ) then
+    -- @note for recording
+    -- @{ 
     -- extcmd "video"
+    -- @}
+
     if t.loop == "bounce" then
      t.direction *= -1
     else
@@ -135,9 +139,12 @@ function make_ef_ui_single()
     end
    end
 
+   -- @note for recording
+   -- @{ 
    -- if t.frame == 0 then
    --  extcmd "rec"
    -- end
+   -- @}
 
    if btnn(0) then
     t.current_index = (t.current_index - 1) % (#gc_easing_functions+1)
@@ -192,7 +199,7 @@ function make_ef_ui_single()
    local yval = -20 * t.current_position - 30
    circ(xval, yval, 3)
 
-   -- Main circle
+   -- main circle
    if t.current_index != 6 then
     circfill(-30+60*t.current_position, 0, 10, 6)
    else
@@ -385,20 +392,11 @@ end
 -- coordinate systems
 sp_screen_center = 3
 
--- @{ useful utility function for getting started
-function add_gobjs(thing)
- add(g_objs, thing)
- return thing
-end
--- @}
-
 
 function game_start()
  g_objs = {
   make_ef_ui_single(),
  }
-
- g_cam= add_gobjs({0,0})
 end
 
 ------------------------------
