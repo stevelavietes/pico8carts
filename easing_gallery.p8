@@ -211,126 +211,7 @@ function make_ef_ui_single()
    if t.current_index != 6 then
     circfill(-30+60*t.current_position, 0, 10, 6)
    else
-    if t.frame == 0 then
-     t.smoke = {}
-     -- t.lightning = {}
-     t.light_particles = {}
-    end
-
-    if t.frame == 0 and #t.light_particles > 0 then
-     cls()
-     print(#t.light_particles)
-     stop()
-    end
-    local cp = t.current_position
-    p1 = {-30+60*cp, 0}
-    p2 = {
-     p1[1] + 20*cos(angle),
-     p1[2] + 20*sin(angle)
-    }
-    p_light = {
-     p1[1] + 15*cos(angle)+6,
-     p1[2] + 15*sin(angle)
-    }
-
-    if t.current_position < 0.75 then
-     angle = 0.35
-     --             x               y            r  c
-     add(t.smoke, {p1[1]+rnd(6)-3, p1[2]-rnd(8)+8, 1, 6+flr(rnd(2))})
-    else
-     angle = 0.35 - 0.1*ef_linear((t.current_position-0.75)/0.25)
-     cp = 0.75
-    end
-
-    -- if (t.current_position > 0.20 and t.current_position < 0.5) then
-    --  if g_tick % 6 == 0 or t.lightning == {} then
-    --   t.lightning = {}
-    --   t.last = g_tick
-    --   for i=1,6 do
-    --    add(
-    --     t.lightning, 
-    --     {
-    --      -30+(40*((i-1)/6))*(4*t.current_position-1)+rnd(6)-3,
-    --      p1[2]+rnd(20)-20
-    --     }
-    --    )
-    --   end
-    --  end
-    -- end
-
-    -- dust clouds
-    for i=1,#t.smoke do
-     local sp=t.smoke[i]
-     circfill(sp[1], sp[2]-sp[3]/1.5, sp[3], sp[4])
-     sp[3]+=0.15
-    end
-
-
-    -- for i=2,#t.lightning do
-    --  local l1 = t.lightning[i-1]
-    --  local l2 = t.lightning[i]
-    --  for i=-2,2,0.25 do
-    --   line(l1[1]+i+rnd(2)-1, l1[2]+i+rnd(2)-1, l2[1]+i+rnd(2)-1, l2[2]+i+rnd(2)-1, 11)
-    --  end
-    -- end
-    -- for i=p1[1],-30,-1 do
-    --  circfill(i+rnd(6)-3, p1[2]-rnd(8)-r/1.5, r+rnd(2), 6+flr(rnd(2)))
-    --  r+=0.25
-    -- end
-    
-    -- motorcycle
-    for i=1,12 do
-     local offset=0
-     if i-1 < 3 or 12-i < 3 then
-      if i < 6 then
-       offset = 3-i
-      else
-       offset = i-10
-      end
-      len = 20-offset
-     end
-     local p2 = {
-      p1[1] + len*cos(angle),
-      p1[2] + len*sin(angle)
-     }
-      local p1 = {
-       p1[1] + offset*cos(angle),
-       p1[2] + offset*sin(angle)
-      }
-      -- print("offset: "..offset)
-     line(p1[1]+i, p1[2], p2[1]+i, p2[2], 8)
-
-     -- wheel
-     if i>3 and i < 10 then
-      local len = 7
-      local p2 = {
-       p1[1] + len*cos(angle),
-       p1[2] + len*sin(angle)
-      }
-      len = -5
-      local p1 = {
-       p1[1] + len*cos(angle),
-       p1[2] + len*sin(angle)
-      }
-      line(p1[1]+i, p1[2], p2[1]+i, p2[2], 5)
-     end
-    end
-
-    circfill(p_light[1], p_light[2], 4, 9)
-    circfill(p_light[1], p_light[2], 2, 10)
-    add(t.light_particles, p_light)
-    -- circ(p_light[1]+6, p_light[2], 8, 9)
-
-    -- light trail
-    if t.light_particles then
-     for i=2, #t.light_particles do
-      local p1 = t.light_particles[i-1]
-      local p2 = t.light_particles[i]
-      for i=-2,2 do
-       line(p1[1], p1[2]+i, p2[1], p2[2]+i, 10)
-      end
-     end
-    end
+    t:draw_kaneda()
    end
 
    -- text at the bottom of the screen
@@ -349,34 +230,130 @@ function make_ef_ui_single()
    local anim = "loop (—): " .. t.loop
    print(anim, -2*#anim, 48, 6)
 
-   local frame = "frame: "..t.frame.. " / " .. t.frame/t.current_loop_duration .. "s"
-   print(frame, -2*#anim, 54, 6)
+   local dir = "dir (Ž): " .. t.direction
+   print(dir, -2*#dir, 54, 6)
+  end,
+  draw_kaneda=function(t)
+   if t.frame == 0 then
+    t.smoke = {}
+    -- t.lightning = {}
+    t.light_particles = {}
+   end
 
-   -- if t.current_position < 0.3 then
-   --  spr(64, -40, -20, 4, 4)
-   -- elseif t.current_position < 0.5 then
-   --  spr(68, -40, -20, 4, 4)
-   -- else
-   --  local delta = flr(10*(t.current_position - 0.4)/0.6)
-   --  local offset = delta/5
-   --  for i=2,15 do
-   --   if i > 5+delta then
-   --    pal(i, 11)
-   --   else
-   --    pal(i, 0)
+   if t.frame == 0 and #t.light_particles > 0 then
+    cls()
+    print(#t.light_particles)
+    stop()
+   end
+   local cp = t.current_position
+   p1 = {-30+60*cp, 0}
+   p2 = {
+    p1[1] + 20*cos(angle),
+    p1[2] + 20*sin(angle)
+   }
+   p_light = {
+    p1[1] + 15*cos(angle)+6,
+    p1[2] + 15*sin(angle)
+   }
+
+   if t.current_position < 0.75 then
+    angle = 0.35
+    --             x               y            r  c
+    add(t.smoke, {p1[1]+rnd(6)-3, p1[2]-rnd(8)+8, 1, 6+flr(rnd(2))})
+   else
+    angle = 0.35 - 0.1*ef_linear((t.current_position-0.75)/0.25)
+    cp = 0.75
+   end
+
+   -- if (t.current_position > 0.20 and t.current_position < 0.5) then
+   --  if g_tick % 6 == 0 or t.lightning == {} then
+   --   t.lightning = {}
+   --   t.last = g_tick
+   --   for i=1,6 do
+   --    add(
+   --     t.lightning, 
+   --     {
+   --      -30+(40*((i-1)/6))*(4*t.current_position-1)+rnd(6)-3,
+   --      p1[2]+rnd(20)-20
+   --     }
+   --    )
    --   end
    --  end
-   --  palt(0, true)
-   --  spr(72, -40, -20-offset, 4, 4)
-   --  pal()
-   --  palt()
-   -- end
-   -- for i=2, lpts_max do
-   --  local p1 = pts[i-1]
-   --  local p2 = pts[i]
-   --  line(p1[1], p1[2], p2[1], p2[2], 11)
    -- end
 
+   -- dust clouds
+   for i=1,#t.smoke do
+    local sp=t.smoke[i]
+    circfill(sp[1], sp[2]-sp[3]/1.5, sp[3], sp[4])
+    sp[3]+=0.15
+   end
+
+
+   -- for i=2,#t.lightning do
+   --  local l1 = t.lightning[i-1]
+   --  local l2 = t.lightning[i]
+   --  for i=-2,2,0.25 do
+   --   line(l1[1]+i+rnd(2)-1, l1[2]+i+rnd(2)-1, l2[1]+i+rnd(2)-1, l2[2]+i+rnd(2)-1, 11)
+   --  end
+   -- end
+   -- for i=p1[1],-30,-1 do
+   --  circfill(i+rnd(6)-3, p1[2]-rnd(8)-r/1.5, r+rnd(2), 6+flr(rnd(2)))
+   --  r+=0.25
+   -- end
+
+   -- motorcycle
+   for i=1,12 do
+    local offset=0
+    if i-1 < 3 or 12-i < 3 then
+     if i < 6 then
+      offset = 3-i
+     else
+      offset = i-10
+     end
+     len = 20-offset
+    end
+    local p2 = {
+     p1[1] + len*cos(angle),
+     p1[2] + len*sin(angle)
+    }
+    local p1 = {
+     p1[1] + offset*cos(angle),
+     p1[2] + offset*sin(angle)
+    }
+    -- print("offset: "..offset)
+    line(p1[1]+i, p1[2], p2[1]+i, p2[2], 8)
+
+    -- wheel
+    if i>3 and i < 10 then
+     local len = 7
+     local p2 = {
+      p1[1] + len*cos(angle),
+      p1[2] + len*sin(angle)
+     }
+     len = -5
+     local p1 = {
+      p1[1] + len*cos(angle),
+      p1[2] + len*sin(angle)
+     }
+     line(p1[1]+i, p1[2], p2[1]+i, p2[2], 5)
+    end
+   end
+
+   circfill(p_light[1], p_light[2], 4, 9)
+   circfill(p_light[1], p_light[2], 2, 10)
+   add(t.light_particles, p_light)
+   -- circ(p_light[1]+6, p_light[2], 8, 9)
+
+   -- light trail
+   if t.light_particles then
+    for i=2, #t.light_particles do
+     local p1 = t.light_particles[i-1]
+     local p2 = t.light_particles[i]
+     for i=-2,2 do
+      line(p1[1], p1[2]+i, p2[1], p2[2]+i, 10)
+     end
+    end
+   end
   end
  }
 end
