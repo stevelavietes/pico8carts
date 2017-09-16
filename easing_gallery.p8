@@ -174,6 +174,10 @@ function make_ef_ui_single()
 
    t.current_loop_duration = max(15, t.current_loop_duration)
 
+   if btnn(4) then
+    t.direction *= -1
+   end
+
    if btnn(5) then
     if t.loop == "loop" then
      t.loop = "bounce"
