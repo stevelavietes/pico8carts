@@ -12,6 +12,10 @@ function ef_linear(amount)
  return amount
 end
 
+function ef_cos(amount)
+ return 0.5 - 0.5*cos(amount/2)
+end
+
 function ef_smootherstep(x)
  return x*x*x*(x*(x*6 - 15) + 10);
 end
@@ -30,6 +34,7 @@ function ef_out_quart(amount)
  return -1 * (t*t*t*t- 1)
 end
 
+-- @{ spring
 function e_exp_approx(f)
  return 1 + f*(1 + f/2*(1 + f/3*(1 + f/4)))
 end
@@ -41,6 +46,7 @@ function ef_spring_criticallydamped(amount)
 
  return ( (v0 + x0 * omega) * amount + x0 )/(e_exp_approx(omega * amount))
 end
+-- @}
 
 crop = 0.30
 
@@ -92,6 +98,7 @@ gc_easing_functions = {
  make_easing_function("out quart cropped", ef_out_quart_cropped),
  make_easing_function("kaneda", ef_out_quart),
  make_easing_function("spring critically damped", ef_spring_criticallydamped),
+ make_easing_function("cosine", ef_cos),
 }
 
 function make_ef_ui_single()
@@ -184,7 +191,7 @@ function make_ef_ui_single()
    circ(xval, yval, 3)
 
    -- Main circle
-   if t.current_index != 7 then
+   if t.current_index != 6 then
     circfill(-30+60*t.current_position, 0, 10, 6)
    else
     if t.current_position == 0 then
