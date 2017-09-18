@@ -52,19 +52,6 @@ end
 
 crop = 0.30
 
-pts = {}
-lpts_max = 6
-add(pts, {-35, -15})
-for i=1,lpts_max do
- add(
-  pts,
-  {
-   10*cos(-0.25-i/(lpts_max*1.25))-15,
-   10*sin(-0.25-i/(lpts_max*1.25)) - 15
-  }
- )
-end
-
 function ef_out_quart_cropped(amount)
  local amount_cropped = min(amount, crop)
  local t = amount_cropped - 1
@@ -240,11 +227,6 @@ function make_ef_ui_single()
     t.light_particles = {}
    end
 
-   if t.frame == 0 and #t.light_particles > 0 then
-    cls()
-    print(#t.light_particles)
-    stop()
-   end
    local cp = t.current_position
    p1 = {-30+60*cp, 0}
    p2 = {
@@ -342,7 +324,6 @@ function make_ef_ui_single()
    circfill(p_light[1], p_light[2], 4, 9)
    circfill(p_light[1], p_light[2], 2, 10)
    add(t.light_particles, p_light)
-   -- circ(p_light[1]+6, p_light[2], 8, 9)
 
    -- light trail
    if t.light_particles then
