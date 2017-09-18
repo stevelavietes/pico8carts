@@ -86,7 +86,7 @@ gc_easing_functions = {
  make_easing_function("out quart", ef_out_quart),
  make_easing_function("out quart cropped", ef_out_quart_cropped),
  make_easing_function("kaneda", ef_out_quart),
- make_easing_function("spring critically damped", ef_spring_criticallydamped),
+ make_easing_function("critically damped spring", ef_spring_criticallydamped),
  make_easing_function("cosine", ef_cos),
 }
 
@@ -101,6 +101,7 @@ function make_ef_ui_single()
   direction=1,
   current_position=0,
   loop = "loop",
+  angle = 0,
   smoke={},
   -- lightning={},
   update=function(t)
@@ -195,7 +196,8 @@ function make_ef_ui_single()
    circ(xval, yval, 3)
 
    -- main circle
-   if t.current_index != 6 then
+   local name = gc_easing_functions[t.current_index].name
+   if name != "kaneda" then
     circfill(-30+60*t.current_position, 0, 10, 6)
    else
     t:draw_kaneda()
@@ -225,25 +227,30 @@ function make_ef_ui_single()
     t.smoke = {}
     -- t.lightning = {}
     t.light_particles = {}
+    t.angle = 0.35
    end
 
    local cp = t.current_position
+
+   -- bottom of the motorcycle
    p1 = {-30+60*cp, 0}
+
+   -- top of the motorcycle
    p2 = {
-    p1[1] + 20*cos(angle),
-    p1[2] + 20*sin(angle)
+    p1[1] + 20*cos(t.angle),
+    p1[2] + 20*sin(t.angle)
    }
    p_light = {
-    p1[1] + 15*cos(angle)+6,
-    p1[2] + 15*sin(angle)
+    p1[1] + 15*cos(t.angle)+6,
+    p1[2] + 15*sin(t.angle)
    }
 
-   if t.current_position < 0.75 then
-    angle = 0.35
+   if cp < 0.85 then
+    t.angle = 0.35
     --             x               y            r  c
     add(t.smoke, {p1[1]+rnd(6)-3, p1[2]-rnd(8)+8, 1, 6+flr(rnd(2))})
    else
-    angle = 0.35 - 0.1*ef_linear((t.current_position-0.75)/0.25)
+    t.angle = 0.35 - 0.1*ef_linear((cp-0.85)/0.15)
     cp = 0.75
    end
 
@@ -295,12 +302,12 @@ function make_ef_ui_single()
      len = 20-offset
     end
     local p2 = {
-     p1[1] + len*cos(angle),
-     p1[2] + len*sin(angle)
+     p1[1] + len*cos(t.angle),
+     p1[2] + len*sin(t.angle)
     }
     local p1 = {
-     p1[1] + offset*cos(angle),
-     p1[2] + offset*sin(angle)
+     p1[1] + offset*cos(t.angle),
+     p1[2] + offset*sin(t.angle)
     }
     -- print("offset: "..offset)
     line(p1[1]+i, p1[2], p2[1]+i, p2[2], 8)
@@ -309,13 +316,13 @@ function make_ef_ui_single()
     if i>3 and i < 10 then
      local len = 7
      local p2 = {
-      p1[1] + len*cos(angle),
-      p1[2] + len*sin(angle)
+      p1[1] + len*cos(t.angle),
+      p1[2] + len*sin(t.angle)
      }
      len = -5
      local p1 = {
-      p1[1] + len*cos(angle),
-      p1[2] + len*sin(angle)
+      p1[1] + len*cos(t.angle),
+      p1[2] + len*sin(t.angle)
      }
      line(p1[1]+i, p1[2], p2[1]+i, p2[2], 5)
     end
@@ -331,7 +338,7 @@ function make_ef_ui_single()
      local p1 = t.light_particles[i-1]
      local p2 = t.light_particles[i]
      for i=-2,2 do
-      line(p1[1], p1[2]+i, p2[1], p2[2]+i, 10)
+      circfill(p1[1],p1[2],2.5,10)
      end
     end
    end
