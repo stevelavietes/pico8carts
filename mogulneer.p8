@@ -33,7 +33,9 @@ __lua__
 -- kill downarrow hunker down mode [x]
 -- a jump system [x]
 
--- JUMP:
+-- jump needs to turn off when you land
+
+-- jump:
  -- make you much turnier when you land a jump
  -- wedge is off while jumping
 -- overflow bug
@@ -752,19 +754,19 @@ function make_player(p)
     -- jump acceleration == mogulneer acceleration for now
    end
 
-   if t.jump_height <= 0 then
+   if t.jumping and t.jump_height <= 0 then
     -- apply euler integration to the jump
     t.jump_velocity += g_mogulneer_accel
     t.jump_height += t.jump_velocity
 
-    -- @TODO: this jumping model assumes a flat plane.
+    -- @todo: this jumping model assumes a flat plane.
     -- should compute the slope of the slope and then figure out when
     -- the player crosses the plane of the snow again.  but this might
     -- just work well enough even though it isn't correct.
-    -- Could just accumulate the y component of the velocity and then
+    -- could just accumulate the y component of the velocity and then
     -- multiply that by the slope of the slope each tick to move the target
-    -- height down each tick  As long as the player falls faster than they move down the slope, they'll hit the ground
-    if t.jump_height >= 0 then
+    -- height down each tick  as long as the player falls faster than they move down the slope, they'll hit the ground
+    if t.jump_height > 0 then
      -- reset the jump
      -- t.jumping = nil
      t.jump_height = 0
