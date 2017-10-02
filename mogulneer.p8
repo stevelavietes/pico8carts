@@ -659,6 +659,8 @@ function make_player(p)
   bound_min=vecmake(-3, -4),
   bound_max=vecmake(2,0),
   angle=0, -- ski angle
+  turn_start = nil,
+  drag_scale = 1,
   ski_vec=null_v,
   ski_vec_perp=null_v,
   wedge=false,
@@ -789,6 +791,10 @@ function make_player(p)
 
    -- sets up the current direction of the skis, "brakes"
    if tgt_dir then
+    if t.turn_start == nil then
+     t.turn_start = g_tick
+    end
+
     if tgt_dir > t.angle then
      t.angle = min(t.angle + turn_amount, 0)
     elseif tgt_dir < t.angle then
@@ -798,11 +804,14 @@ function make_player(p)
     if tgt_dir == -0.25 and abs(t.angle +0.25) < 0.015 then
      t.angle = -0.25
     end
+   else
+    t.turn_start = nil
    end
 
    -- compute the acceleration
    t.total_accel = t.jumping and null_v or t:acceleration()
    -- t.total_accel = t:acceleration()
+   -- t.total_accel = null_v
 
    -- euler integration for now
    t.vel = vecadd(t.vel, t.total_accel)
@@ -853,8 +862,9 @@ function make_player(p)
    --  )
    -- )
    -- g = t.g
-   g = vecscale(ski_vec, ski_vec.y * g_mogulneer_accel)
-   t.g = g
+   -- g = vecscale(ski_vec, ski_vec.y * g_mogulneer_accel)
+   -- local g = vecmake(0, ski_vec.y * g_mogulneer_accel)
+   local g = vecscale(ski_vec, smootherstep(sin(t.angle)) * g_mogulneer_accel)
 
    local vel_along  = vecdot(ski_vec, t.vel)
    t.vel_along = vel_along
@@ -865,17 +875,27 @@ function make_player(p)
    -- drag along the ski is against the component of velocity along the ski
    t.drag_along = vecscale(
     ski_vec,
-    -t.c_drag_along * drag_multiplier * vel_along*abs(vel_along)
+    -1 * t.c_drag_along * drag_multiplier * vel_along*abs(vel_along)
    )
+   -- t.drag_along = null_v
 
    -- t.drag_against = vecscale(
    --  ski_vec_perp,
    --  -t.c_drag_against * drag_multiplier * (vel_against * abs(vel_against))
    -- )
+
+   local drag_scale = 1
+   if t.turn_start and elapsed(t.turn_start) < 60 then
+    drag_scale = cos(elapsed(t.turn_start)/(2*60))
+    drag_scale *= drag_scale
+   end
+   t.drag_scale = drag_scale
+
    t.drag_against = vecscale(
     ski_vec_perp,
-    -t.c_drag_against * drag_multiplier * (vel_against)
+    -drag_scale * t.c_drag_against * drag_multiplier * (vel_against)
    )
+   -- t.drag_against = null_v
    -- @}
 
    -- if brake force is a thing
