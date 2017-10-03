@@ -864,7 +864,16 @@ function make_player(p)
    -- g = t.g
    -- g = vecscale(ski_vec, ski_vec.y * g_mogulneer_accel)
    -- local g = vecmake(0, ski_vec.y * g_mogulneer_accel)
-   local g = vecscale(ski_vec, smootherstep(sin(t.angle)) * g_mogulneer_accel)
+   -- local g = vecscale(ski_vec, smootherstep(sin(t.angle)) * g_mogulneer_accel)
+   -- local  = 
+   -- local g = vecscale(ski_vec, smootherstep(sin(t.angle)) * g_mogulneer_accel)
+   local g_accel = g_mogulneer_accel
+   local ang_test = (t.angle + 0.5) * 2
+   if ang_test % 1 < 0.2 or ang_test % 1 > 0.8 then
+    g_accel = smootherstep((ang_test % 0.2) * 5) * g_mogulneer_accel
+   end
+   local g = vecscale(ski_vec, g_accel)
+   t.g = g
 
    local vel_along  = vecdot(ski_vec, t.vel)
    t.vel_along = vel_along
