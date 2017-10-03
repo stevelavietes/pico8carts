@@ -894,8 +894,8 @@ function make_player(p)
    -- )
 
    local drag_scale = 1
-   if t.turn_start and elapsed(t.turn_start) < 60 then
-    drag_scale = cos(elapsed(t.turn_start)/(2*60))
+   if t.turn_start and elapsed(t.turn_start) < 30 then
+    drag_scale = cos(elapsed(t.turn_start)/(2*30))
     drag_scale *= drag_scale
    end
    t.drag_scale = drag_scale
