@@ -22,6 +22,10 @@ function ef_smootherstep(x)
  return x*x*x*(x*(x*6 - 15) + 10);
 end
 
+function ef_sin_smootherstep(x)
+ return ef_smootherstep(sin((x/2 + 0.5)))
+end
+
 function ef_out_quad(amount)
  return -1 * amount*(amount-2);
 end
@@ -88,6 +92,7 @@ gc_easing_functions = {
  make_easing_function("kaneda", ef_out_quart),
  make_easing_function("critically damped spring", ef_spring_criticallydamped),
  make_easing_function("cosine", ef_cos),
+ make_easing_function("smootherstep of sin", ef_sin_smootherstep),
 }
 
 function make_ef_ui_single()
