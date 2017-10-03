@@ -334,8 +334,7 @@ function spray_particles()
    end
   end,
   add_brake_spray=function(t)
-   -- cbb
-   if not (btn(0) or btn(1) or btn(5) or btn(2) or btn(3)) then
+   if not g_p1.sliding then
     return
    end
 
@@ -343,29 +342,13 @@ function spray_particles()
    -- local amt = abs(v_ag) / 5
 
    -- compute the spray angle
-   local d_angle = g_p1.angle - t.angle_last
-   t.angle_last = g_p1.angle
-   local tgt_angle = g_p1.angle
-   if d_angle > 0 then
-    -- increasing to the right
-    tgt_angle -= 0.10
-   elseif d_angle < 0 then
-    -- decreasing to the left
-    tgt_angle += 0.10
-   end
-
-   if abs(d_angle) > 0 or t.tgt_angle == nil then
-    t.tgt_angle = tgt_angle
-   else
-    return
-   end
-
+   -- along the perpendicular
 
    -- vecscale(g_p1.ski_vec_perp, -vecmag(g_p1.vel))
    for i=0,25 do
-    local ski_vec = vecfromangle(t.tgt_angle+rnd(0.1)-0.05, vecmag(g_p1.vel)) 
+    local ski_vec = vecfromangle(g_p1.perpendicular+rnd(0.1)-0.05, g_p1.vel_against) 
     --+ rnd(0.20) - 0.1, 2+rnd(1)-0.5)
-    local off=vecrand(6, true)
+    local off=vecadd(vecscale(g_p1.ski_vec_perp, -2), vecrand(6, false))
     -- local off=vecmake()
     if rnd() < 1 then
       add_particle(
@@ -664,6 +647,7 @@ function make_player(p)
   bound_min=vecmake(-3, -4),
   bound_max=vecmake(2,0),
   angle=0, -- ski angle
+  perpendicular=0,
   turn_start = nil,
   drag_scale = 1,
   ski_vec=null_v,
@@ -675,6 +659,7 @@ function make_player(p)
   c_drag_along=0.02,
   -- c_drag_against=0.1,
   c_drag_against=0.05,
+  sliding=false,
 
   -- jump
   jumping = nil,
@@ -844,6 +829,7 @@ function make_player(p)
    end
    local ski_vec_perp = vecfromangle(perpendicular)
    t.ski_vec_perp = ski_vec_perp
+   t.perpendicular = perpendicular
 
    local drag_multiplier = 1
    if t.wedge then
@@ -909,6 +895,9 @@ function make_player(p)
     ski_vec_perp,
     -drag_scale * t.c_drag_against * drag_multiplier * (vel_against)
    )
+
+   t.sliding = abs(vel_against) > abs(vel_along)
+
    -- t.drag_against = null_v
    -- @}
 
