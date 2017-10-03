@@ -315,11 +315,16 @@ function spray_particles()
    local amount = min(max(remap(velmag, 3, 5, 0, 1), 0.0), 1.0)
    g_p1.amount = amount
 
+   local n_trail_pts = #(g_p1.trail_points)
    for i=0,25 do
     if rnd() < amount or amount > 0.95 then
-     local pos = vecscale(g_p1.ski_vec, rnd(10)-5)
+     local ind = 1+flr(rnd(min(6, n_trail_pts)))
+     pos = vecadd(
+      vecscale(g_p1.ski_vec, rnd(6)-3),
+      g_p1.trail_points[n_trail_pts - ind]
+     )
      add_particle(
-      g_p1.x+pos.x, g_p1.y+pos.y,
+      pos.x, pos.y,
       rnd(0.5)-0.25, 0.5+rnd(0.3),
       270,
       12,
