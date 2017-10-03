@@ -934,9 +934,9 @@ function make_player(p)
    -- trail renderer
    -- @todo: make this render behind the trees
    for i=2,#t.trail_points do
+    local p1 = vecsub(t.trail_points[i-1], t)
+    local p2 = vecsub(t.trail_points[i], t)
     for x_off=-1,1,2 do
-     local p1 = vecsub(t.trail_points[i-1], t)
-     local p2 = vecsub(t.trail_points[i], t)
      if not t.trail_points[i].gap and not t.trail_points[i-1].gap then
       line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
      end
