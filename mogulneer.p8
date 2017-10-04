@@ -459,23 +459,6 @@ function _title_stuff()
     end
     add_gobjs(make_snow_trans(done_func, 7))
     add_gobjs(make_debugmsg())
-    -- add (
-    --  s,
-    --  make_trans(
-    --  function()
-    --   if i==0 then
-    --    -- slalom
-    --    -- slalom_course_menu()
-    --    -- slalom_start(1)
-    --    slalom_start(1)
-    --    -- add_gobjs(make_snow_trans())
-    --   elseif i==1 then
-    --    -- back country
-    --    backcountry_start()
-    --   end
-    --  end
-    --  )
-    -- )
    end
   )
  )
