@@ -345,27 +345,29 @@ function spray_particles()
    -- along the perpendicular
 
    -- vecscale(g_p1.ski_vec_perp, -vecmag(g_p1.vel))
+   local mag = -min(abs(g_p1.vel_against/2), 1)
    for i=0,25 do
-    local ski_vec = vecfromangle(g_p1.perpendicular+rnd(0.1)-0.05, g_p1.vel_against) 
-    --+ rnd(0.20) - 0.1, 2+rnd(1)-0.5)
+    local ski_vec = vecfromangle(g_p1.perpendicular+rnd(0.2)-0.1,mag)
+
     local off=vecadd(vecscale(g_p1.ski_vec_perp, -2), vecrand(6, false))
+    local life = 30+rnd(5)
     -- local off=vecmake()
-    if rnd() < 1 then
-      add_particle(
-       g_p1.x+off.x,
-       -- g_p1.x+off.x-3-g_p1.bound_min.x,
-       -- g_p1.x+off.x+rnd(6)-3+g_p1.bound_min.x,
-       g_p1.y+off.y,
-       -- g_p1.y+off.y-3-g_p1.bound_min.y,
-       -- g_p1.y+off.y+rnd(6)-3+g_p1.bound_min.y,
-       ski_vec.x,--+rnd(1),
-       ski_vec.y,--+rnd(1),
-       -- ski_vec.x/1.5,--+rnd(1),
-       -- ski_vec.y/1.5,--+rnd(1),
-       10,
-       6,
-       1
-      )
+
+    -- makes bigger chunks some % of the time
+    local num_parts = rnd() < 0.25 and 1 or 0
+
+     for i_x=0,num_parts do
+      for i_y=0,num_parts do
+       add_particle(
+         g_p1.x+off.x+i_x,
+         g_p1.y+off.y+i_y,
+         ski_vec.x,--+rnd(1),
+         max(ski_vec.y, -0.5),--+rnd(1),
+         life, -- life
+         6, -- col
+         -0.01 --ddy
+        )
+      end
      end
    end
 
