@@ -762,15 +762,9 @@ function make_player(p)
     -- height down each tick  as long as the player falls faster than they move down the slope, they'll hit the ground
     if t.jump_height > 0 then
      -- reset the jump
-     -- t.jumping = nil
+     t.turn_start = g_tick - 20
      t.jump_height = 0
      t.jump_velocity = 0
-     current_spd = vecmag(t.vel)
-     spd_along_new_angle = vecdot(t.vel, vecfromangle(t.angle))
-     remain_mag = max(current_spd - abs(spd_along_new_angle), 0)
-     remain_vel = vecscale(vecnormalized(t.vel), remain_mag)
-
-     t.vel = vecadd(vecfromangle(t.angle, current_spd), remain_vel)
     end
    end
 
