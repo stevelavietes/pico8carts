@@ -433,7 +433,7 @@ function _init()
  particle_array, particle_array_length = {}, 0
 
  stdinit()
- add_gobjs(make_snow_trans(_title_stuff, 7))
+ add_gobjs(make_snow_trans(_title_stuff, 6))
 end
 
 function _title_stuff()
