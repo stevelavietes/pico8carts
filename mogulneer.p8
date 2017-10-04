@@ -32,6 +32,13 @@ __lua__
  -- make skis spread out while jumping [x]
 -- kill downarrow hunker down mode [x]
 -- a jump system [x]
+-- split the spray up into two objects, one underneath the player, one on top
+-- can't do ^ because rght now there is one and only one particle bank
+
+-- when flat, the tuck button should give you a push (rather than the arrows)
+-- maybe the up button brakes?  increases the drag on both dimensions?
+-- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
+-- tune the brake spray to be lighter
 
 -- jump needs to turn off when you land
 
@@ -833,31 +840,15 @@ function make_player(p)
    end
 
    -- component of gravity along the skis (acceleration)
-   -- local g = vecscale(ski_vec, vecdot(vecmake(0, g_mogulneer_accel), ski_vec))
-   -- local g = vecmake(0, g_mogulneer_accel)
-
-   -- drag against @{ 
-   -- velocity adjustment 
-   -- 1 1 1 1       0.5     0.0
-   --      0.5  --- 1.0  -- 1.5
-   -- t.g = g
-   -- t.g = vecsub(
-   --  g,
-   --  vecmake(
-   --     0, 
-   --     vecdot(vecmake(0, -g_mogulneer_accel), ski_vec_perp)
-   --  )
-   -- )
-   -- g = t.g
-   -- g = vecscale(ski_vec, ski_vec.y * g_mogulneer_accel)
-   -- local g = vecmake(0, ski_vec.y * g_mogulneer_accel)
-   -- local g = vecscale(ski_vec, smootherstep(sin(t.angle)) * g_mogulneer_accel)
-   -- local  = 
-   -- local g = vecscale(ski_vec, smootherstep(sin(t.angle)) * g_mogulneer_accel)
    local g_accel = g_mogulneer_accel
-   local ang_test = (t.angle + 0.5) * 2
-   if ang_test % 1 < 0.2 or ang_test % 1 > 0.8 then
-    g_accel = smootherstep((ang_test % 0.2) * 5) * g_mogulneer_accel
+   local ang_fact = nil
+   if abs(t.angle) < 0.05 then
+    ang_fact = abs(t.angle) * 5
+   elseif abs(t.angle) > 0.45 then
+    ang_fact = (0.5 - abs(t.angle)) * 20
+   end
+   if ang_fact then
+    g_accel = smootherstep(ang_fact) * g_mogulneer_accel
    end
    local g = vecscale(ski_vec, g_accel)
    t.g = g
