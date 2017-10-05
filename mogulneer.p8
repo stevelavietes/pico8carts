@@ -2314,7 +2314,7 @@ function make_snow_trans(done_func, final_color, delay)
  delay = delay or 0
 
  local snow = {}
- local topsize =  16
+ local topsize =  17
  for i=1,128,topsize do
   for j=1,128,topsize do
    local tgt = vecmake(i,j)
