@@ -341,40 +341,20 @@ function spray_particles()
     -- makes bigger chunks some % of the time
     local num_parts = rnd() < 0.25 and 1 or 0
 
-     for i_x=0,num_parts do
-      for i_y=0,num_parts do
-       add_particle(
-         g_p1.x+off.x+i_x,
-         g_p1.y+off.y+i_y,
-         ski_vec.x,--+rnd(1),
-         max(ski_vec.y, -0.5),--+rnd(1),
-         life, -- life
-         6, -- col
-         -0.01 --ddy
-        )
-      end
+    for i_x=0,num_parts do
+     for i_y=0,num_parts do
+      add_particle(
+        g_p1.x+off.x+i_x,
+        g_p1.y+off.y+i_y,
+        ski_vec.x,--+rnd(1),
+        max(ski_vec.y, -0.5),--+rnd(1),
+        life, -- life
+        6, -- col
+        -0.01 --ddy
+       )
      end
+    end
    end
-
-
-   -- take the velocity magnitude and project it along the perpendicular
-   -- local vel_along_perp = vecscale(g_p1.ski_vec_perp, (rnd(0.5)+0.5) * vecmag(g_p1.vel))
-   -- vel_along_perp = vecscale(vecadd(vel_along_perp, g_p1.vel), rnd(0.5)+0.5)
-   --
-   -- local amount = 1
-   --
-   -- for i=0,25 do
-   --  if rnd() < amount or amount > 0.95 then
-   --   local pos = vecscale(g_p1.ski_vec, rnd(10)-5)
-   --   add_particle(
-   --    g_p1.x+pos.x, g_p1.y+pos.y,
-   --    vel_along_perp.x + rnd(3)-1.5, vel_along_perp.y + rnd(3)-1.5,
-   --    270,
-   --    12,
-   --    g_mogulneer_accel
-   --   )
-   --  end
-   -- end
   end,
   update=function(t)
    if not g_p1.jumping then
