@@ -273,10 +273,6 @@ function make_snow_particles()
   add_particle(rnd(128), y, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
  end
 
- for i=1,100 do
-  mksnow(rnd(128))
- end
-
  return {
   x=0,y=0,
   update=function(t)
