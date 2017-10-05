@@ -196,25 +196,7 @@ function process_particles(at_scope)
  end -- while
 end
 
-collision_objects = {
- {
-  x=30,
-  y=80,
-  width=67,
-  height=24,
-  collides=function(t, part)
-   if (
-    part.x > t.x 
-    and part.x - t.x < t.width 
-    and part.y > t.y and
-    part.y - t.y < t.height
-   ) then
-    -- particle sits on top of the collider
-    return {0, - 1}
-   end
-  end,
- }
-}
+collision_objects = {}
 -- }
 
 -- g_mogulneer_accel = 0.8
@@ -411,13 +393,36 @@ function spray_particles()
 end
 
 function make_title()
- -- cbb
  return {
-  x=7,
-  y=20,
+  x=0,
+  y=-64,
+  duration=20,
+  start_frame=g_tick-15,
+  start=vecmake(-264, -264),
+  target=vecmake(8, 20),
+  update=function(t)
+   local frame = elapsed(t.start_frame)
+   if frame < t.duration then
+    vecset(t, veclerp(t.start, t.target, smootherstep(frame/t.duration)))
+
+    for j=0,16*8,8 do
+     for i=0,30,2 do
+      local off=vecadd(t, vecrand(12, true))
+      add_particle(
+       j+off.x,
+       off.y,
+       rnd(6)-3,
+       1,
+       -- 3+rnd(1),
+       30+rnd(100),
+       7,
+       0.5 
+      )
+     end
+    end
+   end
+  end,
   draw=function()
-   -- print("mogulneer", 0, 0, 1)
-   -- print("mogulneer", 1, 1, 12)
    spr(128, 0, 0, 16,4)
   end,
  }
@@ -444,24 +449,68 @@ function _title_stuff()
  add_gobjs(make_debugmsg())
  add_gobjs(make_snow_particles())
  add_gobjs(
-  make_menu(
-   {
-    'slalom',
-    'back country',
-   },
-   function (t, i, s)
-    function done_func()
-     if i==0 then
-      slalom_start(1)
-     else
-      backcountry_start()
+  make_timer(
+   10,
+   function()
+    add(
+     collision_objects, 
+     {
+      x=30,
+      y=80,
+      width=67,
+      height=24,
+      collides=function(t, part)
+       if (
+        part.x > t.x 
+        and part.x - t.x < t.width 
+        and part.y > t.y and
+        part.y - t.y < t.height
+        ) then
+        return {0, -1}
+       end
+      end
+     }
+    )
+    add_gobjs(make_menu(
+     {
+      'slalom',
+      'back country',
+     },
+     function (t, i, s)
+      function done_func()
+       if i==0 then
+        slalom_start(1)
+       else
+        backcountry_start()
+       end
+      end
+      add_gobjs(make_snow_trans(done_func, 7))
+      add_gobjs(make_debugmsg())
      end
+     )
+     )
     end
-    add_gobjs(make_snow_trans(done_func, 7))
-    add_gobjs(make_debugmsg())
-   end
-  )
+    )
  )
+end
+
+function make_timer(time_to_wait, callback)
+ return {
+  x=0,
+  y=0,
+  start=g_tick,
+  time_to_wait=time_to_wait,
+  callback=callback,
+  called=false,
+  update=function(t)
+   if elapsed(t.start) > t.time_to_wait then
+    del(t, g_objs)
+    t.callback()
+    -- @TODO: why is this not deleting itself?
+    t.update = nil
+   end
+  end
+ }
 end
 
 function _update()
