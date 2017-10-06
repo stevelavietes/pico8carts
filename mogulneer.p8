@@ -921,19 +921,21 @@ function make_player(p)
     t.last_push = g_tick
    end
   end,
-  draw=function(t)
+  draw=function(t, _, layername)
    local pose = flr((t.angle + 0.25)*16)
 
    -- trail renderer
-   -- @todo: make this render behind the trees
-   for i=2,#t.trail_points do
-    local p1 = vecsub(t.trail_points[i-1], t)
-    local p2 = vecsub(t.trail_points[i], t)
-    for x_off=-1,1,2 do
-     if not t.trail_points[i].gap and not t.trail_points[i-1].gap then
-      line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
+   if layername == "backmost" then
+    for i=2,#t.trail_points do
+     local p1 = vecsub(t.trail_points[i-1], t)
+     local p2 = vecsub(t.trail_points[i], t)
+     for x_off=-1,1,2 do
+      if not t.trail_points[i].gap and not t.trail_points[i-1].gap then
+       line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
+      end
      end
     end
+    return
    end
 
    -- skis are in the sprite for the crash case
@@ -1654,12 +1656,13 @@ function slalom_start(track_ind)
  g_cam      = add_gobjs(make_camera())
  g_p1       = add_gobjs(make_player(0))
  g_timer    = add_gobjs(make_clock())
- brake_part       = add_gobjs(
+ in_front_of_player       = add_gobjs(
   {
    x=0,
    y=0,
    draw=function()
     process_particles(sp_world, 1)
+    g_mountain:draw_in_front_of_player()
    end
   }
  )
@@ -1701,12 +1704,13 @@ function backcountry_start()
  g_partm    = add_gobjs(spray_particles())
  g_cam      = add_gobjs(make_camera())
  g_p1       = add_gobjs(make_player(0))
- brake_part       = add_gobjs(
+ in_front_of_player       = add_gobjs(
   {
    x=0,
    y=0,
    draw=function()
     process_particles(sp_world, 1)
+    g_mountain:draw_in_front_of_player()
    end
   }
  )
@@ -1906,8 +1910,12 @@ function make_mountain(kind, track_ind)
    end
   end,
   draw=function(t)
-   drawobjs(t.p_objs)
+   drawobjs({g_p1}, "backmost")
+   drawobjs(t.p_objs, "behind_player")
    drawobjs(t.c_objs)
+  end,
+  draw_in_front_of_player=function(t)
+   drawobjs(t.p_objs, "in_front_player")
   end
  }
 end
@@ -2091,8 +2099,17 @@ function stddraw()
  end
 end
 
-function drawobjs(objs)
+function drawobjs(objs, mode)
  foreach(objs, function(t)
+  if mode == "behind_player" then
+   if t.y > g_p1.y - 10 then
+    return
+   end
+  elseif mode == "in_front_player" then
+   if t.y < g_p1.y - 10 then
+    return
+   end
+  end
   if t.draw then
    local cam_stack = 0
    local t_t = vecflr(t)
@@ -2115,7 +2132,7 @@ function drawobjs(objs)
    elseif t.space == sp_screen_native then
    end
 
-   t:draw(objs)
+   t:draw(objs, mode)
 
    for i=1,cam_stack do
     popc()
