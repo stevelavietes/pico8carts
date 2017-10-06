@@ -326,7 +326,7 @@ function spray_particles()
    for i=0,25 do
     local ski_vec = vecfromangle(g_p1.perpendicular+rnd(0.2)-0.1,mag)
 
-    local off=vecadd(vecscale(g_p1.ski_vec_perp, -2), vecrand(6, false))
+    local off=vecadd(vecscale(g_p1.ski_vec_perp, -7), vecrand(6, true))
     local life = 30+rnd(5)
     -- local off=vecmake()
 
