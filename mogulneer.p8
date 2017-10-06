@@ -2041,6 +2041,7 @@ function overlaps_bounds(fst, snd)
 end
 
 function print_cent(str, col)
+ col = col or 8
  print(str, -(#str)*2, g_cursor_y, col)
  g_cursor_y += 6
 end
