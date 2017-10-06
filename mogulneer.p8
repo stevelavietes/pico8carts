@@ -277,7 +277,7 @@ function make_snow_particles()
   update=function(t)
    if g_state == ge_state_menu then
     -- make snow
-    add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
+    add_particle(rnd(128), 0, rnd_centered(0.5), 0.5+rnd(0.3), 270, 7, 0)
    end
   end,
   draw=function()
@@ -304,12 +304,12 @@ function spray_particles()
     if rnd() < amount or amount > 0.95 then
      local ind = 1+flr(rnd(min(6, n_trail_pts)))
      pos = vecadd(
-      vecscale(g_p1.ski_vec, rnd(6)-3),
+      vecscale(g_p1.ski_vec, rnd_centered(6)),
       g_p1.trail_points[n_trail_pts - ind]
      )
      add_particle(
       pos.x, pos.y,
-      rnd(0.5)-0.25, 0.5+rnd(0.3),
+      rnd_centered(0.5), 0.5+rnd(0.3),
       270,
       12,
       0
@@ -331,7 +331,7 @@ function spray_particles()
    -- vecscale(g_p1.ski_vec_perp, -vecmag(g_p1.vel))
    local mag = -min(abs(g_p1.vel_against/1.5), 1)
    for i=0,25 do
-    local ski_vec = vecfromangle(g_p1.perpendicular+rnd(0.2)-0.1,mag)
+    local ski_vec = vecfromangle(g_p1.perpendicular+rnd_centered(0.2),mag)
 
     local off=vecadd(
      vecscale(g_p1.ski_vec_perp, -3),
@@ -392,7 +392,7 @@ function make_title()
       add_particle(
        j+off.x,
        off.y,
-       rnd(6)-3,
+       rnd_centered(6),
        1,
        -- 3+rnd(1),
        30+rnd(100),
@@ -1337,9 +1337,9 @@ function make_score_display(base_timer, score_mode)
      for i=0,30 do
       local off=vecrand(6, true)
       add_particle(
-       j+t.x + off.x+rnd(6)-3,
-       t.y + off.y+rnd(6)-3,
-       0 + rnd(6)-3,
+       j+t.x + off.x+rnd_centered(6),
+       t.y + off.y+rnd_centered(6),
+       0 + rnd_centered(6),
        3+rnd(1),
        8,
        6,
@@ -1566,7 +1566,7 @@ function make_gate(gate_data, accum_y, starter_objects)
         add_particle(
          t.x + xdir * t.radius,
          t.y,
-         rnd(4)-2,
+         rnd_centered(4),
          -rnd(3)-1,
          10,
          rnd(14)+2,
@@ -1805,7 +1805,7 @@ function backcountry_random_tree_loc(y_loc)
 
  local new_loc = nil
  repeat
-  new_loc = vecmake(off.x + rnd(192)-96, y_loc)
+  new_loc = vecmake(off.x + rnd_centered(192), y_loc)
  until (abs(new_loc.x) > 90)
 
  return new_loc
@@ -1850,8 +1850,8 @@ function make_mountain(kind, track_ind)
     for j=1,4 do
      local off_x = off*90
      local rndloc = vecmake(
-      rnd(40)-20 + off_x + l:x_coordinte(y_c),
-      rnd(12)-6 + y_c
+      rnd_centered(40) + off_x + l:x_coordinte(y_c),
+      rnd_centered(12) + y_c
      )
      add(trees, make_tree(rndloc))
     end
@@ -1864,7 +1864,7 @@ function make_mountain(kind, track_ind)
    add(trees, make_tree(rndloc, true))
   end
   for i=0,5 do
-   local rndloc = vecmake(rnd(128)-64, i*120-300)
+   local rndloc = vecmake(rnd_centered(128), i*120-300)
    add(trees, make_rock(rndloc))
   end
  end
@@ -1927,15 +1927,15 @@ function respawn_object(t, anywhere)
  if g_cam.y - t.y > 80 then
   t.y += 160
   if anywhere then
-   t.x = rnd(192) - 92
+   t.x = rnd_centered(192)
    if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
     repeat
-     t.x = rnd(192) - 92
+     t.x = rnd_centered(192)
     until (abs(t.x) > 30)
    end
   else
    local flip = 110
-   local rnd_off = rnd(80) - 40
+   local rnd_off = rnd_centered(80)
    if rnd(1) > 0.5 then
     flip *= -1
    end
