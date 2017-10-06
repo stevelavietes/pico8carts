@@ -119,18 +119,18 @@ end
 -- @}
 
 -- { particle stuff
-function add_particle(x, y, dx, dy, life, color, ddy)
+function add_particle(x, y, dx, dy, life, color, ddy, pass)
  particle_array_length += 1
 
  -- grow if needed
  if (#particle_array < particle_array_length) add(particle_array, 0)
  
  -- insert into the next available spot
- particle_array[particle_array_length] = {x = x, y = y, dx = dx, dy = dy, life = life or 8, color = color or 6, ddy = ddy or 0.0625}
+ particle_array[particle_array_length] = {x = x, y = y, dx = dx, dy = dy, life = life or 8, color = color or 6, ddy = ddy or 0.0625, pass = pass or 0}
 end
 
 
-function process_particles(at_scope)
+function process_particles(at_scope, pass)
  -- @casualeffects particle system
  -- http://casual-effects.com
 
@@ -141,8 +141,10 @@ function process_particles(at_scope)
   off = {-g_cam.x + 64, -g_cam.y + 64}
   -- off = {g_cam.x + 64, -g_cam.y + 64}
  end
+ pass = pass or 0
  while p <= particle_array_length do
   local particle = particle_array[p]
+  if particle.pass == pass then
   
   -- the bitwise expression will have the high (negative) bit set
   -- if either coordinate is negative or greater than 127, or life < 0
@@ -190,6 +192,9 @@ function process_particles(at_scope)
 
    p += 1
   end -- if alive
+ else
+  p +=1 
+ end
  end -- while
 end
 
@@ -275,7 +280,9 @@ function make_snow_particles()
     add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
    end
   end,
-  draw=process_particles
+  draw=function()
+   process_particles()
+  end
  }
 end
 
@@ -347,7 +354,8 @@ function spray_particles()
         max(ski_vec.y, -0.5),--+rnd(1),
         life, -- life
         6, -- col
-        -0.01 --ddy
+        -0.01, --ddy
+        1
        )
      end
     end
@@ -1646,6 +1654,15 @@ function slalom_start(track_ind)
  g_cam      = add_gobjs(make_camera())
  g_p1       = add_gobjs(make_player(0))
  g_timer    = add_gobjs(make_clock())
+ brake_part       = add_gobjs(
+  {
+   x=0,
+   y=0,
+   draw=function()
+    process_particles(sp_world, 1)
+   end
+  }
+ )
 
  -- start the music
  music(10)
@@ -1684,6 +1701,15 @@ function backcountry_start()
  g_partm    = add_gobjs(spray_particles())
  g_cam      = add_gobjs(make_camera())
  g_p1       = add_gobjs(make_player(0))
+ brake_part       = add_gobjs(
+  {
+   x=0,
+   y=0,
+   draw=function()
+    process_particles(sp_world, 1)
+   end
+  }
+ )
 
  music(0)
 end
