@@ -85,11 +85,8 @@ function make_one_euro_filt(beta, mincutoff)
   xfilt = make_low_pass_filter(),
   dxfilt = make_low_pass_filter(),
   filter=function(t, x)
-   if t.first_time then
-    t.dx = 0
-   else
-    t.dx = (x - t.xfilt.hatxprev) * t.rate
-   end
+   t.dx = t.first_time and 0 or (x - t.xfilt.hatxprev) * t.rate
+
    local edx = t.dxfilt:filter(t.dx, t:alpha(t.rate, t.d_cutoff))
    local cutoff = mincutoff + beta * abs(edx)
 
@@ -269,20 +266,16 @@ end
 -- }
 
 function make_snow_particles()
- local mksnow=function(y)
-  add_particle(rnd(128), y, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
- end
-
  return {
-  x=0,y=0,
+  x=0,
+  y=0,
   update=function(t)
    if g_state == ge_state_menu then
-    mksnow(0)
+    -- make snow
+    add_particle(rnd(128), 0, rnd(0.5)-0.25, 0.5+rnd(0.3), 270, 7, 0)
    end
   end,
-  draw=function(t)
-   process_particles()
-  end
+  draw=process_particles
  }
 end
 
@@ -290,7 +283,6 @@ function spray_particles()
  return {
   x=0,
   y=0,
-  angle_last = 0,
   add_trail_spray=function(t)
    local velmag = vecmag(g_p1.vel)
    if velmag < 2 then
@@ -477,7 +469,6 @@ function make_timer(time_to_wait, callback)
   start=g_tick,
   time_to_wait=time_to_wait,
   callback=callback,
-  called=false,
   update=function(t)
    if elapsed(t.start) > t.time_to_wait then
     del(t, g_objs)
@@ -525,26 +516,15 @@ function remap(
  o_min,
  o_max
 )
- return (
-  (
-   o_min 
-   + (
-    (val - i_min) 
-    * (o_max-o_min)
-    /(i_max-i_min)
-   )
-  )
- )
+ return lerp((val-i_min)/(i_max-i_min), o_min, o_max)
 end
 -- @}
 
 -- @{ vector library
-function vecdraw(v, c, o)
- if not o then
-  o = vecmake()
- end
---  local end_point = vecadd(o, vecscale(vecnormalized(v), 5))
- local end_point = vecadd(o, vecscale(v, 30))
+function vecdraw(v, c, scale, o)
+ o = o or null_v
+
+ local end_point = vecadd(o, vecscale(v, scale or 30))
  line(o.x, o.y, end_point.x, end_point.y, c)
  return
 end
@@ -1955,19 +1935,12 @@ function make_tree(loc, anywhere)
    respawn_object(t, anywhere)
   end,
   draw=function(t)
-   -- if abs(t.y - g_cam.y) > 70 then
-   --  return
-   -- end
-   -- spr(-2,-2,1,2,10)
-   -- spr(15, -4, -4, 1, 2, t.flip)
    sspr(
     120, 0, 8, 16, 
     -4 - t.height/8, -4 - t.height,
     8+t.height/4, 16 + t.height,
     t.flip
    )
-   -- rect(-4,-4,4,4,11)
-   -- draw_bound_rect(t, 11)
   end
  }
 end
@@ -1988,20 +1961,6 @@ function make_rock(loc)
   end
  }
 end
-
--- function draw_bound_circ(obj, col)
---  circ(obj.bound_cent.x, obj.bound_cent.y, obj.radius,col)
--- end
---
--- function draw_bound_rect(obj, col)
---  rect(
---   obj.bound_min.x,
---   obj.bound_min.y,
---   obj.bound_max.x,
---   obj.bound_max.y,
---   col
---  )
--- end
 
 function overlaps_bounds(fst, snd)
  if fst == snd or not fst or not snd then
@@ -2150,19 +2109,6 @@ function btnn(i,p)
  return pr and chg
 end
 
--- function getspraddr(n)
---  return flr(n/16)*512+(n%16)*4
--- end
-
--- function sprcpy(dst,src,w,h)
---  w = w or 1
---  h = h or 1
---  for i=0,h*8-1 do
---   memcpy(getspraddr(dst)+64*i,
---      getspraddr(src)+64*i,4*w)
---  end
--- end
-
 function pushc(x, y)
  local l=g_cs[#g_cs] or {0,0}
  local n={l[1]+x,l[2]+y}
@@ -2270,28 +2216,6 @@ function elapsed(t)
  return 32767-t+g_tick
 end
 
--- function trans(s)
---  if (s<1) return
---  s=2^s
---  local b,m,o =
---    0x6000,
---    15,
---    s/2-1+(32*s)
---
---  for y=0,128-s,s do
---   for x=0,128-s,s do
---    local a=b+x/2
---    local c=band(peek(a+o),m)
---    c=bor(c,shl(c,4))
---    for i=1,s do
---     memset(a,c,s/2)
---     a+=64
---    end
---   end
---   b+=s*64
---  end
--- end
-
 -- @todo: switch to a table approach instead of object based 
 function make_snow_chunk(src, tgt, col, size, nframes, delay)
  local start = g_tick+delay
@@ -2367,34 +2291,6 @@ function make_snow_trans(done_func, final_color, delay)
  }
  return g_trans
 end
-
--- function make_trans(f,d,i)
---  return {
---   d=d,
---   e=g_tick,
---   f=f,
---   i=i,
---   x=0,
---   y=0,
---   update=function(t,s)
---    if elapsed(t.e)>10 then
---     if (t.f) t:f(s)
---     del(s,t)
---     if not t.i then
---      add(s,
---        make_trans(nil,nil,1))
---     end
---    end
---   end,
---   draw=function(t)
---    local x=flr(elapsed(t.e)/2)
---    if t.i then
---     x=5-x
---    end
---    trans(x)
---   end
---  }
--- end
 
 __gfx__
 0060000010122101000000003300033000666000000600000000000098899000998899000bb0000011357bdf0000000000000000000000000000000000000000
