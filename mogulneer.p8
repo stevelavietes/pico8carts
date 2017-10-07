@@ -297,9 +297,8 @@ function spray_particles()
    end
 
    local amount = min(max(remap(velmag, 3, 5, 0, 1), 0.0), 1.0)
-   g_p1.amount = amount
+   local n_trail_pts = #g_p1.trail_points
 
-   local n_trail_pts = #(g_p1.trail_points)
    for i=0,25 do
     if rnd() < amount or amount > 0.95 then
      local ind = 1+flr(rnd(min(6, n_trail_pts)))
@@ -308,7 +307,9 @@ function spray_particles()
       g_p1.trail_points[n_trail_pts - ind]
      )
      add_particle(
+     -- pos
       pos.x, pos.y,
+      -- vel
       rnd_centered(0.5), 0.5+rnd(0.3),
       270,
       12,
@@ -322,14 +323,11 @@ function spray_particles()
     return
    end
 
-   -- local v_ag = g_p1.vel_against
-   -- local amt = abs(v_ag) / 5
-
    -- compute the spray angle
    -- along the perpendicular
 
-   -- vecscale(g_p1.ski_vec_perp, -vecmag(g_p1.vel))
    local mag = -min(abs(g_p1.vel_against/1.5), 1)
+
    for i=0,25 do
     local ski_vec = vecfromangle(g_p1.perpendicular+rnd_centered(0.2),mag)
 
@@ -340,7 +338,6 @@ function spray_particles()
     off = vecadd(off, vecrand(4, true))
 
     local life = 30+rnd(5)
-    -- local off=vecmake()
 
     -- makes bigger chunks some % of the time
     local num_parts = rnd() < 0.25 and 1 or 0
@@ -587,9 +584,9 @@ function vecmag(v, sf)
  return result
 end
 
-function vecnormalized(v)
- return vecscale(v, 1/vecmag(v))
-end
+-- function vecnormalized(v)
+--  return vecscale(v, 1/vecmag(v))
+-- end
 
 function vecdot(a, b)
  return (a.x*b.x+a.y*b.y)
@@ -653,7 +650,6 @@ function make_player(p)
   y=0,
   p=p,
   space=sp_world,
-  c_objs={},
   -- pose goes from -4 to +4
   pose=4,
   vel=null_v,
@@ -686,6 +682,7 @@ function make_player(p)
   total_accel=null_v,
   drag_along=null_v,
   drag_against=null_v,
+
   update=function(t)
    -- crash case
    if t.crashed then
@@ -698,7 +695,6 @@ function make_player(p)
       make_score_screen(g_bc_score, true)
      end
      add_gobjs(make_snow_trans(done_func, 7, 45))
-     -- t.celebrate = g_tick
     end
     return
    end
@@ -728,19 +724,14 @@ function make_player(p)
      t.wedge = false
     end
    end
+
    if btnn(2, t.p) then
     -- up
-    if abs(t.angle) < 0.25 then
-     t.angle = 0
-    else
-     t.angle = -0.5
-    end
+    t.angle = abs(t.angle) < 0.25 and 0 or -0.5
    end
 
    if btn(5, t.p) then
-    -- loaded_ski = g_ski_both
     t.wedge = false
-    -- x
    end
 
    local jmp = btn(4, t.p)
@@ -781,12 +772,8 @@ function make_player(p)
     end
    end
 
-   -- speed based turnability scaling
-   -- local spd = min(max(1, vecmag(t.vel)), 4)
-   -- local turn_amount = lerp((spd-1)/3, 0.02, 0.010)
-
    -- tuck based turnability scaling
-   local turn_amount = t.wedge and 0.015 or (t.jumping and 0.018) or 0.011
+   local turn_amount = (t.wedge and 0.015) or (t.jumping and 0.018) or 0.011
 
    -- sets up the current direction of the skis, "brakes"
    if tgt_dir then
@@ -809,13 +796,10 @@ function make_player(p)
 
    -- compute the acceleration
    t.total_accel = t.jumping and null_v or t:acceleration()
-   -- t.total_accel = t:acceleration()
-   -- t.total_accel = null_v
 
    -- euler integration for now
    t.vel = vecadd(t.vel, t.total_accel)
    vecset(t, vecadd(t, t.vel))
-   updateobjs(t.c_objs)
 
    for i=#t.trail_points,1,-1 do
     if (t.y - t.trail_points[i].y > 100) then
@@ -826,9 +810,6 @@ function make_player(p)
    t:add_new_trail_point(t)
   end,
   acceleration=function(t)
-   -- cbb
-   -- local brake_force = t:brake_force()
-
    -- ski direction unit vector
    local ski_vec = vecfromangle(t.angle)
    t.ski_vec = ski_vec
@@ -861,7 +842,6 @@ function make_player(p)
 
    local vel_along  = vecdot(ski_vec, t.vel)
    t.vel_along = vel_along
-   -- local vel_mag_sq  = vecmagsq(t.vel)
    local vel_against = vecdot(ski_vec_perp, t.vel)
    t.vel_against = vel_against
 
@@ -870,12 +850,6 @@ function make_player(p)
     ski_vec,
     -1 * t.c_drag_along * drag_multiplier * vel_along*abs(vel_along)
    )
-   -- t.drag_along = null_v
-
-   -- t.drag_against = vecscale(
-   --  ski_vec_perp,
-   --  -t.c_drag_against * drag_multiplier * (vel_against * abs(vel_against))
-   -- )
 
    local drag_scale = 1
    if t.turn_start and elapsed(t.turn_start) < 30 then
@@ -891,24 +865,8 @@ function make_player(p)
 
    t.sliding = abs(vel_against) > abs(vel_along)
 
-   -- t.drag_against = null_v
-   -- @}
-
-   -- if brake force is a thing
-   -- return vecadd(
-   --  vecadd(g, vecadd(t.drag_along, t.drag_against)),
-   --  brake_force
-   -- )
    return vecadd(g, vecadd(t.drag_along, t.drag_against))
   end,
-  -- brake_force=function(t)
-  --  -- if not t.wedge then
-  --  if true then
-  --   return vecmake()
-  --  end
-  --
-  --  return vecscale(t.vel, -0.3)
-  -- end,
   horizontal_push=function(t, dir)
    if (
     btnn(dir, t.p) 
@@ -941,8 +899,6 @@ function make_player(p)
    -- skis are in the sprite for the crash case
    if not t.crashed then
     for x_off=-1,1,2 do
-    -- for x_off in all({1}) do
-     -- draw the skis
      local ang = t.angle
      local offset = 1
      if t.jumping or t.wedge then
@@ -960,64 +916,19 @@ function make_player(p)
      local first_p = vecscale(vecmake(cos(ang), sin(ang)),4)
      local last_p  = vecscale(first_p, -1)
 
-     -- if not t.wedge then
-      first_p = vecadd(first_p, turn_off)
-      last_p = vecadd(last_p, turn_off)
-     -- end
+     first_p = vecadd(first_p, turn_off)
+     last_p = vecadd(last_p, turn_off)
 
      line(first_p.x, first_p.y, last_p.x, last_p.y, 4)
-     -- line(first_p.x, first_p.y, 0, 0, 4)
      circfill(first_p.x, first_p.y, 1, 8)
     end
    end
 
-   -- @TODO: compute the maximum height. Should be a quadratic equation.
+   -- @TODO: compute the maximum height. should be a quadratic equation.
    if t.jumping then
-    -- @TODO: drop lerp? build it into smootherstep?
     local shadow_size = lerp(smootherstep(-t.jump_height/18), 3, 1)
     circfill(0, 0, shadow_size, 5)
    end
-
-   -- draw_bound_rect(t, 11)
-   -- hit box stuff (might need it later)
-   -- spr(2, -3, -3)
-   -- rect(-3,-3, 3,3, 8)
-   -- print(str, -(#str)*2, 12, 8)
-   g_cursor_y=12
-   jump_height_max = max(abs(t.jump_height), jump_height_max)
-   print_cent("jump_height: " .. t.jump_height, 8)
-   print_cent("jump_velocity: " .. t.jump_velocity, 8)
-   -- print_cent("max height: "..jump_height_max, 8)
-   print_cent("jumping: "..repr(t.jumping))
-   -- print_cent("remain_mag: "..repr(remain_mag), 8)
-   -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
-   -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
-   -- print_cent("load_left: " .. t.load_left, 8)
-   -- print_cent("load_right: " .. t.load_right, 8)
-   -- print_cent("vel: " .. vecmag(t.vel), 8)
-   -- print_cent("drag acceleration: " .. repr(t:drageration()), 8)
-   -- print_cent("angle: " .. t.angle, 8)
-
-   -- @{ acceleration components
-   -- if t.drag_against != nil then
-   -- if false then
-    -- print_cent("v_g: " .. vecmag(t.grav_accel), 2)
-    -- print_cent("v_d_along: " .. vecmag(t.drag_along), 12)
-    -- print_cent("v_d_against: " .. vecmag(t.drag_against), 1)
-    -- print_cent("v_t: " .. vecmag(t.total_accel), 9)
-    -- print_cent("vel_ang: " .. t.vel_angle, 8)
-    -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
-    -- vecdraw(t.drag_along, 12)
-    -- vecdraw(t.drag_against, 1)
-    -- vecdraw(t.total_accel, 9)
-    -- vecdraw(t.vel, 2)
-    -- vecdraw(t.vel, 11)
-   -- end
-   -- print_cent("angle: " .. t.angle, 8)
-   -- print_cent("pose: ".. pose, 8)
-   -- print_cent("v_b: " .. t.angle, 8)
-   -- print_cent("v_d: " .. t.angle, 8)
-   -- @}
 
    -- if false then
    local offset = 0
@@ -1041,14 +952,52 @@ function make_player(p)
     sprn = 27
    end
 
+   -- draw the skier sprite
    spr(sprn, -8, -11 + offset + t.jump_height, 2, 2, pose < 0)
    palt()
    pal()
 
-   drawobjs(t.c_objs)
-   -- print_cent("sprn: ".. sprn, 8)
+   g_cursor_y=12
+   jump_height_max = max(abs(t.jump_height), jump_height_max)
+   if not mute_debug then
+    print_cent("sliding: " .. repr(t.sliding))
+    print_cent("ski_vec: " .. repr(t.ski_vec_perp))
+   -- print_cent("jump_height: " .. t.jump_height, 8)
+   -- print_cent("jump_velocity: " .. t.jump_velocity, 8)
+   -- print_cent("max height: "..jump_height_max, 8)
+   -- print_cent("jumping: "..repr(t.jumping))
+   -- print_cent("remain_mag: "..repr(remain_mag), 8)
+   -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
+   -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
+   -- print_cent("load_left: " .. t.load_left, 8)
+   -- print_cent("load_right: " .. t.load_right, 8)
+   -- print_cent("vel: " .. vecmag(t.vel), 8)
+   -- print_cent("drag acceleration: " .. repr(t:drageration()), 8)
+   -- print_cent("angle: " .. t.angle, 8)
 
-   -- draw_bound_rect(t, 11)
+   -- @{ acceleration components
+   -- if t.drag_against != nil then
+   -- if false then
+    -- print_cent("v_g: " .. vecmag(t.grav_accel), 2)
+    -- print_cent("v_d_along: " .. vecmag(t.drag_along), 12)
+    -- print_cent("v_d_against: " .. vecmag(t.drag_against), 1)
+    -- print_cent("v_t: " .. vecmag(t.total_accel), 9)
+    -- print_cent("vel_ang: " .. t.vel_angle, 8)
+    print_cent("vel_against: " .. repr(t.vel_against), 8)
+    -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
+    -- vecdraw(t.drag_along, 11)
+    -- vecdraw(t.drag_against, 1)
+    -- vecdraw(t.total_accel, 9)
+    -- vecdraw(t.vel, 2)
+    -- vecdraw(vecscale(t.ski_vec, t.vel_along), 4)
+    vecdraw(t.ski_vec_perp, 1, 5)
+    -- vecdraw(t.vel, 11)
+   -- end
+   -- print_cent("angle: " .. t.angle, 8)
+   -- print_cent("pose: ".. pose, 8)
+   -- print_cent("v_b: " .. t.angle, 8)
+   -- print_cent("v_d: " .. t.angle, 8)
+  end
   end,
   add_new_trail_point=function(t, p)
    p = vecflr(p)
@@ -1064,8 +1013,6 @@ function make_player(p)
   end
  }
 end
-
-g_epsilon = 0.001
 
 function make_camera(x,y)
  return {
@@ -1128,26 +1075,26 @@ function make_camera(x,y)
    -- filtering the position of the camera.
    vecset(t, vecflr(t))
   end,
-  is_visible=function(t, o)
-   -- uses a circle based visibility check
-   if not o.vis_r or 
-    (
-     (
-      t.x - 64 - o.vis_r < o.x 
-      and t.x + 64 + o.vis_r > o.x
-     ) 
-     and 
-     (
-      t.y - 64 - o.vis_r < o.y 
-      and t.y + 64 + o.vis_r > o.y
-     )
-    ) 
-   then
-    return true
-   end
-
-   return false
-  end,
+  -- is_visible=function(t, o)
+  --  -- uses a circle based visibility check
+  --  if not o.vis_r or 
+  --   (
+  --    (
+  --     t.x - 64 - o.vis_r < o.x 
+  --     and t.x + 64 + o.vis_r > o.x
+  --    ) 
+  --    and 
+  --    (
+  --     t.y - 64 - o.vis_r < o.y 
+  --     and t.y + 64 + o.vis_r > o.y
+  --    )
+  --   ) 
+  --  then
+  --   return true
+  --  end
+  --
+  --  return false
+  -- end,
  }
 end
 -- @}
@@ -1163,6 +1110,7 @@ ge_state_menu = 0
 ge_state_menu_trans = 1
 ge_state_playing = 2
 
+-- debug only
 state_map = {}
 state_map[0] = "menu"
 state_map[1] = "menu_trans"
@@ -1481,7 +1429,7 @@ function make_score_screen(timer, backcountry_mode)
 end
 
 function make_gate(gate_data, accum_y, starter_objects)
- local index = #starter_objects + 1
+--  local index = #starter_objects + 1
  local gate_kind = gate_data[3]
  if gate_kind == ge_gate_next or gate_kind == nil then
   gate_kind = (
@@ -1595,14 +1543,10 @@ function make_gate(gate_data, accum_y, starter_objects)
      pal(12, 8)
      pal(1, 2)
     end
-    -- for debugging gate location
-    -- circ(0, 0, 5, 9)
-    -- circ(0, 0, 1, 9)
-    -- circ(0, 0, 0, 11)
+
     if t.missed then
-     -- @todo: add more juice?
+     -- @TODO: add more juice to missing?
      circ(0, 0, 4, 8)
-     -- circ(0, 0, 5, 8)
     end
     if t.passed != nil and not t.missed then
      if elapsed(t.passed) % 2 == 1 then
@@ -1617,31 +1561,9 @@ function make_gate(gate_data, accum_y, starter_objects)
      pal()
     end
    end
-   -- print(gate_str_map[t.gate_kind+1], 8, 8, 11)
-   -- print("d: "..abs(g_p1.y - t.y), 8, 16, 11)
-   -- print(t.overlaps, 8, 24, 11)
   end
  }
 end
-
--- function make_track_mark(track_data)
---  return {
---   x=track_data["sel"].x,
---   y=track_data["sel"].y,
---   draw=function()
---    circfill(0, 0, 5, 11)
---   end
---  }
--- end
---
--- function make_track_marks()
---  result = {}
---  for tr in all(tracks) do
---   add(result, make_track_mark(tr))
---  end
---  return result
--- end
-
 
 -- constructor for slalom mode
 function slalom_start(track_ind)
@@ -1730,14 +1652,13 @@ end
 
 -- slalom track borders
 function make_line(before, g1, g2, after)
+ -- hermitian curves
  local m0 = vecmake(0, 1)
  local m1 = vecmake(0, -1)
  if before then
-  -- m0 = vecscale(vecsub(g1, before), 0.5)
   m0 = vecsub(g1, before)
  end
  if after then
-  -- m1 = vecscale(vecsub(after, g2), 0.5)
   m1 = vecsub(after, g2)
  end
 
