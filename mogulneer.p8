@@ -35,6 +35,8 @@ __lua__
 -- tune the brake spray to be lighter [x]
 
 -- today:
+-- moguls, push your skiier up as you go over them.
+-- a little pop of confetti when you clear a gate would be cool
 -- pointing down should still give you a bit more gravity than pointing across the mountain
 -- when flat, the tuck button should give you a push (rather than the arrows)
 -- maybe the up button brakes?  increases the drag on both dimensions?
