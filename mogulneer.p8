@@ -145,65 +145,63 @@ function process_particles(at_scope, pass)
  while p <= particle_array_length do
   local particle = particle_array[p]
   if particle.pass == pass then
-  
-  -- the bitwise expression will have the high (negative) bit set
-  -- if either coordinate is negative or greater than 127, or life < 0
-  if bor(band(0x8000, particle.life), band(bor(off[1]+particle.x, off[2]+particle.y), 0xff80)) != 0 then
-
-   -- delete dead particles efficiently. pico8 doesn't support
-   -- table.setn, so we have to maintain an explicit length variable
-   particle_array[p], particle_array[particle_array_length] = particle_array[particle_array_length], nil
-   particle_array_length -= 1
-
-  else
-
-   -- draw the particle by directly manipulating the
-   -- correct nibble on the screen
-   local addr = bor(0x6000, bor(shr(off[1]+particle.x, 1), shl(band(off[2]+particle.y, 0xffff), 6)))
-   local pixel_pair = peek(addr)
-   if band(off[1]+particle.x, 1) == 1 then
-    -- even x; we're writing to the high bits
-    pixel_pair = bor(band(pixel_pair, 0x0f), shl(particle.color, 4))
-   else
-    -- odd x; we're writing to the low bits
-    pixel_pair = bor(band(pixel_pair, 0xf0), particle.color)
-   end
-   poke(addr, pixel_pair)
    
-   -- acceleration
-   particle.dy += particle.ddy
-  
-   -- advance state
-   particle.x += particle.dx
-   particle.y += particle.dy
-   particle.life -= 1
+   -- the bitwise expression will have the high (negative) bit set
+   -- if either coordinate is negative or greater than 127, or life < 0
+   if bor(band(0x8000, particle.life), band(bor(off[1]+particle.x, off[2]+particle.y), 0xff80)) != 0 then
 
-   if g_state == ge_state_menu then
-    for _, c in pairs(collision_objects) do
-     local collision_result = c:collides(particle)
-     if collision_result != nil then
-      particle.x += collision_result[1]
-      particle.y += collision_result[2]
-      particle.dy = 0
-      particle.dx = 0
+    -- delete dead particles efficiently. pico8 doesn't support
+    -- table.setn, so we have to maintain an explicit length variable
+    particle_array[p], particle_array[particle_array_length] = particle_array[particle_array_length], nil
+    particle_array_length -= 1
+
+   else
+
+    -- draw the particle by directly manipulating the
+    -- correct nibble on the screen
+    local addr = bor(0x6000, bor(shr(off[1]+particle.x, 1), shl(band(off[2]+particle.y, 0xffff), 6)))
+    local pixel_pair = peek(addr)
+    if band(off[1]+particle.x, 1) == 1 then
+     -- even x; we're writing to the high bits
+     pixel_pair = bor(band(pixel_pair, 0x0f), shl(particle.color, 4))
+    else
+     -- odd x; we're writing to the low bits
+     pixel_pair = bor(band(pixel_pair, 0xf0), particle.color)
+    end
+    poke(addr, pixel_pair)
+    
+    -- acceleration
+    particle.dy += particle.ddy
+   
+    -- advance state
+    particle.x += particle.dx
+    particle.y += particle.dy
+    particle.life -= 1
+
+    if g_state == ge_state_menu then
+     for _, c in pairs(collision_objects) do
+      local collision_result = c:collides(particle)
+      if collision_result != nil then
+       particle.x += collision_result[1]
+       particle.y += collision_result[2]
+       particle.dy = 0
+       particle.dx = 0
+      end
      end
     end
-   end
 
-   p += 1
-  end -- if alive
- else
-  p +=1 
- end
+    p += 1
+   end -- if alive
+  else
+   p +=1 
+  end -- if pass
  end -- while
 end
 
 collision_objects = {}
 -- }
 
--- g_mogulneer_accel = 0.8
 g_mogulneer_accel = 0.4
--- g_mogulneer_accel = 0.3
 
 
 -- { debug stuff can be deleted
