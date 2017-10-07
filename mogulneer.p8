@@ -4,18 +4,15 @@ __lua__
 -- skiiiii
 
 -- todo:
--- tune speed
 -- add moguls
--- add weight system
 -- some kind of 2nd order system
 -- rocks don't cause crashes at the moment 
 
 -- cool flavor:
 -- draw the hat when you crash
 -- skis skitter down the mountain
--- upgrading the draw order
 
--- today:
+-- done:
 -- don't spawn trees near the player [x]
 -- make trees spawn to the left and right as well as up and down [x]
 -- add a point counter for back country mode [x]
@@ -34,28 +31,21 @@ __lua__
 -- a jump system [x]
 -- split the spray up into two objects, one underneath the player, one on top
 -- can't do ^ because rght now there is one and only one particle bank
+-- "z-sorted" tree drawing system [x]
+-- tune the brake spray to be lighter [x]
 
+-- today:
+-- pointing down should still give you a bit more gravity than pointing across the mountain
 -- when flat, the tuck button should give you a push (rather than the arrows)
 -- maybe the up button brakes?  increases the drag on both dimensions?
 -- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
--- tune the brake spray to be lighter
-
--- jump needs to turn off when you land
-
--- jump:
- -- make you much turnier when you land a jump
- -- wedge is off while jumping
--- overflow bug
--- dash if you cross the gate close to the gate
--- moguls
--- display all gates in the score for slalom
+-- add a "GO!" sprite at the beginning of slalom mode
+-- find some way to add a little bit of animation to the trees maybe?  Really static right now
 -- add a button prompt with the "dash" button
 -- better backcountry score display
--- increase the top speed as the level goes on
+-- increase the top speed as the level goes on (backcountry mode)
 -- maybe cheering crowds in slalom mode?  something else to help cue you for your progress in the level!
--- refined movement mechanics (i miss the slidey ness of the old system, plus the new system has some quirks - you can slide up the mountain for example).
 -- retune camera filter (add some x to it too?)
--- better spray and better trail particles
 -- add sfx
  -- turn 
  -- gate hit
@@ -63,8 +53,6 @@ __lua__
  -- end of the slalom
  -- menu select
 
--- probably not:
--- "z-sorted" tree drawing system
 
 -- mute_debug = true
 
