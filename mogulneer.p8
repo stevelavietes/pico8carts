@@ -947,45 +947,9 @@ function make_player(p)
 
    g_cursor_y=12
    jump_height_max = max(abs(t.jump_height), jump_height_max)
-   if not mute_debug then
-    print_cent("sliding: " .. repr(t.sliding))
-    print_cent("ski_vec: " .. repr(t.ski_vec_perp))
+   -- if not mute_debug then
    -- print_cent("jump_height: " .. t.jump_height, 8)
-   -- print_cent("jump_velocity: " .. t.jump_velocity, 8)
-   -- print_cent("max height: "..jump_height_max, 8)
-   -- print_cent("jumping: "..repr(t.jumping))
-   -- print_cent("remain_mag: "..repr(remain_mag), 8)
-   -- print_cent("world: " .. t.x .. ", " .. t.y, 8)
-   -- print_cent("g_p1: " .. g_p1.x .. ", " .. g_p1.y, 8)
-   -- print_cent("load_left: " .. t.load_left, 8)
-   -- print_cent("load_right: " .. t.load_right, 8)
-   -- print_cent("vel: " .. vecmag(t.vel), 8)
-   -- print_cent("drag acceleration: " .. repr(t:drageration()), 8)
-   -- print_cent("angle: " .. t.angle, 8)
-
-   -- @{ acceleration components
-   -- if t.drag_against != nil then
-   -- if false then
-    -- print_cent("v_g: " .. vecmag(t.grav_accel), 2)
-    -- print_cent("v_d_along: " .. vecmag(t.drag_along), 12)
-    -- print_cent("v_d_against: " .. vecmag(t.drag_against), 1)
-    -- print_cent("v_t: " .. vecmag(t.total_accel), 9)
-    -- print_cent("vel_ang: " .. t.vel_angle, 8)
-    print_cent("vel_against: " .. repr(t.vel_against), 8)
-    -- print_cent("vel: " .. repr(vecnormalized(t.vel)), 8)
-    -- vecdraw(t.drag_along, 11)
-    -- vecdraw(t.drag_against, 1)
-    -- vecdraw(t.total_accel, 9)
-    -- vecdraw(t.vel, 2)
-    -- vecdraw(vecscale(t.ski_vec, t.vel_along), 4)
-    vecdraw(t.ski_vec_perp, 1, 5)
-    -- vecdraw(t.vel, 11)
-   -- end
-   -- print_cent("angle: " .. t.angle, 8)
-   -- print_cent("pose: ".. pose, 8)
-   -- print_cent("v_b: " .. t.angle, 8)
-   -- print_cent("v_d: " .. t.angle, 8)
-  end
+  -- end
   end,
   add_new_trail_point=function(t, p)
    p = vecflr(p)
