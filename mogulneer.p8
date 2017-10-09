@@ -1854,7 +1854,7 @@ function make_tree(loc, anywhere)
   end,
   draw=function(t)
    sspr(
-    120, 0, 8, 16, 
+    0, 32, 8, 16, 
     -4 - t.height/8, -4 - t.height,
     8+t.height/4, 16 + t.height,
     t.flip
