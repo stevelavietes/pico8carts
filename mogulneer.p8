@@ -34,9 +34,9 @@ __lua__
 -- "z-sorted" tree drawing system [x]
 -- tune the brake spray to be lighter [x]
 -- pointing down should still give you a bit more gravity than pointing across the mountain [x]
+-- when flat, the tuck button should give you a push (rather than the arrows) [x]
 
 -- today:
--- when flat, the tuck button should give you a push (rather than the arrows)
 -- maybe the up button brakes?  increases the drag on both dimensions?
 -- moguls, push your skiier up as you go over them.
 -- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
@@ -697,8 +697,6 @@ function make_player(p)
    if btn(0, t.p) then
     -- left
     tgt_dir = -0.5
-
-    t:horizontal_push(0)
    end 
    if btn(1, t.p) then
     -- right
@@ -708,7 +706,6 @@ function make_player(p)
     else
      tgt_dir = 0
     end
-    t:horizontal_push(1)
    end
    if btn(3, t.p) then
     -- down
@@ -723,8 +720,11 @@ function make_player(p)
     t.angle = abs(t.angle) < 0.25 and 0 or -0.5
    end
 
+   -- tuck
    if btn(5, t.p) then
     t.wedge = false
+
+    t:horizontal_push()
    end
 
    local jmp = btn(4, t.p)
@@ -863,13 +863,13 @@ function make_player(p)
   end,
   horizontal_push=function(t, dir)
    if (
-    btnn(dir, t.p) 
-    and t.angle == -0.5 + 0.5*dir 
-    and elapsed(t.last_push) > 10 
+    (t.angle <= -0.45 or t.angle >= -0.05)
+    and elapsed(t.last_push) > 25 
+    and vecmag(t.vel) < 1
    )
    then
     -- push right
-    t.vel = vecadd(t.vel, vecmake(-0.5+dir, 0))
+    t.vel = vecadd(t.vel, vecfromangle(t.angle, 2.5))
     t.last_push = g_tick
    end
   end,
