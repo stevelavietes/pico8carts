@@ -1774,7 +1774,7 @@ function make_mountain(kind, track_ind)
       -- vecset(o, backcountry_random_tree_loc(5))
       -- vecset(o, backcountry_random_tree_loc(g_cam.y))
      else
-      if overlaps_bounds(o, g_p1) and not g_p1.crashed then
+      if false and overlaps_bounds(o, g_p1) and not g_p1.crashed then
        g_p1.crashed = true
        shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
        flash_screen(4, 8)
