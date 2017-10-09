@@ -724,7 +724,16 @@ function make_player(p)
    if btn(5, t.p) then
     t.wedge = false
 
-    t:horizontal_push()
+    if (
+     (t.angle <= -0.45 or t.angle >= -0.05)
+     and elapsed(t.last_push) > 25 
+     and vecmag(t.vel) < 1
+    )
+    then
+     -- push right
+     t.vel = vecadd(t.vel, vecfromangle(t.angle, 2.5))
+     t.last_push = g_tick
+    end
    end
 
    local jmp = btn(4, t.p)
@@ -860,18 +869,6 @@ function make_player(p)
    t.sliding = abs(vel_against) > abs(vel_along)
 
    return vecadd(g, vecadd(t.drag_along, t.drag_against))
-  end,
-  horizontal_push=function(t, dir)
-   if (
-    (t.angle <= -0.45 or t.angle >= -0.05)
-    and elapsed(t.last_push) > 25 
-    and vecmag(t.vel) < 1
-   )
-   then
-    -- push right
-    t.vel = vecadd(t.vel, vecfromangle(t.angle, 2.5))
-    t.last_push = g_tick
-   end
   end,
   draw=function(t, _, layername)
    local pose = flr((t.angle + 0.25)*16)
