@@ -35,12 +35,12 @@ __lua__
 -- tune the brake spray to be lighter [x]
 
 -- today:
--- moguls, push your skiier up as you go over them.
--- a little pop of confetti when you clear a gate would be cool
--- pointing down should still give you a bit more gravity than pointing across the mountain
+-- pointing down should still give you a bit more gravity than pointing across the mountain [x]
 -- when flat, the tuck button should give you a push (rather than the arrows)
 -- maybe the up button brakes?  increases the drag on both dimensions?
+-- moguls, push your skiier up as you go over them.
 -- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
+-- a little pop of confetti when you clear a gate would be cool
 -- add a "GO!" sprite at the beginning of slalom mode
 -- find some way to add a little bit of animation to the trees maybe?  Really static right now
 -- add a button prompt with the "dash" button
@@ -191,7 +191,7 @@ end
 collision_objects = {}
 -- }
 
-g_mogulneer_accel = 0.4
+g_mogulneer_accel = 0.45
 
 
 -- { debug stuff can be deleted
@@ -498,6 +498,11 @@ function add_gobjs(thing)
  return thing
 end
 
+function ef_out_quart(amount)
+ local t = amount - 1
+ return -1 * (t*t*t*t- 1)
+end
+
 function smootherstep(x)
  -- assumes x in [0, 1]
  return x*x*x*(x*(x*6 - 15) + 10);
@@ -735,7 +740,7 @@ function make_player(p)
    end
 
    if t.jumping == g_tick then
-    t.jump_velocity = -3
+    t.jump_velocity = -3.375
     t.jump_height = 0
     -- jump acceleration == mogulneer acceleration for now
    end
@@ -815,17 +820,17 @@ function make_player(p)
    end
 
    -- component of gravity along the skis (acceleration)
-   local g_accel = g_mogulneer_accel
-   local ang_fact = nil
-   if abs(t.angle) < 0.05 then
-    ang_fact = abs(t.angle) * 5
-   elseif abs(t.angle) > 0.45 then
-    ang_fact = (0.5 - abs(t.angle)) * 20
-   end
-   if ang_fact then
-    g_accel = smootherstep(ang_fact) * g_mogulneer_accel
-   end
+
+   -- remap angle [0,-0.25], [-0.25, -0.5] to [0, 1]
+   local mod_ang = (0.25 - abs(0.25 + t.angle))*4
+   -- apply easing 
+   local ang_fact = ef_out_quart(mod_ang) 
+   -- scale
+   local g_accel = ang_fact * g_mogulneer_accel
+   -- turn into a vector
    local g = vecscale(ski_vec, g_accel)
+
+   t.ang_fact = ang_fact
    t.g = g
 
    local vel_along  = vecdot(ski_vec, t.vel)
