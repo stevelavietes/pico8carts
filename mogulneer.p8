@@ -33,9 +33,9 @@ __lua__
 -- can't do ^ because rght now there is one and only one particle bank
 -- "z-sorted" tree drawing system [x]
 -- tune the brake spray to be lighter [x]
+-- pointing down should still give you a bit more gravity than pointing across the mountain [x]
 
 -- today:
--- pointing down should still give you a bit more gravity than pointing across the mountain [x]
 -- when flat, the tuck button should give you a push (rather than the arrows)
 -- maybe the up button brakes?  increases the drag on both dimensions?
 -- moguls, push your skiier up as you go over them.
