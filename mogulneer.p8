@@ -848,7 +848,8 @@ function make_player(p)
 
    t.drag_against = vecscale(
     ski_vec_perp,
-    -drag_scale * t.c_drag_against * drag_multiplier * (vel_against)
+    -drag_scale * t.c_drag_against *5 * (vel_against)
+    -- -drag_scale * t.c_drag_against * drag_multiplier * (vel_against)
    )
 
    t.sliding = abs(vel_against) > abs(vel_along)
