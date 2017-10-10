@@ -654,7 +654,7 @@ function make_player(p)
   bound_min=vecmake(-3, -4),
   bound_max=vecmake(2,0),
   angle=0, -- ski angle
-  perpendicular=0,
+  perpendicular=0.5,
   turn_start = nil,
   drag_scale = 1,
   ski_vec=null_v,
@@ -897,11 +897,22 @@ function make_player(p)
    -- trail renderer
    if layername == "backmost" then
     for i=2,#t.trail_points do
-     local p1 = vecsub(t.trail_points[i-1], t)
-     local p2 = vecsub(t.trail_points[i], t)
-     for x_off=-1,1,2 do
-      if not t.trail_points[i].gap and not t.trail_points[i-1].gap then
-       line(p1.x + x_off, p1.y, p2.x + x_off, p2.y, 6)
+     local real_p1 = t.trail_points[i-1]
+     local real_p2 = t.trail_points[i]
+     local p1 = vecsub(real_p1, t)
+     local p2 = vecsub(real_p2, t)
+     local off_1 = vecflr(vecfromangle(real_p1.perpendicular, 1))
+     local off_2 = vecflr(vecfromangle(real_p2.perpendicular, 1))
+     for off_mult=-1,1,2 do
+      if not real_p1.gap and not real_p2.gap then
+       line(
+        -- p1 + offset 
+        p1.x + off_1.x*off_mult, p1.y + off_1.y * off_mult,
+        -- p2 + offset
+        p2.x + off_2.x*off_mult, p2.y + off_2.y * off_mult, 
+        -- color
+        6
+       )
       end
      end
     end
@@ -976,8 +987,9 @@ function make_player(p)
   -- end
   end,
   add_new_trail_point=function(t, p)
-   p = vecflr(p)
+   p = vecadd(vecflr(p), vecmake(1))
    p.gap = t.jumping
+   p.perpendicular = t.perpendicular
    local last_point = t.trail_points[#t.trail_points]
    if (
      last_point == nil 
