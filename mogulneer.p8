@@ -35,9 +35,11 @@ __lua__
 -- tune the brake spray to be lighter [x]
 -- pointing down should still give you a bit more gravity than pointing across the mountain [x]
 -- when flat, the tuck button should give you a push (rather than the arrows) [x]
+-- maybe the up button brakes?  increases the drag on both dimensions? [x]
 
 -- today:
--- maybe the up button brakes?  increases the drag on both dimensions?
+-- fix interaction of tuck and wedge
+-- X under a missed flag instead of an O
 -- moguls, push your skiier up as you go over them.
 -- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
 -- a little pop of confetti when you clear a gate would be cool
@@ -656,7 +658,9 @@ function make_player(p)
   drag_scale = 1,
   ski_vec=null_v,
   ski_vec_perp=null_v,
-  wedge=false,
+
+  skier_state=ge_skier_normal,
+
   trail_points={},
   crashed=false,
   last_push=g_tick,
@@ -692,7 +696,8 @@ function make_player(p)
     return
    end
 
-   t.wedge = true
+   t.skier_state = ge_skier_normal
+
    local tgt_dir = nil
    if btn(0, t.p) then
     -- left
@@ -702,7 +707,7 @@ function make_player(p)
     -- right
 
     if tgt_dir != nil then
-     t.wedge = true
+     t.skier_state = ge_skier_wedge
     else
      tgt_dir = 0
     end
@@ -711,18 +716,19 @@ function make_player(p)
     -- down
     tgt_dir = -0.25
     if t.angle == -0.25 then
-     t.wedge = false
+     t.skier_state = ge_skier_tuck
     end
    end
 
-   if btnn(2, t.p) then
+   if btn(2, t.p) then
     -- up
-    t.angle = abs(t.angle) < 0.25 and 0 or -0.5
+    -- t.angle = abs(t.angle) < 0.25 and 0 or -0.5
+    t.skier_state = ge_skier_wedge
    end
 
    -- tuck
    if btn(5, t.p) then
-    t.wedge = false
+     t.skier_state = ge_skier_tuck
 
     if (
      (t.angle <= -0.45 or t.angle >= -0.05)
@@ -775,7 +781,12 @@ function make_player(p)
    end
 
    -- tuck based turnability scaling
-   local turn_amount = (t.wedge and 0.015) or (t.jumping and 0.018) or 0.011
+   local turn_amount = (
+    (t.jumping and 0.021) 
+    or ((t.skier_state == ge_skier_tuck) and 0.011) 
+    -- wedge or normal
+    or 0.015
+   )
 
    -- sets up the current direction of the skis, "brakes"
    if tgt_dir then
@@ -823,9 +834,13 @@ function make_player(p)
    t.ski_vec_perp = ski_vec_perp
    t.perpendicular = perpendicular
 
-   local drag_multiplier = 1
-   if t.wedge then
-    drag_multiplier = 5
+   local drag_along_multiplier = 1
+   local drag_against_multiplier = 5
+   if t.skier_state == ge_skier_normal then
+    drag_along_multiplier = 5
+   elseif t.skier_state == ge_skier_wedge then
+    drag_along_multiplier = 25
+    drag_against_multiplier = 15
    end
 
    -- component of gravity along the skis (acceleration)
@@ -850,7 +865,7 @@ function make_player(p)
    -- drag along the ski is against the component of velocity along the ski
    t.drag_along = vecscale(
     ski_vec,
-    -1 * t.c_drag_along * drag_multiplier * vel_along*abs(vel_along)
+    -1 * t.c_drag_along * drag_along_multiplier * vel_along*abs(vel_along)
    )
 
    local drag_scale = 1
@@ -862,7 +877,7 @@ function make_player(p)
 
    t.drag_against = vecscale(
     ski_vec_perp,
-    -drag_scale * t.c_drag_against *5 * (vel_against)
+    -drag_scale * t.c_drag_against * drag_along_multiplier * (vel_against)
     -- -drag_scale * t.c_drag_against * drag_multiplier * (vel_against)
    )
 
@@ -892,7 +907,7 @@ function make_player(p)
     for x_off=-1,1,2 do
      local ang = t.angle
      local offset = 1
-     if t.jumping or t.wedge then
+     if t.jumping or t.skier_state == ge_skier_wedge then
       ang = t.angle-0.06*x_off
       if t.jumping then
        ang += 0.08*x_off
@@ -926,14 +941,14 @@ function make_player(p)
 
    palt(0, false)
    palt(3, true)
-   if t.wedge then
-    palt(14, false)
-    pal(14, 11)
-    pal(13, 11)
-   else
+   if t.skier_state == ge_skier_tuck then
     palt(14, true)
     palt(13, true)
     offset = 2
+   else
+    palt(14, false)
+    pal(14, 11)
+    pal(13, 11)
    end
    local sprn = 17+abs(pose)*2
    if t.crashed then
@@ -1064,6 +1079,14 @@ ge_gate_next = 4
 ge_state_menu = 0
 ge_state_menu_trans = 1
 ge_state_playing = 2
+
+ge_skier_normal = 0
+ge_skier_tuck = 1
+ge_skier_wedge = 2
+skier_state_map = {}
+skier_state_map[0] = "normal"
+skier_state_map[1] = "tuck"
+skier_state_map[2] = "wedge"
 
 -- debug only
 state_map = {}
