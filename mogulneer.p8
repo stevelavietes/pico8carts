@@ -36,9 +36,10 @@ __lua__
 -- pointing down should still give you a bit more gravity than pointing across the mountain [x]
 -- when flat, the tuck button should give you a push (rather than the arrows) [x]
 -- maybe the up button brakes?  increases the drag on both dimensions? [x]
+-- fix interaction of tuck and wedge [x]
 
 -- today:
--- fix interaction of tuck and wedge
+-- trail doesn't line up with mogulneer/skis right
 -- X under a missed flag instead of an O
 -- moguls, push your skiier up as you go over them.
 -- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
@@ -669,6 +670,9 @@ function make_player(p)
   c_drag_against=0.05,
   sliding=false,
 
+  drag_along_multiplier=5,
+  drag_against_multiplier=5,
+
   -- jump
   jumping = nil,
   jump_velocity = 0,
@@ -727,7 +731,7 @@ function make_player(p)
    end
 
    -- tuck
-   if btn(5, t.p) then
+   if btn(5, t.p) and t.skier_state != ge_skier_wedge then
      t.skier_state = ge_skier_tuck
 
     if (
@@ -843,6 +847,9 @@ function make_player(p)
     drag_against_multiplier = 15
    end
 
+   t.drag_along_multiplier = lerp(0.3, t.drag_along_multiplier, drag_along_multiplier)
+   t.drag_against_multiplier = lerp(0.3, t.drag_against_multiplier, drag_against_multiplier)
+
    -- component of gravity along the skis (acceleration)
 
    -- remap angle [0,-0.25], [-0.25, -0.5] to [0, 1]
@@ -865,7 +872,7 @@ function make_player(p)
    -- drag along the ski is against the component of velocity along the ski
    t.drag_along = vecscale(
     ski_vec,
-    -1 * t.c_drag_along * drag_along_multiplier * vel_along*abs(vel_along)
+    -1 * t.c_drag_along * t.drag_along_multiplier * vel_along*abs(vel_along)
    )
 
    local drag_scale = 1
@@ -877,8 +884,7 @@ function make_player(p)
 
    t.drag_against = vecscale(
     ski_vec_perp,
-    -drag_scale * t.c_drag_against * drag_along_multiplier * (vel_against)
-    -- -drag_scale * t.c_drag_against * drag_multiplier * (vel_against)
+    -drag_scale * t.c_drag_against * t.drag_against_multiplier * (vel_against)
    )
 
    t.sliding = abs(vel_against) > abs(vel_along)
