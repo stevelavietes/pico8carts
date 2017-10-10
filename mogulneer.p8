@@ -59,7 +59,7 @@ __lua__
  -- menu select
 
 
--- mute_debug = true
+mute_debug = true
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -294,17 +294,24 @@ function spray_particles()
     if rnd() < amount or amount > 0.95 then
      local ind = 1+flr(rnd(min(6, n_trail_pts)))
      pos = vecadd(
-      vecscale(g_p1.ski_vec, rnd_centered(6)),
-      g_p1.trail_points[n_trail_pts - ind]
+      vecadd(
+       vecscale(g_p1.ski_vec, rnd_centered(6)),
+       g_p1.trail_points[n_trail_pts - ind]
+      ),
+      vecfromangle(
+       g_p1.trail_points[n_trail_pts - ind].perpendicular,
+       rnd_centered(5)
+      )
      )
+
      add_particle(
      -- pos
       pos.x, pos.y,
       -- vel
       rnd_centered(0.5), 0.5+rnd(0.3),
       270,
-      12,
-      0
+      12, -- col
+      0 -- pass
      )
     end
    end
