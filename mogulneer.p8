@@ -535,7 +535,6 @@ function vecdraw(v, c, scale, o)
  return
 end
 
--- @TODO: use this function
 function rnd_centered(max_val)
  return rnd(max_val)-(max_val/2)
 end
