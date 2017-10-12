@@ -518,6 +518,7 @@ function add_gobjs(thing)
 end
 
 function ef_out_quart(amount)
+ amount = max(0, min(amount, 1))
  local t = amount - 1
  return -1 * (t*t*t*t- 1)
 end
