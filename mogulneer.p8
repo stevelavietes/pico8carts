@@ -41,10 +41,10 @@ __lua__
 -- start facing downwards [x]
 -- don't let the player move until they hit a key [x]
 -- add starting hut with gate bar that flies up when you hit a button [x]
+-- diagonal presses should still point you diagonally [x]
+-- where did the music go on the start screen? [x]
 
 -- today:
--- diagonal presses should still point you diagonally
--- where did the music go on the start screen?
 -- don't like the way the trail collapses when you're going diagonal down left
 -- maybe move jump to up instead of brake?
 -- X under a missed flag instead of an O
@@ -427,6 +427,9 @@ function _init()
 end
 
 function _title_stuff()
+ music(-1)
+ music(0)
+
  g_state = ge_state_menu
  stdinit()
  add_gobjs(make_bg(6))
