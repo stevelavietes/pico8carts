@@ -661,7 +661,7 @@ end
 -- @{ built in diagnostic stuff
 function make_player(p)
  return {
-  x=0,
+  x=0.1, -- not 0 - that messes the flr up in add_new_trail_point
   y=-3,
   p=p,
   space=sp_world,
@@ -923,17 +923,18 @@ function make_player(p)
     for i=2,#t.trail_points do
      local real_p1 = t.trail_points[i-1]
      local real_p2 = t.trail_points[i]
-     local p1 = vecsub(real_p1, t)
-     local p2 = vecsub(real_p2, t)
-     local off_1 = vecflr(vecfromangle(real_p1.perpendicular, 1))
-     local off_2 = vecflr(vecfromangle(real_p2.perpendicular, 1))
-     for off_mult=-1,1,2 do
-      if not real_p1.gap and not real_p2.gap then
+     if not real_p1.gap and not real_p2.gap then
+      local p1 = vecflr(vecsub(real_p1, t)) -- need to flr to stabilize trail
+      local p2 = vecflr(vecsub(real_p2, t))
+      for off_mult=-1,1,2 do
+       local off_perp = vecfromangle(real_p2.perpendicular, off_mult)
+       local p1_off = vecadd(p1, off_perp)
+       local p2_off = vecadd(p2, off_perp)
        line(
         -- p1 + offset 
-        p1.x + off_1.x*off_mult, p1.y + off_1.y * off_mult,
+        p1_off.x, p1_off.y,
         -- p2 + offset
-        p2.x + off_2.x*off_mult, p2.y + off_2.y * off_mult, 
+        p2_off.x, p2_off.y,
         -- color
         6
        )
