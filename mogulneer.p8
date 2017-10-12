@@ -661,8 +661,6 @@ function make_player(p)
   y=-3,
   p=p,
   space=sp_world,
-  -- pose goes from -4 to +4
-  pose=4,
   vel=null_v,
   vel_along=0,
   vel_against=0,
