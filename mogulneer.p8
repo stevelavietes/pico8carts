@@ -40,9 +40,12 @@ __lua__
 -- trail doesn't line up with mogulneer/skis right [x]
 -- start facing downwards [x]
 -- don't let the player move until they hit a key [x]
+-- add starting hut with gate bar that flies up when you hit a button [x]
 
 -- today:
 -- diagonal presses should still point you diagonally
+-- where did the music go on the start screen?
+-- don't like the way the trail collapses when you're going diagonal down left
 -- maybe move jump to up instead of brake?
 -- X under a missed flag instead of an O
 -- moguls, push your skiier up as you go over them.
@@ -288,11 +291,6 @@ function spray_particles()
   start_spray=0,
   add_trail_spray=function(t)
    local velmag = vecmag(g_p1.vel)
-
-   if t.start_spray < 10 and g_p1.skier_state != ge_skier_start then
-    velmag = 10
-    t.start_spray += 1
-   end
 
    if velmag < 2 then
     return
@@ -660,7 +658,7 @@ end
 function make_player(p)
  return {
   x=0,
-  y=0,
+  y=-3,
   p=p,
   space=sp_world,
   -- pose goes from -4 to +4
@@ -1603,6 +1601,42 @@ function make_gate(gate_data, accum_y, starter_objects)
  }
 end
 
+function make_starting_gate()
+ return {
+  x=0,
+  y=0,
+  start_frame=nil,
+  space=sp_world,
+  update=function(t)
+   if not t.start_frame and g_p1.skier_state != ge_skier_start then
+    t.start_frame = g_tick
+   end
+  end,
+  draw=function(t)
+    -- banner
+    line(-11, -18, -11, 0, 1)
+    line(11, -18, 11, 0, 1)
+    rectfill(-11, -18, 11, -10, 12) 
+    rectfill(-10, -17, 10, -11, 1) 
+    print("start", -9, -16, 12)
+
+    -- gate
+    line(-5, -4, -5, 0, 1)
+    line(5, -4, 5, 0, 1)
+
+    -- bar
+    local angle = 0.5
+    if t.start_frame then
+     angle = lerp(ef_out_quart(elapsed(t.start_frame)/20), 0.5, 0.25)
+    end
+
+    local start = vecmake(-5, -4)
+    local endp = vecadd(start, vecfromangle(angle, -10))
+    line(start.x, start.y, endp.x, endp.y, 12)
+  end,
+ }
+end
+
 -- constructor for slalom mode
 function slalom_start(track_ind)
  g_state = ge_state_playing
@@ -1615,6 +1649,7 @@ function slalom_start(track_ind)
  g_partm    = add_gobjs(spray_particles())
  g_cam      = add_gobjs(make_camera())
  g_p1       = add_gobjs(make_player(0))
+ add_gobjs(make_starting_gate())
  g_timer    = add_gobjs(make_clock())
  in_front_of_player       = add_gobjs(
   {
