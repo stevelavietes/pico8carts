@@ -734,9 +734,10 @@ function make_player(p)
    end
    if btn(3, t.p) then
     -- down
-    tgt_dir = -0.25
-    if t.angle == -0.25 then
-     t.skier_state = ge_skier_tuck
+    if not tgt_dir then
+     tgt_dir = -0.25
+    else
+     tgt_dir = (tgt_dir -0.25)/2
     end
    end
 
@@ -826,9 +827,7 @@ function make_player(p)
      t.angle = max(t.angle - turn_amount, -0.5)
     end
 
-    if tgt_dir == -0.25 and abs(t.angle +0.25) < 0.015 then
-     t.angle = -0.25
-    end
+    t.angle = clamp_to(t.angle, tgt_dir)
    else
     t.turn_start = nil
    end
@@ -1037,6 +1036,10 @@ function make_player(p)
    end
   end
  }
+end
+
+function clamp_to(val_to_clamp, val_to_clamp_to)
+ return abs(val_to_clamp - val_to_clamp_to) < 0.015 and val_to_clamp_to or val_to_clamp
 end
 
 function make_camera(x,y)
