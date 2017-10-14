@@ -1136,11 +1136,11 @@ end
 -- @}
 
 -- gate enums
-ge_gate_start = 0
-ge_gate_end = 1
-ge_gate_left = 2
-ge_gate_right = 3
-ge_gate_next = 4
+ge_trackitem_start = 0
+ge_trackitem_end = 1
+ge_trackitem_left = 2
+ge_trackitem_right = 3
+ge_trackitem_next = 4
 
 ge_state_menu = 0
 ge_state_menu_trans = 1
@@ -1182,49 +1182,51 @@ tracks = {
  { 
   sel = vecmake(30, 96),
   course = {
-   {vecmake(0,    0), 32,  ge_gate_start},
-   {vecmake(-32, 50),  0,  ge_gate_right},
-   {vecmake(-66, 90),  0},
-   {vecmake(-2, 100),  0},
-   {vecmake(12,  80),  0},
-   {vecmake(62,  80),  0},
-   {vecmake(62, 100),  0},
-   {vecmake(62, 100),  0},
-   {vecmake(42,  80),  0},
-   {vecmake(16,  90),  0},
-   {vecmake(-2, 100),  0},
-   {vecmake(-32, 50),  0},
-   {vecmake(-66, 90),  0},
-   {vecmake(-2, 100),  0},
-   {vecmake(12,  80),  0},
-   {vecmake(62,  80),  0},
-   {vecmake(62, 100),  0},
-   {vecmake(62, 100),  0},
-   {vecmake(42,  80),  0},
-   {vecmake(16,  90),  0},
-   {vecmake(-2, 100),  0},
+   -- x offset is from the centerline (x=0), not previous gate
+   -- x offset, y distance to last object, gate enum, optional data radius
+   {vecmake(0,    0),  ge_trackitem_start, 32},
+   {vecmake(-32, 50),  ge_trackitem_right},
+   {vecmake(-66, 90)},
+   {vecmake(-2, 100)},
+   {vecmake(12,  80)},
+   {vecmake(62,  80)},
+   {vecmake(62, 100)},
+   {vecmake(62, 100)},
+   {vecmake(42,  80)},
+   {vecmake(16,  90)},
+   {vecmake(-2, 100)},
+   {vecmake(-32, 50)},
+   {vecmake(-66, 90)},
+   {vecmake(-2, 100)},
+   {vecmake(12,  80)},
+   {vecmake(62,  80)},
+   {vecmake(62, 100)},
+   {vecmake(62, 100)},
+   {vecmake(42,  80)},
+   {vecmake(16,  90)},
+   {vecmake(-2, 100)},
 
-   -- {vecmake(-32, 50),  0,  ge_gate_right},
-   -- {vecmake(-66, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   -- {vecmake(12,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(42, 80),  0,  ge_gate_next},
-   -- {vecmake(16, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   -- {vecmake(-32, 50),  0,  ge_gate_right},
-   -- {vecmake(-66, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   -- {vecmake(12,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  80),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(62,  100),  0,  ge_gate_next},
-   -- {vecmake(42, 80),  0,  ge_gate_next},
-   -- {vecmake(16, 90),  0,  ge_gate_next},
-   -- {vecmake(-2, 100),  0,  ge_gate_next},
-   {vecmake(0,   80), 16,  ge_gate_end},
+   -- {vecmake(-32, 50),  0,  ge_trackitem_right},
+   -- {vecmake(-66, 90),  0,  ge_trackitem_next},
+   -- {vecmake(-2, 100),  0,  ge_trackitem_next},
+   -- {vecmake(12,  80),  0,  ge_trackitem_next},
+   -- {vecmake(62,  80),  0,  ge_trackitem_next},
+   -- {vecmake(62,  100),  0,  ge_trackitem_next},
+   -- {vecmake(62,  100),  0,  ge_trackitem_next},
+   -- {vecmake(42, 80),  0,  ge_trackitem_next},
+   -- {vecmake(16, 90),  0,  ge_trackitem_next},
+   -- {vecmake(-2, 100),  0,  ge_trackitem_next},
+   -- {vecmake(-32, 50),  0,  ge_trackitem_right},
+   -- {vecmake(-66, 90),  0,  ge_trackitem_next},
+   -- {vecmake(-2, 100),  0,  ge_trackitem_next},
+   -- {vecmake(12,  80),  0,  ge_trackitem_next},
+   -- {vecmake(62,  80),  0,  ge_trackitem_next},
+   -- {vecmake(62,  100),  0,  ge_trackitem_next},
+   -- {vecmake(62,  100),  0,  ge_trackitem_next},
+   -- {vecmake(42, 80),  0,  ge_trackitem_next},
+   -- {vecmake(16, 90),  0,  ge_trackitem_next},
+   -- {vecmake(-2, 100),  0,  ge_trackitem_next},
+   {vecmake(0,   80), ge_trackitem_end, 16},
   }
  },
  { 
@@ -1476,25 +1478,25 @@ end
 
 function make_gate(gate_data, accum_y, starter_objects)
 --  local index = #starter_objects + 1
- local gate_kind = gate_data[3]
- if gate_kind == ge_gate_next or gate_kind == nil then
+ local gate_kind = gate_data[2]
+ if gate_kind == ge_trackitem_next or gate_kind == nil then
   gate_kind = (
-   ge_gate_right 
+   ge_trackitem_right 
    - starter_objects[#starter_objects].gate_kind 
-   + ge_gate_left
+   + ge_trackitem_left
   )
  end
  local gate_border_offset = 0
- if gate_kind == ge_gate_right then
+ if gate_kind == ge_trackitem_right then
   gate_border_offset = 30
- elseif gate_kind == ge_gate_left then
+ elseif gate_kind == ge_trackitem_left then
   gate_border_offset = -30
  end
  return {
   x=gate_data[1].x,
   y=accum_y,
   gate_border_offset = gate_data[1].x + gate_border_offset,
-  radius=gate_data[2],
+  radius=gate_data[3],
   gate_kind=gate_kind,
   space=sp_world,
   overlaps = false,
@@ -1513,9 +1515,9 @@ function make_gate(gate_data, accum_y, starter_objects)
    if abs(g_p1.y - t.y) < 0.5 then
     t.overlaps = true
    elseif t.overlaps or (g_p1.y < t.y and g_p1.y + g_p1.vel.y > t.y) then
-    if t.gate_kind == ge_gate_start then
+    if t.gate_kind == ge_trackitem_start then
      g_timer:start()
-    elseif t.gate_kind == ge_gate_end then
+    elseif t.gate_kind == ge_trackitem_end then
      g_timer:stop()
      g_cam.drift = true
      g_cam.last_target_point = veccopy(t)
@@ -1524,14 +1526,14 @@ function make_gate(gate_data, accum_y, starter_objects)
      end
      add_gobjs(make_snow_trans(done_func, 7, 45))
      t.celebrate = g_tick
-    elseif t.gate_kind == ge_gate_left then
+    elseif t.gate_kind == ge_trackitem_left then
      if g_p1.x > t.x  then
       flash = true
      elseif t.passed == nil then
       t.passed = g_tick
      end
      -- stop()
-    elseif t.gate_kind == ge_gate_right then
+    elseif t.gate_kind == ge_trackitem_right then
      if g_p1.x < t.x then
       flash = true
      elseif t.passed == nil then
@@ -1550,7 +1552,7 @@ function make_gate(gate_data, accum_y, starter_objects)
    if abs(t.y - g_cam.y) > 70 then
     return
    end
-   if t.gate_kind == ge_gate_start or t.gate_kind == ge_gate_end then
+   if t.gate_kind == ge_trackitem_start or t.gate_kind == ge_trackitem_end then
     -- flag
     for xdir=-1,1,2 do
      -- stem
@@ -1581,7 +1583,7 @@ function make_gate(gate_data, accum_y, starter_objects)
    else
     local offset=0
     local flip = false
-    if t.gate_kind == ge_gate_left then
+    if t.gate_kind == ge_trackitem_left then
      flip = true
 
      -- because the sprite is on the left pixel of a 16 wide sprite
