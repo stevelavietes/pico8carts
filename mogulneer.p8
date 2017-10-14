@@ -1140,7 +1140,6 @@ ge_trackitem_start = 0
 ge_trackitem_end = 1
 ge_trackitem_left = 2
 ge_trackitem_right = 3
-ge_trackitem_next = 4
 
 ge_state_menu = 0
 ge_state_menu_trans = 1
@@ -1479,7 +1478,7 @@ end
 function make_gate(gate_data, accum_y, starter_objects)
 --  local index = #starter_objects + 1
  local gate_kind = gate_data[2]
- if gate_kind == ge_trackitem_next or gate_kind == nil then
+ if gate_kind == nil then
   gate_kind = (
    ge_trackitem_right 
    - starter_objects[#starter_objects].gate_kind 
