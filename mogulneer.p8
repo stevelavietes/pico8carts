@@ -47,7 +47,11 @@ __lua__
 -- X under a missed flag instead of an O [x]
 
 -- today:
+-- refactor gate constructor/gate data to need less placeholder
 -- moguls, push your skiier up as you go over them.
+-- make missing the end gates also a penalty
+-- retune penalties with current speed
+-- add crashing to slalom
 -- after jumping give a boost to drag against and reduction to drag along to get a bit of a zigzag going
 -- a little pop of confetti when you clear a gate would be cool
 -- add a "GO!" sprite at the beginning of slalom mode
