@@ -279,8 +279,6 @@ end
 
 function make_snow_particles()
  return {
-  x=0,
-  y=0,
   update=function(t)
    if g_state == ge_state_menu then
     -- make snow
@@ -295,8 +293,6 @@ end
 
 function spray_particles()
  return {
-  x=0,
-  y=0,
   start_spray=0,
   add_trail_spray=function(t)
    local velmag = vecmag(g_p1.vel)
@@ -388,7 +384,6 @@ end
 
 function make_title()
  return {
-  x=0,
   y=-64,
   duration=20,
   start_frame=g_tick-15,
@@ -487,8 +482,6 @@ end
 
 function make_timer(time_to_wait, callback)
  return {
-  x=0,
-  y=0,
   start=g_tick,
   time_to_wait=time_to_wait,
   callback=callback,
@@ -1352,7 +1345,6 @@ end
 -- final score display
 function make_score_display(base_timer, score_mode)
  return {
-  x=0,
   y=-192,
   start=vecmake(0, -192),
   target=vecmake(0, -4),
@@ -1656,8 +1648,6 @@ end
 
 function make_starting_gate()
  return {
-  x=0,
-  y=0,
   start_frame=nil,
   space=sp_world,
   update=function(t)
@@ -1706,8 +1696,6 @@ function slalom_start(track_ind)
  g_timer    = add_gobjs(make_clock())
  in_front_of_player       = add_gobjs(
   {
-   x=0,
-   y=0,
    draw=function()
     process_particles(sp_world, 1)
     g_mountain:draw_in_front_of_player()
@@ -1723,8 +1711,6 @@ ramp = {1, 13, 12, 6, 3, 11, 10}
 
 function make_backcountry_points()
  return {
-  x=0,
-  y=0,
   space=sp_screen_native,
   score=0,
   col=1,
@@ -1754,8 +1740,6 @@ function backcountry_start()
  g_p1       = add_gobjs(make_player(0))
  in_front_of_player       = add_gobjs(
   {
-   x=0,
-   y=0,
    draw=function()
     process_particles(sp_world, 1)
     g_mountain:draw_in_front_of_player()
@@ -1810,8 +1794,6 @@ function make_line(before, g1, g2, after)
  end
 
  return {
-  x=0, 
-  y=0, 
   space=sp_world,
   g1=g1,
   g2=g2,
@@ -1966,8 +1948,6 @@ function make_mountain(kind, track_ind)
   end
  end
  return {
-  x=0,
-  y=0,
   sp=sp_world,
   c_objs=starter_objects,
   p_objs=trees,
@@ -2415,8 +2395,6 @@ function make_snow_trans(done_func, final_color, delay)
 
  local start=g_tick
  g_trans = {
-  x=0,
-  y=0,
   space=sp_screen_native,
   snow=snow,
   update=function(t)
