@@ -51,6 +51,25 @@ function ef_spring_criticallydamped(amount)
  local x0 = 1 
 
  return ( (v0 + x0 * omega) * amount + x0 )/(e_exp_approx(omega * amount))
+--  return e_exp_approx(omega * amount)
+end
+
+-- (x_0 * cos(alpha * t)  + sin(alpha*t)*(v_0 + omega * psi * x_0)/alpha)e ^ (-omega * psi * t) 
+function ef_spring_underdamped(amount)
+ local omega = (3.14159 * 2)
+ local psi = 0.5
+ local alpha = omega * sqrt(1 - (psi * psi))
+
+ local v0 = 0
+ local x0 = 1 
+
+ return (
+  x0 * cos(alpha * amount) + sin(alpha * amount) * (v0 + omega * psi * x0)/alpha
+  ) / e_exp_approx(omega * psi * amount)
+--  return (1/e_exp_approx(-omega * psi * amount))
+--  return (
+--   x0 * cos(alpha * amount) - sin(alpha * amount) * (v0 + omega * psi * x0)/alpha
+--  ) 
 end
 -- @}
 
@@ -83,6 +102,8 @@ end
 
 -- !!!! add to this list if you want to add a new easing function !!!!
 gc_easing_functions = {
+ make_easing_function("critically damped spring", ef_spring_criticallydamped),
+ make_easing_function("under damped spring", ef_spring_underdamped),
  make_easing_function("smootherstep", ef_smootherstep),
  make_easing_function("linear", ef_linear),
  make_easing_function("out quadratic", ef_out_quad),
@@ -90,7 +111,6 @@ gc_easing_functions = {
  make_easing_function("out quart", ef_out_quart),
  make_easing_function("out quart cropped", ef_out_quart_cropped),
  make_easing_function("kaneda", ef_out_quart),
- make_easing_function("critically damped spring", ef_spring_criticallydamped),
  make_easing_function("cosine", ef_cos),
  make_easing_function("smootherstep of sin", ef_sin_smootherstep),
 }
