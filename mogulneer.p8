@@ -48,8 +48,12 @@ __lua__
 -- refactor gate constructor/gate data to need less placeholder [x]
 -- moguls, push your skiier up as you go over them. [x]
 -- put track names into menu [x]
+-- better backcountry score display
+-- increase the top speed as the level goes on (backcountry mode)
 
 -- today:
+-- strip out backcountry mode
+-- rotation momentum on jump landing
 -- use moguls to impact jump height
 -- add pits
 -- add ice
@@ -62,8 +66,6 @@ __lua__
 -- add a "GO!" sprite at the beginning of slalom mode
 -- find some way to add a little bit of animation to the trees maybe?  Really static right now
 -- add a button prompt with the "dash" button
--- better backcountry score display
--- increase the top speed as the level goes on (backcountry mode)
 -- maybe cheering crowds in slalom mode?  something else to help cue you for your progress in the level!
 -- retune camera filter (add some x to it too?)
 -- maybe move jump to up instead of brake?
@@ -1163,7 +1165,10 @@ ge_trackitem_start = 0
 ge_trackitem_end = 1
 ge_trackitem_left = 2
 ge_trackitem_right = 3
+-- hazards?
 ge_trackitem_mogul = 10
+-- other stuff
+ge_trackitem_text = 20
 
 ge_state_menu = 0
 ge_state_menu_trans = 1
@@ -1203,33 +1208,38 @@ gate_flag_height_offset = 6
 -- track data
 tracks = {
  { 
+  -- big open tutorial level
   name = "first tracks",
-  sel = vecmake(30, 96),
   course = {
    -- x offset is from the centerline (x=0), not previous gate
    -- x offset, y distance to last object, gate enum, optional data radius
    {vecmake(0,    0), ge_trackitem_start, 32},
-   {vecmake(-32, 50), ge_trackitem_right},
-   {vecmake(-32, 60), ge_trackitem_mogul, 3, 3},
-   {vecmake(-66, 90)},
-   {vecmake(-2, 100)},
-   {vecmake(12,  80)},
-   {vecmake(62,  80)},
-   {vecmake(62, 100)},
-   {vecmake(62, 100)},
-   {vecmake(42,  80)},
-   {vecmake(16,  90)},
-   {vecmake(-2, 100)},
-   {vecmake(-32, 50)},
-   {vecmake(-66, 90)},
-   {vecmake(-2, 100)},
-   {vecmake(12,  80)},
-   {vecmake(62,  80)},
-   {vecmake(62, 100)},
-   {vecmake(62, 100)},
-   {vecmake(42,  80)},
-   {vecmake(16,  90)},
-   {vecmake(-2, 100)},
+   {vecmake(-48, 8), ge_trackitem_text, "   press any key\nto start"},
+   {vecmake(-16, 64), ge_trackitem_text, "  hold  \nfor brakes"},
+   {vecmake(-48, 70), ge_trackitem_right},
+   {vecmake(32, 100)},
+
+
+   -- {vecmake(-32, 60), ge_trackitem_mogul, 3, 3},
+   -- {vecmake(-66, 90)},
+   -- {vecmake(-2, 100)},
+   -- {vecmake(12,  80)},
+   -- {vecmake(62,  80)},
+   -- {vecmake(62, 100)},
+   -- {vecmake(62, 100)},
+   -- {vecmake(42,  80)},
+   -- {vecmake(16,  90)},
+   -- {vecmake(-2, 100)},
+   -- {vecmake(-32, 50)},
+   -- {vecmake(-66, 90)},
+   -- {vecmake(-2, 100)},
+   -- {vecmake(12,  80)},
+   -- {vecmake(62,  80)},
+   -- {vecmake(62, 100)},
+   -- {vecmake(62, 100)},
+   -- {vecmake(42,  80)},
+   -- {vecmake(16,  90)},
+   -- {vecmake(-2, 100)},
 
    -- {vecmake(-32, 50),  0,  ge_trackitem_right},
    -- {vecmake(-66, 90),  0,  ge_trackitem_next},
@@ -1255,7 +1265,7 @@ tracks = {
   }
  },
  { 
-  sel = vecmake(60, 45),
+  name = "no friends on powder days",
   course = {
   }
  }
@@ -1844,6 +1854,25 @@ function backcountry_random_tree_loc(y_loc)
  return new_loc
 end
 
+function trackitem_factory(gate_data, accum_x, accum_y)
+ local fn = trackitem_map[gate_data[2]]
+ if fn then
+  return fn(gate_data, accum_x, accum_y)
+ end
+end
+
+function make_trackitem_text(gate_data, accum_x, accum_y)
+ return {
+  x=accum_x+gate_data[1].x,
+  y=accum_y+gate_data[1].y,
+  space=sp_world,
+  text=gate_data[3],
+  draw=function(t)
+   print(t.text, 0, 0, 8)
+  end
+ }
+end
+
 function make_mogul(gate_data, accum_x, accum_y)
  return {
   x=accum_x,
@@ -1875,6 +1904,11 @@ function make_mogul(gate_data, accum_x, accum_y)
  }
 end
 
+-- ? looks like directly putting these in the constructor didn't work
+trackitem_map = {}
+trackitem_map[ge_trackitem_mogul] = make_mogul
+trackitem_map[ge_trackitem_text] = make_trackitem_text
+
 function is_gate(gate_data)
  return not gate_data[2] or gate_data[2] < 10
 end
@@ -1895,13 +1929,17 @@ function make_mountain(kind, track_ind)
     accum_y += gate[1].y
     add(gates, make_gate(gate, accum_y, gates))
    else
-    local n_x = gate[3] or 1
-    local n_y = gate[4] or 1
-    for i=1,n_x do
-     for j=1,n_y do
-      local accum_x = gate[1].x + 16*(i-1)
-      add(trees, make_mogul(gate, accum_x, accum_y + 16*(j-1)))
+    if gate[2] == ge_trackitem_mogul then
+     local n_x = gate[3] or 1
+     local n_y = gate[4] or 1
+     for i=1,n_x do
+      for j=1,n_y do
+       local accum_x = gate[1].x + 16*(i-1)
+       add(trees, trackitem_factory(gate, accum_x, accum_y + 16*(j-1)))
+      end
      end
+    else
+     add(trees, trackitem_factory(gate, 0, accum_y))
     end
    end
   end
