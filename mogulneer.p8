@@ -52,6 +52,9 @@ __lua__
 -- increase the top speed as the level goes on (backcountry mode)
 
 -- today:
+-- holes spawn you below them after a time penalty (+ speed penalty)
+-- fix menus after completing a level to go to the next one, replay the current, or go to the main menu
+-- DEAD MAN'S SLOPE?
 -- strip out backcountry mode
 -- rotation momentum on jump landing
 -- use moguls to impact jump height
@@ -1169,6 +1172,8 @@ ge_trackitem_right = 3
 ge_trackitem_mogul = 10
 -- other stuff
 ge_trackitem_text = 20
+ge_trackitem_hole = 21
+ge_trackitem_ice = 22
 
 ge_state_menu = 0
 ge_state_menu_trans = 1
@@ -1221,6 +1226,9 @@ tracks = {
    {vecmake(-48, 32), ge_trackitem_text, "  hold  \n to dash "},
    {vecmake(-96, 140)},
    {vecmake(0, 80)},
+   {vecmake(0, 10), ge_trackitem_ice},
+   {vecmake(20, 40), ge_trackitem_hole},
+   {vecmake(-40, 40), ge_trackitem_hole},
    {vecmake(-20, 84), ge_trackitem_text, "finish line!"},
    {vecmake(0,   80), ge_trackitem_end, 16},
   }
@@ -1822,6 +1830,82 @@ function trackitem_factory(gate_data, accum_x, accum_y)
  end
 end
 
+function make_trackitem_ice(gate_data, accum_x, accum_y)
+ local size = { 3,3 }
+ return {
+  x=accum_x+gate_data[1].x,
+  y=accum_y+gate_data[1].y,
+  space=sp_world,
+  size = size,
+  bound_min = vecmake(0, 0),
+  bound_max = vecmake(size[1]*8-1, size[2]*8-1),
+  draw=function(t)
+   palt(0, false)
+   -- spr(12, 0, 0)
+   rectfill(0,0,t.bound_max.x, t.bound_max.y, 12)
+
+   -- for i=1,t.size[1] do
+   --  for j=1,t.size[2] do
+   --   -- first draw straight lines
+   --   if i == 1 then
+   --    spr(55, 0, 0)
+   --   elseif i == t.size[1] then
+   --    spr(56, 0, 0)
+   --   end
+   --  end
+   -- end
+
+   palt()
+   -- bounds rect
+   -- rect(
+   --  t.bound_min.x, 
+   --  t.bound_min.y, 
+   --  t.bound_max.x, 
+   --  t.bound_max.y, 
+   --  11
+   -- )
+  end,
+ }
+end
+
+function make_trackitem_hole(gate_data, accum_x, accum_y)
+ local size = { 3,3 }
+ return {
+  x=accum_x+gate_data[1].x,
+  y=accum_y+gate_data[1].y,
+  space=sp_world,
+  size = size,
+  bound_min = vecmake(0, 0),
+  bound_max = vecmake(size[1]*8-1, size[2]*8-1),
+  draw=function(t)
+   palt(0, false)
+   -- spr(12, 0, 0)
+   rectfill(0,0,t.bound_max.x, t.bound_max.y, 0)
+
+   -- for i=1,t.size[1] do
+   --  for j=1,t.size[2] do
+   --   -- first draw straight lines
+   --   if i == 1 then
+   --    spr(55, 0, 0)
+   --   elseif i == t.size[1] then
+   --    spr(56, 0, 0)
+   --   end
+   --  end
+   -- end
+
+   palt()
+   -- bounds rect
+   -- rect(
+   --  t.bound_min.x, 
+   --  t.bound_min.y, 
+   --  t.bound_max.x, 
+   --  t.bound_max.y, 
+   --  11
+   -- )
+  end,
+ }
+end
+
 function make_trackitem_text(gate_data, accum_x, accum_y)
  return {
   x=accum_x+gate_data[1].x,
@@ -1869,6 +1953,8 @@ end
 trackitem_map = {}
 trackitem_map[ge_trackitem_mogul] = make_mogul
 trackitem_map[ge_trackitem_text] = make_trackitem_text
+trackitem_map[ge_trackitem_hole] = make_trackitem_hole
+trackitem_map[ge_trackitem_ice] = make_trackitem_ice
 
 function is_gate(gate_data)
  return not gate_data[2] or gate_data[2] < 10
@@ -2417,14 +2503,14 @@ function make_snow_trans(done_func, final_color, delay)
 end
 
 __gfx__
-0060000010122101000000003300033000666000000600000000000098899000998899000bb0000011357bdf0c00000c00000000000000000000000000000000
-0066000000088000000c0000300000300633360000636000000000009988990059988990088b0000fffeeddc0000c0c000000000000000000000000000006000
-0066600010033001000c00000000000063333360063336000000000049988990599889900888b000cbbaa998c0c00c0000000000000000000000000000066000
-00666600283083820cc8cc0000030000336663300066600000666000549988905599889908000000877665540c0000c000000000000000000000000000033000
-0066650028380382000c00000000000006333600063336000055560055499899559988990800000043322111000c000000000000000000000000000000033000
-0066500010033001000c00003000003000333000633433600055550055588888559988992820000011111111c0c000c000000000000000000000000000633600
-00650000000880000000000033000330000400000004000000000000000000005588888828200000111111110c00c00000000000000000000000000000363300
-005000001012210100000000000000000004000000040000000000000000000000000000222000001111111100c00c0c00000000000000000000000000333300
+0060000010122101000000003300033000666000000600000000000098899000998899000bb0000011357bdf0c00000c76666777766667770000000000000000
+0066000000088000000c0000300000300633360000636000000000009988990059988990088b0000fffeeddc0000c0c076556667765566670000000000006000
+0066600010033001000c00000000000063333360063336000000000049988990599889900888b000cbbaa998c0c00c0076555566765555560000000000066000
+00666600283083820cc8cc0000030000336663300066600000666000549988905599889908000000877665540c0000c066500556765000560000000000033000
+0066650028380382000c00000000000006333600063336000055560055499899559988990800000043322111000c000066550567765000560000000000033000
+0066500010033001000c00003000003000333000633433600055550055588888559988992820000011111111c0c000c076650567765000560000000000633600
+00650000000880000000000033000330000400000004000000000000000000005588888828200000111111110c00c00077650567765000560000000000363300
+005000001012210100000000000000000004000000040000000000000000000000000000222000001111111100c00c0c77777667765000560000000000333300
 33888883333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333306333360
 0387978333333333a33333333333333a33333333333333a333333333333333333333333333333333333333333333333333333333333333333333333303336330
 30899980333333338333333333333338333333333333333833333333333a33333333333333333333333333333333333333333333333333333333333303333330
