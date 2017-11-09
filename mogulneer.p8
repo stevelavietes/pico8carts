@@ -52,6 +52,7 @@ __lua__
 -- increase the top speed as the level goes on (backcountry mode)
 
 -- today:
+-- ice that makes you slide
 -- holes spawn you below them after a time penalty (+ speed penalty)
 -- fix menus after completing a level to go to the next one, replay the current, or go to the main menu
 -- DEAD MAN'S SLOPE?
@@ -1219,6 +1220,7 @@ tracks = {
    -- x offset is from the centerline (x=0), not previous gate
    -- x offset, y distance to last object, gate enum, optional data radius
    {vecmake(0, 0), ge_trackitem_start, 32},
+   {vecmake(0, 10), ge_trackitem_ice, 3,6},
    {vecmake(-48, 8), ge_trackitem_text, "   press any key\nto start"},
    {vecmake(-16, 64), ge_trackitem_text, "  hold  \nfor brakes"},
    {vecmake(-48, 70), ge_trackitem_right},
@@ -1226,7 +1228,7 @@ tracks = {
    {vecmake(-48, 32), ge_trackitem_text, "  hold  \n to dash "},
    {vecmake(-96, 140)},
    {vecmake(0, 80)},
-   {vecmake(0, 10), ge_trackitem_ice},
+   {vecmake(0, 10), ge_trackitem_ice, 3,3 },
    {vecmake(20, 40), ge_trackitem_hole},
    {vecmake(-40, 40), ge_trackitem_hole},
    {vecmake(-20, 84), ge_trackitem_text, "finish line!"},
@@ -1831,7 +1833,7 @@ function trackitem_factory(gate_data, accum_x, accum_y)
 end
 
 function make_trackitem_ice(gate_data, accum_x, accum_y)
- local size = { 3,3 }
+ local size = { gate_data[3],gate_data[4] }
  return {
   x=accum_x+gate_data[1].x,
   y=accum_y+gate_data[1].y,
