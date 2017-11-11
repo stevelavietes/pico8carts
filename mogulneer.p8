@@ -1760,7 +1760,7 @@ function make_line(before, g1, g2, after)
    return (y_coordinate - pt1.y) * (pt2.x - pt1.x) / (pt2.y - pt1.y) + pt1.x
   end,
   draw=function(t)
-   if abs(t.g2.y - g_cam.y) > 70 and abs(t.g1.y - g_cam.y) > 70 then
+   if abs(t.g2.y - g_cam.y) > 130 and abs(t.g1.y - g_cam.y) > 130 then
     return
    end
 
