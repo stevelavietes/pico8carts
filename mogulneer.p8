@@ -50,9 +50,9 @@ __lua__
 -- put track names into menu [x]
 -- better backcountry score display
 -- increase the top speed as the level goes on (backcountry mode)
+-- ice that makes you slide [x]
 
 -- today:
--- ice that makes you slide
 -- holes spawn you below them after a time penalty (+ speed penalty)
 -- fix menus after completing a level to go to the next one, replay the current, or go to the main menu
 -- DEAD MAN'S SLOPE?
@@ -694,6 +694,7 @@ function make_player(p)
 
   trail_points={},
   crashed=false,
+  made_timer = false,
   last_push=g_tick,
   c_drag_along=0.02,
   -- c_drag_against=0.1,
@@ -723,13 +724,29 @@ function make_player(p)
    if t.crashed then
     t.vel = vecscale(t.vel, 0.9)
     vecset(t, vecadd(t, t.vel))
-    if vecmagsq(t.vel) < 0.1 then
-     g_cam.drift = true
-     g_cam.last_target_point = veccopy(t)
-     function done_func()
-      make_score_screen(g_bc_score, true)
-     end
-     add_gobjs(make_snow_trans(done_func, 7, 45))
+    g_cam.drift = true
+    g_cam.last_target_point = veccopy(t)
+    if not t.made_timer and vecmagsq(t.vel) < 0.1 then
+     t.made_timer = true
+     add_gobjs(
+      make_timer(
+       20,
+       function()
+        t.make_timer = false
+        t.vel = null_v
+        vecset(t, t.respawn_location)
+        t.crashed = false
+        t.skier_state = ge_skier_start
+        t.angle = -0.25
+        g_cam.drift = false
+        flash_screen(4, 8)
+       end
+      )
+     )
+     -- function done_func()
+     --  make_score_screen(g_bc_score, true)
+     -- end
+     -- add_gobjs(make_snow_trans(done_func, 7, 45))
     end
     return
    end
@@ -1891,6 +1908,14 @@ function make_trackitem_hole(gate_data, accum_x, accum_y)
   size = size,
   bound_min = vecmake(0, 0),
   bound_max = vecmake(size[1]*8-1, size[2]*8-1),
+  overlaps=function(t)
+   if not g_p1.crashed then
+    g_p1.crashed = true
+    shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
+    flash_screen(10, 8)
+    g_p1.respawn_location = vecmake(g_p1.x,  t.y + t.size[1] * 8 + 6)
+   end
+  end,
   draw=function(t)
    palt(0, false)
    -- spr(12, 0, 0)
