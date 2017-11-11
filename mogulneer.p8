@@ -1840,7 +1840,7 @@ function make_trackitem_hole(gate_data, accum_x, accum_y)
   bound_min = vecmake(0, 0),
   bound_max = vecmake(size[1]*8-1, size[2]*8-1),
   overlaps=function(t)
-   if not g_p1.crashed then
+   if not g_p1.jumping and not g_p1.crashed then
     g_p1.crashed = true
     shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
     flash_screen(10, 8)
