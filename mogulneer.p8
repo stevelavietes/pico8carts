@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 11
+version 14
 __lua__
 -- skiiiii
 
@@ -1255,8 +1255,8 @@ tracks = {
    {vecmake(-96, 140)},
    {vecmake(0, 80)},
    -- {vecmake(0, 10), ge_trackitem_ice, 3,3 },
-   {vecmake(20, 40), ge_trackitem_hole},
-   {vecmake(-40, 40), ge_trackitem_hole},
+   {vecmake(-30, 30), ge_trackitem_text, "  press  to jump "},
+   {vecmake(-50, 40), ge_trackitem_hole, 12, 1},
    {vecmake(-20, 84), ge_trackitem_text, "finish line!"},
    {vecmake(0,   100), ge_trackitem_end, 16},
   }
@@ -1831,7 +1831,7 @@ function make_trackitem_ice(gate_data, accum_x, accum_y)
 end
 
 function make_trackitem_hole(gate_data, accum_x, accum_y)
- local size = { 3,3 }
+ local size = { gate_data[3],gate_data[4] }
  return {
   x=accum_x+gate_data[1].x,
   y=accum_y+gate_data[1].y,
