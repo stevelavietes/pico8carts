@@ -1254,11 +1254,12 @@ tracks = {
    {vecmake(-48, 32), ge_trackitem_text, "  hold  \n to dash "},
    {vecmake(-96, 140)},
    {vecmake(0, 80)},
+   {vecmake(-20, 90)},
    -- {vecmake(0, 10), ge_trackitem_ice, 3,3 },
-   {vecmake(-30, 30), ge_trackitem_text, "  press  to jump "},
-   {vecmake(-50, 40), ge_trackitem_hole, 12, 1},
-   {vecmake(-20, 84), ge_trackitem_text, "finish line!"},
-   {vecmake(0,   100), ge_trackitem_end, 16},
+   {vecmake(-45, 60), ge_trackitem_text, "     press  \nto jump over the hole!"},
+   {vecmake(-50, 80), ge_trackitem_hole, 12, 1},
+   {vecmake(-20, 200), ge_trackitem_text, "finish line!"},
+   {vecmake(0,   220), ge_trackitem_end, 16},
   }
  },
  { 
