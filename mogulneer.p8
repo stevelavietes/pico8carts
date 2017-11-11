@@ -1991,6 +1991,7 @@ function make_mountain(kind, track_ind)
     end
    end
   end
+ end
  return {
   sp=sp_world,
   c_objs=starter_objects,
