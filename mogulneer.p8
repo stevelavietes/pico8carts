@@ -252,6 +252,7 @@ function make_debugmsg()
     if g_p1.amount then
      print("amt:  ".. g_p1.amount)
     end
+    print("ice: "..repr(g_p1.is_on_ice == g_tick))
     -- if not g_p1.svp then
     --  g_p1.svp = null_v
     -- end
@@ -698,6 +699,7 @@ function make_player(p)
   -- c_drag_against=0.1,
   c_drag_against=0.05,
   sliding=false,
+  is_on_ice=nil,
 
   drag_along_multiplier=5,
   drag_against_multiplier=5,
@@ -887,6 +889,7 @@ function make_player(p)
 
    local drag_along_multiplier = 1
    local drag_against_multiplier = 5
+
    if t.skier_state == ge_skier_normal then
     drag_along_multiplier = 5
    elseif t.skier_state == ge_skier_wedge then
@@ -894,11 +897,17 @@ function make_player(p)
     drag_against_multiplier = 15
    end
 
+   if t.is_on_ice and t.is_on_ice + 1 == g_tick then
+    drag_along_multiplier *= 0.5
+    drag_against_multiplier *= 0.4
+   end
+
    if t.mogul_off > 0 then
     drag_along_multiplier *= 5
     drag_against_multiplier /= 3
    end
 
+   -- helps with stablility
    t.drag_along_multiplier = lerp(0.3, t.drag_along_multiplier, drag_along_multiplier)
    t.drag_against_multiplier = lerp(0.3, t.drag_against_multiplier, drag_against_multiplier)
 
@@ -936,7 +945,7 @@ function make_player(p)
 
    t.drag_against = vecscale(
     ski_vec_perp,
-    -drag_scale * t.c_drag_against * t.drag_against_multiplier * (vel_against)
+    -drag_scale * t.c_drag_against * t.drag_against_multiplier * vel_against
    )
 
    t.sliding = abs(vel_against) > abs(vel_along)
@@ -1220,7 +1229,7 @@ tracks = {
    -- x offset is from the centerline (x=0), not previous gate
    -- x offset, y distance to last object, gate enum, optional data radius
    {vecmake(0, 0), ge_trackitem_start, 32},
-   {vecmake(0, 10), ge_trackitem_ice, 3,6},
+   -- {vecmake(-20, 10), ge_trackitem_ice, 8,18},
    {vecmake(-48, 8), ge_trackitem_text, "   press any key\nto start"},
    {vecmake(-16, 64), ge_trackitem_text, "  hold  \nfor brakes"},
    {vecmake(-48, 70), ge_trackitem_right},
@@ -1228,11 +1237,11 @@ tracks = {
    {vecmake(-48, 32), ge_trackitem_text, "  hold  \n to dash "},
    {vecmake(-96, 140)},
    {vecmake(0, 80)},
-   {vecmake(0, 10), ge_trackitem_ice, 3,3 },
+   -- {vecmake(0, 10), ge_trackitem_ice, 3,3 },
    {vecmake(20, 40), ge_trackitem_hole},
    {vecmake(-40, 40), ge_trackitem_hole},
    {vecmake(-20, 84), ge_trackitem_text, "finish line!"},
-   {vecmake(0,   80), ge_trackitem_end, 16},
+   {vecmake(0,   100), ge_trackitem_end, 16},
   }
  },
  { 
@@ -1841,6 +1850,9 @@ function make_trackitem_ice(gate_data, accum_x, accum_y)
   size = size,
   bound_min = vecmake(0, 0),
   bound_max = vecmake(size[1]*8-1, size[2]*8-1),
+  overlaps=function(t, o)
+   o.is_on_ice = g_tick
+  end,
   draw=function(t)
    palt(0, false)
    -- spr(12, 0, 0)
