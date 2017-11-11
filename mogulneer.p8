@@ -1444,23 +1444,6 @@ function make_score_display(base_timer, score_mode)
    local c_o = base_timer.c - 10*flr(base_timer.c/10)
    return {m_t, m_o, 10, s_t, s_o, 10, c_t, c_o}
   end,
-  backcountry_score=function(t)
-   -- pull each digit out and store it
-   local score = base_timer.score
-   local result = {}
-   repeat
-    add(result, score % 10)
-    score /= 10
-   until flr(score) == 0
-
-   -- ugly array flip
-   local flipped_result = {}
-   for i=#result,1,-1 do
-    add(flipped_result, result[i])
-   end
-
-   return flipped_result
-  end,
   draw=function(t)
    -- minutes
    local gratz_str = "congratulations!"
@@ -1716,47 +1699,6 @@ end
 
 ramp = {1, 13, 12, 6, 3, 11, 10}
 
-function make_backcountry_points()
- return {
-  space=sp_screen_native,
-  score=0,
-  col=1,
-  update=function(t)
-   if not g_p1.crashed then
-    -- @todo: make this an exponentional easing function
-    t.col = ramp[min(flr((g_p1.vel.y/4) * #ramp)+1, #ramp)]
-    t.score += g_p1.vel.y
-   end
-  end,
-  draw=function(t)
-   print(t.score, 60, 1, t.col)
-  end,
- }
-end
-
-function backcountry_start()
- g_state = ge_state_playing
- g_objs = { make_bg(7) }
-
- g_mountain = add_gobjs(make_mountain("back_country"))
- add_gobjs(make_debugmsg())
-
- g_bc_score = add_gobjs(make_backcountry_points())
- g_partm    = add_gobjs(spray_particles())
- g_cam      = add_gobjs(make_camera())
- g_p1       = add_gobjs(make_player(0))
- in_front_of_player       = add_gobjs(
-  {
-   draw=function()
-    process_particles(sp_world, 1)
-    g_mountain:draw_in_front_of_player()
-   end
-  }
- )
-
- music(0)
-end
-
 function make_bg(col)
  col = col or 7
 
@@ -1838,17 +1780,6 @@ function make_line(before, g1, g2, after)
    end
   end
  }
-end
-
-function backcountry_random_tree_loc(y_loc)
- local off = g_cam or null_v
-
- local new_loc = nil
- repeat
-  new_loc = vecmake(off.x + rnd_centered(192), y_loc)
- until (abs(new_loc.x) > 90)
-
- return new_loc
 end
 
 function trackitem_factory(gate_data, accum_x, accum_y)
@@ -2060,17 +1991,6 @@ function make_mountain(kind, track_ind)
     end
    end
   end
- else
-  -- backcountry mode
-  for i=0,50 do
-   local rndloc = backcountry_random_tree_loc(i*12-300)
-   add(trees, make_tree(rndloc, true))
-  end
-  for i=0,5 do
-   local rndloc = vecmake(rnd_centered(128), i*120-300)
-   add(trees, make_rock(rndloc))
-  end
- end
  return {
   sp=sp_world,
   c_objs=starter_objects,
@@ -2087,24 +2007,6 @@ function make_mountain(kind, track_ind)
   update=function(t)
    updateobjs(t.p_objs)
    updateobjs(t.c_objs)
-
-   -- check to see if we need to respawn the tree
-   if kind != "slalom" then
-    for o in all(t.p_objs) do
-     if g_cam.y - o.y > 300 then
-      vecset(o, backcountry_random_tree_loc(g_cam.y))
-     elseif abs(g_cam.x - o.x) > 60 then
-      -- vecset(o, backcountry_random_tree_loc(5))
-      -- vecset(o, backcountry_random_tree_loc(g_cam.y))
-     else
-      if false and overlaps_bounds(o, g_p1) and not g_p1.crashed then
-       g_p1.crashed = true
-       shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
-       flash_screen(4, 8)
-      end
-     end
-    end
-   end
   end,
   draw=function(t)
    drawobjs({g_p1}, "backmost")
