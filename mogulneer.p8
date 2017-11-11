@@ -730,7 +730,7 @@ function make_player(p)
      t.made_timer = true
      add_gobjs(
       make_timer(
-       20,
+       30,
        function()
         t.make_timer = false
         t.vel = null_v
@@ -1246,7 +1246,7 @@ tracks = {
    -- x offset is from the centerline (x=0), not previous gate
    -- x offset, y distance to last object, gate enum, optional data radius
    {vecmake(0, 0), ge_trackitem_start, 32},
-   -- {vecmake(-20, 10), ge_trackitem_ice, 8,18},
+   -- {vecmake(-20, 10), ge_trackitem_hole, 8,18},
    {vecmake(-48, 8), ge_trackitem_text, "   press any key\nto start"},
    {vecmake(-16, 64), ge_trackitem_text, "  hold  \nfor brakes"},
    {vecmake(-48, 70), ge_trackitem_right},
