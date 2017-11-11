@@ -1790,7 +1790,7 @@ function trackitem_factory(gate_data, accum_x, accum_y)
  end
 end
 
-function make_trackitem_ice(gate_data, accum_x, accum_y)
+function make_ice_trackitem(gate_data, accum_x, accum_y)
  local size = { gate_data[3],gate_data[4] }
  return {
   x=accum_x+gate_data[1].x,
@@ -1831,7 +1831,7 @@ function make_trackitem_ice(gate_data, accum_x, accum_y)
  }
 end
 
-function make_trackitem_hole(gate_data, accum_x, accum_y)
+function make_hole_trackitem(gate_data, accum_x, accum_y)
  local size = { gate_data[3],gate_data[4] }
  return {
   x=accum_x+gate_data[1].x,
@@ -1889,7 +1889,7 @@ function make_trackitem_text(gate_data, accum_x, accum_y)
  }
 end
 
-function make_mogul(gate_data, accum_x, accum_y)
+function make_trackitem_mogul(gate_data, accum_x, accum_y)
  return {
   x=accum_x,
   y=accum_y,
@@ -1922,10 +1922,10 @@ end
 
 -- ? looks like directly putting these in the constructor didn't work
 trackitem_map = {}
-trackitem_map[ge_trackitem_mogul] = make_mogul
+trackitem_map[ge_trackitem_mogul] = make_trackitem_mogul
 trackitem_map[ge_trackitem_text] = make_trackitem_text
-trackitem_map[ge_trackitem_hole] = make_trackitem_hole
-trackitem_map[ge_trackitem_ice] = make_trackitem_ice
+trackitem_map[ge_trackitem_hole] = make_hole_trackitem
+trackitem_map[ge_trackitem_ice] = make_ice_trackitem
 
 function is_gate(gate_data)
  return not gate_data[2] or gate_data[2] < 10
