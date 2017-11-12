@@ -220,48 +220,48 @@ g_mogulneer_accel = 0.45
 
 
 -- { debug stuff can be deleted
-function make_debugmsg()
- local maxmem=stat(2)
- local minmem=stat(2)
- return {
-  space=sp_screen_native,
-  draw=function(t)
-   if mute_debug == true then
-    return
-   end
-   maxmem = max(maxmem, stat(0)/1024)
-   -- minmem = min(minmem, stat(2))
-   color(14)
-   cursor(1,1)
-   print("cpu: ".. stat(1))
-   print("mem: ".. stat(0)/1024)
-   print(" max:" ..maxmem)
-   print("gst: "..state_map[g_state])
-   -- print("shk: "..repr(g_shake_end))
-   -- print("smg: "..repr(g_shake_mag))
-   -- print("shf: "..repr(g_shake_frequency))
-   -- print("lst: "..repr(last_shake))
-   if g_p1 then
-    print("vel: ".. vecmag(g_p1.vel))
-    print("ang: ".. g_p1.angle)
-    -- print("g:  ".. repr(g_p1.perp_dot))
-    print("d_al:  ".. vecmag(g_p1.drag_along))
-    print("d_ag:  ".. vecmag(g_p1.drag_against))
-    print("t_a:  ".. vecmag(g_p1.total_accel))
-    print("g:  ".. vecmag(g_p1.g))
-    if g_p1.amount then
-     print("amt:  ".. g_p1.amount)
-    end
-    print("ice: "..repr(g_p1.is_on_ice == g_tick))
-    -- if not g_p1.svp then
-    --  g_p1.svp = null_v
-    -- end
-    -- print("v_d:  ".. repr(vecdot(g_p1.svp, g_p1.vel)))
-    -- print("d_o: ".. g_cam.delta_offset)
-   end
-  end
- }
-end
+-- function make_debugmsg()
+--  local maxmem=stat(2)
+--  local minmem=stat(2)
+--  return {
+--   space=sp_screen_native,
+--   draw=function(t)
+--    if mute_debug == true then
+--     return
+--    end
+--    maxmem = max(maxmem, stat(0)/1024)
+--    -- minmem = min(minmem, stat(2))
+--    color(14)
+--    cursor(1,1)
+--    print("cpu: ".. stat(1))
+--    print("mem: ".. stat(0)/1024)
+--    print(" max:" ..maxmem)
+--    print("gst: "..state_map[g_state])
+--    -- print("shk: "..repr(g_shake_end))
+--    -- print("smg: "..repr(g_shake_mag))
+--    -- print("shf: "..repr(g_shake_frequency))
+--    -- print("lst: "..repr(last_shake))
+--    if g_p1 then
+--     print("vel: ".. vecmag(g_p1.vel))
+--     print("ang: ".. g_p1.angle)
+--     -- print("g:  ".. repr(g_p1.perp_dot))
+--     print("d_al:  ".. vecmag(g_p1.drag_along))
+--     print("d_ag:  ".. vecmag(g_p1.drag_against))
+--     print("t_a:  ".. vecmag(g_p1.total_accel))
+--     print("g:  ".. vecmag(g_p1.g))
+--     if g_p1.amount then
+--      print("amt:  ".. g_p1.amount)
+--     end
+--     print("ice: "..repr(g_p1.is_on_ice == g_tick))
+--     -- if not g_p1.svp then
+--     --  g_p1.svp = null_v
+--     -- end
+--     -- print("v_d:  ".. repr(vecdot(g_p1.svp, g_p1.vel)))
+--     -- print("d_o: ".. g_cam.delta_offset)
+--    end
+--   end
+--  }
+-- end
 
 -- dead code
 function repr(arg)
@@ -445,7 +445,7 @@ function _title_stuff()
  stdinit()
  add_gobjs(make_bg(6))
  add_gobjs(make_title())
- add_gobjs(make_debugmsg())
+--  add_gobjs(make_debugmsg())
  add_gobjs(make_snow_particles())
  add_gobjs(
   make_timer(
@@ -478,7 +478,7 @@ function _title_stuff()
         slalom_start(i+1)
        end
        add_gobjs(make_snow_trans(done_func, 7))
-       add_gobjs(make_debugmsg())
+       -- add_gobjs(make_debugmsg())
       end
       )
      )
@@ -1419,7 +1419,7 @@ function make_score_display(base_timer, score_mode)
         end
        end
        add_gobjs(make_snow_trans(done_func, 7))
-       add_gobjs(make_debugmsg())
+       -- add_gobjs(make_debugmsg())
       end
      )
     )
@@ -1488,7 +1488,7 @@ function make_score_screen(timer, backcountry_mode)
  g_objs = {
   make_bg(7),
   make_score_display(timer, backcountry_mode),
-  make_debugmsg(),
+  -- make_debugmsg(),
  }
  g_p1 = nil
  g_cam = add_gobjs(make_camera(0,0))
@@ -1676,7 +1676,7 @@ function slalom_start(track_ind)
  g_state = ge_state_playing
  g_objs = {
   make_bg(7),
-  make_debugmsg(),
+  -- make_debugmsg(),
  }
 
  g_mountain = add_gobjs(make_mountain("slalom", track_ind))
