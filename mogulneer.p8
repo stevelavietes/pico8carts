@@ -1765,15 +1765,16 @@ function make_line(before, g1, g2, after)
    end
 
    local last_point = p0
-   local colors = {8,8,1,2}
-   for p_ind = 2,#pts,1 do
+   local colors = {10,9,4,9,10}
+   local npts = #pts
+   for p_ind = 2,npts,1 do
     local last_point = pts[p_ind-1]
     local p_t = pts[p_ind]
 
     for offset=-1,1,2 do
-     for l_ind=0,3 do
-      local i=50+l_ind
-      local c = colors[l_ind+1]
+     for l_ind=1,5 do
+      local i=49+l_ind
+      local c = colors[l_ind]
       line(last_point.x+offset*i, last_point.y, p_t.x+offset*i, p_t.y, c)
      end
     end
