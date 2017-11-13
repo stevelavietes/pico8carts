@@ -3,14 +3,12 @@ version 14
 __lua__
 -- skiiiii
 
--- todo:
--- add moguls
--- some kind of 2nd order system
--- rocks don't cause crashes at the moment 
-
 -- cool flavor:
 -- draw the hat when you crash
 -- skis skitter down the mountain
+-- birds that fly away when you go by
+-- little bit of always falling snow
+-- wind?
 
 -- done:
 -- don't spawn trees near the player [x]
@@ -81,7 +79,7 @@ __lua__
  -- menu select
 
 
-mute_debug = true
+-- mute_debug = true
 
 -- @{ one euro filter impl, see: http://cristal.univ-lille.fr/~casiez/1euro/
 -- 1 euro filter parameters, tuned to make the effect visible
@@ -1257,7 +1255,7 @@ tracks = {
    {vecmake(-20, 90)},
    -- {vecmake(0, 10), ge_trackitem_ice, 3,3 },
    {vecmake(-45, 60), ge_trackitem_text, "     press  \nto jump over the hole!"},
-   {vecmake(-50, 80), ge_trackitem_hole, 12, 1},
+   {vecmake(-45, 80), ge_trackitem_hole, 12, 1},
    {vecmake(-20, 200), ge_trackitem_text, "finish line!"},
    {vecmake(0,   220), ge_trackitem_end, 16},
   }
@@ -1846,7 +1844,7 @@ function make_hole_trackitem(gate_data, accum_x, accum_y)
     g_p1.crashed = true
     shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
     flash_screen(10, 8)
-    g_p1.respawn_location = vecmake(g_p1.x,  t.y + t.size[1] * 8 + 6)
+    g_p1.respawn_location = vecmake(g_p1.x,  t.y + 2*8)
    end
   end,
   draw=function(t)
