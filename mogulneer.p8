@@ -424,9 +424,7 @@ end
 
 function _init()
  music(-1)
- g_shake_end = nil
- g_shake_mag = nil
- g_shake_frequency = nil
+ reset_shake()
  g_flash_end = nil
  g_flash_color =nil 
  particle_array, particle_array_length = {}, 0
@@ -2031,6 +2029,12 @@ function shake_screen(duration, magnitude, frequency)
  g_shake_frequency = frequency
 end
 
+function reset_shake()
+ g_shake_end = nil
+ g_shake_mag = nil
+ g_shake_frequency = nil
+end
+
 function respawn_object(t, anywhere)
  if g_cam.y - t.y > 80 then
   t.y += 160
@@ -2391,6 +2395,7 @@ function make_snow_trans(done_func, final_color, delay)
   return
  end
  delay = delay or 0
+ reset_shake()
 
  local snow = {}
  local topsize =  17
