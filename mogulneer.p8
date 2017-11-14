@@ -1261,6 +1261,32 @@ tracks = {
  { 
   name = "no friends on powder days",
   course = {
+   -- start
+   {vecmake(0, 0), ge_trackitem_start, 32},
+   {vecmake(-50, 90), ge_trackitem_right},
+   {vecmake(50, 90)}, --l 
+   {vecmake(200, 80)},
+   {vecmake(90, 90)}, --l
+   {vecmake(-60, 90)}, 
+   {vecmake(-0, 90)}, --l
+
+   {vecmake(0, 90), ge_trackitem_right},
+   -- sharp little chicane
+   {vecmake(0, 60)},
+   {vecmake(0, 60)},
+   
+   -- long straightaway with holes across
+   {vecmake(-30, 40), ge_trackitem_hole, 12, 1},
+   {vecmake(-60, 120), ge_trackitem_hole, 12, 4},
+
+   {vecmake(0, 180)},
+
+   -- slalom-y holes you can jump if you're good
+   {vecmake(-30, 40), ge_trackitem_hole, 12, 1},
+   {vecmake(-60, 120), ge_trackitem_hole, 12, 4},
+
+   -- end
+   {vecmake(0,   220), ge_trackitem_end, 16},
   }
  }
 }
