@@ -1347,7 +1347,7 @@ function make_clock()
 end
 
 -- final score display
-function make_score_display(base_timer, score_mode)
+function make_score_display(base_timer, score_mode, track_ind)
  return {
   y=-192,
   start=vecmake(0, -192),
@@ -1408,7 +1408,7 @@ function make_score_display(base_timer, score_mode)
          if score_mode then
           backcountry_start()
          else
-          slalom_start(1)
+          slalom_start(track_ind)
          end
         else
          _title_stuff()
@@ -1480,10 +1480,10 @@ function make_score_display(base_timer, score_mode)
  }
 end
 
-function make_score_screen(timer, backcountry_mode)
+function make_score_screen(timer, backcountry_mode, track_ind)
  g_objs = {
   make_bg(7),
-  make_score_display(timer, backcountry_mode),
+  make_score_display(timer, backcountry_mode, track_ind),
   -- make_debugmsg(),
  }
  g_p1 = nil
@@ -1491,7 +1491,7 @@ function make_score_screen(timer, backcountry_mode)
  g_state = ge_state_menu
 end
 
-function make_gate(gate_data, accum_y, starter_objects)
+function make_gate(gate_data, accum_y, starter_objects, track_ind)
 --  local index = #starter_objects + 1
  local gate_kind = gate_data[2]
  if gate_kind == nil then
@@ -1537,7 +1537,7 @@ function make_gate(gate_data, accum_y, starter_objects)
      g_cam.drift = true
      g_cam.last_target_point = veccopy(t)
      function done_func()
-      make_score_screen(g_timer)
+      make_score_screen(g_timer, false, track_ind)
      end
      add_gobjs(make_snow_trans(done_func, 7, 45))
      t.celebrate = g_tick
@@ -1942,7 +1942,7 @@ function make_mountain(kind, track_ind)
   for gate in all(tracks[track_ind]["course"]) do
    if is_gate(gate) then
     accum_y += gate[1].y
-    add(gates, make_gate(gate, accum_y, gates))
+    add(gates, make_gate(gate, accum_y, gates, track_ind))
    else
     if gate[2] == ge_trackitem_mogul then
      local n_x = gate[3] or 1
