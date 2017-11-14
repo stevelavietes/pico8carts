@@ -728,7 +728,7 @@ function make_player(p)
       make_timer(
        30,
        function()
-        t.make_timer = false
+        t.made_timer = false
         t.vel = null_v
         vecset(t, t.respawn_location)
         t.crashed = false
