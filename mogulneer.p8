@@ -1888,7 +1888,8 @@ function make_hole_trackitem(gate_data, accum_x, accum_y)
    palt(0, false)
    pal(3, 0)
    -- spr(12, 0, 0)
-   rectfill(0,0,t.bound_max.x, t.bound_max.y, 10)
+   rectfill(0,0,t.bound_max.x, t.bound_max.y, 0)
+   palt(0, true)
 
    for j=1,size[2] do
     local y_off = 8*(j-1)
@@ -1896,57 +1897,53 @@ function make_hole_trackitem(gate_data, accum_x, accum_y)
      local x_off = 8*(i-1)
      local sprnum = sprites[j][i]
 
-     local flip_x = false
-     local flip_y = false
-     local base_spr = 48
-     local corner = false
-
-     local sprites_to_draw = {}
-     if i==size[1] then
-      flip_x = true
-     end
-
-     if j==size[2] then
-      flip_y = true
-     end
-
-     if i==size[1] or i==1 then
-      base_spr = 52
-
-      if j==1 or j==size[2] then
-       corner = true
-      end
-     end
      if sprnum >= 0 then
-      add(sprites_to_draw, base_spr)
+      local sprites_to_draw = {}
 
-      if corner then
-       add(sprites_to_draw, 48)
-       add(sprites_to_draw, 56)
+      if i==1 then
+       add(sprites_to_draw, {52, false, false})
+      end
+
+      if i==size[1] then
+       add(sprites_to_draw, {52, true, false})
+      end
+
+      if j==1 then
+       add(sprites_to_draw, {48, false, false})
+      end
+
+      if j==size[2] then
+       add(sprites_to_draw, {48, false, true})
+      end
+
+      if #sprites_to_draw > 1 then
+       for c_spec_x in all({1, size[1]}) do
+        for c_spec_y in all({1, size[2]}) do
+         if i == c_spec_x and j == c_spec_y then
+          add(sprites_to_draw, {56, i!=1, j!=1})
+         end
+        end
+       end
+      end
+
+      for spr_str in all(sprites_to_draw) do
+       local base_spr = spr_str[1]
+       local flip_x = spr_str[2]
+       local flip_y = spr_str[3]
+
+       if flip_x or flip_y then
+        pal(6, 0)
+        pal(5, 0)
+       end
+       spr(base_spr + sprnum, x_off, y_off, 1, 1, flip_x, flip_y)
+       if flip_x or flip_y then
+        pal(6, 6)
+        pal(5, 5)
+       end
       end
      end
-
-
-     rectfill(x_off, y_off, x_off + 7, y_off + 7, 0)
-
-     palt(0, true)
-     for base_spr in all(sprites_to_draw) do
-      spr(base_spr + sprnum, x_off, y_off, 1, 1, flip_x, flip_y)
-     end
-     palt(0, false)
     end
    end
-
-   -- for i=1,t.size[1] do
-   --  for j=1,t.size[2] do
-   --   -- first draw straight lines
-   --   if i == 1 then
-   --    spr(55, 0, 0)
-   --   elseif i == t.size[1] then
-   --    spr(56, 0, 0)
-   --   end
-   --  end
-   -- end
 
    palt()
    pal()
