@@ -54,11 +54,14 @@ __lua__
 -- add ice [x]
 -- strip out backcountry mode [x]
 -- make trees things that collide with you [x]
+-- fix menus after completing a level to go to the next one, replay the current, or go to the main menu [x]
 
 -- today:
--- fix menus after completing a level to go to the next one, replay the current, or go to the main menu
--- misses: should display the total you had after its done counting down
+-- misses: count up to total instead of down
+-- third level moving holes to that
 -- DEAD MAN'S SLOPE?
+-- menu snow doesn't sit on the text box fully
+-- "TRACK SELECT" header on text box
 
 -- probably not:
 -- rotation momentum on jump landing
@@ -1426,19 +1429,23 @@ function make_score_display(base_timer, score_mode, track_ind)
     and (score_mode or base_timer.misses == 0)
    ) then
     t.made = nil
-    local event_str = score_mode and "backcountry mode" or "slalom" 
+    local menu_items = {'try track again'}
+    local n_tracks = #tracks
+    if track_ind != n_tracks then
+     add(menu_items, 'next track')
+    end
+    add(menu_items, 'main menu')
     add_gobjs(
      make_menu(
-      {
-       'try '.. event_str.. ' again',
-       'main menu',
-      },
+      menu_items,
       function (t, i, s)
        local function done_func()
         if i==0 then
          slalom_start(track_ind)
-        else
+        elseif i==2 or track_ind == n_tracks then
          _title_stuff()
+        else
+         slalom_start(track_ind+1)
         end
        end
        add_gobjs(make_snow_trans(done_func, 7))
