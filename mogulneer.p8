@@ -57,11 +57,12 @@ __lua__
 -- fix menus after completing a level to go to the next one, replay the current, or go to the main menu [x]
 
 -- today:
+-- menu snow doesn't sit on the text box fully
+-- title text above starting gate
+-- "TRACK SELECT" header on text box
 -- misses: count up to total instead of down
 -- third level moving holes to that
 -- DEAD MAN'S SLOPE?
--- menu snow doesn't sit on the text box fully
--- "TRACK SELECT" header on text box
 
 -- probably not:
 -- rotation momentum on jump landing
@@ -1267,7 +1268,7 @@ tracks = {
   }
  },
  { 
-  name = "no friends on powder days",
+  name = "powder days",
   course = {
    -- start
    {vecmake(0, 0), ge_trackitem_start, 32},
@@ -1625,6 +1626,14 @@ function make_gate(gate_data, accum_y, starter_objects, track_ind)
       end
      end
     end
+
+    if t.gate_kind == ge_trackitem_start then
+     -- label
+    g_cursor_y = -27 
+    print_cent(""..track_ind..": "..tracks[track_ind].name, 15)
+    g_cursor_y = -28 
+    print_cent(""..track_ind..": "..tracks[track_ind].name, 14)
+   end
    else
     local offset=0
     local flip = false
