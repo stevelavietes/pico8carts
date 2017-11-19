@@ -1980,6 +1980,7 @@ function make_trackitem_text(gate_data, accum_x, accum_y)
   space=sp_world,
   text=gate_data[3],
   draw=function(t)
+   print(t.text, 0, 1, 15)
    print(t.text, 0, 0, 8)
   end
  }
