@@ -722,6 +722,7 @@ function make_player(p)
     vecset(t, vecadd(t, t.vel))
     g_cam.drift = true
     g_cam.last_target_point = veccopy(t)
+    t.sliding = true
     if not t.made_timer and vecmagsq(t.vel) < 0.1 then
      t.made_timer = true
      add_gobjs(
@@ -732,6 +733,7 @@ function make_player(p)
         t.vel = null_v
         vecset(t, t.respawn_location)
         t.crashed = false
+        t.sliding = false
         t.skier_state = ge_skier_start
         t.angle = -0.25
         g_cam.drift = false
@@ -1083,7 +1085,7 @@ function make_player(p)
   end,
   add_new_trail_point=function(t, p)
    p = vecadd(vecflr(p), vecmake(1))
-   p.gap = t.jumping
+   p.gap = t.jumping or t.crashed
    p.perpendicular = t.perpendicular
    local last_point = t.trail_points[#t.trail_points]
    if (
@@ -1878,6 +1880,7 @@ function make_hole_trackitem(gate_data, accum_x, accum_y)
   bound_max = vecmake(size[1]*8-1, size[2]*8-1),
   overlaps=function(t)
    if not g_p1.jumping and not g_p1.crashed then
+    g_p1.sliding = false
     g_p1.crashed = true
     shake_screen(min(15*(vecmag(g_p1.vel)/4), 5), 15, 3)
     flash_screen(10, 8)
@@ -2164,6 +2167,18 @@ function make_tree(loc, anywhere)
   bound_max=vecmake(1,12),
   flip=rnd(1) > 0.5,
   height=flr(rnd(16)),
+  overlaps=function(t, o)
+   if not g_p1.jumping and not g_p1.crashed then
+    g_p1.sliding = false
+    g_p1.crashed = true
+    shake_screen(min(15*(vecmag(g_p1.vel)/4), 50), 20, 1)
+    -- flash_screen(10, 8)
+    g_p1.respawn_location = vecmake(
+     g_mountain:line_for_height(t.y):x_coordinte(t.y),
+     t.y
+    )
+   end
+  end,
   update=function(t)
    respawn_object(t, anywhere)
   end,
