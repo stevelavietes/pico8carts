@@ -49,17 +49,20 @@ __lua__
 -- better backcountry score display
 -- increase the top speed as the level goes on (backcountry mode)
 -- ice that makes you slide [x]
+-- holes spawn you below them after a time penalty (+ speed penalty) [x]
+-- add pits [x]
+-- add ice [x]
+-- strip out backcountry mode [x]
+-- make trees things that collide with you [x]
 
 -- today:
--- holes spawn you below them after a time penalty (+ speed penalty)
 -- fix menus after completing a level to go to the next one, replay the current, or go to the main menu
+-- misses: should display the total you had after its done counting down
 -- DEAD MAN'S SLOPE?
--- strip out backcountry mode
+
+-- probably not:
 -- rotation momentum on jump landing
 -- use moguls to impact jump height
--- add pits
--- add ice
--- make trees things that collide with you
 -- make missing the end gates also a penalty
 -- retune penalties with current speed
 -- add crashing to slalom
