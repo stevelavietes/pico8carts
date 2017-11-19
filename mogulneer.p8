@@ -2189,6 +2189,13 @@ function make_tree(loc, anywhere)
     8+t.height/4, 16 + t.height,
     t.flip
    )
+   -- rect(
+   --  t.bound_min.x, 
+   --  t.bound_min.y, 
+   --  t.bound_max.x, 
+   --  t.bound_max.y, 
+   --  11
+   -- )
   end
  }
 end
