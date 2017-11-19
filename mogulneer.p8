@@ -235,7 +235,7 @@ g_mogulneer_accel = 0.45
 --    print("mem: ".. stat(0)/1024)
 --    print(" max:" ..maxmem)
 --    print("gst: "..state_map[g_state])
---    -- print("shk: "..repr(g_shake_end))
+--    print("sld: "..repr(g_p1.sliding))
 --    -- print("smg: "..repr(g_shake_mag))
 --    -- print("shf: "..repr(g_shake_frequency))
 --    -- print("lst: "..repr(last_shake))
@@ -1433,11 +1433,7 @@ function make_score_display(base_timer, score_mode, track_ind)
       function (t, i, s)
        local function done_func()
         if i==0 then
-         if score_mode then
-          backcountry_start()
-         else
-          slalom_start(track_ind)
-         end
+         slalom_start(track_ind)
         else
          _title_stuff()
         end
@@ -1485,11 +1481,7 @@ function make_score_display(base_timer, score_mode, track_ind)
    end
 
    local char_array = {}
-   if score_mode  then 
-    char_array = t:backcountry_score()
-   else
-    char_array = t:timer_score()
-   end
+   char_array = t:timer_score()
 
    local x_off = -#char_array*4
    palt(3, true)
@@ -1974,36 +1966,36 @@ function make_trackitem_text(gate_data, accum_x, accum_y)
  }
 end
 
-function make_trackitem_mogul(gate_data, accum_x, accum_y)
- return {
-  x=accum_x,
-  y=accum_y,
-  space=sp_world,
-  bound_min = vecmake(-8, -4),
-  bound_max = vecmake(8, 12),
-  overlaps  = function(t, other)
-   -- transform into local space
-   local o = vecsub(vecadd(t, t.bound_min), other)
-
-   local heightmap_coord = vecsub(vecmake(112, 32), o)
-   heightmap_coord = vecclamp(
-    heightmap_coord,
-    vecmake(112, 32),
-    vecmake(127, 47)
-   )
-
-
-   local flr_heightmap_coord = vecflr(heightmap_coord)
-   local height = sget(flr_heightmap_coord.x, flr_heightmap_coord.y) - 1
-   other.mogul_off = height
-  end,
-  draw=function(t)
-   palt(3, true)
-   spr(106, -8, -1, 2, 2)
-   palt()
-  end,
- }
-end
+-- function make_trackitem_mogul(gate_data, accum_x, accum_y)
+--  return {
+--   x=accum_x,
+--   y=accum_y,
+--   space=sp_world,
+--   bound_min = vecmake(-8, -4),
+--   bound_max = vecmake(8, 12),
+--   overlaps  = function(t, other)
+--    -- transform into local space
+--    local o = vecsub(vecadd(t, t.bound_min), other)
+--
+--    local heightmap_coord = vecsub(vecmake(112, 32), o)
+--    heightmap_coord = vecclamp(
+--     heightmap_coord,
+--     vecmake(112, 32),
+--     vecmake(127, 47)
+--    )
+--
+--
+--    local flr_heightmap_coord = vecflr(heightmap_coord)
+--    local height = sget(flr_heightmap_coord.x, flr_heightmap_coord.y) - 1
+--    other.mogul_off = height
+--   end,
+--   draw=function(t)
+--    palt(3, true)
+--    spr(106, -8, -1, 2, 2)
+--    palt()
+--   end,
+--  }
+-- end
 
 -- ? looks like directly putting these in the constructor didn't work
 trackitem_map = {}
@@ -2126,21 +2118,21 @@ end
 function respawn_object(t, anywhere)
  if g_cam.y - t.y > 80 then
   t.y += 160
-  if anywhere then
-   t.x = rnd_centered(192)
-   if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
-    repeat
-     t.x = rnd_centered(192)
-    until (abs(t.x) > 30)
-   end
-  else
+  -- if anywhere then
+  --  t.x = rnd_centered(192)
+  --  if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
+  --   repeat
+  --    t.x = rnd_centered(192)
+  --   until (abs(t.x) > 30)
+  --  end
+  -- else
    local flip = 110
    local rnd_off = rnd_centered(80)
    if rnd(1) > 0.5 then
     flip *= -1
    end
    t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
-  end
+  -- end
   -- cycle objects to end of the list, effectively z-sorting the tree list
   del(g_mountain.p_objs, t)
   add(g_mountain.p_objs, t)
@@ -2200,22 +2192,22 @@ function make_tree(loc, anywhere)
  }
 end
 
-function make_rock(loc)
- return {
-  x=loc.x,
-  y=loc.y,
-  space=sp_world,
-  radius=3,
-  index=flr(rnd(4)),
-  bound_cent=vecmake(0, 9),
-  update=function(t)
-   respawn_object(t, true)
-  end,
-  draw=function(t)
-   spr(96+t.index, -4, -4, 1, 2)
-  end
- }
-end
+-- function make_rock(loc)
+--  return {
+--   x=loc.x,
+--   y=loc.y,
+--   space=sp_world,
+--   radius=3,
+--   index=flr(rnd(4)),
+--   bound_cent=vecmake(0, 9),
+--   update=function(t)
+--    respawn_object(t, true)
+--   end,
+--   draw=function(t)
+--    spr(96+t.index, -4, -4, 1, 2)
+--   end
+--  }
+-- end
 
 function overlaps_bounds(fst, snd)
  if fst == snd or not fst or not snd then
