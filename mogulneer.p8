@@ -1936,7 +1936,7 @@ function make_hole_trackitem(gate_data, accum_x, accum_y)
        local flip_x = spr_str[2]
        local flip_y = spr_str[3]
 
-       if flip_x or flip_y then
+       if flip_y then
         pal(6, 0)
         pal(5, 0)
        end
