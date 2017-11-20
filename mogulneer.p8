@@ -55,10 +55,12 @@ __lua__
 -- strip out backcountry mode [x]
 -- make trees things that collide with you [x]
 -- fix menus after completing a level to go to the next one, replay the current, or go to the main menu [x]
+-- menu snow doesn't sit on the text box fully [x]
+-- title text above starting gate [x]
 
 -- today:
--- menu snow doesn't sit on the text box fully
--- title text above starting gate
+-- no shake on crash for some reason
+-- some trees aren't spawning outside of the track
 -- "TRACK SELECT" header on text box
 -- misses: count up to total instead of down
 -- third level moving holes to that
@@ -2183,7 +2185,7 @@ function make_tree(loc, anywhere)
    if not g_p1.jumping and not g_p1.crashed then
     g_p1.sliding = false
     g_p1.crashed = true
-    shake_screen(min(15*(vecmag(g_p1.vel)/4), 50), 20, 1)
+    shake_screen(9, 20, 3)
     -- flash_screen(10, 8)
     g_p1.respawn_location = vecmake(
      g_mountain:line_for_height(t.y):x_coordinte(t.y),
