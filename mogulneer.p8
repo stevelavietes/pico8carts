@@ -2141,34 +2141,13 @@ end
 function respawn_object(t, anywhere)
  if g_cam.y - t.y > 80 then
   t.y += 160
-  -- if anywhere then
-  --  t.x = rnd_centered(192)
-  --  if g_p1.x == 0 and g_p1.y == 0 and abs(t.y) < 10 then
-  --   repeat
-  --    t.x = rnd_centered(192)
-  --   until (abs(t.x) > 30)
-  --  end
-  -- else
-   local flip = 110
-   local rnd_off = rnd_centered(80)
-   if rnd(1) > 0.5 then
-    flip *= -1
-   end
-   t.x = flip + rnd_off+ g_mountain:line_for_height(t.y):x_coordinte(t.y)
-  -- end
+  local flip = rnd(1) > 0.5 and 1 or -1
+  local rnd_off = 110 + rnd_centered(60)
+  t.x = flip*rnd_off + g_mountain:line_for_height(t.y):x_coordinte(t.y)
+
   -- cycle objects to end of the list, effectively z-sorting the tree list
   del(g_mountain.p_objs, t)
   add(g_mountain.p_objs, t)
- end
-
- if anywhere then
-  if abs(g_cam.x - t.x) > 80 then
-   if g_cam.x > t.x then
-    t.x += 160
-   else
-    t.x -= 160
-   end
-  end
  end
 end
 
