@@ -57,10 +57,11 @@ __lua__
 -- fix menus after completing a level to go to the next one, replay the current, or go to the main menu [x]
 -- menu snow doesn't sit on the text box fully [x]
 -- title text above starting gate [x]
+-- no shake on crash for some reason [x]
 
 -- today:
--- no shake on crash for some reason
 -- some trees aren't spawning outside of the track
+-- message on 0 misses "NICE"
 -- "TRACK SELECT" header on text box
 -- misses: count up to total instead of down
 -- third level moving holes to that
