@@ -2477,12 +2477,12 @@ function make_menu(
    if btnn(2,t.p) and
      t.i>0 then
     t.i-=1
-    sfx(1)
+    -- sfx(1)
    end
    if btnn(3,t.p) and
      t.i<(#lbs-1) then
     t.i+=1
-    sfx(1)
+    -- sfx(1)
    end
   end
  }
