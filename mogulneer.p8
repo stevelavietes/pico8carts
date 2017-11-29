@@ -444,6 +444,8 @@ function make_title()
    if elapsed(t.start_frame) > t.duration then
     print("by: @stephan_gfx   ", 19, 46, 12)
     print("    @stevelavieties", 19, 54, 12)
+    local ic_s = "controls are " .. (ge_inverted_controls and "inverted" or "not inverted")
+    print(ic_s, 8, 100, 7)
    end
    palt()
   end,
@@ -498,11 +500,15 @@ function _title_stuff()
      make_menu(
       track_names,
       function (t, i, s)
+       if i < (#tracks - 1) then
        function done_func()
         slalom_start(i+1)
        end
        add_gobjs(make_snow_trans(done_func, 7))
        -- add_gobjs(make_debugmsg())
+      else
+       ge_inverted_controls = not ge_inverted_controls
+      end
       end
       )
      )
@@ -784,7 +790,7 @@ function make_player(p)
    local tgt_dir = nil
    if btn(0, t.p) then
     -- left
-    tgt_dir = -0.5
+    tgt_dir = ge_inverted_controls and 0 or -0.5
    end 
    if btn(1, t.p) then
     -- right
@@ -792,7 +798,7 @@ function make_player(p)
     if tgt_dir != nil then
      t.skier_state = ge_skier_wedge
     else
-     tgt_dir = 0
+     tgt_dir = ge_inverted_controls and -0.5 or 0
     end
    end
    if btn(3, t.p) then
@@ -1216,6 +1222,8 @@ function make_camera(x,y)
 end
 -- @}
 
+ge_inverted_controls = false
+
 -- gate enums
 ge_trackitem_start = 0
 ge_trackitem_end = 1
@@ -1324,6 +1332,7 @@ track_names = {}
 for t in all(tracks) do
  add(track_names, t.name)
 end
+add(track_names, "invert controls")
 
 ge_timerstate_stopped = 0
 ge_timerstate_running = 1
