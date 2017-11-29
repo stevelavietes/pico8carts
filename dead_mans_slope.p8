@@ -504,7 +504,7 @@ function _title_stuff()
      make_menu(
       track_names,
       function (t, i, s)
-       if i < (#tracks - 1) then
+       if i < #tracks then
        function done_func()
         slalom_start(i+1)
        end
