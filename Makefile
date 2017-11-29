@@ -1,16 +1,16 @@
-all: mogulneer_minified.p8
+all: dead_mans_slope_minified.p8
 
-mogulneer_minified.p8: mogulneer.p8
-	@cp mogulneer.p8 mogulneer_minified.p8
-	@# wc -l mogulneer_minified.p8
+dead_mans_slope_minified.p8: dead_mans_slope.p8
+	@cp dead_mans_slope.p8 dead_mans_slope_minified.p8
+	@# wc -l dead_mans_slope_minified.p8
 	@# Remove leading and trailing whitespace
-	@sed -i bak 's/^[[:blank:]]*//;s/[[:blank:]]*$$//' mogulneer_minified.p8
+	@sed -i bak '8,$$s/^[[:blank:]]*//;s/[[:blank:]]*$$//' dead_mans_slope_minified.p8
 	@# Remove all comments
-	@sed -i bak 's:--.*$$::g' mogulneer_minified.p8
+	@sed -i bak '8,$$s:--.*$$::g' dead_mans_slope_minified.p8
 	@# Delete empty lines
-	@sed -i bak '/^$$/d' mogulneer_minified.p8
-	@# wc -l mogulneer_minified.p8
-	@echo "Wrote: mogulneer_minified.p8"
+	@sed -i bak '/^$$/d' dead_mans_slope_minified.p8
+	@# wc -l dead_mans_slope_minified.p8
+	@echo "Wrote: dead_mans_slope_minified.p8"
 
 clean:
-	rm -f mogulneer_minified.p8
+	rm -f dead_mans_slope_minified.p8
