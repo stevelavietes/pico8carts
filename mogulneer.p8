@@ -1,6 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 14
 __lua__
+-- dead mans slope
+-- @stephan_gfx / @stevelavieties
+-- 
+-- v0.5
 -- skiiiii
 
 -- cool flavor:
