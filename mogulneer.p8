@@ -4,7 +4,7 @@ __lua__
 -- dead mans slope
 -- @stephan_gfx / @stevelavieties
 -- 
--- v0.5
+-- v0.6
 -- skiiiii
 
 -- cool flavor:
