@@ -65,11 +65,14 @@ __lua__
 -- some trees aren't spawning outside of the track [x]
 -- message on 0 misses "NICE" [x]
 -- misses: count up to total instead of down [x]
+-- "TRACK SELECT" header on text box [x]
+-- DEAD MAN'S SLOPE? [x]
+-- token pass [x]
 
 -- today:
--- "TRACK SELECT" header on text box
 -- third level moving holes to that
--- DEAD MAN'S SLOPE?
+-- move up menu box (and entire screen, really)
+-- adjust size of menubox collider
 
 -- probably not:
 -- rotation momentum on jump landing
@@ -105,7 +108,7 @@ function make_one_euro_filt(beta, mincutoff)
  return {
   first_time = true,
   dx = 0,
-  rate = 1/30,
+  rate = 0.0333, --1/30
   mincutoff = mincutoff, -- hz
   beta = beta, -- cutoff slope
   d_cutoff = 0, -- derivative cutoff
@@ -276,29 +279,23 @@ g_mogulneer_accel = 0.45
 -- end
 
 -- dead code
-function repr(arg)
- -- turn any thing into a string (table, boolean, whatever)
- if arg == nil then
-  return "nil"
- end
- if type(arg) == "boolean" then
-  return arg and "true" or "false"
- end
- if type(arg) == "table" then 
-  local retval = " table{ "
-  for k, v in pairs(arg) do
-   retval = retval .. k .. ": ".. repr(v).. ","
-  end
-  retval = retval .. "} "
-  return retval
- end
- return ""..arg
-end
--- }
-
+-- function repr(arg)
+--  -- turn any thing into a string (table, boolean, whatever)
+--  if type(arg) == "table" then 
+--   local retval = " table{ "
+--   for k, v in pairs(arg) do
+--    retval = retval .. k .. ": ".. repr(v).. ","
+--   end
+--   retval = retval .. "} "
+--   return retval
+--  end
+--  return tostr(arg)
+-- end
+-- -- }
+--
 function make_snow_particles()
  return {
-  update=function(t)
+  update=function()
    if g_state == ge_state_menu then
     -- make snow
     add_particle(rnd(128), 0, rnd_centered(0.5), 0.5+rnd(0.3), 270, 7, 0)
@@ -313,24 +310,20 @@ end
 function spray_particles()
  return {
   start_spray=0,
-  add_trail_spray=function(t)
+  add_trail_spray=function()
    local velmag = vecmag(g_p1.vel)
 
    if velmag < 2 then
     return
    end
 
-   local amount = min(max(remap(velmag, 3, 5, 0, 1), 0.0), 1.0)
+   local amount = clamp(remap(velmag, 3, 5, 0, 1))
    local n_trail_pts = #g_p1.trail_points
 
    for i=0,25 do
     if rnd() < amount or amount > 0.95 then
-     local ind = 1+flr(rnd(min(6, n_trail_pts)))
-     local pt = g_p1.trail_points[n_trail_pts - ind]
-
-     if not pt then
-      pt = g_p1
-     end
+     local ind = ceil(rnd(min(6, n_trail_pts)))
+     local pt = g_p1.trail_points[n_trail_pts - ind] or g_p1
 
      pos = vecadd(
       vecadd(vecscale(g_p1.ski_vec, rnd_centered(6)), pt),
@@ -349,7 +342,7 @@ function spray_particles()
     end
    end
   end,
-  add_brake_spray=function(t)
+  add_brake_spray=function()
    if not g_p1.sliding then
     return
    end
@@ -395,7 +388,7 @@ function spray_particles()
     t:add_brake_spray()
    end
   end,
-  draw=function(t)
+  draw=function()
    process_particles(sp_world)
   end
  }
@@ -553,13 +546,11 @@ sp_screen_center = 3
 
 -- @{ useful utility function for getting started
 function add_gobjs(thing)
- add(g_objs, thing)
- return thing
+ return add(g_objs, thing)
 end
 
 function ef_out_quart(amount)
- amount = max(0, min(amount, 1))
- local t = amount - 1
+ local t = clamp(amount) - 1
  return -1 * (t*t*t*t- 1)
 end
 
@@ -697,10 +688,14 @@ function veclerp(v1, v2, amount, clamp)
  return result
 end
 
+function clamp(v, min_v, max_v)
+ return min(max(v, min_v or 0), max_v or 1)
+end
+
 function vecclamp(v, min_v, max_v)
  return vecmake(
-  min(max(v.x, min_v.x), max_v.x),
-  min(max(v.y, min_v.y), max_v.y)
+  clamp(v.x, min_v.x, max_v.x),
+  clamp(v.y, min_v.y, max_v.y)
  )
 end
 -- @}
@@ -1248,17 +1243,17 @@ ge_skier_normal = 0
 ge_skier_tuck = 1
 ge_skier_wedge = 2
 ge_skier_start = 3
-skier_state_map = {}
-skier_state_map[0] = "normal"
-skier_state_map[1] = "tuck"
-skier_state_map[2] = "wedge"
-skier_state_map[3] = "start"
+-- skier_state_map = {}
+-- skier_state_map[0] = "normal"
+-- skier_state_map[1] = "tuck"
+-- skier_state_map[2] = "wedge"
+-- skier_state_map[3] = "start"
 
--- debug only
-state_map = {}
-state_map[0] = "menu"
-state_map[1] = "menu_trans"
-state_map[2] = "playing"
+-- -- debug only
+-- state_map = {}
+-- state_map[0] = "menu"
+-- state_map[1] = "menu_trans"
+-- state_map[2] = "playing"
 
 -- gate_str_map = {
 --  "start",
@@ -1283,7 +1278,7 @@ tracks = {
   course = {
    -- x offset is from the centerline (x=0), not previous gate
    -- x offset, y distance to last object, gate enum, optional data radius
-   {vecmake(0, 0), ge_trackitem_start, 32},
+   {vecmake(), ge_trackitem_start, 32},
    -- {vecmake(-20, 10), ge_trackitem_hole, 8,18},
    {vecmake(-48, 8), ge_trackitem_text, "   press any key\nto start"},
    {vecmake(-16, 64), ge_trackitem_text, "  hold  \nfor brakes"},
@@ -1304,7 +1299,7 @@ tracks = {
   name = "powder days",
   course = {
    -- start
-   {vecmake(0, 0), ge_trackitem_start, 32},
+   {vecmake(), ge_trackitem_start, 32},
    {vecmake(-50, 90), ge_trackitem_right},
    {vecmake(50, 90)}, --l 
    {vecmake(200, 80)},
@@ -1333,9 +1328,7 @@ tracks = {
  }
 }
 track_names = {}
-for t in all(tracks) do
- add(track_names, t.name)
-end
+foreach(tracks, function(t) add(track_names, t.name) end)
 add(track_names, "invert controls")
 
 ge_timerstate_stopped = 0
@@ -1492,7 +1485,7 @@ function make_score_display(base_timer, score_mode, track_ind)
     )
    end
   end,
-  timer_score=function(t)
+  timer_score=function()
    local m_t = 0
    if base_timer.m > 10 then
     m_t = min(9, flr(base_timer.m/10))
@@ -1778,7 +1771,7 @@ function make_bg(col)
  col = col or 7
 
  return {
-  draw=function(t)
+  draw=function()
    stdclscol(col)
   end
  }
@@ -1812,9 +1805,7 @@ function make_line(before, g1, g2, after)
   local m0_t = vecscale(m0, (z*z*z - 2*z*z + z))
   local p1_t = vecscale(p1, (-2*z*z*z + 3*z*z))
   local m1_t = vecscale(m1, (z*z*z - z*z))
-  local p_t = vecadd(vecadd(p0_t, m0_t), vecadd(p1_t, m1_t))
-  add(pts, p_t)
-  last_point = p_t
+  last_point = add(pts, vecadd(vecadd(p0_t, m0_t), vecadd(p1_t, m1_t)))
  end
 
  return {
@@ -1872,7 +1863,7 @@ function make_ice_trackitem(gate_data, accum_x, accum_y)
   y=accum_y+gate_data[1].y,
   space=sp_world,
   size = size,
-  bound_min = vecmake(0, 0),
+  bound_min = vecmake(),
   bound_max = vecmake(size[1]*8-1, size[2]*8-1),
   overlaps=function(t, o)
    o.is_on_ice = g_tick
@@ -1926,7 +1917,7 @@ function make_hole_trackitem(gate_data, accum_x, accum_y)
   y=accum_y+gate_data[1].y,
   space=sp_world,
   size = size,
-  bound_min = vecmake(0, 0),
+  bound_min = vecmake(),
   bound_max = vecmake(size[1]*8-1, size[2]*8-1),
   overlaps=function(t)
    if not g_p1.jumping and not g_p1.crashed then
@@ -2193,11 +2184,10 @@ function make_tree(loc, anywhere)
   x=loc.x,
   y=loc.y,
   space=sp_world,
-  radius=3,
   bound_min=vecmake(-2,9),
   bound_max=vecmake(1,12),
   flip=rnd(1) > 0.5,
-  height=flr(rnd(16)),
+  height=flr(rnd(24)),
   overlaps=function(t, o)
    if not g_p1.jumping and not g_p1.crashed then
     g_p1.sliding = false
@@ -2249,29 +2239,29 @@ end
 -- end
 
 function overlaps_bounds(fst, snd)
- if fst == snd or not fst or not snd then
-  return false
- end
+--  if fst == snd or not fst or not snd then
+--   return false
+--  end
  if not fst.bound_min or not snd.bound_min or 
    not fst.bound_max or not snd.bound_max then
   return false
  end
  -- hb: x0, y0, x1, y1
  
- local fst_pos = {fst.x, fst.y}
- local snd_pos = {snd.x, snd.y}
- local fst_bmin = {fst.bound_min.x, fst.bound_min.y}
- local fst_bmax = {fst.bound_max.x, fst.bound_max.y}
- local snd_bmin = {snd.bound_min.x, snd.bound_min.y}
- local snd_bmax = {snd.bound_max.x, snd.bound_max.y}
- for dim=1,2 do
+--  local fst_pos = {fst.x, fst.y}
+--  local snd_pos = {snd.x, snd.y}
+--  local fst_bmin = {fst.bound_min.x, fst.bound_min.y}
+--  local fst_bmax = {fst.bound_max.x, fst.bound_max.y}
+--  local snd_bmin = {snd.bound_min.x, snd.bound_min.y}
+--  local snd_bmax = {snd.bound_max.x, snd.bound_max.y}
+ for dim in all({'x','y'}) do
   fst_dim = {
-   fst_bmin[dim] + fst_pos[dim],
-   fst_bmax[dim] + fst_pos[dim]
+   fst.bound_min[dim] + fst[dim],
+   fst.bound_max[dim] + fst[dim]
   }
   snd_dim = {
-   snd_bmin[dim] + snd_pos[dim],
-   snd_bmax[dim] + snd_pos[dim]
+   snd.bound_min[dim] + snd[dim],
+   snd.bound_max[dim] + snd[dim]
   }
   if (
    (fst_dim[2] < snd_dim[1])
@@ -2286,9 +2276,8 @@ function overlaps_bounds(fst, snd)
 end
 
 function print_cent(str, col)
- col = col or 8
- str = ""..repr(str)
- print(str, -(#str)*2, g_cursor_y, col)
+ str = tostr(str)
+ print(str, -(#str)*2, g_cursor_y, col or 8)
  g_cursor_y += 6
 end
 ------------------------------
@@ -2343,15 +2332,15 @@ function stddraw()
 end
 
 function drawobjs(objs, mode)
- foreach(objs, function(t)
-  if mode == "behind_player" then
-   if t.y > g_p1.y - 2 then
-    return
-   end
-  elseif mode == "in_front_player" then
-   if t.y < g_p1.y - 2 then
-    return
-   end
+ foreach(
+ objs,
+ function(t)
+  if 
+   (mode == "behind_player" and t.y > g_p1.y - 2)
+   or (mode == "in_front_player" and t.y < g_p1.y - 2) 
+   
+  then
+   return
   end
   if t.draw then
    local cam_stack = 0
@@ -2372,7 +2361,7 @@ function drawobjs(objs, mode)
    elseif not t.space or t.space == sp_local then
     pushc(-t_t.x, -t_t.y)
     cam_stack += 1
-   elseif t.space == sp_screen_native then
+    -- elseif t.space == sp_screen_native then
    end
 
    t:draw(objs, mode)
@@ -2381,7 +2370,8 @@ function drawobjs(objs, mode)
     popc()
    end
   end
- end)
+ end
+ )
 end
 
 --returns state,changed
@@ -2467,8 +2457,11 @@ function make_menu(
    spr(0,-x,2+10*t.i)
   end,
   update=function(t,s)
-   if (t.off) return
-   if elapsed(t.s)<(t.e*2) then
+   if t.off then
+    return
+   end
+
+   if elapsed(t.s)<t.e*2 then
     return
    end
 
@@ -2521,7 +2514,7 @@ function make_snow_chunk(src, tgt, col, size, nframes, delay)
   update=function(t)
    vecset(t, veclerp(t, tgt, elapsed(start)/nframes))
   end,
-  draw=function(t)
+  draw=function()
    circfill(0, 0, size, col)
   end
  }
@@ -2566,7 +2559,6 @@ function make_snow_trans(done_func, final_color, delay)
  local start=g_tick
  g_trans = {
   space=sp_screen_native,
-  snow=snow,
   update=function(t)
    if elapsed(start) > delay then
     g_state = ge_state_menu_trans
@@ -2578,11 +2570,11 @@ function make_snow_trans(done_func, final_color, delay)
     updateobjs(snow)
    end
   end,
-  draw=function(t)
+  draw=function()
    if elapsed(start) > delay then
     drawobjs(snow)
    end
-  end,
+  end
  }
  return g_trans
 end
