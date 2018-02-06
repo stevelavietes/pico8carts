@@ -400,15 +400,19 @@ end
 function make_cloud(origin, num_bubbles, vel)
  local bubbles = {}
  for i=0,num_bubbles do
-  add(vecmake(i*4,0))
+  add(bubbles, vecrand(20, true))
  end
  local new_cloud = {
   space=sp_world,
   draw=function(t)
    for b in all(bubbles) do
     circfill(b.x,b.y,5,13)
-    circfill(b.x+1,b.y+1,5,1)
+    circfill(b.x+1,b.y,5,13)
     circfill(b.x+2,b.y+2,5,12)
+   end
+   for b in all(bubbles) do
+    circfill(b.x+1,b.y+1,5,1)
+    circfill(b.x+1,b.y+1,5,1)
    end
   end
  }
@@ -422,7 +426,7 @@ function game_start()
   -- make_mouse_ptr(),
   -- make_grid(sp_world, 128),
   make_starfield(192,64,20),
-  make_cloud(vecmake(10), 4, vecmake(3, 0)),
+  make_cloud(vecmake(0), 4, vecmake(3, 0)),
   -- make_grid(sp_screen_center, 128),
   -- make_particle_manager(),
   make_debugmsg(),
