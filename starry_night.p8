@@ -398,21 +398,33 @@ function make_starfield(sky_half_width, pixels_per_chunk, stars_per_chunk)
 end
 
 function make_cloud(origin, num_bubbles, vel)
+ -- -8         x         8
+ --  +-+---+---+---+---+-+
  local bubbles = {}
- for i=0,num_bubbles do
-  add(bubbles, vecrand(20, true))
+ local space=3
+ local b = add(bubbles, vecmake(-8*space,0))
+ b.r = 5
+ b = add(bubbles, vecmake(8*space,0))
+ b.r = 5
+
+ for i=0,4 do
+  add(bubbles, vecmake((-6+i*3)*space,rnd(4)-2))
  end
+ for i=3,#bubbles do
+  bubbles[i].r = 8-rnd(2)
+ end
+ 
  local new_cloud = {
   space=sp_world,
   draw=function(t)
    for b in all(bubbles) do
-    circfill(b.x,b.y,5,13)
-    circfill(b.x+1,b.y,5,13)
-    circfill(b.x+2,b.y+2,5,12)
+    circfill(b.x+2,b.y+2,b.r,12)
+    circfill(b.x,  b.y,  b.r,13)
    end
    for b in all(bubbles) do
-    circfill(b.x+1,b.y+1,5,1)
-    circfill(b.x+1,b.y+1,5,1)
+    circfill(b.x+1,b.y+1,b.r,1)
+    circfill(b.x+1,b.y,  b.r,13)
+    circfill(b.x+1,b.y+1,b.r,1)
    end
   end
  }
