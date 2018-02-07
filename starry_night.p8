@@ -3,13 +3,14 @@ version 8
 __lua__
 
 -- today:
--- randomly spawn coud and have it drift across the sky ("wind")
--- meteors
 -- trees
 -- wind
 -- the moon
+-- meteors
 -- juicy title screen
+-- randomly spawn coud 
 
+-- have it drift across the sky ("wind") [x]
 -- bounded world [x]
 -- basic title screen [x]
 -- starfield instead of world grid [x]
@@ -421,6 +422,9 @@ function make_cloud(origin, num_bubbles, vel)
  
  local new_cloud = {
   space=sp_world,
+  update=function(t)
+   t.x += vel.x
+  end,
   draw=function(t)
    for b in all(bubbles) do
     circfill(b.x+2,b.y+2,b.r,12)
@@ -443,7 +447,7 @@ function game_start()
   -- make_mouse_ptr(),
   -- make_grid(sp_world, 128),
   make_starfield(192,64,20),
-  make_cloud(vecmake(0), 4, vecmake(3, 0)),
+  make_cloud(vecmake(0), 4, vecmake(0.01, 0)),
   -- make_grid(sp_screen_center, 128),
   -- make_particle_manager(),
   make_debugmsg(),
