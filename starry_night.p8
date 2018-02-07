@@ -3,17 +3,18 @@ version 8
 __lua__
 
 -- today:
--- starfield instead of world grid
--- bounded world
--- stars twinkle
+-- randomly spawn coud and have it drift across the sky ("wind")
 -- meteors
 -- trees
 -- wind
--- cloud
 -- the moon
 -- juicy title screen
 
+-- bounded world [x]
 -- basic title screen [x]
+-- starfield instead of world grid [x]
+-- stars twinkle [x]
+-- cloud [x]
 
 -- Idea is to make an experience/game about sitting on the porch and looking
 -- at stars in the night sky, maybe seeing meteors
@@ -300,6 +301,10 @@ function make_player(p)
    end
    t.x += m_x
    t.y += m_y
+   t.x = max(t.x, -110)
+   t.x = min(t.x, 180)
+   t.y = max(t.y, -110)
+   t.y = min(t.y, 180)
    updateobjs(t.c_objs)
   end,
   draw=function(t)
