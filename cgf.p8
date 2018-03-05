@@ -236,30 +236,44 @@ end
 
 -- @{ built in diagnostic stuff
 function make_player(p)
- return {
+ local thing = {
   x=0,
   y=0,
   p=p,
+  grid_loc=vecmake(),
   space=sp_world,
   c_objs={},
   update=function(t)
    -- move cells
    local m_x = 0
    local m_y = 0
+   local next_cell = vecmake()
    if btn(0, t.p) then
-    m_x =-1
+    next_cell.x = -1
+    -- m_x =-1
    end 
    if btn(1, t.p) then
-    m_x = 1
+    next_cell.x = 1
+    -- m_x = 1
    end
    if btn(2, t.p) then
-    m_y = -1
+    next_cell.y = -1
+    -- m_y = -1
    end
    if btn(3, t.p) then
-    m_y = 1
+    next_cell.y = 1
+    -- m_y = 1
    end
-   t.x += m_x
-   t.y += m_y
+   -- t.x += m_x
+   -- t.y += m_y
+
+   if next_cell.x != 0 or next_cell.y != 0 then
+    next_cell = get_cell(vecadd(next_cell, t.grid_loc))
+    if next_cell then
+     next_cell:now_contains(t)
+    end
+   end
+
    updateobjs(t.c_objs)
   end,
   draw=function(t)
@@ -267,9 +281,25 @@ function make_player(p)
    rect(-3,-3, 3,3, 8)
    local str = "world: " .. t.x .. ", " .. t.y
    print(str, -(#str)*2, 12, 8)
+   local str = "grid: " .. t.grid_loc.x .. ", " .. t.grid_loc.y
+   print(str, -(#str)*2, 18, 8)
    drawobjs(t.c_objs)
   end
  }
+
+--  g_board.cells[thing.grid_loc.x][thing.grid_loc.y].now_contains(thing)
+ local p = get_cell(thing.grid_loc)
+
+ if p == nil then
+  cls()
+  print("barf")
+  print(thing.grid_loc.x)
+  stop()
+ end
+ 
+ p:now_contains(thing)
+
+ return thing
 end
 
 function make_camera()
@@ -290,11 +320,27 @@ function vecdrawrect(start_p, end_p, c)
 end
 -- @}
 
+function get_cell(loc)
+ if (
+  loc.x < g_board.grid_dimensions.x and loc.x > -1 and
+  loc.y < g_board.grid_dimensions.y and loc.y > -1
+ ) then
+  return g_board.cells[loc.x+ 1][loc.y+ 1]
+ end
+ return nil
+end
+
 function make_cell(i, j)
  return {
   x = 9*i+2,
   y = 9*j+2,
   contains = nil,
+  now_contains=function(t, other)
+   t.contains = other
+   other.contained_by = t
+   vecset(other, t)
+   vecset(other.grid_loc, vecmake(i,j))
+  end,
   draw=function(t)
    vecdrawrect(null_v, vecmake(7,7), 5)
   end,
@@ -324,7 +370,7 @@ function make_board()
   space=sp_world,
   cells=cells,
   flat_cells = flat_cells,
-  grid_dimensions = vecmake(12, 9),
+  grid_dimensions = BOARD_DIM,
   -- goes from (0,0)
   grid_dimensions_world = vecmake(BOARD_DIM.x*9+2, BOARD_DIM.y*9+2),
   update=function(t)
@@ -340,7 +386,7 @@ end
 
 function game_start()
  g_objs = {
-  make_debugmsg(),
+  -- make_debugmsg(),
  }
 
  g_board = add_gobjs(make_board())
