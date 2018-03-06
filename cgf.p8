@@ -279,7 +279,9 @@ function make_player(p)
    if next_cell.x != 0 or next_cell.y != 0 then
     next_cell = get_cell(vecadd(next_cell, t.grid_loc))
     if next_cell then
-     next_cell:now_contains(t)
+     if not next_cell.contains then
+      next_cell:now_contains(t)
+     end
     end
    end
 
@@ -297,17 +299,7 @@ function make_player(p)
   end
  }
 
---  g_board.cells[thing.grid_loc.x][thing.grid_loc.y].now_contains(thing)
- local p = get_cell(thing.grid_loc)
-
- if p == nil then
-  cls()
-  print("barf")
-  print(thing.grid_loc.x)
-  stop()
- end
- 
- p:now_contains(thing)
+ get_cell(thing.grid_loc):now_contains(thing)
 
  return thing
 end
@@ -346,6 +338,9 @@ function make_cell(i, j)
   y = 9*j+2,
   contains = nil,
   now_contains=function(t, other)
+   if other.contained_by and other.contained_by.contains then
+    other.contained_by.contains = nil
+   end
    t.contains = other
    other.contained_by = t
    vecset(other, t)
