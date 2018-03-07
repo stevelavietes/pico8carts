@@ -9,6 +9,28 @@ __lua__
 -- No team from Argenstein has even won.  But here you are.  Seconds left on the clock, hopes and dreams and aspiration and inspirations being shouted in every langauge and you have a shot.
 -- you have everything with you that need to win.  You just need to figure out how to do it.
 
+-- rough design
+-- there are goons and you're trying to get through them
+-- the tools at your disposal are things in the room -- furniture and things
+-- you can climb on it to lunge
+-- kick some to do damage to enemies
+-- enemies can also kick them at you
+-- you're faster but weaker than the enemies ( you move 2x to every one they move, but they take 2 or 3 hits to die and you only take one hit)
+-- you get to the exit and see how far you can get, if you can escape!
+
+-- next:
+-- spawn furniture
+-- kick furniture
+-- kicked furniture hits enemies
+
+
+-- done
+-- you can attack the goons to make them disapear
+-- goons randomly spawned
+-- move around on the grid
+-- avatar
+-- grid
+
 
 
 -- { debug stuff can be deleted
@@ -457,7 +479,7 @@ end
 
 function game_start()
  g_objs = {
-  -- make_debugmsg(),
+  make_debugmsg(),
  }
 
  g_board = add_gobjs(make_board())
