@@ -19,12 +19,12 @@ __lua__
 -- you get to the exit and see how far you can get, if you can escape!
 
 -- next:
--- spawn furniture
 -- kick furniture
 -- kicked furniture hits enemies
 
 
 -- done
+-- spawn furniture
 -- you can attack the goons to make them disapear
 -- goons randomly spawned
 -- move around on the grid
@@ -50,7 +50,7 @@ function repr(arg)
   retval = retval .. "} "
   return retval
  end
- return ""..arg
+ return ""..tostr(arg)
 end
 
 function make_debugmsg()
@@ -266,10 +266,14 @@ end
 -- @}
 
 -- enum
+G_STATE = ge_state_playing
+ge_state_playing = 1
+ge_state_animating = 2
+
 ge_obj_player = 1
 ge_obj_goon = 2
 
-ge_frn_chair = 10
+ge_obj_chair = 10
 
 function interact(obj, target_cell)
  if not target_cell.contains then
@@ -281,6 +285,18 @@ function interact(obj, target_cell)
  
  -- check to see if a goon is in the target_cell
  other_obj:attack(obj)
+end
+
+-- returns whether it could move or not
+function move_obj_in_dir(obj, dir)
+ if dir and (dir.x != 0 or dir.y != 0) then
+  next_cell = get_cell(vecadd(dir, obj.grid_loc))
+  if next_cell then
+   interact(obj, next_cell)
+   return true
+  end
+ end
+ return false
 end
 
 -- @{ built in diagnostic stuff
@@ -317,12 +333,7 @@ function make_player(p)
    -- t.x += m_x
    -- t.y += m_y
 
-   if next_cell.x != 0 or next_cell.y != 0 then
-    next_cell = get_cell(vecadd(next_cell, t.grid_loc))
-    if next_cell then
-      interact(t, next_cell)
-    end
-   end
+   move_obj_in_dir(t, next_cell)
 
    updateobjs(t.c_objs)
   end,
@@ -419,21 +430,44 @@ function make_chair()
   x=0,
   y=0,
   grid_loc=vecmake(),
-  obj_type=ge_frn_chair,
+  obj_type=ge_obj_chair,
   space=sp_world,
+
+  -- for being kicked
+  target_cell=nil,
+  kick_distance=nil,
+  kick_dir = nil,
+
+  update=function(t)
+   if t.kick_distance == nil then
+    return
+   end
+
+   -- reset kick stuff
+   if t.kick_distance <= 0 then
+    t.kick_distance = nil
+    t.kick_dir = nil
+    return
+   end
+
+   local could_move = move_obj_in_dir(t, t.kick_dir)
+   t.kick_distance -= 1
+
+   if not could_move then
+    g_board:remove(t)
+   end
+   -- if not animating, done
+   -- if animating and on final frame, move into target cell
+  end,
   attack=function(t, attacker)
-   -- if the object is a person
-   -- if attacker.obj_type < 10 then
-   --
-   -- end
-   --
-   -- -- if attacked, enemy is killed
-   -- t.contained_by:now_contains(attacker)
-   -- g_board:remove(t)
+   -- start out moving four squares when kicked
+   t.kick_dir = vecsub(t.grid_loc, attacker.grid_loc)
+   t.kick_distance = 4
   end,
   draw=function(t)
    spr(10,0,0)
    -- rect(0,0,8,8,11)
+
   end
  }
 end
@@ -512,7 +546,7 @@ function game_start()
  g_board = add_gobjs(make_board())
  -- make some goons and some furniture
  g_board:spawn_thing(10, make_goon)
- g_board:spawn_thing(30, make_chair)
+ g_board:spawn_thing(40, make_chair)
  g_cam= add_gobjs(make_camera())
  g_p1 = add_gobjs(make_player(0))
 
