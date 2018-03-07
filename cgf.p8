@@ -243,12 +243,29 @@ function make_mouse_ptr()
 end
 -- @}
 
+-- enum
+ge_obj_player = 1
+ge_obj_goon = 2
+
+function interact(obj, target_cell)
+ if not target_cell.contains then
+  target_cell:now_contains(obj)
+  return
+ end
+
+ local other_obj = target_cell.contains
+ 
+ -- check to see if a goon is in the target_cell
+ other_obj:attack(obj)
+end
+
 -- @{ built in diagnostic stuff
 function make_player(p)
  local thing = {
   x=0,
   y=0,
   p=p,
+  obj_type=ge_obj_player,
   grid_loc=vecmake(),
   space=sp_world,
   c_objs={},
@@ -279,9 +296,7 @@ function make_player(p)
    if next_cell.x != 0 or next_cell.y != 0 then
     next_cell = get_cell(vecadd(next_cell, t.grid_loc))
     if next_cell then
-     if not next_cell.contains then
-      next_cell:now_contains(t)
-     end
+      interact(t, next_cell)
     end
    end
 
@@ -357,7 +372,17 @@ function make_goon()
   x=0,
   y=0,
   grid_loc=vecmake(),
+  obj_type=ge_obj_goon,
   space=sp_world,
+  attack=function(t, attacker)
+   if attacker.obj_type == ge_obj_goon then
+    return
+   end
+
+   -- if attacked, enemy is killed
+   t.contained_by:now_contains(attacker)
+   g_board:remove(t)
+  end,
   draw=function(t)
    spr(37,0,0)
    rect(0,0,8,8,11)
@@ -391,6 +416,13 @@ function make_board()
   grid_dimensions = BOARD_DIM,
   -- goes from (0,0)
   grid_dimensions_world = vecmake(BOARD_DIM.x*9+2, BOARD_DIM.y*9+2),
+  remove=function(t, obj)
+   if obj.contained_by then
+    obj.contained_by.contains = nil
+    obj.contained_by = nil
+   end
+   del(g_objs, obj)
+  end,
   update=function(t)
   end,
   random_empty_cell=function(t)
