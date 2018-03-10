@@ -571,11 +571,12 @@ function game_start()
  }
 
  g_board = add_gobjs(make_board())
+ g_cam= add_gobjs(make_camera())
+ g_p1 = add_gobjs(make_player(0))
  -- make some goons and some furniture
  g_board:spawn_thing(10, make_goon)
  g_board:spawn_thing(40, make_chair)
- g_cam= add_gobjs(make_camera())
- g_p1 = add_gobjs(make_player(0))
+
 
 
 --  g_brd = make_board()
