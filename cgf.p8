@@ -19,10 +19,11 @@ __lua__
 -- you get to the exit and see how far you can get, if you can escape!
 
 -- next:
+-- fix world boundaries
 -- enemies  come at you with A*
+-- turn based movement - for every two moves you make, the enemies make a move
 -- enemies can k
 -- kicks should lose momentum, not push indefinitely
--- fix world boundaries
 
 
 -- done
@@ -382,7 +383,7 @@ end
 -- returns whether it could move or not
 function move_obj_in_dir(obj, dir)
  if dir and (dir.x != 0 or dir.y != 0) then
-  next_cell = get_cell(vecadd(dir, obj.grid_loc))
+  next_cell = vecgetcell(vecadd(dir, obj.grid_loc))
   if next_cell then
    interact(obj, next_cell)
    return true
@@ -441,7 +442,7 @@ function make_player(p)
   end
  }
 
- get_cell(thing.grid_loc):now_contains(thing)
+ vecgetcell(thing.grid_loc):now_contains(thing)
 
  return thing
 end
@@ -464,11 +465,11 @@ function vecdrawrect(start_p, end_p, c)
 end
 -- @}
 
-function coordget_cell(x,y)
- return get_cell(vecmake(x,y))
+function getcell(x,y)
+ return vecgetcell(vecmake(x,y))
 end
 
-function get_cell(loc)
+function vecgetcell(loc)
  if (
   loc.x < g_board.grid_dimensions.x+1 and loc.x > 0 and
   loc.y < g_board.grid_dimensions.y+1 and loc.y > 0
