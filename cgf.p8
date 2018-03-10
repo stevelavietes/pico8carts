@@ -19,8 +19,10 @@ __lua__
 -- you get to the exit and see how far you can get, if you can escape!
 
 -- next:
--- kick furniture
--- kicked furniture hits enemies
+-- enemies  come at you with A*
+-- enemies can k
+-- kicks should lose momentum, not push indefinitely
+-- fix world boundaries
 
 
 -- done
@@ -30,7 +32,8 @@ __lua__
 -- move around on the grid
 -- avatar
 -- grid
-
+-- kick furniture
+-- kicked furniture hits enemies
 
 
 -- { debug stuff can be deleted
