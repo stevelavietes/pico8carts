@@ -183,6 +183,95 @@ function make_particle_manager()
 end
 -- }
 
+-- {
+function cell_is_empty(cell)
+ if not cell then
+  return true
+ end
+
+ return cell.contains == nil
+end
+-- }
+
+-- { A* pathfinding
+function _pop_lowest_rank_in(some_list)
+ local lowest = some_list[1]
+ local lowest_rank = lowest.rank
+
+ for i=2,#some_list do
+  if some_list[i].rank < lowest_rank then
+   lowest = some_list[i]
+   lowest_rank = lowest.rank
+  end
+ end
+
+ del(some_list, lowest)
+
+ return lowest.cell
+end
+
+function distance_to_target_cell_heuristic(from_cell, to_cell)
+ local d = vecabs(vecsub(from_cell.grid_loc, to_cell.grid_loc))
+
+ return (d.x+d.y)
+end
+
+function next_move(from_cell, to_cell)
+ local path_from, _ = compute_path(from_cell, to_cell)
+ return path_from[from_cell]
+end
+
+function compute_path(from_cell, to_cell)
+ local frontier = {{cell=from_cell, rank=0}}
+
+ local came_from = {}
+ came_from[from_cell] = nil
+
+ local cost_so_far = {}
+ cost_so_far[from_cell] = 0
+
+ local move_cost = 1
+
+ local current_cell = nil
+
+ while  #frontier > 0 do
+  current_cell = _pop_lowest_rank_in(frontier)
+
+  if current_cell == to_cell then
+   break
+  end
+
+  local new_cost = cost_so_far[current_cell] + move_cost
+
+  for _, next in pairs(current_cell.neighbors) do
+   if (
+    (cell_is_empty(next) or next == to_cell)
+   )
+   and 
+   (
+    cost_so_far[next] == nil or new_cost < cost_so_far[next]
+   ) then
+    cost_so_far[next] = new_cost
+    local priority = new_cost + distance_to_target_cell_heuristic(next, to_cell)
+    add(frontier, {cell=next, rank=priority})
+    came_from[next] = current_cell
+   end
+  end
+ end
+
+ -- reverse the path
+ local next = to_cell
+ local result_path = {}
+ repeat
+  local next_from = came_from[next]
+  result_path[next_from] = next
+  next = next_from
+ until (next == from_cell)
+
+ return result_path, cost_so_far
+end
+-- }
+
 function _init()
  stdinit()
 
@@ -427,8 +516,13 @@ function make_goon()
    g_board:remove(t)
   end,
   draw=function(t)
+   local next_cell, _ = next_move(t.contained_by, g_p1.contained_by)
    spr(37,0,0)
    rect(0,0,8,8,11)
+   if next_cell != nil then
+    local n = vecsub(next_cell, t.contained_by)
+    rectfill(n.x, n.y, n.x + 7, n.y+7, 11)
+   end
   end
  }
 end
