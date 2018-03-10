@@ -309,7 +309,7 @@ function make_player(p)
   y=0,
   p=p,
   obj_type=ge_obj_player,
-  grid_loc=vecmake(),
+  grid_loc=vecmake(1),
   space=sp_world,
   c_objs={},
   update=function(t)
@@ -375,12 +375,16 @@ function vecdrawrect(start_p, end_p, c)
 end
 -- @}
 
+function coordget_cell(x,y)
+ return get_cell(vecmake(x,y))
+end
+
 function get_cell(loc)
  if (
-  loc.x < g_board.grid_dimensions.x and loc.x > -1 and
-  loc.y < g_board.grid_dimensions.y and loc.y > -1
+  loc.x < g_board.grid_dimensions.x+1 and loc.x > 0 and
+  loc.y < g_board.grid_dimensions.y+1 and loc.y > 0
  ) then
-  return g_board.cells[loc.x+ 1][loc.y+ 1]
+  return g_board.cells[loc.x][loc.y]
  end
  return nil
 end
@@ -390,6 +394,7 @@ function make_cell(i, j)
   x = 9*i+2,
   y = 9*j+2,
   contains = nil,
+  grid_loc=vecmake(i,j),
   now_contains=function(t, other)
    if other.contained_by and other.contained_by.contains then
     other.contained_by.contains = nil
@@ -487,13 +492,12 @@ function make_board()
   add(cells, {})
   -- column
   for j=1,BOARD_DIM.y do
-   new_cell = add(cells[i], make_cell(i-1,j-1))
+   new_cell = add(cells[i], make_cell(i,j))
    add(flat_cells, new_cell)
   end
  end
 
-
- return {
+ local board = {
   x=0,
   y=0,
   space=sp_world,
@@ -539,6 +543,26 @@ function make_board()
    drawobjs(t.flat_cells)
   end
  }
+
+ for c in all(board.flat_cells) do
+   c.neighbors = {}
+   local i= c.grid_loc.x
+   local j= c.grid_loc.y
+   if i > 1 then
+    add(c.neighbors,board.cells[i-1][j])
+   end
+   if i < BOARD_DIM.x then
+    add(c.neighbors,board.cells[i+1][j])
+   end
+   if j > 1 then
+    add(c.neighbors,board.cells[i][j-1])
+   end
+   if j < BOARD_DIM.y then
+    add(c.neighbors,board.cells[i][j+1])
+   end
+ end
+ 
+ return board
 end
 
 function game_start()
