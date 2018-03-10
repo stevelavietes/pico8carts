@@ -859,6 +859,10 @@ function vecrand(scale, center, yscale)
  return result
 end
 
+function vecrepr(v)
+ return "("..v.x..", "..v.y..")"
+end
+
 function vecmake(xf, yf)
  xf = xf or 0
 
