@@ -911,6 +911,10 @@ function vecsub(a, b)
  return {x=a.x-b.x, y=a.y-b.y}
 end
 
+function vecabs(v)
+ return vecmake(abs(v.x), abs(v.y))
+end
+
 function vecflr(a)
  return vecmake(flr(a.x), flr(a.y))
 end
