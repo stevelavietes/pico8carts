@@ -19,7 +19,11 @@ __lua__
 -- you get to the exit and see how far you can get, if you can escape!
 
 -- next:
--- two moves per one enemy turn instead of just 1-1
+-- enemies leave corpses, which can be thrown
+-- turn queue instead of using the update loop to manage turns 
+--  (also enemies avoid chairs right now, thats broken)
+-- little bit of juice after moves (maybe little dust puffs?  push_back had something)
+-- smoother camera
 -- more moves than just moving (lunge?  grab?)
 -- enemies can k
 -- kicks should lose momentum, not push indefinitely
@@ -28,6 +32,8 @@ __lua__
 
 
 -- done
+-- turn counter
+-- two moves per one enemy turn instead of just 1-1
 -- turn based movement - for every two moves you make, the enemies make a move
 -- enemies  come at you with A*
 -- bit of optimization on A*
@@ -299,6 +305,7 @@ end
 
 function _init()
  stdinit()
+ g_turn = 1
 
  add_gobjs(
    make_menu(
@@ -426,6 +433,7 @@ function make_player(p)
   grid_loc=vecmake(1),
   space=sp_world,
   c_objs={},
+  actions_remaining=2,
   update=function(t)
    if G_STATE == ge_state_player_input then
     -- move cells
@@ -444,12 +452,19 @@ function make_player(p)
     end
 
     if next_cell.x != 0 or next_cell.y != 0 then
-     G_STATE = ge_state_enemy_turn
+     t.actions_remaining -= 1
     end
+
+    if t.actions_remaining == 0 then
+     G_STATE = ge_state_enemy_turn
+     g_turn += 1
+    end
+
     move_obj_in_dir(t, next_cell)
    else
     -- enemies make one move and then player can input again
     G_STATE = ge_state_player_input
+    t.actions_remaining = 2
    end
 
    updateobjs(t.c_objs)
@@ -458,10 +473,10 @@ function make_player(p)
    -- spr(2, -3, -3)
    spr(5, 0,0)
    -- rect(-3,-3, 3,3, 8)
-   local str = "world: " .. t.x .. ", " .. t.y
-   print(str, -(#str)*2, 12, 8)
-   local str = "grid: " .. t.grid_loc.x .. ", " .. t.grid_loc.y
-   print(str, -(#str)*2, 18, 8)
+   -- local str = "world: " .. t.x .. ", " .. t.y
+   -- print(str, -(#str)*2, 12, 8)
+   -- local str = "grid: " .. t.grid_loc.x .. ", " .. t.grid_loc.y
+   -- print(str, -(#str)*2, 18, 8)
    drawobjs(t.c_objs)
   end,
   attack=function(t, attacker)
@@ -487,9 +502,14 @@ function make_camera()
  }
 end
 
-function vecdrawrect(start_p, end_p, c)
- rect(start_p.x, start_p.y, end_p.x, end_p.y, c)
+function vecdrawrect(start_p, end_p, c, fill)
+ if fill then
+  rectfill(start_p.x, start_p.y, end_p.x, end_p.y, c)
+ else
+  rect(start_p.x, start_p.y, end_p.x, end_p.y, c)
+ end
 end
+
 -- @}
 
 function getcell(x,y)
@@ -698,6 +718,24 @@ function make_board()
  return board
 end
 
+function make_hud()
+ return {
+  x=0,
+  y=0,
+  space=sp_screen_center,
+  draw=function(t)
+   -- vecdrawrect(vecmake(-10,50), vecmake(26, 56), 5, true)
+   rectfill(-10,50, 26, 56, 5)
+   print("actions:"..g_p1.actions_remaining, -9, 51, 7)
+   rect(-11,49, 27, 57, 7)
+
+   rectfill(-10,-50, 26, -56, 5)
+   print("turn:"..g_turn, -9, -55, 7)
+   rect(-11,-49, 27, -57, 7)
+  end
+ }
+end
+
 function game_start()
  g_objs = {
  }
@@ -714,6 +752,8 @@ function game_start()
  
  g_board:spawn_thing(10, make_goon)
  g_board:spawn_thing(40, make_chair)
+
+ g_hud = add_gobjs(make_hud())
 
 --  local c = add_gobjs(make_chair())
 --  getcell(3, 2):now_contains(c)
