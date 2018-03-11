@@ -406,6 +406,8 @@ function interact(obj, target_cell)
  end
 
  local other_obj = target_cell.contains
+
+ add(g_board.cobjs, make_dust(target_cell, true))
  
  -- check to see if a goon is in the target_cell
  other_obj:attack(obj)
@@ -416,6 +418,7 @@ function move_obj_in_dir(obj, dir)
  if dir and (dir.x != 0 or dir.y != 0) then
   next_cell = vecgetcell(vecadd(dir, obj.grid_loc))
   if next_cell then
+   add(g_board.cobjs,make_dust(obj.contained_by))
    interact(obj, next_cell)
    return true
   end
@@ -590,6 +593,49 @@ function make_goon(c)
  }
 end
 
+function make_dust(loc, is_pop)
+ local offsets={}
+ for i=1,3 do
+  add(offsets, {rnd(7), rnd(7)})
+ end
+ return {
+  x=loc.x,
+  y=loc.y,
+  is_pop = is_pop,
+  space=sp_local,
+  start=g_tick,
+  offsets=offsets,
+  showing=#offsets,
+  update=function(t)
+   local e = elapsed(t.start)
+   local alive =10
+   if t.is_pop then
+    alive = 5
+   end
+   if e > alive then
+    del(g_board.cobjs, t)
+   end
+   if e % 3 == 0 then
+    t.showing -= 1
+   end
+  end,
+  draw=function(t)
+   local size = 1
+   local col = 6
+   if t.is_pop then
+    size = 4
+    col = 9
+   end
+   for i=1,#t.offsets do
+    if i <= t.showing then
+     local o = t.offsets[i]
+     rectfill(o[1],o[2],o[1]+size,o[2]+size,col)
+    end
+   end
+  end
+ }
+end
+
 function make_chair(sprnum)
  return {
   x=0,
@@ -664,6 +710,7 @@ function make_board()
   space=sp_world,
   cells=cells,
   flat_cells = flat_cells,
+  cobjs={},
   grid_dimensions = BOARD_DIM,
   -- goes from (0,0)
   grid_dimensions_world = vecmake((BOARD_DIM.x+1)*9+2, (BOARD_DIM.y+1)*9+2),
@@ -675,6 +722,7 @@ function make_board()
    del(g_objs, obj)
   end,
   update=function(t)
+   updateobjs(t.cobjs)
   end,
   random_empty_cell=function(t)
    local next_cell = nil
@@ -707,6 +755,7 @@ function make_board()
    vecdrawrect(vecmake(8), t.grid_dimensions_world, 2)
 
    drawobjs(t.flat_cells)
+   drawobjs(t.cobjs)
   end
  }
 
