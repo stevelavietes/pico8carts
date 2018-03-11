@@ -626,7 +626,8 @@ function make_chair()
    t.kick_distance = 4
   end,
   draw=function(t)
-   spr(10,0,0)
+   -- spr(10,0,0)
+   print("c", 1, 1, 4)
    -- rect(0,0,8,8,11)
 
   end
