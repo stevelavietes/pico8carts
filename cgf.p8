@@ -19,14 +19,19 @@ __lua__
 -- you get to the exit and see how far you can get, if you can escape!
 
 -- next:
--- fix world boundaries
--- enemies  come at you with A*
--- turn based movement - for every two moves you make, the enemies make a move
+-- two moves per one enemy turn instead of just 1-1
+-- more moves than just moving (lunge?  grab?)
 -- enemies can k
 -- kicks should lose momentum, not push indefinitely
+-- better game over screen
+-- more enemies, progression
 
 
 -- done
+-- turn based movement - for every two moves you make, the enemies make a move
+-- enemies  come at you with A*
+-- bit of optimization on A*
+-- fix world boundaries
 -- spawn furniture
 -- you can attack the goons to make them disapear
 -- goons randomly spawned
@@ -378,9 +383,9 @@ end
 -- @}
 
 -- enum
-G_STATE = ge_state_playing
-ge_state_playing = 1
-ge_state_animating = 2
+G_STATE = ge_state_enemy_turn
+ge_state_player_input = 1
+ge_state_enemy_turn = 2
 
 ge_obj_player = 1
 ge_obj_goon = 2
@@ -422,30 +427,30 @@ function make_player(p)
   space=sp_world,
   c_objs={},
   update=function(t)
-   -- move cells
-   local m_x = 0
-   local m_y = 0
-   local next_cell = vecmake()
-   if btnn(0, t.p) then
-    next_cell.x = -1
-    -- m_x =-1
-   end 
-   if btnn(1, t.p) then
-    next_cell.x = 1
-    -- m_x = 1
-   end
-   if btnn(2, t.p) then
-    next_cell.y = -1
-    -- m_y = -1
-   end
-   if btnn(3, t.p) then
-    next_cell.y = 1
-    -- m_y = 1
-   end
-   -- t.x += m_x
-   -- t.y += m_y
+   if G_STATE == ge_state_player_input then
+    -- move cells
+    local next_cell = vecmake()
+    if btnn(0, t.p) then
+     next_cell.x = -1
+    end 
+    if btnn(1, t.p) then
+     next_cell.x = 1
+    end
+    if btnn(2, t.p) then
+     next_cell.y = -1
+    end
+    if btnn(3, t.p) then
+     next_cell.y = 1
+    end
 
-   move_obj_in_dir(t, next_cell)
+    if next_cell.x != 0 or next_cell.y != 0 then
+     G_STATE = ge_state_enemy_turn
+    end
+    move_obj_in_dir(t, next_cell)
+   else
+    -- enemies make one move and then player can input again
+    G_STATE = ge_state_player_input
+   end
 
    updateobjs(t.c_objs)
   end,
@@ -458,7 +463,10 @@ function make_player(p)
    local str = "grid: " .. t.grid_loc.x .. ", " .. t.grid_loc.y
    print(str, -(#str)*2, 18, 8)
    drawobjs(t.c_objs)
-  end
+  end,
+  attack=function(t, attacker)
+   _init()
+  end,
  }
 
  vecgetcell(thing.grid_loc):now_contains(thing)
@@ -535,9 +543,14 @@ function make_goon(c)
    t.contained_by:now_contains(attacker)
    g_board:remove(t)
   end,
+  update=function(t)
+   if G_STATE == ge_state_enemy_turn then
+    local next_cell = next_move(t.contained_by, g_p1.contained_by)
+    move_obj_in_dir(t, vecsub(next_cell.grid_loc, t.grid_loc))
+   end
+  end,
   draw=function(t)
    -- local next_cell = next_move(t.contained_by, g_p1.contained_by)
-   local path = compute_path(t.contained_by, g_p1.contained_by)
 
    spr(37,0,0)
    rect(0,0,8,8,11)
@@ -696,21 +709,21 @@ function game_start()
 --  local g = add_gobjs(make_goon(11))
 --  getcell(7,7):now_contains(g)
 
- local g = add_gobjs(make_goon(12))
- getcell(BOARD_DIM.x, BOARD_DIM.y):now_contains(g)
+--  local g = add_gobjs(make_goon(12))
+--  getcell(BOARD_DIM.x, BOARD_DIM.y):now_contains(g)
  
---  g_board:spawn_thing(10, make_goon)
---  g_board:spawn_thing(40, make_chair)
+ g_board:spawn_thing(10, make_goon)
+ g_board:spawn_thing(40, make_chair)
 
- local c = add_gobjs(make_chair())
- getcell(3, 2):now_contains(c)
-
- local c = add_gobjs(make_chair())
- getcell(4, 4):now_contains(c)
-
- local c = add_gobjs(make_chair())
- getcell(7, 7):now_contains(c)
-
+--  local c = add_gobjs(make_chair())
+--  getcell(3, 2):now_contains(c)
+--
+--  local c = add_gobjs(make_chair())
+--  getcell(4, 4):now_contains(c)
+--
+--  local c = add_gobjs(make_chair())
+--  getcell(7, 7):now_contains(c)
+--
  add_gobjs(make_debugmsg())
 
 
