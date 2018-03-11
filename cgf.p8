@@ -559,6 +559,10 @@ function make_goon(c)
     return
    end
 
+   -- and leave behind corpse...
+   local new_corpse = g_board:spawn_thing(make_chair(38), t.contained_by)
+   new_corpse:attack(attacker)
+
    -- if attacked, enemy is killed
    t.contained_by:now_contains(attacker)
    g_board:remove(t)
@@ -586,13 +590,14 @@ function make_goon(c)
  }
 end
 
-function make_chair()
+function make_chair(sprnum)
  return {
   x=0,
   y=0,
   grid_loc=vecmake(),
   obj_type=ge_obj_chair,
   space=sp_world,
+  sprnum=sprnum,
 
   -- for being kicked
   target_cell=nil,
@@ -627,9 +632,11 @@ function make_chair()
   end,
   draw=function(t)
    -- spr(10,0,0)
-   print("c", 1, 1, 4)
-   -- rect(0,0,8,8,11)
-
+   if not t.sprnum then
+    print("c", 1, 1, 4)
+   else
+    spr(t.sprnum,0,0)
+   end
   end
  }
 end
@@ -661,7 +668,7 @@ function make_board()
   -- goes from (0,0)
   grid_dimensions_world = vecmake((BOARD_DIM.x+1)*9+2, (BOARD_DIM.y+1)*9+2),
   remove=function(t, obj)
-   if obj.contained_by then
+   if obj.contained_by and obj.contained_by.contains == t then
     obj.contained_by.contains = nil
     obj.contained_by = nil
    end
@@ -679,7 +686,12 @@ function make_board()
    until (next_cell.contains == nil)
    return next_cell
   end,
-  spawn_thing=function(t, num_to_spawn, cons)
+  spawn_thing=function(t, new_thing, cell)
+   cell:now_contains(new_thing)
+   add_gobjs(new_thing)
+   return new_thing
+  end,
+  spawn_things_randomly=function(t, num_to_spawn, cons)
    for i=1,num_to_spawn do
     -- pick a location
     local cell = t:random_empty_cell()
@@ -751,8 +763,8 @@ function game_start()
 --  local g = add_gobjs(make_goon(12))
 --  getcell(BOARD_DIM.x, BOARD_DIM.y):now_contains(g)
  
- g_board:spawn_thing(10, make_goon)
- g_board:spawn_thing(40, make_chair)
+ g_board:spawn_things_randomly(10, make_goon)
+ g_board:spawn_things_randomly(40, make_chair)
 
  g_hud = add_gobjs(make_hud())
 
