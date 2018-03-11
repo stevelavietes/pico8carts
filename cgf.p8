@@ -186,10 +186,10 @@ end
 
 -- {
 function cell_is_empty(cell)
- if not cell then
-  return true
- end
-
+--  if not cell then
+--   return true
+--  end
+--
  return cell.contains == nil
 end
 -- }
@@ -197,33 +197,36 @@ end
 -- { A* pathfinding
 function _pop_lowest_rank_in(some_list)
  local lowest = some_list[1]
- local lowest_rank = lowest.rank
+ local lowest_rank = lowest[2]
 
- for i=2,#some_list do
-  if some_list[i].rank < lowest_rank then
-   lowest = some_list[i]
-   lowest_rank = lowest.rank
+ for _, v in pairs(some_list) do
+  if v[2] < lowest_rank then
+   lowest = v
+   lowest_rank = lowest[2]
   end
  end
 
  del(some_list, lowest)
 
- return lowest.cell
+ return lowest[1]
 end
 
-function distance_to_target_cell_heuristic(from_cell, to_cell)
- local d = vecabs(vecsub(from_cell.grid_loc, to_cell.grid_loc))
+function distance_to_target_cell_heuristic(from, to)
+--  local d = vecabs(vecsub(from_cell.grid_loc, to_cell.grid_loc))
 
- return (d.x+d.y)
+--  return (d.x+d.y)
+ return (
+  abs(to.x - from.x) +
+  abs(to.y - from.y)
+ )
 end
 
 function next_move(from_cell, to_cell)
- local path_from, _ = compute_path(from_cell, to_cell)
- return path_from[from_cell]
+ return compute_path(from_cell, to_cell)[from_cell]
 end
 
 function compute_path(from_cell, to_cell)
- local frontier = {{cell=from_cell, rank=0}}
+ local frontier = {{from_cell, 0}}
 
  local came_from = {}
  came_from[from_cell] = nil
@@ -231,31 +234,47 @@ function compute_path(from_cell, to_cell)
  local cost_so_far = {}
  cost_so_far[from_cell] = 0
 
- local move_cost = 1
+--  local move_cost = 1
 
- local current_cell = nil
+--  local current_cell = nil
 
- while  #frontier > 0 do
-  current_cell = _pop_lowest_rank_in(frontier)
+ while #frontier > 0 do
+  local current_cell = _pop_lowest_rank_in(frontier)
 
   if current_cell == to_cell then
    break
   end
 
-  local new_cost = cost_so_far[current_cell] + move_cost
+  local new_cost = cost_so_far[current_cell] + 1
+
+  -- XXX:  in order to opimize this more, I think I'd have to switch to using
+  --       a single int (the index of the cell in the flat_cells list) to 
+  --       refer to the cell, rather than adding the cell object itself to
+  --       things.  that would make all the indices ints and all the cell 
+  --       comparisons ints
+  --       its turn based, so this should be good enough for now.
 
   for _, next in pairs(current_cell.neighbors) do
    if (
-    (cell_is_empty(next) or next == to_cell)
-   )
-   and 
-   (
     cost_so_far[next] == nil or new_cost < cost_so_far[next]
-   ) then
-    cost_so_far[next] = new_cost
-    local priority = new_cost + distance_to_target_cell_heuristic(next, to_cell)
-    add(frontier, {cell=next, rank=priority})
+   )
+   and
+   (
+    next.contains == nil or next == to_cell
+   )
+    then
     came_from[next] = current_cell
+    cost_so_far[next] = new_cost
+    add(
+     frontier, 
+     {
+      next,
+      new_cost + distance_to_target_cell_heuristic(
+       next.grid_loc,
+       to_cell.grid_loc
+      )
+     }
+    )
    end
   end
  end
@@ -269,7 +288,7 @@ function compute_path(from_cell, to_cell)
   next = next_from
  until (next == from_cell)
 
- return result_path, cost_so_far
+ return result_path
 end
 -- }
 
@@ -500,7 +519,7 @@ function make_cell(i, j)
  }
 end
 
-function make_goon()
+function make_goon(c)
  return {
   x=0,
   y=0,
@@ -517,13 +536,19 @@ function make_goon()
    g_board:remove(t)
   end,
   draw=function(t)
-   local next_cell, _ = next_move(t.contained_by, g_p1.contained_by)
+   -- local next_cell = next_move(t.contained_by, g_p1.contained_by)
+   local path = compute_path(t.contained_by, g_p1.contained_by)
+
    spr(37,0,0)
    rect(0,0,8,8,11)
-   if next_cell != nil then
-    local n = vecsub(next_cell, t.contained_by)
-    rectfill(n.x, n.y, n.x + 7, n.y+7, 11)
-   end
+   -- if next_cell != nil then
+    -- local n = vecsub(next_cell, t.contained_by)
+    -- rectfill(n.x, n.y, n.x + 7, n.y+7, 11)
+    -- for _, next_cell in pairs(path) do
+    --  local n = vecsub(next_cell, t.contained_by)
+    --  rectfill(n.x, n.y, n.x + 7, n.y+7, c)
+    -- end
+   -- end
   end
  }
 end
@@ -600,7 +625,7 @@ function make_board()
   flat_cells = flat_cells,
   grid_dimensions = BOARD_DIM,
   -- goes from (0,0)
-  grid_dimensions_world = vecmake(BOARD_DIM.x*9+2, BOARD_DIM.y*9+2),
+  grid_dimensions_world = vecmake((BOARD_DIM.x+1)*9+2, (BOARD_DIM.y+1)*9+2),
   remove=function(t, obj)
    if obj.contained_by then
     obj.contained_by.contains = nil
@@ -633,7 +658,7 @@ function make_board()
   end,
   draw=function(t)
    -- draw the border
-   vecdrawrect(null_v, t.grid_dimensions_world, 2)
+   vecdrawrect(vecmake(8), t.grid_dimensions_world, 2)
 
    drawobjs(t.flat_cells)
   end
@@ -662,15 +687,31 @@ end
 
 function game_start()
  g_objs = {
-  make_debugmsg(),
  }
 
  g_board = add_gobjs(make_board())
  g_cam= add_gobjs(make_camera())
  g_p1 = add_gobjs(make_player(0))
  -- make some goons and some furniture
- g_board:spawn_thing(10, make_goon)
- g_board:spawn_thing(40, make_chair)
+--  local g = add_gobjs(make_goon(11))
+--  getcell(7,7):now_contains(g)
+
+ local g = add_gobjs(make_goon(12))
+ getcell(BOARD_DIM.x, BOARD_DIM.y):now_contains(g)
+ 
+--  g_board:spawn_thing(10, make_goon)
+--  g_board:spawn_thing(40, make_chair)
+
+ local c = add_gobjs(make_chair())
+ getcell(3, 2):now_contains(c)
+
+ local c = add_gobjs(make_chair())
+ getcell(4, 4):now_contains(c)
+
+ local c = add_gobjs(make_chair())
+ getcell(7, 7):now_contains(c)
+
+ add_gobjs(make_debugmsg())
 
 
 
