@@ -516,13 +516,74 @@ function make_cloud(origin, num_bubbles, vel)
  return new_cloud
 end
 
+function make_meteor()
+ return {
+  x=0,
+  y=0,
+  space=sp_world,
+  draw=function(t)
+
+   local p1 = vecmake( -10, -10)
+   local p2 = vecmake( 20, 10)
+
+   -- 
+   vecdrawpt(p1, 11)
+   vecdrawpt(p2, 12)
+
+   line(p1.x, p1.y, p2.x, p2.y, 9)
+
+   local dp1p2 = vecsub(p1, p2)
+
+   local cent = vecadd(vecscale(dp1p2, 0.5), p2)
+   vecdrawpt(cent, 13)
+
+   local radius = vecmag(dp1p2)
+
+   local mid_to_cent = sin(1/6)*radius
+
+   local cent_pt = vecadd(cent, vecscale(vecnormalized(vecperp(dp1p2)), mid_to_cent))
+
+
+   vecdraw(vecnormalized(vecperp(dp1p2)), 14, mid_to_cent, cent)
+
+   vecdrawpt(cent_pt, 15)
+
+   circ(cent_pt.x, cent_pt.y, radius, 6)
+
+   -- parameters
+   -- local center = vecmake(0, -150)
+   -- local val = sin((elapsed(time())%60)/60)
+   -- local radius = 200
+   -- circ(center.x,center.y,radius, 11)
+   --
+   -- local minpix = vecsub(g_cam, vecmake(64))
+   -- local maxpix = vecadd(g_cam, vecmake(64))
+   --
+   -- local ang = 
+   --
+   -- -- find the intersection with the left side of the screen
+   -- local xmin = acos((minpix.x - center.x)/radius)
+   -- local xmax = acos((maxpix.x - center.x)/radius)
+   --
+   -- local val = (xmax-xmin)*value+xmin
+   --
+   -- local x = radius * cos(val) + center.x
+   -- local y = center.y + radius * sin(val)
+   --
+   --
+   -- circfill(x, y, 11, 12)
+  end
+ }
+end
+
 function game_start()
  g_objs = {
   -- make_mouse_ptr(),
   -- make_grid(sp_world, 128),
   make_starfield(192,64,20),
+  make_meteor(),
   -- make_cloud(vecmake(0), 4, vecmake(0.01, 0)),
-  make_tree(vecmake()),
+  -- make_tree(vecmake()),
   -- make_grid(sp_screen_center, 128),
   -- make_particle_manager(),
   make_debugmsg(),
@@ -799,12 +860,24 @@ function loop_over(numframes)
 end
 
 -- @{ vector library
+function vecdrawpt(v, c)
+ rectfill(v.x-1, v.y-1, v.x+1, v.y+1, c)
+end
+
+function vecdrawrectfill(v1, v2, c)
+ rectfill(v1.x, v1.y, v2.x, v2.y, c)
+end
+
 function vecdraw(v, c, scale, o)
  o = o or null_v
 
  local end_point = vecadd(o, vecscale(v, scale or 30))
  line(o.x, o.y, end_point.x, end_point.y, c)
  return
+end
+
+function vecatan_noflr(v)
+ return atan2(v.x, v.y)
 end
 
 function rnd_centered(max_val)
