@@ -190,6 +190,11 @@ function make_title()
 end
 
 function _init()
+ WORLD_DIM = {
+  vecmake(-110, -110),
+  vecmake(180, 180)
+ }
+
  stdinit()
 
  add_gobjs(make_title())
@@ -302,10 +307,10 @@ function make_player(p)
    end
    t.x += m_x
    t.y += m_y
-   t.x = max(t.x, -110)
-   t.x = min(t.x, 180)
-   t.y = max(t.y, -110)
-   t.y = min(t.y, 180)
+   t.x = max(t.x, WORLD_DIM[1].x)
+   t.x = min(t.x, WORLD_DIM[2].x)
+   t.y = max(t.y, WORLD_DIM[1].y)
+   t.y = min(t.y, WORLD_DIM[2].y)
    updateobjs(t.c_objs)
   end,
   draw=function(t)
@@ -527,53 +532,20 @@ function make_meteor()
    local p2 = vecmake( 20, 10)
 
    -- 
-   vecdrawpt(p1, 11)
-   vecdrawpt(p2, 12)
+   -- vecdrawpt(p1, 11)
+   -- vecdrawpt(p2, 12)
+   -- vecdrawline(p1, p2, 9)
 
-   line(p1.x, p1.y, p2.x, p2.y, 9)
+   local val = ef_out_quad((g_tick % 60)/60)
 
-   local dp1p2 = vecsub(p1, p2)
-
-   local cent = vecadd(vecscale(dp1p2, 0.5), p2)
-   vecdrawpt(cent, 13)
-
-   local radius = vecmag(dp1p2)
-
-   local mid_to_cent = sin(1/6)*radius
-
-   local cent_pt = vecadd(cent, vecscale(vecnormalized(vecperp(dp1p2)), mid_to_cent))
-
-
-   vecdraw(vecnormalized(vecperp(dp1p2)), 14, mid_to_cent, cent)
-
-   vecdrawpt(cent_pt, 15)
-
-   circ(cent_pt.x, cent_pt.y, radius, 6)
-
-   -- parameters
-   -- local center = vecmake(0, -150)
-   -- local val = sin((elapsed(time())%60)/60)
-   -- local radius = 200
-   -- circ(center.x,center.y,radius, 11)
-   --
-   -- local minpix = vecsub(g_cam, vecmake(64))
-   -- local maxpix = vecadd(g_cam, vecmake(64))
-   --
-   -- local ang = 
-   --
-   -- -- find the intersection with the left side of the screen
-   -- local xmin = acos((minpix.x - center.x)/radius)
-   -- local xmax = acos((maxpix.x - center.x)/radius)
-   --
-   -- local val = (xmax-xmin)*value+xmin
-   --
-   -- local x = radius * cos(val) + center.x
-   -- local y = center.y + radius * sin(val)
-   --
-   --
-   -- circfill(x, y, 11, 12)
+   local p_now = veclerp(p1, p2, val)
+   vecdrawpt(p_now, 10)
   end
  }
+end
+
+function ef_out_quad(amount)
+ return -1 * amount*(amount-2);
 end
 
 function game_start()
@@ -862,6 +834,10 @@ end
 -- @{ vector library
 function vecdrawpt(v, c)
  rectfill(v.x-1, v.y-1, v.x+1, v.y+1, c)
+end
+
+function vecdrawline(p1, p2, c)
+ line(p1.x, p1.y, p2.x, p2.y, c)
 end
 
 function vecdrawrectfill(v1, v2, c)
