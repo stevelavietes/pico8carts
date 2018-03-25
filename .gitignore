@@ -1,6 +1,8 @@
 # backup files
 *.bak
 *.png
+*_fmt.p8
+*bak
 
 # random OS garbage
 .DS_Store
