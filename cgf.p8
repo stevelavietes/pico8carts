@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 15
+version 16
 __lua__
 
 -- Copa Globale Football '83
@@ -307,6 +307,9 @@ function _init()
  stdinit()
  g_turn = 1
 
+ -- for iteration, go straight to game state
+ game_start()
+ --[[
  add_gobjs(
    make_menu(
    {
@@ -324,6 +327,7 @@ function _init()
    end
   )
  )
+ --]]
 end
 
 function _update()
