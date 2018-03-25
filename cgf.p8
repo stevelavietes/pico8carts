@@ -347,47 +347,6 @@ function add_gobjs(thing)
 end
 -- @}
 
--- @{ mouse support
-poke(0x5F2D, 1)
-
-function make_mouse_ptr()
- return {
-  x=0,
-  y=0,
-  button_down={false,false,false},
-  space=sp_screen_native,
-  update=function(t)
-   -- if you have the vector functions
-   -- vecset(t, makev(stat(32), stat(33)))
-   t.x = stat(32)
-   t.y = stat(33)
-
-   local mbtn=stat(34)
-   for i,mask in pairs({1,2,4}) do
-    t.button_down[i] = band(mbtn, mask) == mask and true or false
-   end
-  end,
-  draw=function(t)
-   -- chang the color if you have one of the buttons down
-   if t.button_down[1] then
-    pal(3, 11)
-    add_particle(0, 0, 0, 1, 60, 11, 1)
-   end
-   if t.button_down[2] then
-    pal(3, 12)
-   end
-   if t.button_down[3] then
-    pal(3, 10)
-   end
-   spr(3, t.x-3, t.y-3)
-   if t.button_down[1] or t.button_down[2] or t.button_down[3] then
-    pal(3,3)
-   end
-   print("("..t.x..","..t.y..")", 1, 13)
-  end
- }
-end
--- @}
 
 -- enum
 G_STATE = ge_state_enemy_turn
