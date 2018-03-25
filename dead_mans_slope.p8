@@ -1325,6 +1325,45 @@ tracks = {
    -- end
    {vecmake(0,   220), ge_trackitem_end, 16},
   }
+ },
+ { 
+  name = "sunnyside",
+  course = {
+   -- start
+   {vecmake(), ge_trackitem_start, 32},
+
+   -- opening straightaway with ice
+   {vecmake(-50, 90), ge_trackitem_right},
+   {vecmake(50, 90)}, --l 
+   {vecmake(-10, 40), ge_trackitem_ice, 12, 1},
+
+   {vecmake(-50, 90)}, --l 
+
+   -- big turn
+   {vecmake(200, 80)},
+   {vecmake(90, 90)}, --l
+   {vecmake(-60, 90)}, 
+   {vecmake(-0, 90)}, --l
+
+   {vecmake(0, 90), ge_trackitem_right},
+
+   -- sharp little chicane
+   {vecmake(0, 60)},
+   {vecmake(0, 60)},
+
+   -- long straightaway with holes across
+   {vecmake(-30, 40), ge_trackitem_hole, 12, 1},
+   {vecmake(-60, 120), ge_trackitem_hole, 12, 4},
+
+   {vecmake(0, 180)},
+
+   -- slalom-y holes you can jump if you're good
+   {vecmake(-30, 40), ge_trackitem_hole, 12, 1},
+   {vecmake(-60, 120), ge_trackitem_hole, 12, 4},
+
+   -- end
+   {vecmake(0,   220), ge_trackitem_end, 16},
+  }
  }
 }
 track_names = {}
