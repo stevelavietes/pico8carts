@@ -536,10 +536,21 @@ function make_meteor()
    -- vecdrawpt(p2, 12)
    -- vecdrawline(p1, p2, 9)
 
-   local val = ef_out_quad((g_tick % 60)/60)
+   local tval = (g_tick % 60)/60
+   local val = ef_out_quad(tval)
 
    local p_now = veclerp(p1, p2, val)
    vecdrawpt(p_now, 10)
+
+   local d_val_dt = -2 * tval
+
+   local tval_last = -d_val_dt
+   local p_last = veclerp(p1, p2, tval_last)
+   vecdrawpt(p_last, 11)
+
+
+
+   -- tail
   end
  }
 end
