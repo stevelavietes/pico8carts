@@ -27,7 +27,8 @@ directory of your clone.
 * [Picotris Attack] (https://www.lexaloffle.com/bbs/?tid=2925)
 * [Pentamino] (https://www.lexaloffle.com/bbs/?tid=28815)
 * [Maze Burger] (https://www.lexaloffle.com/bbs/?tid=27953)
-* [![Dead Man's Slope](https://www.lexaloffle.com/bbs/thumbs/pico46800.png)](https://www.lexaloffle.com/bbs/?tid=30307)
+* Dead Man's Slope:
+    * [![Dead Man's Slope](https://www.lexaloffle.com/bbs/thumbs/pico46800.png)](https://www.lexaloffle.com/bbs/?tid=30307)
 * [Pushback] (https://www.lexaloffle.com/bbs/?tid=29285)
 
 ## Utility Carts
