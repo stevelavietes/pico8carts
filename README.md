@@ -18,7 +18,7 @@ directory of your clone.
 
 # Pico8
 
-[Pico8] (http://www.lexaloffle.com/pico-8.php)
+Pico8: [![Pico8](https://www.lexaloffle.com/gfx/lexaloffle-pico8.png)](http://www.lexaloffle.com/pico-8.php)
 
 # Published Carts
 
