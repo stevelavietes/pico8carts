@@ -28,17 +28,11 @@ Click the thumbnail to play the games for free on the Pico8 BBS!
 
 |Picotris Attack|Pentomino|Maze Burger|
 |-----|----|----|
-|    * [![Picotris Attack](https://www.lexaloffle.com/bbs/thumbs/pico37969.png)](https://www.lexaloffle.com/bbs/?tid=2925)
-    * [source](https://github.com/stevelavietes/pico8carts/blob/master/picotrisattack.p8)| [![Pentomino](https://www.lexaloffle.com/bbs/thumbs/pico37638.png)](https://www.lexaloffle.com/bbs/?tid=28815)
-    * [source](https://github.com/stevelavietes/pico8carts/blob/master/pentomino.p8) |
-    * [![Maze Burger](https://www.lexaloffle.com/bbs/thumbs/pico38005.png)](https://www.lexaloffle.com/bbs/?tid=27953)
-    * [source](https://github.com/stevelavietes/pico8carts/blob/master/mazeburger.p8) |
+|[![Picotris Attack](https://www.lexaloffle.com/bbs/thumbs/pico37969.png)](https://www.lexaloffle.com/bbs/?tid=2925)<br>[source](https://github.com/stevelavietes/pico8carts/blob/master/picotrisattack.p8)|[![Pentomino](https://www.lexaloffle.com/bbs/thumbs/pico37638.png)](https://www.lexaloffle.com/bbs/?tid=28815)<br>[source](https://github.com/stevelavietes/pico8carts/blob/master/pentomino.p8)|[![Maze Burger](https://www.lexaloffle.com/bbs/thumbs/pico38005.png)](https://www.lexaloffle.com/bbs/?tid=27953)<br>[source](https://github.com/stevelavietes/pico8carts/blob/master/mazeburger.p8)|
 
 |Pushback|Dead Man's Slope|
 |----|----|
-|   [![Pushback](https://www.lexaloffle.com/bbs/thumbs/pico40479.png)](https://www.lexaloffle.com/bbs/?tid=29285)
-    * [source](https://github.com/stevelavietes/pico8carts/blob/master/pushback.p8)|* [![Dead Man's Slope](https://www.lexaloffle.com/bbs/thumbs/pico46800.png)](https://www.lexaloffle.com/bbs/?tid=30307)
-    * [source](https://github.com/stevelavietes/pico8carts/blob/master/dead_mans_slope.p8)|
+|[![Pushback](https://www.lexaloffle.com/bbs/thumbs/pico40479.png)](https://www.lexaloffle.com/bbs/?tid=29285)<br>[source](https://github.com/stevelavietes/pico8carts/blob/master/pushback.p8)|[![Dead Man's Slope](https://www.lexaloffle.com/bbs/thumbs/pico46800.png)](https://www.lexaloffle.com/bbs/?tid=30307)<br>[source](https://github.com/stevelavietes/pico8carts/blob/master/dead_mans_slope.p8)|
 
 ## Utility Carts
 
