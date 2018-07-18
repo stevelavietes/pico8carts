@@ -29,8 +29,8 @@ Click the thumbnail to play the games for free on the Pico8 BBS!
 * Picotris Attack:
     * [![Picotris Attack](https://www.lexaloffle.com/bbs/thumbs/pico37969.png)](https://www.lexaloffle.com/bbs/?tid=2925)
     * [source](https://github.com/stevelavietes/pico8carts/blob/master/picotrisattack.p8)
-* Pentamino:
-    * [![Pentamino](https://www.lexaloffle.com/bbs/thumbs/pico37638.png)](https://www.lexaloffle.com/bbs/?tid=28815)
+* Pentomino:
+    * [![Pentomino](https://www.lexaloffle.com/bbs/thumbs/pico37638.png)](https://www.lexaloffle.com/bbs/?tid=28815)
     * [source](https://github.com/stevelavietes/pico8carts/blob/master/pentomino.p8)
 * Maze Burger:
     * [![Maze Burger](https://www.lexaloffle.com/bbs/thumbs/pico38005.png)](https://www.lexaloffle.com/bbs/?tid=27953)
