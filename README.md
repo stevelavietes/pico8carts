@@ -22,6 +22,8 @@ Pico8: [![Pico8](https://www.lexaloffle.com/gfx/lexaloffle-pico8.png)](http://ww
 
 # Published Carts
 
+Click the thumbnail to play the games for free on the Pico8 BBS!
+
 ## Games
 
 * Picotris Attack:
