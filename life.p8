@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
---almeet 2019 intro
+--al meetup 2019 intro tweetcart
 --by stephan_gfx
 d=8192z=11v=128m=memcpy
 for i=0,v,8 do
