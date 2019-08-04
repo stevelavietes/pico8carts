@@ -29,6 +29,9 @@ end
 function _update60()
  g_t += 1
  
+ if btnp(0, 1) then
+  raiseboard(g_b)
+ end
  updatecursor(g_cur)
 
  
@@ -352,8 +355,40 @@ function updatecursorpos(c)
  c.y = y
 end
 
+_colors = {
+  0, 0, 0, 0, 0, 0, 0,
+  3, 8, 12}
+
+function getcol()
+ return _colors[
+   flr(rnd(#_colors)) + 1]
+ 
+end
+
 function raiseboard(b)
  --todo
+ for i = 1, #b do
+  local c = b[i]
+  
+  del(c, c[1])
+  local e = {0,0,0,0}
+  
+  if i > 1 and i < #b then
+   e[2] = getcol()
+   
+   if c[#c][1] == 0 then
+    c[#c][1] = getcol()
+   end
+  
+   
+  end
+  
+  
+  add(c, e)
+  
+  c[1][1] = 0
+  c[1][2] = 0
+ end
 end
 __gfx__
 00000000000110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
