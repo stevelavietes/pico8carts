@@ -81,6 +81,9 @@ function board_new()
  b.nextlinerandomseed =
    rnd(32767)
  
+ b.x = 8
+ b.y = 32
+ 
 
  return b
 
@@ -600,8 +603,9 @@ function block_draw(b, x, y, ry,
 end
 
 
-function board_draw(b, x, y)
- 
+function board_draw(b)
+ local x = b.x
+ local y = b.y
  rectfill(x - 2, y - 1,
    x + 1 + 6 * 8,
    y + 1 + 12 * 8, 13)
@@ -709,18 +713,21 @@ function _init()
  prevcstate = 0
  squashframe = 0
  squashcount = 0
- 
- row = {}
 
- for i = 1, 6 do
-  row[i] = block_new()
-  row[i].btype =
-    flr(rnd(6)) + 1
- end
+ boards = {board_new(),
+   board_new()}
+
+ boards[1].x = 4
+ boards[2].x = 76
  
- boards = {board_new()}
- board_fill(boards[1], 5)
- 
+ boards[2].nextlinerandomseed =
+   boards[1].nextlinerandomseed
+ local s = rnd(31767)
+ srand(s)
+ board_fill(boards[1], 6)
+ srand(s)
+ board_fill(boards[2], 6)
+
 end
 
 function _press(
@@ -783,7 +790,7 @@ function _draw()
  palt(0, false)
  
  for i = 1, #boards do
-	 board_draw(boards[i], 8, 32)
+	 board_draw(boards[i])
 	end
 	
  palt(0, true)
