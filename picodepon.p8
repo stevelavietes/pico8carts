@@ -5,6 +5,8 @@ __lua__
 bounceframecount = 10
 coyotehangtime = 12
 manualraiserepeatframes = 5
+squashholdframes = 3
+
 
 bs_idle = 0
 bs_matching = 1
@@ -21,6 +23,10 @@ blocktileidxs = {
 bounceframes = {
  0, 3, 3, 3,
  4, 4, 4, 4, 2, 2, 2, 0
+}
+
+squashframes = {
+ 2, 0, 3, 4, 3, 0
 }
 
 function block_new()
@@ -561,7 +567,8 @@ function board_step(b)
  
 end
 
-function block_draw(b, x, y, ry)
+function block_draw(b, x, y, ry,
+  squashed)
  if b.btype == 0
  		or b.bstate == bs_swapping
  		then
@@ -576,8 +583,11 @@ function block_draw(b, x, y, ry)
    idx += 1
   elseif b.count > 0 then
    idx += bounceframes[b.count]
-  else
+  elseif squashed then
   	-- todo column squash
+  	idx = idx + squashframes[
+  	  squashframe + 1]
+  	
   end
   
   spr(idx, x, y)
@@ -605,6 +615,15 @@ function board_draw(b, x, y)
    y + 1 + 12 * 8, 7)
    
  
+ local r1 = board_getrow(b, 1)
+ local r2 = board_getrow(b, 2)
+ local squashed = {}
+ for i = 1, 6 do
+  squashed[i] = (
+    r1[i].btype > 0 or
+      r2[i].btype > 0)
+ end
+ 
  y -= b.raiseoffset
 	local yy = y
 	
@@ -616,7 +635,8 @@ function board_draw(b, x, y)
 	 for tx = 1, 6 do
 	  local bk = row[tx]
 	  
-	  block_draw(bk, xx, yy, ty)
+	  block_draw(bk, xx, yy, ty,
+	    squashed[tx])
 	  
 	  xx += 8
 	 end
@@ -687,6 +707,8 @@ function _init()
  pframe = 1
  cstate = 0
  prevcstate = 0
+ squashframe = 0
+ squashcount = 0
  
  row = {}
 
@@ -740,6 +762,14 @@ function _update60()
 	
 	prevcstate = cstate
 	cstate = btn()
+	
+	squashcount =
+	  (squashcount + 1) % 3
+	
+	if squashcount == 0 then
+	 squashframe =
+	   (squashframe + 1) % 6
+	end
 	
 	for i = 1, #boards do
 	 board_step(boards[i])
