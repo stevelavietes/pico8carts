@@ -4,6 +4,7 @@ __lua__
 
 bounceframecount = 10
 coyotehangtime = 12
+manualraiserepeatframes = 5
 
 bs_idle = 0
 bs_matching = 1
@@ -14,7 +15,7 @@ bs_garbage = 5
 bs_garbagematching = 6
 
 blocktileidxs = {
-  1, 17, 33, 49, 8, 24
+  1, 17, 33, 49, 8, 24, 40
 }
 
 bounceframes = {
@@ -69,7 +70,12 @@ function board_new()
  
  b.rowstart = 0
  b.raiseoffset = 0
+ b.manualraise = 0
+
+ b.nextlinerandomseed =
+   rnd(32767)
  
+
  return b
 
 end
@@ -303,25 +309,109 @@ function board_cursinput(b)
 end
 
 
+
+function board_raise(b)
+	local toprow =
+	  board_getrow(b, 1)
+
+ for i = 1, 6 do
+  if toprow[i].btype > 0 then
+   b.manualraise = 0
+   return
+  end
+ end
+
+ b.raiseoffset += 1
+ 
+ if b.raiseoffset == 8 then
+  b.raiseoffset = 0
+  if b.cursy > 0 then
+   b.cursy -= 1
+  end
+ 
+  b.rowstart =
+    (b.rowstart + 1) % 13
+  
+  b.nextlinerandomseed += 1
+  srand(b.nextlinerandomseed)
+  
+  local botrow =
+    board_getrow(b, 13)
+  
+  local runlen = 0
+  local lasttype = 255
+  for i = 1, 6 do
+   local t = flr(
+     rnd(b.blocktypecount))
+   
+   if t == lasttype then
+    runlen += 1
+    if runlen > 2 then
+     t = t + flr(rnd(
+       b.blocktypecount - 1)
+         ) + 1
+     t = t % b.blocktypecount
+     runlen = 1
+    end
+   else
+    runlen = 1
+   end
+   
+   if rnd(128) < 8 then
+    t = 6
+   end 
+   
+   botrow[i].count = 0
+   botrow[i].chain = 0
+   botrow[i].state = bs_idle
+   botrow[i].btype = t + 1
+   lasttype = t
+  end
+  
+  --todo, adjust matches
+ 
+ elseif b.raiseoffset == 2 then
+  if b.cursstate == cs_idle and
+    b.cursy == 0 then
+   b.cursy = 1
+  end
+ end
+
+end
+
+
+
 function board_step(b)
 
- if newpress(4, b.contidx) then
+ if press(4, b.contidx) then
   
-  --[[
-  cls()
-  local bk1, bk2 =
-    board_getcursblocks(b)
-   
-  print (bk1.btype)
-  print (bk1.state)
+  local raise = true
+  if b.raiseoffset == 0 then
+   if newpress(4, b.contidx)
+     then
+    b.manualraise =
+      manualraiserepeatframes
+   else
+    b.manualraise -= 1
+    if b.manualraise > 0 then
+     raise = false
+    end
+   end
+  else
+   b.manualraise =
+     manualraiserepeatframes
+  end
   
+  if raise then
+   board_raise(b)
+  end
+ elseif b.raiseoffset > 0 and
+   b.manualraise > 0 then
+   board_raise(b)
+ else
+  b.manualraise = 0
   
-  print (bk2.btype)
-  print (bk2.state)
-  stop()
-  --]]
-  b.raiseoffset =
-    (b.raiseoffset + 1) % 8
+  --todo, autoraise
  end
  
  board_cursinput(b)
