@@ -299,6 +299,9 @@ function board_cursinput(b)
  
 end
 
+bounceframecount = 10
+
+
 function board_step(b)
 
  if newpress(4, b.contidx) then
@@ -310,8 +313,6 @@ function board_step(b)
  
  if b.cursstate == cs_swapping
    then
-   
-   
   local bk1, bk2 =
     board_getcursblocks(b)
   
@@ -324,8 +325,91 @@ function board_step(b)
    bk2.btype = t
    bk1.state = bs_idle
    bk2.state = bs_idle
+   
+   stop()
+   cls()
+   print(t, 0, 0, 7)
+
   end
  end
+ 
+ -- board scan
+ local rows = {}
+ for i = 1, 13 do
+  rows[i] = board_getrow(b, i)
+ end
+ 
+ local prevrow = nil
+ local row = nil
+ for y = 12, 1, -1 do
+  row = rows[y]
+  for x = 1, 6 do
+   
+   local bk = row[x]
+   if bk.state == bs_coyote or
+     bk.state ==
+       bs_postclearhold
+     then
+    bk.count -= 1
+    if bk.count <= 0 then
+     bk.state = bs_idle
+    end
+   end
+  
+   if bk.state == bs_idle
+     and bk.btype > 0 then
+    
+    if prevrow then
+   	
+     local bkbelow = prevrow[x]
+
+     if bkbelow.state == bs_idle
+       and bkbelow.btype == 0
+       then
+						
+      bkbelow.btype = bk.btype
+      bkbelow.fallframe =
+        frame
+      bkbelow.count = 0
+      bkbelow.chain = 0
+      
+      bk.btype = 0
+      bk.count = 0
+      bk.chain = 0
+      
+      -- todo horzrunlen = 0
+      goto cont
+      
+     end
+    end
+    
+    -- was falling but stopped
+    if bk.fallframe ==
+      pframe then
+     bk.count =
+       bounceframecount
+     --sfxdrop
+    else
+     -- not falling
+     if bk.count > 0 then
+      bk.count -= 1
+     end
+    
+     -- todo chain reset
+    end
+      
+    
+   else
+    -- todo, garbage
+   end
+   
+  
+   ::cont::
+   
+   prevrow = row
+  end
+ end
+ 
  
  
 end
