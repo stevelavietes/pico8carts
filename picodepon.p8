@@ -1011,11 +1011,13 @@ function board_draw(b)
 	  local sx = (m.x - 1) * 8 + x
 	  local sy = (m.y - 1) * 8 + y
 	  
-	  local d = m.puffcount
-	 	spr(48, sx - d, sy - d)
-	 	spr(48, sx + d, sy - d)
-	 	spr(48, sx - d, sy + d)
-	 	spr(48, sx + d, sy + d)
+	  local n = m.puffcount / 17
+	  local g = n * 10
+	  local d = (n^0.75) * 12 + 2
+	 	spr(48, sx - d, sy - d + g)
+	 	spr(48, sx + d, sy - d + g)
+	 	spr(48, sx - d, sy + d + g)
+	 	spr(48, sx + d, sy + d + g)
 	 	
 	 	
 	 	
