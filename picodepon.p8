@@ -249,7 +249,13 @@ function board_getcursblocks(
    row[b.cursx + 2]
 end
 
+cursshakeframes = {
+ -1, -1, 0, 0, 1, 1, 0, 0
+}
 function board_cursinput(b)
+	
+	b.cursbumpx = 0
+	b.cursbumpy = 0
 	
 	if b.cursstate != cs_idle then
 	 return
@@ -290,8 +296,25 @@ function board_cursinput(b)
    b.curscount = 0
    
    return
-  else
-   -- todo mask and bump
+  else   
+   maskpress(bnot(shl(1, 5)),
+     b.contidx)
+   -- todo pending bump shake   
+   
+   if (
+     stateisswappable(bk1.state)
+     and hasblock(bk1, bk1below)
+     and canswap(bk1, bk1below)
+     ) or (
+     stateisswappable(bk2.state)
+     and hasblock(bk2, bk2below)
+     and canswap(bk2, bk2below)
+     ) then
+    
+    b.cursbumpx = 
+      cursshakeframes[
+        (frame % 8) + 1]
+   end
   end
  
  
@@ -506,7 +529,9 @@ function board_step(b)
    postswap(b.cursx + 2,
      b.cursy + 1)
      
-   
+   -- unset dpad states
+   maskpress(bnot(7),
+     b.contidx)
    
   end
  end
@@ -981,6 +1006,8 @@ function board_draw(b)
       r2[i].btype > 0)
  end
  
+ clip(0, y, 128, 128 - y)
+ 
  y -= b.raiseoffset
 	local yy = y
 	
@@ -1001,6 +1028,8 @@ function board_draw(b)
 		yy += 8
 	end
 	
+	clip()
+	
 	palt(12, true)
 	for i = 1, #b.matchrecs do
 	 local m = b.matchrecs[i]
@@ -1012,7 +1041,7 @@ function board_draw(b)
 	  local sy = (m.y - 1) * 8 + y
 	  
 	  local n = m.puffcount / 17
-	  local g = n * 10
+	  local g = n * 16
 	  local d = (n^0.75) * 16
 	 	spr(48, sx - d, sy - d + g)
 	 	spr(48, sx + d, sy - d + g)
@@ -1029,6 +1058,9 @@ function board_draw(b)
 
 	local cx = x + b.cursx * 8
 	local cy = y + b.cursy * 8
+	
+	cx += b.cursbumpx
+	cy += b.cursbumpy
 	
 	  -- todo draw swapping blocks
 	if b.cursstate == cs_swapping
@@ -1139,6 +1171,17 @@ function newpress(bidx, cidx)
 	return true
 end
 
+function maskpress(bidx, cidx)
+ local v = nil
+ if cidx > 0 then
+  v = shl(bidx, 8) + 255
+ else
+  v = shl(255, 8) + bidx
+ end
+ 
+ cstate = band(cstate, v)
+
+end
 
 function _update60()
 	pframe = frame
