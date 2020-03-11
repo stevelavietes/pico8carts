@@ -1013,7 +1013,7 @@ function board_draw(b)
 	  
 	  local n = m.puffcount / 17
 	  local g = n * 10
-	  local d = (n^0.75) * 12 + 2
+	  local d = (n^0.75) * 16
 	 	spr(48, sx - d, sy - d + g)
 	 	spr(48, sx + d, sy - d + g)
 	 	spr(48, sx - d, sy + d + g)
