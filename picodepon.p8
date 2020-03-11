@@ -769,11 +769,11 @@ function board_step(b)
       bk.count) < 2 then
      
      checkhorzrun(x)
-     horzrun.type = 0
+     horzrun.btype = 0
      horzrun.len = 1
      
      checkvertrun(x, y + 1)
-     vertruns[x].type = 0
+     vertruns[x].btype = 0
      vertruns[x].len = 1
     
     else
