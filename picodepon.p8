@@ -6,7 +6,12 @@ bounceframecount = 10
 coyotehangtime = 12
 manualraiserepeatframes = 5
 squashholdframes = 3
-
+flashframes = 45
+faceframes = 26
+flashandfaceframes = 71
+popoffset = 9
+chainresetcount = 7
+postclearholdframes = 3
 
 bs_idle = 0
 bs_matching = 1
@@ -84,7 +89,8 @@ function board_new()
  b.x = 8
  b.y = 32
  
-
+ b.matchrecs = {}
+ 
  return b
 
 end
@@ -377,6 +383,10 @@ function board_raise(b)
    lasttype = t
   end
   
+  
+  for i = 1, #b.matchrecs do
+   b.matchrecs[i].y -= 1
+  end
   --todo, adjust matches
  
  elseif b.raiseoffset == 2 then
@@ -388,6 +398,20 @@ function board_raise(b)
 
 end
 
+function runrec_new()
+ return {btype=0, len=0}
+end
+
+function matchrec_new()
+ return {
+  x=0,
+  y=0,
+  dur=0,
+  chain=0,
+  seqidx=0,
+  puffcount=255,
+ }
+end
 
 
 function board_step(b)
@@ -430,7 +454,7 @@ function board_step(b)
   local bk1, bk2 =
     board_getcursblocks(b)
   
-  if b.curscount < 4 then
+  if b.curscount < 3 then
    b.curscount += 1
   else
    b.cursstate = cs_idle
@@ -493,10 +517,192 @@ function board_step(b)
   rows[i] = board_getrow(b, i)
  end
  
+ local horzrun = runrec_new()
+ local vertruns = {}
+ 
+ for i = 1, 6 do
+  vertruns[i] = runrec_new()
+ end
+ 
+ local newmatchminx = 7
+ local newmatchminy = 13
+ 
+ local matchseqmap = {}
+ local newmatchseqs = {}
+ 
+ local newmatchchainmax = 0
+
+ local checkhorzrun =
+   function(x1, y1)
+  if horzrun.len < 3 then
+   return
+  end
+  -- todo
+  local matchseq = {}
+  add(newmatchseqs, matchseq)
+  local row = board_getrow(
+    b, y1)
+  local pad = flashandfaceframes
+  local dur = pad +
+      horzrun.len * popoffset
+  
+  
+  local chainmax = 0
+  
+  -- todo, metal match count
+  local rx = x1 - horzrun.len
+  newmatchminy = min(
+     newmatchminy, y1)
+  
+  for r = 1, horzrun.len do
+   local runbk =
+     row[rx]
+   
+   runbk.state = bs_matching
+   runbk.count = 0
+   runbk.count2 = pad
+   
+   matchseqmap[
+     rx + shl(y1, 4)] =
+       matchseq
+
+   local mrec = matchrec_new()
+   mrec.x = rx
+   mrec.y = y1
+   mrec.dur = dur
+   add(matchseq, mrec)
+   
+   chainmax = max(chainmax,
+     runbk.chain + 1)
+   
+   newmatchminx = min(
+     newmatchminx, rx)
+     
+   pad += popoffset
+   rx += 1
+  end
+  
+  if chainmax > 1 then
+   for i = 1, #matchseq do
+    matchseq[i].chain =
+      chainmax
+   end
+  end
+  
+  newmatchchainmax = max(
+    newmatchchainmax, chainmax)
+ end
+ 
+ --todo function checkvertrun
+ local checkvertrun = function(
+   x1, y1)
+  if vertruns[x1].len < 3 then
+   return
+  end
+  local runlen =
+    vertruns[x1].len
+  local runlendur =
+    runlen * popoffset
+  
+  newmatchminx = min(
+     newmatchminx, x1)
+     
+  local pad = flashandfaceframes
+  local dur = pad + runlendur
+  local ry = y1
+  local chainmax = 0
+  local crosschainmax = 0
+  local runoffset = 0
+  local runbtype =
+    vertruns[x1].btype
+  
+  local hmatchseq = nil
+  
+  for r = 1, runlen do
+   local runbk =
+     board_getrow(b, ry)[x1]
+   
+   local key = x1 + shl(ry, 4)
+   if not hmatchseq and
+     matchseqmap[key] then
+    hmatchseq =
+      matchseqmap[key]
+    
+    pad = hmatchseq[1].dur
+    dur = pad + runlendur
+    
+    for i = 1, #hmatchseq do
+     hmatchseq[i].dur = dur
+    end  
+    
+    chainmax = max(chainmax,
+      hmatchseq[1].chain)
+   else
+    chainmax = max(chainmax,
+      runbk.chain + 1)
+   end
+     
+   
+   ry += 1
+  end
+ 
+  local matchseq = nil
+  if hmatchseq then
+   matchseq = hmatchseq
+   for i = 1, #matchseq do
+    matchseq[i].chain =
+      chainmax
+   end
+  else
+   matchseq = {}
+   add(newmatchseqs, matchseq) 
+  end
+  
+  local mrec = nil
+  ry = y1
+  for r = 1, runlen do
+   local runbk =
+     board_getrow(b, ry)[x1]
+   
+   if runbk.state ==
+     bs_matching then
+    goto cont
+   end
+   
+   runbk.state = bs_matching
+   runbk.count = 0
+   runbk.count2 = pad
+   
+   mrec = matchrec_new()
+   mrec.x = x1
+   mrec.y = ry
+   mrec.dur = dur
+   mrec.chain = chainmax
+   add(matchseq, mrec)
+   
+   newmatchminy = min(
+     newmatchminy, ry)
+   
+   --todo: metal
+   --todo: seqidx
+   
+   ::cont::
+   
+  	ry += 1
+  	pad += popoffset
+  end
+  
+  newmatchchainmax = max(
+    newmatchchainmax, chainmax)
+ 
+ end
+ 
  local prevrow = nil
  local row = nil
  for y = 12, 1, -1 do
   row = rows[y]
+  horzrun.len = 0
+  horzrun.btype = 0
   for x = 1, 6 do
    
    local bk = row[x]
@@ -532,7 +738,9 @@ function board_step(b)
       bk.count = 0
       bk.chain = 0
       
-      -- todo horzrunlen = 0
+      horzrun.len = 0
+      horzrun.btype = 0
+      
       goto cont
       
      end
@@ -551,21 +759,148 @@ function board_step(b)
      end
     
      -- todo chain reset
+     if bk.count ==
+       chainresetcount then
+      bk.chain = 0
+     end
     end
+    
+    if (bounceframecount -
+      bk.count) < 2 then
+     
+     checkhorzrun(x)
+     horzrun.type = 0
+     horzrun.len = 1
+     
+     checkvertrun(x, y + 1)
+     vertruns[x].type = 0
+     vertruns[x].len = 1
+    
+    else
+     
+     if horzrun.btype ==
+       bk.btype then
+      horzrun.len += 1
+     else
+      --we don't match but
+      --what's before us might
+      checkhorzrun(x, y)
+      horzrun.btype = bk.btype
+      horzrun.len = 1
+     end
+     
+     if vertruns[x].btype ==
+       bk.btype then
+      vertruns[x].len += 1
       
+      if y == 1 then
+       checkvertrun(x, 1)
+      end
+     else
+      checkvertrun(x, y + 1)
+      vertruns[x].btype =
+        bk.btype
+      vertruns[x].len = 1
+     end
+     
+     
+    end
     
    else
+    checkhorzrun(x, y)
+    horzrun.btype = 0
+    horzrun.len = 0
+    
+    checkvertrun(x, y + 1)
+    vertruns[x].btype = 0
+    vertruns[x].len = 0
+    
+   
     -- todo, garbage
    end
    
-  
    ::cont::
    
-   
   end
+  checkhorzrun(7, y)
   prevrow = row
  end
  
+ 
+ if #newmatchseqs > 0 then
+  --b.matchrecs
+  
+  --todo, check garbage
+  for i = 1, #newmatchseqs do
+   
+   local ms = newmatchseqs[i]
+   
+   for j = 1, #ms do
+    add(b.matchrecs, ms[j])
+   end
+   
+  end
+  --transfer to active match
+ end
+ 
+ local activematches = {}
+ 
+ for i = 1, #b.matchrecs do
+  local m =
+    b.matchrecs[i]
+  
+  local keep = true
+  if m.dur > 0 then
+   local bk = board_getrow(b,
+     m.y)[m.x]
+   
+   bk.count = bk.count + 1
+   
+   if bk.count >= m.dur then
+    m.dur = 0
+    bk.count =
+      postclearholdframes
+    if bk.state == bs_matching
+      then
+     bk.state =
+       bs_postclearhold
+     
+     bk.btype = 0
+     bk.chain = 0
+     
+     -- walk up and max chain
+     for y = m.y - 1, 1, -1 do
+      -- todo
+     end
+     
+     
+    --todo garbage match
+    end
+   elseif bk.count == bk.count2
+     then
+    m.puffcount = 0
+    --sfxpop
+   end
+  
+  end
+  
+  if m.puffcount != 255 then
+   if m.puffcount >= 18 then
+    if m.dur == 0 then
+     keep = false
+    end
+   else
+    m.puffcount += 1
+   end
+  end
+  
+  
+  if keep then
+   add(activematches, m)
+  end
+ end
+ 
+ b.matchrecs = activematches
  
  
 end
@@ -595,6 +930,24 @@ function block_draw(b, x, y, ry,
   
   spr(idx, x, y)
  
+ 
+ elseif b.state == bs_matching
+   then
+  
+  local idx = blocktileidxs[
+  		b.btype]
+  
+  if b.count < flashframes then
+   if frame % 2 == 0 then
+    idx += 6
+   end
+  elseif b.count < b.count2 then
+   idx += 5
+  else
+   return
+  end
+  
+  spr(idx, x, y) 
  -- todo, matching
  --       garbage
  --       garbagematching 
@@ -648,7 +1001,28 @@ function board_draw(b)
 		yy += 8
 	end
 	
+	palt(12, true)
+	for i = 1, #b.matchrecs do
+	 local m = b.matchrecs[i]
+	 
+	 if m.puffcount != 255 and 
+	   m.puffcount < 18 then
+	 
+	  local sx = (m.x - 1) * 8 + x
+	  local sy = (m.y - 1) * 8 + y
+	  
+	  local d = m.puffcount
+	 	spr(48, sx - d, sy - d)
+	 	spr(48, sx + d, sy - d)
+	 	spr(48, sx - d, sy + d)
+	 	spr(48, sx + d, sy + d)
+	 	
+	 	
+	 	
+	 end
 	
+	end
+	palt(12, false)
 	-- draw cursors
 
 	local cx = x + b.cursx * 8
@@ -717,8 +1091,9 @@ function _init()
  boards = {board_new(),
    board_new()}
 
- boards[1].x = 4
- boards[2].x = 76
+ boards[1].x = 3
+ boards[2].x = 77
+ boards[2].contidx = 1
  
  boards[2].nextlinerandomseed =
    boards[1].nextlinerandomseed
@@ -831,14 +1206,14 @@ d00700dd3bbbbb305b5b5b503bbbbb303bbbbb3033333330333333337bbbbb7b5555555005050500
 dd070ddd3bbbbb3035b5b535bbbbbbb0333333303333333033bbbb337bbbbb7b5556555050505050555555505555555055555550556666557776777600000000
 dd000ddd3333333053535350bbbbbbb03333333033333330333333337777777b5555555005050500556665505555555055555550555555557777777600000000
 dddddddd000000000505050500000000000000000000000003333330bbbbbbbb0000000000000000000000000000000000000000055555506666666600000000
-00000000944444405454545094444440999499409999994004444440977777790000000000000000000000000000000000000000000000005555555555555555
-00000000499499404595954544444440499999404499944044444444799799790555555505555555555555550000000055555555000000005000000557777775
-00000000499999405959595044444440449994404999994044944944799999790500000005000000000000000000000000000000000000005050050557577575
-00000000449994404595954599949990499999404994994044944944779997790500000005000000000000000000000000000000000000005050050557577575
-00000000499999405959595099999990499499404444444044444444799999790500000005000000000000000000000000000000000000005000000557777775
-00000000499499404595954599999990444444404444444044999944799799790500000005000000000000000000000000000000000000005055550557555575
-00000000444444405454545099949990444444404444444044444444777777790555555505000000555555555555555500000000000000005000000557777775
-00000000000000000505050500000000000000000000000004444440999999990000000005000000000000000000000000000000000000005555555555555555
+cccccccc944444405454545094444440999499409999994004444440977777790000000000000000000000000000000000000000000000005555555555555555
+cccccccc499499404595954544444440499999404499944044444444799799790555555505555555555555550000000055555555000000005000000557777775
+ccc76ccc499999405959595044444440449994404999994044944944799999790500000005000000000000000000000000000000000000005050050557577575
+cc7665cc449994404595954599949990499999404994994044944944779997790500000005000000000000000000000000000000000000005050050557577575
+cc6655cc499999405959595099999990499499404444444044444444799999790500000005000000000000000000000000000000000000005000000557777775
+ccc55ccc499499404595954599999990444444404444444044999944799799790500000005000000000000000000000000000000000000005055550557555575
+cccccccc444444405454545099949990444444404444444044444444777777790555555505000000555555555555555500000000000000005000000557777775
+cccccccc000000000505050500000000000000000000000004444440999999990000000005000000000000000000000000000000000000005555555555555555
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
