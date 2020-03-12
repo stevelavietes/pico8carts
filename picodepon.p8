@@ -95,6 +95,8 @@ function board_new()
  b.autoraisecounter = 0
  b.autoraisespeed = 60
  
+ b.shakecount = 0
+ 
  return b
 
 end
@@ -618,7 +620,7 @@ function board_step(b)
    
    chainmax = max(chainmax,
      runbk.chain + 1)
-   
+   mrec.chain = chainmax
    newmatchminx = min(
      newmatchminx, rx)
      
@@ -779,7 +781,7 @@ function board_step(b)
       bkbelow.fallframe =
         frame
       bkbelow.count = 0
-      bkbelow.chain = 0
+      bkbelow.chain = bk.chain
       
       bk.btype = 0
       bk.count = 0
@@ -804,13 +806,16 @@ function board_step(b)
      -- not falling
      if bk.count > 0 then
       bk.count -= 1
+      
+      -- todo chain reset
+      if bk.count ==
+       chainresetcount then
+       bk.chain = 0
+      end
+     
      end
     
-     -- todo chain reset
-     if bk.count ==
-       chainresetcount then
-      bk.chain = 0
-     end
+     
     end
     
     if (bounceframecount -
@@ -874,6 +879,7 @@ function board_step(b)
   prevrow = row
  end
  
+ local matchcount = 0
  
  if #newmatchseqs > 0 then
   --b.matchrecs
@@ -882,7 +888,7 @@ function board_step(b)
   for i = 1, #newmatchseqs do
    
    local ms = newmatchseqs[i]
-   
+   matchcount += #ms
    for j = 1, #ms do
     add(b.matchrecs, ms[j])
    end
@@ -920,6 +926,18 @@ function board_step(b)
      -- walk up and max chain
      for y = m.y - 1, 1, -1 do
       -- todo
+      local runbk =
+        board_getrow(b, y)[m.x]
+       
+      if runbk.btype == 0 or
+        (runbk.state != bs_idle
+        and runbk.state !=
+          bs_garbage) then
+       break
+      end
+      
+      runbk.chain = max(
+        runbk.chain, m.chain)
      end
      
      
@@ -954,6 +972,39 @@ function board_step(b)
  
  b.matchrecs = activematches
  
+
+ 
+ local buboffset = 0
+ if matchcount > 3 then
+  local mx =
+    (newmatchminx - 1) * 8
+      + b.x - 4
+  
+  
+  local my =
+    (newmatchminy - 1) * 8
+      + board_getyorg(b) - 4
+ 
+  add(matchbubs, matchbub_new(
+    0, matchcount, mx, my))
+ 
+  buboffset = 11
+ end
+ 
+ if newmatchchainmax > 1 then
+  local mx =
+    (newmatchminx - 1) * 8
+      + b.x - 5
+  
+  local my =
+    (newmatchminy - 1) * 8
+      + board_getyorg(b) - 4
+  my -= buboffset
+ 
+  add(matchbubs, matchbub_new(
+    1, newmatchchainmax, mx, my))
+  
+ end
  
 end
 
@@ -1007,6 +1058,16 @@ function block_draw(b, x, y, ry,
  
 end
 
+function board_getyorg(b)
+ local y = b.y - b.raiseoffset
+ 
+ if b.shakevalues then
+  y = y - b.shakevalues[
+    b.shakecount + 1]
+ end
+
+ return y
+end
 
 function board_draw(b)
  local x = b.x
@@ -1036,6 +1097,17 @@ function board_draw(b)
  clip(0, y, 128, 128 - y)
  
  y -= b.raiseoffset
+	
+	if b.shakecount > 0 and
+	  b.shakevalues then
+	 
+	 b.shakecount -= 1
+	 y = y - b.shakevalues[
+	   b.shakecount + 1]
+	else
+	 b.shakevalues = nil
+	end
+	
 	local yy = y
 	
 	-- draw blocks
@@ -1170,6 +1242,8 @@ function _init()
  srand(s)
  board_fill(boards[2], 6)
 
+ matchbubs = {}
+
 end
 
 function _press(
@@ -1216,6 +1290,16 @@ function maskpress(bidx, cidx)
 
 end
 
+-- todo, encode token-free
+matchbubyoffsets = {
+ 1, 1, 1, 1, 1, 0, 1, 0,
+ 1, 0, 1, 0, 1, 0, 0, 1,
+ 0, 0, 0, 0, 1, 0, 0, 0,
+ 0, 0, 0, 0, 0, 0, 0, 0,
+ 0, 0, 0, 1, 0, 0, 0, 0,
+}
+
+
 function _update60()
 	pframe = frame
 	frame += 1
@@ -1234,6 +1318,22 @@ function _update60()
 	for i = 1, #boards do
 	 board_step(boards[i])
 	end
+	
+	local newmatchbubs = {}
+	for i = 1, #matchbubs do
+	 local mb = matchbubs[i]
+	 mb.count += 1
+	 if mb.count <
+	   #matchbubyoffsets then
+	  mb.y = mb.y -
+	    matchbubyoffsets[
+	      mb.count] / 2
+	  add(newmatchbubs, mb)
+	 end
+	
+	end
+	matchbubs = newmatchbubs
+	
 end
 
 function _draw()
@@ -1247,9 +1347,62 @@ function _draw()
 	end
 	
  palt(0, true)
+ 
+ for i = 1, #matchbubs do
+  matchbub_draw(matchbubs[i])
+ end
+ 
 end
 
+function matchbub_new(
+  bubtype, value, x, y)
+ return {
+  bubtype = bubtype,
+  value = value,
+  x = x,
+  y = y,
+  count = 0
+ }
+end
 
+function matchbub_draw(mb)
+ palt(13, true)
+ palt(0, false)
+ local offset = 7
+ local textoffset = 6
+ if mb.bubtype > 0 then
+  pal(3, 8)
+  offset = 8
+  textoffset = 8
+ end
+
+ spr(64, mb.x, mb.y)
+ spr(64, mb.x + offset, mb.y,
+   1, 1, true, false)
+ 
+ spr(65, mb.x, mb.y + 8)
+ spr(65, mb.x + offset,
+   mb.y + 8, 1, 1, true, false)
+ 
+ if mb.bubtype > 0 then
+  spr(66, mb.x + 4, mb.y + 6)
+ end
+ 
+ local v = mb.value
+ if v > 9 then
+  v = "+"
+ end
+ print(v,
+   mb.x + textoffset,
+     mb.y + 6, 0)
+ 
+ print(v,
+   mb.x + textoffset,
+     mb.y + 5, 7)
+ 
+ pal()
+ palt()
+end
 
 
 
