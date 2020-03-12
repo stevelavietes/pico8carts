@@ -1219,6 +1219,16 @@ function board_draw(b)
 end
 
 
+function hexstr2array(s)
+ local a = {}
+ --tonum
+ for i = 1, #s do
+  add(a, tonum(
+    '0x' .. sub(s, i, i + 1)))
+ end
+ return a
+end
+
 function _init()
  frame = 2
  pframe = 1
@@ -1226,6 +1236,13 @@ function _init()
  prevcstate = 0
  squashframe = 0
  squashcount = 0
+
+ shakesmall = hexstr2array(
+  "010011001110001111")
+ shakelarge = hexstr2array(
+  "010101010101010010010011001100111023332111456665422269abbbba8"
+	)
+
 
  boards = {board_new(),
    board_new()}
