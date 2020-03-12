@@ -129,7 +129,7 @@ function board_fill(b, startidx)
     end
    end
    vertruntype = 0
-   if y < 10 then
+   if y < 11 then
     local row2 =
       board_getrow(b, y + 1)
     local row3 =
