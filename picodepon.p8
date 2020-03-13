@@ -42,7 +42,7 @@ function block_new()
  	count2=0,
  	fallframe=0,
  	chain=0,
- 	fallenonce=0,
+ 	fallenonce=false,
  	garbagex=0,
  	garbagey=0,
  	garbagewidth=0,
@@ -174,16 +174,14 @@ function board_fill(b, startidx)
  end
  
  board_addgarbage(b,
-   1, 2, 5, 2)
- 
- board_addgarbage(b,
-   2, 3, 3, 1)
+   1, 1, 5, 3)
  
  
 end
 
 function board_addgarbage(b,
-  x, y, width, height)
+  x, y, width, height,
+    forcey, forceh)
  
  for yy = y - (height - 1), y do
   
@@ -200,7 +198,14 @@ function board_addgarbage(b,
 		  bk.garbagewidth = width
 		  bk.garbageheight = height
 		  bk.btype = 10
+		  bk.fallenonce = false
 		  
+		  if forcey then
+		   bk.garbagey = forcey
+		  end
+		  if forceh then
+		   bk.garbageheight = forceh
+		  end
    end
   end
   --for xx = 
@@ -609,7 +614,8 @@ function board_step(b)
  local newmatchseqs = {}
  
  local newmatchchainmax = 0
-
+ local garbagefallarea = 0
+ 
  local checkhorzrun =
    function(x1, y1)
   if horzrun.len < 3 then
@@ -908,10 +914,58 @@ function board_step(b)
       bk.state == bs_garbage and
       bk.garbagex == 0 then
       
-      local bkbelow =
-        prevrow[x]
+      --local bkbelow =
+      --  prevrow[x]
       
-      -- todo from here
+      local clearbelow = true
+      for i = x,
+        x + bk.garbagewidth - 1
+        do
+       local bbk = prevrow[i]
+       if bbk.state != bs_idle
+         or bbk.btype != 0 then
+        clearbelow = false
+        break
+       end
+      end
+      
+      if clearbelow then
+       for i = x,
+         x + bk.garbagewidth - 1
+         do
+        prevrow[i] = row[i]
+        row[i] = block_new() 
+        prevrow[i].fallframe =
+          frame
+       end     
+       
+       if y == 1 and
+         bk.garbagey <
+          bk.garbageheight - 1
+          then
+        board_addgarbage(b, x, 1,
+          bk.garbagewidth, 1,
+          bk.garbagey + 1,
+          bk.garbageheight)
+       end
+      
+      else
+       if bk.fallframe ==
+         pframe then
+         
+        sfx(2)
+       elseif bk.garbagey == 0
+         and not bk.fallenonce
+         then
+        bk.fallenonce = true
+        garbagefallarea = 
+          garbagefallarea +
+            bk.garbagewidth *
+            bk.garbageheight
+            
+        
+       end
+      end
       
     end
     
@@ -1035,10 +1089,6 @@ function board_step(b)
  
   buboffset = 11
   
-  --b.shakevalues = shakesmall
-  --b.shakecount = #b.shakevalues
-  
-  
  end
  
  if newmatchchainmax > 1 then
@@ -1054,6 +1104,15 @@ function board_step(b)
   add(matchbubs, matchbub_new(
     1, newmatchchainmax, mx, my))
   
+ end
+ 
+ if garbagefallarea > 0 then
+  if garbagefallarea > 4 then
+   b.shakevalues = shakelarge
+ 	else
+ 	 b.shakevalues = shakesmall
+ 	end
+  b.shakecount = #b.shakevalues
  end
  
 end
@@ -1113,7 +1172,7 @@ function block_draw(b, x, y, ry,
  	   (b.garbageheight - 1) * 8
  	 
  	 local right = x +
- 	   b.garbagewidth * 8
+ 	   b.garbagewidth * 8 - 1
  	 
  	 local left = x
  	 local bottom = y + 7
