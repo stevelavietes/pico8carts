@@ -174,7 +174,9 @@ function board_fill(b, startidx)
  end
  
  board_addgarbage(b,
-   1, 1, 5, 3)
+   1, 1, 3, 1)
+ board_addgarbage(b,
+   4, 1, 3, 1)
  
  
 end
@@ -1471,7 +1473,6 @@ function board_breakgarbage(
  local maxdur = dur
  local maxdurtmp = nil
  
- --todo, metal or not
  local matchrecs = {}
  
  local seqidx = seqidxstartr[1]
@@ -1486,62 +1487,53 @@ function board_breakgarbage(
  	local bk = board_getrow(
  	  b, y)[rx]
  	
- 	--[[
+ 	
+ 	local _check = function
+ 	  (xx, xo, yo)
+ 	 local bk2 =
+ 	   board_getrow(b, y + yo)[
+ 	     xx + xo]
+ 	 
+ 	 if bk2.state == bs_garbage
+ 	   and bk2.btype ==
+ 	     bk.btype then
+ 	  return max(
+ 	    board_breakgarbage(b,
+ 	      xx + xo, y + yo, dur,
+ 	        chain,
+ 	          seqidxstartr),
+ 	            maxdur)
+ 	 end
+ 	 
+ 	 return maxdur
+ 	end
+ 	
+  
  	-- check left
  	if x > 1 then
- 	 
- 	 local bk2 =
- 	   board_getrow(b, x - 1)
- 	 
- 	 if bk2.state == bs_garbage
- 	   and bk2.btype ==
- 	     bk.btype then
- 	  maxdur = max(
- 	    board_breakgarbage(b,
- 	      x - 1, y, dur, chain,
- 	        seqidxstartf),
- 	          maxdur)
- 	 end 
+ 		maxdur = _check(x, -1, 0)
  	end
- 	--]]
- 	--[[
+ 	
+ 	
  	-- check right
  	if rx < wmax then
- 		local bk2 =
- 	   board_getrow(b, rx + 1)
- 	 
- 	 if bk2.state == bs_garbage
- 	   and bk2.btype ==
- 	     bk.btype then
- 	  maxdur = max(
- 	    board_breakgarbage(b,
- 	      rx + 1, y, dur, chain,
- 	        seqidxstartf),
- 	          maxdur)
- 	 end
+ 		maxdur = _check(rx, 1, 0)
  	end
- 	--]]
- 	
- 	-- todo walk in x and check
- 	-- top/bot when meaningful
  	
  	for j = 0, w - 1 do
  	 
  	 bk = board_getrow(b, y)[rx]
  	 
- 	 --[[
  	 --check down
  	 if i == 0 and y < 12 then
- 	  --todo
+ 	  maxdur = _check(rx, 0, 1) 
  	 end
  	 
  	 --check up
- 	 if y > 1 and i == hmax then
- 	  --todo
+ 	 if y > 1 and i == h - 1 then
+ 	  maxdur = _check(rx, 0, -1)
  	 end
- 	 --]]
- 	 --todo, new matchrec
- 	 --      set block attrs
+ 	 
  	 
  	 local m = matchrec_new()
  	 m.x = rx
