@@ -983,13 +983,49 @@ function board_step(b)
  if #newmatchseqs > 0 then
   --b.matchrecs
   
+  local seqidxstartr = {0}
+  
   --todo, check garbage
   for i = 1, #newmatchseqs do
    
    local ms = newmatchseqs[i]
    matchcount += #ms
    for j = 1, #ms do
-    add(b.matchrecs, ms[j])
+    local m = ms[j]
+    add(b.matchrecs, m)
+    
+    local _breakgarb =
+      function(xo, yo)
+     if board_getrow(b,
+       m.y + yo)[
+         m.x + xo].state ==
+           bs_garbage then
+      
+      board_breakgarbage(
+       b, m.x + xo, m.y + yo,
+         m.dur, m.chain,
+           seqidxstartr) 
+     end
+    end
+    
+    
+    -- left
+    if m.x > 1 then
+     _breakgarb(-1, 0)
+    end
+    
+    if m.x < 6 then
+      _breakgarb(1, 0)
+    end
+    
+    if m.y > 1 then
+     _breakgarb(0, -1)
+    end
+    
+    if m.y < 12 then
+     _breakgarb(0, 1)
+    end
+    
    end
    
   end
@@ -1039,15 +1075,22 @@ function board_step(b)
         runbk.chain, m.chain)
      end
      
+    elseif bk.state ==
+      bs_garbagematching then
+     bk.state =
+       bs_postclearhold 
+     bk.chain = max(bk.chain,
+       m.chain)
      
-    --todo garbage match
+     bk.fallframe = frame
+    
     end
    elseif bk.count == bk.count2
      then
     m.puffcount = 0
     --sfxpop
     sfx(0, -1, min(
-      m.seqidx*2 + 3, 16), 1)
+      m.seqidx, 16), 1)
    end
   
   end
@@ -1201,13 +1244,24 @@ function block_draw(b, x, y, ry,
  	
  	end
  	 	
- 	--garbagex=0,
- 	--garbagey=0,
- 	--garbagewidth=0,
- 	--garbageheight=0,
- 	
- else
- --       garbagematching 
+ 
+ elseif b.state ==
+   bs_garbagematching then
+  
+  local idx = 62
+  if b.count < flashframes then
+   if frame % 2 == 0 then
+    idx = 63
+   end
+  elseif b.count < b.count2 then
+  else
+   idx = blocktileidxs[
+  		b.btype]
+
+  end
+  
+  spr(idx, x, y)
+  
  end
  
 end
@@ -1370,6 +1424,156 @@ function board_draw(b)
 	
 	palt(13, false)
 	
+end
+
+function board_breakgarbage(
+  b, x, y, basedur, chain,
+    seqidxstartr)
+ local bk =
+   board_getrow(b, y)[x]
+ 
+ if bk.state != bs_garbage then
+  return 0
+ end
+ 
+ chain = max(bk.chain, chain)
+ 
+ x -= bk.garbagex
+ y += bk.garbagey
+ 
+ bk = board_getrow(b, y)[x]
+ 
+ if bk.state != bs_garbage then
+  return 0
+ end
+ 
+ bk.state = bs_garbagematching
+ 
+ local w = bk.garbagewidth
+ local h = bk.garbageheight
+ 
+ -- trim off top
+ if y < h then
+  local extrarows = h - y
+  h -= extrarows
+  --todo, prepend rest
+ end
+ 
+ local numblocks = w * h
+ 
+ local hmax = 12
+ local wmax = 6
+ 
+ local dur = basedur + (
+   numblocks * popoffset)
+ local pad = basedur
+ 
+ local maxdur = dur
+ local maxdurtmp = nil
+ 
+ --todo, metal or not
+ local matchrecs = {}
+ 
+ local seqidx = seqidxstartr[1]
+ seqidxstartr[1] += numblocks
+ 
+ for i = 0, h - 1 do
+ 	if y < 1 then
+ 	 break
+ 	end
+ 	local rx = x + (w - 1)
+ 	
+ 	local bk = board_getrow(
+ 	  b, y)[rx]
+ 	
+ 	--[[
+ 	-- check left
+ 	if x > 1 then
+ 	 
+ 	 local bk2 =
+ 	   board_getrow(b, x - 1)
+ 	 
+ 	 if bk2.state == bs_garbage
+ 	   and bk2.btype ==
+ 	     bk.btype then
+ 	  maxdur = max(
+ 	    board_breakgarbage(b,
+ 	      x - 1, y, dur, chain,
+ 	        seqidxstartf),
+ 	          maxdur)
+ 	 end 
+ 	end
+ 	--]]
+ 	--[[
+ 	-- check right
+ 	if rx < wmax then
+ 		local bk2 =
+ 	   board_getrow(b, rx + 1)
+ 	 
+ 	 if bk2.state == bs_garbage
+ 	   and bk2.btype ==
+ 	     bk.btype then
+ 	  maxdur = max(
+ 	    board_breakgarbage(b,
+ 	      rx + 1, y, dur, chain,
+ 	        seqidxstartf),
+ 	          maxdur)
+ 	 end
+ 	end
+ 	--]]
+ 	
+ 	-- todo walk in x and check
+ 	-- top/bot when meaningful
+ 	
+ 	for j = 0, w - 1 do
+ 	 
+ 	 bk = board_getrow(b, y)[rx]
+ 	 
+ 	 --[[
+ 	 --check down
+ 	 if i == 0 and y < 12 then
+ 	  --todo
+ 	 end
+ 	 
+ 	 --check up
+ 	 if y > 1 and i == hmax then
+ 	  --todo
+ 	 end
+ 	 --]]
+ 	 --todo, new matchrec
+ 	 --      set block attrs
+ 	 
+ 	 local m = matchrec_new()
+ 	 m.x = rx
+ 	 m.y = y
+ 	 m.dur = dur
+ 	 m.chain = chain
+ 	 seqidx += 1
+ 	 m.seqidx = seqidx
+ 	 bk.count = 0
+ 	 bk.count2 = pad
+ 	 bk.btype = flr(rnd(
+ 	   b.blocktypecount)) + 1
+ 	 bk.state =
+ 	   bs_garbagematching
+ 	 rx -= 1
+ 	 pad += popoffset
+ 	 
+ 	 add(b.matchrecs, m)
+ 	 add(matchrecs, m)
+ 	end
+ 	
+ 	y -= 1
+ end
+ 
+ if maxdur > dur then
+  for i = 1, #matchrecs do
+   matchrecs[i].dur = maxdur
+  end
+ 
+ end
+ 
+ return maxdur   
 end
 
 
