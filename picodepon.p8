@@ -98,6 +98,7 @@ function board_new()
  b.shakecount = 0
  
  b.pendinggarbage = {}
+ b.pendingoffset = 0
  return b
 
 end
@@ -173,20 +174,6 @@ function board_fill(b, startidx)
    
   end
  end
- 
- 
- board_appendgarbage(b,
-   3, 1)
- board_appendgarbage(b,
-   3, 1)
- board_appendgarbage(b,
-   6, 3)
- 
- 
- --board_addgarbage(b,
- --  1, 1, 3, 1)
- --board_addgarbage(b,
- --  4, 1, 3, 2)
  
  
 end
@@ -1127,6 +1114,7 @@ function board_step(b)
  b.matchrecs = activematches
  
 
+ local lastbub = nil
  
  local buboffset = 0
  if matchcount > 3 then
@@ -1139,8 +1127,9 @@ function board_step(b)
     (newmatchminy - 1) * 8
       + board_getyorg(b) - 4
  
-  add(matchbubs, matchbub_new(
-    0, matchcount, mx, my))
+  lastbub = matchbub_new(
+    0, matchcount, mx, my)
+  add(matchbubs, lastbub)
  
   buboffset = 11
   
@@ -1155,9 +1144,19 @@ function board_step(b)
     (newmatchminy - 1) * 8
       + board_getyorg(b) - 4
   my -= buboffset
+  
+  lastbub = matchbub_new(1,
+    newmatchchainmax, mx, my)
+  add(matchbubs, lastbub)
+  
+ end
  
-  add(matchbubs, matchbub_new(
-    1, newmatchchainmax, mx, my))
+ if b.target and lastbub then
+  lastbub.target = b.target
+  lastbub.matchcount = 
+    matchcount
+  lastbub.matchchain =
+    newmatchchainmax
   
  end
  
@@ -1581,12 +1580,13 @@ function board_breakgarbage(
 end
 
 
-function hexstr2array(s)
+function hexstr2array(s, off)
  local a = {}
  --tonum
+ if not off then off = 0 end
  for i = 1, #s do
   add(a, tonum(
-    '0x' .. sub(s, i, i)))
+    '0x' .. sub(s, i, i)) + off)
  end
  return a
 end
@@ -1605,9 +1605,23 @@ function _init()
   "010101010101010010010011001100111023332111456665422269abbbba8"
 	)
 
+ bubdeltax = hexstr2array(
+  "444444444444444444444444444444444444444400112222333343443434344445558",
+  -4
+ )
+ 
+ bubdeltay = hexstr2array(
+  "555554545454544544445444444444444445444481233444444544455455555577777",
+  -4
+ )
+
 
  boards = {board_new(),
    board_new()}
+ 
+ boards[1].target = boards[2]
+ boards[2].target = boards[1]
+ 
 
  boards[1].x = 3
  boards[2].x = 77
@@ -1669,16 +1683,6 @@ function maskpress(bidx, cidx)
 
 end
 
--- todo, encode token-free
-matchbubyoffsets = {
- 1, 1, 1, 1, 1, 0, 1, 0,
- 1, 0, 1, 0, 1, 0, 0, 1,
- 0, 0, 0, 0, 1, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 1, 0, 0, 0, 0,
-}
-
-
 function _update60()
 	pframe = frame
 	frame += 1
@@ -1702,14 +1706,116 @@ function _update60()
 	for i = 1, #matchbubs do
 	 local mb = matchbubs[i]
 	 mb.count += 1
-	 if mb.count <
-	   #matchbubyoffsets then
+	 
+	 --[[
+	 if mb.count < 69 then
 	  mb.y = mb.y -
-	    matchbubyoffsets[
-	      mb.count] / 2
+	   bubdeltay[mb.count] / 2
+	  
+	  local div = 2
+	  if mb.x > 64 then
+	   div = -2
+	  end
+	  mb.x = mb.x +
+	    bubdeltax[mb.count] / div
+	  
+	  
 	  add(newmatchbubs, mb)
 	 end
-	
+	 --]]
+	 
+	 if mb.count == 40 then
+	  if not mb.target then
+	   goto skip
+	 	end
+	 
+	 elseif mb.count == 77 then
+	  -- send garbage
+	  -- todo
+	  --  matchcount
+	  --  matchchain
+	  
+	  local gt = mb.matchcount
+	  if gt < 10 then
+	   gt -= 1
+	  end
+	  
+	  gt *= mb.matchchain
+	  
+	  if gt <= 6 then
+	   board_appendgarbage(
+	     mb.target, gt, 1)
+	  else
+	   local rem = gt % 6
+	   if rem == 0 or rem >= 3
+	     then
+	    
+	    board_appendgarbage(
+	      mb.target, 6,
+	        flr(gt / 6))
+	    
+	    if rem > 0 then
+	     board_appendgarbage(
+	       mb.target, rem, 1
+	         ).count = 0
+	    end
+	   else
+	    local dur = 60
+	    
+	    local trimtotal = gt - 3
+	    while trimtotal > 0 do
+	     if trimtotal < 6 then
+	      board_appendgarbage(
+	       mb.target, trimtotal, 1
+	         ).count = dur
+	      break
+	     else
+	      board_appendgarbage(
+	       mb.target, 6, 1
+	         ).count = dur
+	      
+	      trimtotal -= 6
+	     end
+	     dur = 0
+	    end
+	    
+	   end
+	  end
+	  
+	  goto skip
+	 elseif mb.count == 69 then
+	  if mb.target then
+	   mb.dx = (mb.target.x + 2 - 
+	     mb.x) / 8
+	   
+	   mb.dy = (mb.target.y - 16 - 
+	     mb.y) / 8  
+	  end
+	 end
+	 
+	 if mb.dx then
+	  mb.x += mb.dx
+	  mb.y += mb.dy
+	 else
+	  
+	  mb.y = mb.y -
+	   bubdeltay[mb.count] / 2
+	  
+	  local div = 2
+	  if mb.x > 64 then
+	   div = -2
+	  end
+	  mb.x = mb.x +
+	    bubdeltax[mb.count] / div
+		 
+	 end
+	 
+	 
+	  
+	  
+	 
+	 add(newmatchbubs, mb)
+	 ::skip::
 	end
 	matchbubs = newmatchbubs
 	
@@ -1745,6 +1851,15 @@ function matchbub_new(
 end
 
 function matchbub_draw(mb)
+ if mb.count > 40 then
+  if frame % 3 == 0 then
+   pal(5, 7)
+  end
+  spr(61, mb.x, mb.y)
+  pal(5, 5)
+  return
+ end
+ 
  palt(13, true)
  palt(0, false)
  local offset = 7
@@ -1812,12 +1927,19 @@ end
 function board_appendgarbage(b,
   width, height, forcex)
  
- add(b.pendinggarbage,
-   pendinggarbage_new(width,
-     height, f0rcex))
+ local pg = pendinggarbage_new(
+   width, height, f0rcex)
+ add(b.pendinggarbage, pg)
+ 
+ return pg 
 end
 
 function board_pendingstep(b)
+
+ if b.pendingoffset > 0 then
+  b.pendingoffset -= 1
+ end
+ 
  
  while #b.pendinggarbage > 0 do
   local pg =
@@ -1877,6 +1999,7 @@ function board_pendingstep(b)
   
   board_addgarbage(b, dropx, 1,
     pg.width, pg.height)
+  b.pendingoffset += 8
   
  end
  
@@ -1887,6 +2010,7 @@ function board_drawpending(b)
  
  
 	local x = b.x
+	  + b.pendingoffset
 	local y = b.y - 11
  for i = 1, min(4,
    #b.pendinggarbage) do
@@ -1941,14 +2065,14 @@ d00700dd3bbbbb305b5b5b503bbbbb303bbbbb3033333330333333337bbbbb7b5555555005050500
 dd070ddd3bbbbb3035b5b535bbbbbbb0333333303333333033bbbb337bbbbb7b55565550505050505555555055555550555555505566665577767776dddddddd
 dd000ddd3333333053535350bbbbbbb03333333033333330333333337777777b55555550050505005566655055555550555555505555555577777776dddddddd
 dddddddd000000000505050500000000000000000000000003333330bbbbbbbb00000000000000000000000000000000000000000555555066666666dddddddd
-cccccccc94444440545454509444444099949940999999400444444097777779dddddddddddddddddddddddddddddddd0000000d000000005555555555555555
-cccccccc49949940459595454444444049999940449994404444444479979979ddddddddd00000dd0000000d0000000d0101010d000000005000000557777775
-ccc76ccc499999405959595044444440449994404999994044944944799999790000000dd01010dd0101010d0101010d0000000d000000005050050557577575
-cc7665cc449994404595954599949990499999404994994044944944779997790101010dd00000dd0000000d0000000d5010105d000000005050050557577575
-cc6655cc499999405959595099999990499499404444444044444444799999790000000dd01010dd5010105d0101010d0000000d000000005000000557777775
-ccc55ccc499499404595954599999990444444404444444044999944799799795555555dd00000ddd00000dd0000000d0101010d000000005055550557555575
-cccccccc44444440545454509994999044444440444444404444444477777779ddddddddd55555ddd55555dd5555555d0000000d000000005000000557777775
-cccccccc00000000050505050000000000000000000000000444444099999999dddddddddddddddddddddddddddddddd5555555d000000005555555555555555
+cccccccc94444440545454509444444099949940999999400444444097777779dddddddddddddddddddddddddddddddd0000000d005555005555555555555555
+cccccccc49949940459595454444444049999940449994404444444479979979ddddddddd00000dd0000000d0000000d0101010d051111505000000557777775
+ccc76ccc499999405959595044444440449994404999994044944944799999790000000dd01010dd0101010d0101010d0000000d515555155050050557577575
+cc7665cc449994404595954599949990499999404994994044944944779997790101010dd00000dd0000000d0000000d5010105d515555155050050557577575
+cc6655cc499999405959595099999990499499404444444044444444799999790000000dd01010dd5010105d0101010d0000000d515555155000000557777775
+ccc55ccc499499404595954599999990444444404444444044999944799799795555555dd00000ddd00000dd0000000d0101010d515555155055550557555575
+cccccccc44444440545454509994999044444440444444404444444477777779ddddddddd55555ddd55555dd5555555d0000000d051111505000000557777775
+cccccccc00000000050505050000000000000000000000000444444099999999dddddddddddddddddddddddddddddddd5555555d005555005555555555555555
 dddddddddd7333337d7dddddddddddddd05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 dddddddddd733333070dddddddddddddd05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 dddddddddd733333707ddddddd000000d05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
