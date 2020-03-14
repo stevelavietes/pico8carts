@@ -1283,7 +1283,8 @@ function board_getyorg(b)
  
  if b.shakevalues then
   y = y - b.shakevalues[
-    b.shakecount] / 2
+    min(b.shakecount,
+      #b.shakevalues)] / 2
  end
 
  return y
