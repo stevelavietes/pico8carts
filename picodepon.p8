@@ -1054,12 +1054,18 @@ function board_step(b)
  local newmatchchainmax = 0
  local garbagefallarea = 0
  
+ local metalcount = 0
+ 
  local checkhorzrun =
    function(x1, y1)
   if horzrun.len < 3 then
    return
   end
-  -- todo
+  
+  if horzrun.btype == 7 then
+   metalcount += horzrun.len
+  end
+  
   local matchseq = {}
   add(newmatchseqs, matchseq)
   local row = board_getrow(
@@ -1161,6 +1167,9 @@ function board_step(b)
     chainmax = max(chainmax,
       hmatchseq[1].chain)
    else
+    if runbk.btype == 7 then
+     metalcount += 1
+    end
     chainmax = max(chainmax,
       runbk.chain + 1)
    end
@@ -1418,6 +1427,7 @@ function board_step(b)
  
  local matchcount = 0
  
+ 
  if #newmatchseqs > 0 then
   --b.matchrecs
   
@@ -1557,16 +1567,38 @@ function board_step(b)
  local lastbub = nil
  
  local buboffset = 0
- if matchcount > 3 then
-  local mx =
+ 
+ 
+ local mx =
     (newmatchminx - 1) * 8
       + b.x - 4
-  
-  
-  local my =
+ local my =
     (newmatchminy - 1) * 8
       + board_getyorg(b) - 4
  
+ 
+ if metalcount >= 3 then  
+  matchcount -= metalcount
+  if matchcount <= 0 then
+   newmatchchainmax = 0
+  end
+  
+  
+  local bub = matchbub_new(
+    0, matchcount, mx, my)
+  add(matchbubs, bub)
+  
+  if b.target then
+   bub.target = b.target
+   bub.matchcount = 0
+   bub.matchchain =
+     metalcount - 2
+  end
+    
+ end
+
+ 
+ if matchcount > 3 then
   lastbub = matchbub_new(
     0, matchcount, mx, my)
   add(matchbubs, lastbub)
@@ -1576,13 +1608,7 @@ function board_step(b)
  end
  
  if newmatchchainmax > 1 then
-  local mx =
-    (newmatchminx - 1) * 8
-      + b.x - 5
   
-  local my =
-    (newmatchminy - 1) * 8
-      + board_getyorg(b) - 4
   my -= buboffset
   
   lastbub = matchbub_new(1,
@@ -1748,10 +1774,17 @@ function block_draw(b, x, y, ry,
  	 local left = x
  	 local bottom = y + 7
  	 
+ 	 local bg = 0
+ 	 local fg = 5
+ 	 if b.btype > 10 then
+ 	  bg = 5
+ 	  fg = 0
+ 	 end
+ 	 
  	 rectfill(left, top, right,
- 	   bottom, 0)
+ 	   bottom, bg)
  	 rect(left + 1, top + 1,
- 	   right - 1, bottom - 1, 5)
+ 	   right - 1, bottom - 1, fg)
  	 
  	 palt(13, true)
  	 
@@ -1799,8 +1832,8 @@ function board_getyorg(b)
  
  if b.shakevalues then
   y = y - b.shakevalues[
-    min(b.shakecount,
-      #b.shakevalues)] / 2
+    max(1, min(b.shakecount,
+      #b.shakevalues))] / 2
  end
 
  return y
@@ -2314,7 +2347,14 @@ function updategame()
 	  
 	  gt *= mb.matchchain
 	  
-	  if gt <= 6 then
+	  if mb.matchcount == 0 then
+	   for i = 1, mb.matchchain do
+	    board_appendgarbage(
+	      mb.target, 6, 1).metal =
+	        true
+	   end
+	   
+	  elseif gt <= 6 then
 	   board_appendgarbage(
 	     mb.target, gt, 1)
 	  else
@@ -2444,6 +2484,8 @@ function matchbub_draw(mb)
  local v = mb.value
  if v > 9 then
   v = "+"
+ elseif v == 0 then
+  v = "!"
  end
  print(v,
    mb.x + textoffset,
@@ -2552,6 +2594,16 @@ function board_pendingstep(b)
   board_addgarbage(b, dropx, 1,
     pg.width, pg.height)
   b.pendingoffset += 8
+  
+  if pg.metal then
+   local row =
+     board_getrow(b, 1)
+   
+   for i = 1, 6 do
+    row[i].btype = 11
+   end
+  end
+  
   
  end
  
