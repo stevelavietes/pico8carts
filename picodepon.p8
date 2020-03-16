@@ -1949,14 +1949,18 @@ function board_draw(b)
 	 local y = b.y + 32
 	 local x = b.x + 10
 		if b.lose then
-		 x += sin(frame / 60) * 3
+		 local s =
+		   sin(frame / 60) - 0.5
+		 x += s * 3
 		 spr(87, x, y, 1, 2)
 		 spr(86, x + 7, y, 1, 2)
 		 spr(85, x + 14, y, 1, 2)
 		 spr(89, x + 21, y, 1, 2)
 		 
 	 else
-	  y += sin(frame / 30) * 6
+	  local s =
+		   sin(frame / 30) - 0.5
+	  y += s * 6
 	  x += 4
 	  spr(90, x, y, 2, 2)
 	  spr(92, x + 15, y, 1, 2)
