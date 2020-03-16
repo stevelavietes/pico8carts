@@ -233,7 +233,7 @@ end
 function selectmenu_draw()
  rectfill(0, 0, 127, 20, 13)
  
- levelselect_draw(1, 8, 22)
+ levelselect_draw(1, 1, 22)
  
  if g_numplayers == 1 then
   solo_draw(3, 3)  
