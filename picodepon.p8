@@ -18,6 +18,10 @@ autoraisespeedstart = {
  60, 20, 8,
 }
 
+autoraisespeeddec = {
+ 1000, 360, 300,
+}
+
 autoraiseholdmult = {
  60, 45, 30,
 }
@@ -416,6 +420,9 @@ function board_new()
  b.autoraisecounter = 0
  b.autoraisespeed = 60
  
+ b.autoraisedeccounter
+   = 0
+
  b.shakecount = 0
  
  b.pendinggarbage = {}
@@ -806,7 +813,18 @@ end
 
 
 function board_step(b)
-
+ 
+ b.autoraisedeccounter += 1
+ if b.autoraisedeccounter >=
+   autoraisespeeddec[
+     b.level] then
+  
+  b.autoraisedeccounter = 0
+  if b.autoraisespeed > 3 then
+    b.autoraisespeed -= 1
+  end
+ end
+ 
  if press(4, b.contidx) then
   
   local raise = true
