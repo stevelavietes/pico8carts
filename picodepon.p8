@@ -235,15 +235,23 @@ function mainmenu_draw()
  rectfill(0, 86, 127, 88, 5)
  rectfill(0, 89, 127, 128, 13)
 
- spr(112, 1, 67, 3, 1)
- spr(115, 26, 67, 2, 1)
- spr(117, 43, 67, 2, 1)
+ local drawkat = function(y)
+  spr(112, 1, y, 3, 1)
+  spr(115, 26, y, 2, 1)
+  spr(117, 43, y, 2, 1)
+ end
+ 
  
  pal(9, 0)
  pal(10, 0)
+ pal(7, 0)
+ drawkat(67)
+ 
  spr(71, 1, 77, 8, 1)
  
  pal()
+	drawkat(66)
+ 
 	spr(71, 1, 76, 8, 1)
  line(0, 86, 128, 86, 0)
  solo_draw(45, 92)
