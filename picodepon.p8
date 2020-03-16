@@ -18,6 +18,10 @@ autoraisespeedstart = {
  60, 20, 8,
 }
 
+autoraiseholdmult = {
+ 60, 45, 30,
+}
+
 function defconsts()
  shakesmall = hexstr2array(
   "010011001110001111")
@@ -92,7 +96,7 @@ function _draw()
   selectmenu_draw()  
  else
   rectfill(0, 0, 127, 127, 5)
-
+    
   palt(0, false)
   
 	 for i = 1, #boards do
@@ -146,6 +150,12 @@ function mainmenu_draw()
  rectfill(0, 86, 127, 88, 5)
  rectfill(0, 89, 127, 128, 13)
 
+ pal(9, 0)
+ pal(10, 0)
+ spr(71, 1, 77, 8, 1)
+ 
+ pal()
+	spr(71, 1, 76, 8, 1)
  line(0, 86, 128, 86, 0)
  solo_draw(45, 92)
  vs_draw(45, 110)
@@ -216,19 +226,15 @@ end
 function selectmenu_draw()
  rectfill(0, 0, 127, 20, 13)
  
- 
  levelselect_draw(1, 1, 22)
  
  if g_numplayers == 1 then
   solo_draw(3, 3)  
  else
   levelselect_draw(2, 65, 22)
- 
   vs_draw(3, 3)
  end
- 
- 
- 
+
 end
 
 
@@ -822,8 +828,14 @@ function board_step(b)
  else
   b.manualraise = 0
   
+  if b.autoraisehold > 0 then
+   b.autoraisehold -= 1
+  end
+  
   --todo, autoraise
-  if #b.matchrecs == 0 then
+  if #b.matchrecs == 0
+    and b.autoraisehold == 0
+    then
    b.autoraisecounter += 0.5
    if b.autoraisecounter >=
      b.autoraisespeed then
@@ -1421,7 +1433,8 @@ function board_step(b)
  
  b.matchrecs = activematches
  
-
+ local holdtotal = 0
+ 
  local lastbub = nil
  
  local buboffset = 0
@@ -1440,7 +1453,7 @@ function board_step(b)
   add(matchbubs, lastbub)
  
   buboffset = 11
-  
+  holdtotal = matchcount - 1
  end
  
  if newmatchchainmax > 1 then
@@ -1456,6 +1469,20 @@ function board_step(b)
   lastbub = matchbub_new(1,
     newmatchchainmax, mx, my)
   add(matchbubs, lastbub)
+  
+  if holdtotal == 0 then
+   holdtotal = 2
+  end
+  
+  holdtotal *= newmatchchainmax
+  
+ end
+ 
+ if holdtotal > 0 then
+  holdtotal = holdtotal *
+    autoraiseholdmult[b.level]
+   
+  b.autoraisehold += holdtotal
   
  end
  
@@ -1767,6 +1794,21 @@ function board_draw(b)
 	 palt(13, false)
 	 
 	end
+	
+	if b.autoraisehold > 0 then
+	 local top = max(b.y, 128 -
+	   (b.autoraisehold / 2))
+	   
+	 local x = b.x - 2
+	 if b.x > 63 then
+	  x = b.x + 49
+	 end
+  
+  line(x, top, x, 127, 11)	
+	
+	end
+	
+	
 end
 
 function board_breakgarbage(
@@ -2331,13 +2373,13 @@ cc6655cc499999405959595099999990499499404444444044444444799999790000000dd01010dd
 ccc55ccc499499404595954599999990444444404444444044999944799799795555555dd00000ddd00000dd0000000d0101010d515555155055550557555575
 cccccccc44444440545454509994999044444440444444404444444477777779ddddddddd55555ddd55555dd5555555d0000000d051111505000000557777775
 cccccccc00000000050505050000000000000000000000000444444099999999dddddddddddddddddddddddddddddddd5555555d005555005555555555555555
-dddddddddd7333337d7dddddddddddddd05000001111111022222220000000000000000000000000000000000000000000000000000000000000000000000000
-dddddddddd733333070dddddddddddddd05000001ddddd102eeeee20000000000000000000000000000000000000000000000000000000000000000000000000
-dddddddddd733333707ddddddd000000d05000001d111d1021111120000000000000000000000000000000000000000000000000000000000000000000000000
-dddd7777dd0733330d0dddddd0555555d05555551dd1dd102e1e1e20000000000000000000000000000000000000000000000000000000000000000000000000
-ddd73333ddd07777ddddddddd0500000dd0000001dd1dd102e1e1e20000000000000000000000000000000000000000000000000000000000000000000000000
-dd733333dddd0000ddddddddd0500000dddddddd1d111d1021111120000000000000000000000000000000000000000000000000000000000000000000000000
-dd733333ddddddddddddddddd0500000dddddddd1ddddd102eeeee20000000000000000000000000000000000000000000000000000000000000000000000000
+dddddddddd7333337d7dddddddddddddd05000001111111022222220aaaaa00aa00aaaa00aaaa00000aaaaa00aaaaa0000aaaaa000aaaa00aa000aa000000000
+dddddddddd733333070dddddddddddddd05000001ddddd102eeeee20aaaaaa0aa0aaaaa0aaaaaa0000aaaaaa0aaaaa0000aaaaaa0aaaaaa0aaa00aa000000000
+dddddddddd733333707ddddddd000000d05000001d111d1021111120aa00aa0aa0aa0000aa00aa0000aa00aa0aa0000000aa00aa0aa00aa0aaaa0aa000000000
+dddd7777dd0733330d0dddddd0555555d05555551dd1dd102e1e1e20999999099099000099009900009900990999900000999999099009909999999000000000
+ddd73333ddd07777ddddddddd0500000dd0000001dd1dd102e1e1e20999990099099000099009900009900990990000000999990099009909909999000000000
+dd733333dddd0000ddddddddd0500000dddddddd1d111d1021111120990000099099999099999900009999990999990000990000099999909900999000000000
+dd733333ddddddddddddddddd0500000dddddddd1ddddd102eeeee20990000099009999009999000009999900999990000990000009999009900099000000000
 dd733333ddddddddddddddddd0500000dddddddd1111111022222220000000000000000000000000000000000000000000000000000000000000000000000000
 dddddddddddddddddddddddddddddddddddddddddd00000ddd000ddd0000dddd0000000d0000000d000000000000000000000000000000000000000000000000
 ddd00000000dddddddd00000000ddddd00000dddd077770dd07770dd0770dddd0770770d0777770d000000000000000000000000000000000000000000000000
