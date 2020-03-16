@@ -108,6 +108,13 @@ function _draw()
 	 for i = 1, #matchbubs do
 	  matchbub_draw(matchbubs[i])
 	 end
+	 
+	 if g_gamecount < 20 then
+	   trans(
+	     flr((20 - g_gamecount) / 4))
+	   
+	 end
+	 
  end
 end
 
@@ -226,7 +233,7 @@ end
 function selectmenu_draw()
  rectfill(0, 0, 127, 20, 13)
  
- levelselect_draw(1, 1, 22)
+ levelselect_draw(1, 8, 22)
  
  if g_numplayers == 1 then
   solo_draw(3, 3)  
@@ -2351,6 +2358,32 @@ function board_drawpending(b)
  end
 
 end
+
+
+function trans(s)
+ if s<1 then
+  return
+ end
+ s=2^s
+ local b,m,o =
+   0x6000,
+   15,
+   s/2-1+(32*s)
+
+ for y=0,128-s,s do
+  for x=0,128-s,s do
+   local a=b+x/2
+   local c=band(peek(a+o),m)
+   c=bor(c,shl(c,4))
+   for i=1,s do
+    memset(a,c,s/2)
+    a+=64
+   end
+  end
+  b+=s*64
+ end
+end
+
 __gfx__
 0000000082222220525252508222222082828220888888200222222087777778e222222052525250e2222220e2eee220eeeeee2002222220e777777e00700000
 000000002282822025858525222222202888882028888820222222227787877822eee22025e5e525222222202eeeee202eeeee202222222277eee77e00770000
