@@ -13,6 +13,7 @@ popoffset = 9
 chainresetcount = 7
 postclearholdframes = 3
 boardxpos = {3, 77}
+toppedoutboardframelimit = 120
 
 autoraisespeedstart = {
  60, 20, 8,
@@ -87,6 +88,24 @@ function _update60()
 	 updategame()
 	end
 	
+	if g_gamestate == gs_gameend
+	  then
+  
+  if g_gamecount < 180 then
+   g_gamecount += 1
+  else
+   for i = 1, g_numplayers do
+    if newpress(4, i - 1) or
+      newpress(5, i - 1) then
+      
+      startselectmenu()
+      break
+    end
+   end
+  end
+  	  
+	end
+
 end
 
 function _draw()
@@ -113,8 +132,9 @@ function _draw()
 	  matchbub_draw(matchbubs[i])
 	 end
 	 
-	 if g_gamecount < 20 then
-	   trans(
+	 if g_gamestate == gs_gamestart
+	   and g_gamecount < 20 then
+	  trans(
 	     flr((20 - g_gamecount) / 4))
 	   
 	 end
@@ -427,6 +447,10 @@ function board_new()
  
  b.pendinggarbage = {}
  b.pendingoffset = 0
+ 
+ b.toppedoutframecount = 0
+ 
+ b.lost = false
  return b
 
 end
@@ -624,7 +648,11 @@ cursshakeframes = {
  -1, -1, 0, 0, 1, 1, 0, 0
 }
 function board_cursinput(b)
-	
+	if g_gamestate != gs_gameplay
+	  then
+	 return
+	end
+
 	b.cursbumpx = 0
 	b.cursbumpy = 0
 	
@@ -813,7 +841,11 @@ end
 
 
 function board_step(b)
- 
+ if g_gamestate != gs_gameplay
+   then
+  return
+ end
+
  b.autoraisedeccounter += 1
  if b.autoraisedeccounter >=
    autoraisespeeddec[
@@ -1530,6 +1562,67 @@ function board_step(b)
  end
  
  board_pendingstep(b)
+ 
+ local anyattop = false
+ local toprow =
+   board_getrow(b, 1)
+ for i = 1, 6 do
+  if toprow[i].btype > 0 then
+   anyattop = true
+   break
+  end
+ end
+ 
+ if anyattop then
+  if b.autoraisehold == 0 and
+    #b.matchrecs == 0 then
+   b.toppedoutframecount += 1
+   
+   if b.toppedoutframecount >=
+     toppedoutboardframelimit
+       then
+    board_lose(b) 
+   end
+  end
+ else
+  b.toppedoutframecount = 0  
+ end
+ 
+ 
+end
+
+function board_lose(b)
+ b.lose = true
+ for i = 1, 12 do
+  local row = board_getrow(b, i)
+  for j = 1, 6 do
+   local bk = row[j]
+   if bk.btype > 0 then
+	   if bk.state != bs_garbage
+	     and bk.state !=
+	       bs_garbagematching
+	     then
+	    bk.state = bs_matching
+	     
+	   else
+	    bk.state =
+	      bs_garbagematching
+	   end
+	   bk.count2 = 100
+	   bk.count = flashframes + 2
+   end
+  end
+ end
+ 
+ g_gamestate = gs_gameend
+ g_gamecount = 0
+ 
+ matchbubs = {}
+ 
+ b.shakevalues = shakelarge
+ b.shakecount = #b.shakevalues
+ 
+ 
 end
 
 function block_draw(b, x, y, ry,
@@ -1554,6 +1647,7 @@ function block_draw(b, x, y, ry,
   	  squashframe + 1]
   	
   end
+  
   
   spr(idx, x, y)
  
@@ -1751,60 +1845,76 @@ function board_draw(b)
 	
 	end
 	palt(12, false)
+	
+	if b.autoraisehold > 0 then
+	 local top = max(b.y, 128 -
+	   (b.autoraisehold / 2))
+	   
+	 local x = b.x - 2
+	 if b.x > 63 then
+	  x = b.x + 49
+	 end
+  
+  line(x, top, x, 127, 11)	
+	
+	end
+	
 	-- draw cursors
-
-	local cx = x + b.cursx * 8
-	local cy = y + b.cursy * 8
-	
-	cx += b.cursbumpx
-	cy += b.cursbumpy
-	
-	  -- todo draw swapping blocks
-	if b.cursstate == cs_swapping
-	  then
-	 local bk1, bk2 =
-  	  board_getcursblocks(b)
-  	
-  if bk1.btype > 0 then
-   local idx = blocktileidxs[
-  		 bk1.btype]
-  	
-  	spr(idx, cx + b.curscount * 2,
-  	  cy)
-  end
-  
-  if bk2.btype > 0 then
-   local idx = blocktileidxs[
-  		 bk2.btype]
-  		 
-  	spr(idx, cx + 8
-  	  - b.curscount * 2, cy)
-  end
-  
+ if g_gamestate != gs_gameend
+   then
+		local cx = x + b.cursx * 8
+		local cy = y + b.cursy * 8
+		
+		cx += b.cursbumpx
+		cy += b.cursbumpy
+		
+		  -- todo draw swapping blocks
+		if b.cursstate == cs_swapping
+		  then
+		 local bk1, bk2 =
+	  	  board_getcursblocks(b)
+	  	
+	  if bk1.btype > 0 then
+	   local idx = blocktileidxs[
+	  		 bk1.btype]
+	  	
+	  	spr(idx, cx + b.curscount * 2,
+	  	  cy)
+	  end
+	  
+	  if bk2.btype > 0 then
+	   local idx = blocktileidxs[
+	  		 bk2.btype]
+	  		 
+	  	spr(idx, cx + 8
+	  	  - b.curscount * 2, cy)
+	  end
+	  
+		end
+		
+		local off = 0
+		if frame % 32 < 15 then
+		 off = 1
+		end
+		
+		palt(13, true)
+		spr(16, cx - 4 - off,
+		  cy - 4 - off)
+		spr(16, cx - 4 - off,
+			 cy + 3 + off, 1, 1,
+			 		false, true)
+		spr(16, cx + 12 + off,
+			 cy - 4 - off, 1, 1,
+			 		true, false)
+		spr(16, cx + 12 + off,
+			 cy + 3 + off, 1, 1,
+			 		true, true)
+		spr(32, cx + 4,
+			 cy - 4 - off, 1, 1)
+		spr(32, cx + 4,
+			 cy + 3 + off, 1, 1,
+			   false, true)
 	end
-	
-	local off = 0
-	if frame % 32 < 15 then
-	 off = 1
-	end
-	
-	palt(13, true)
-	spr(16, cx - 4 - off,
-	  cy - 4 - off)
-	spr(16, cx - 4 - off,
-		 cy + 3 + off, 1, 1,
-		 		false, true)
-	spr(16, cx + 12 + off,
-		 cy - 4 - off, 1, 1,
-		 		true, false)
-	spr(16, cx + 12 + off,
-		 cy + 3 + off, 1, 1,
-		 		true, true)
-	spr(32, cx + 4,
-		 cy - 4 - off, 1, 1)
-	spr(32, cx + 4,
-		 cy + 3 + off, 1, 1,
-		   false, true)
 	
 	board_drawpending(b)
 	palt(13, false)
@@ -1831,19 +1941,29 @@ function board_draw(b)
 	 
 	end
 	
-	if b.autoraisehold > 0 then
-	 local top = max(b.y, 128 -
-	   (b.autoraisehold / 2))
-	   
-	 local x = b.x - 2
-	 if b.x > 63 then
-	  x = b.x + 49
+	
+	if g_gamestate == gs_gameend
+	  then
+	 
+	 palt(13, true)
+	 local y = b.y + 32
+	 local x = b.x + 10
+		if b.lose then
+		 x += sin(frame / 60) * 3
+		 spr(87, x, y, 1, 2)
+		 spr(86, x + 7, y, 1, 2)
+		 spr(85, x + 14, y, 1, 2)
+		 spr(89, x + 21, y, 1, 2)
+		 
+	 else
+	  y += sin(frame / 30) * 6
+	  x += 4
+	  spr(90, x, y, 2, 2)
+	  spr(92, x + 15, y, 1, 2)
+	  
 	 end
-  
-  line(x, top, x, 127, 11)	
-	
+	 palt(13, false)
 	end
-	
 	
 end
 
@@ -2062,7 +2182,7 @@ function updategame()
 	  g_gamecount += 1
 	  
 	  if g_gamecount == 180 then
-	   g_gamestate = gs_play
+	   g_gamestate = gs_gameplay
 	   --todo sfx
 	  end
 
@@ -2074,6 +2194,7 @@ function updategame()
 	for i = 1, #boards do
 	 board_step(boards[i])
 	end
+	
 	
 	local newmatchbubs = {}
 	for i = 1, #matchbubs do
@@ -2443,22 +2564,22 @@ ddd73333ddd07777ddddddddd0500000dd0000001dd1dd102e1e1e20999990099099000099009900
 dd733333dddd0000ddddddddd0500000dddddddd1d111d1021111120990000099099999099999900009999990999990000990000099999909900999000000000
 dd733333ddddddddddddddddd0500000dddddddd1ddddd102eeeee20990000099009999009999000009999900999990000990000009999009900099000000000
 dd733333ddddddddddddddddd0500000dddddddd1111111022222220000000000000000000000000000000000000000000000000000000000000000000000000
-dddddddddddddddddddddddddddddddddddddddddd00000ddd000ddd0000dddd0000000d0000000d000000000000000000000000000000000000000000000000
-ddd00000000dddddddd00000000ddddd00000dddd077770dd07770dd0770dddd0770770d0777770d000000000000000000000000000000000000000000000000
-ddd077777770ddddddd077777770dddd07770ddd0777770d0777770d0770dddd0770770d0777770d000000000000000000000000000000000000000000000000
-ddd0777777770dddddd0777777770ddd07770ddd0770000d0770770d0770dddd0770770d0770000d000000000000000000000000000000000000000000000000
-ddd0000000770dddddd0000000770ddd00770ddd0770dddd0770770d0770dddd0770770d0770dddd000000000000000000000000000000000000000000000000
-ddd5555550770dddddd5555550770ddd50770ddd07700ddd0770770d0770dddd0770770d077000dd000000000000000000000000000000000000000000000000
-dddd000000770dddddddd00000770dddd0770ddd077770dd0770770d0770dddd0770770d077770dd000000000000000000000000000000000000000000000000
-dddd077777705ddddddd077777770dddd0770dddd077770d0770770d0770dddd0770770d077770dd000000000000000000000000000000000000000000000000
-dddd07777770ddddddd0777777705dddd0770ddddd00770d0770770d0770dddd0770770d077000dd000000000000000000000000000000000000000000000000
-dddd000000770dddddd077000005ddddd0770dddddd0770d0770770d0770dddd0770770d0770dddd000000000000000000000000000000000000000000000000
-dddd555550770dddddd07705555dddddd0770ddd0000770d0770770d0770000d0777770d0770000d000000000000000000000000000000000000000000000000
-ddd0000000770dddddd0770000000ddd007700dd0777770d0777770d0777770dd07770dd0777770d000000000000000000000000000000000000000000000000
-ddd0777777770dddddd0777777770ddd077770dd077770ddd07770dd0777770ddd070ddd0777770d000000000000000000000000000000000000000000000000
-ddd0777777705dddddd0777777770ddd077770dd00000ddddd000ddd0000000dddd0dddd0000000d000000000000000000000000000000000000000000000000
-ddd000000005ddddddd0000000000ddd000000dddddddddddddddddddddddddddddddddddddddddd000000000000000000000000000000000000000000000000
-ddd55555555dddddddd5555555555ddd555555dddddddddddddddddddddddddddddddddddddddddd000000000000000000000000000000000000000000000000
+dddddddddddddddddddddddddddddddddddddddddd00000ddd000ddd0000dddd0000000d0000000d0000d0000d0000dd00000ddd000000000000000000000000
+ddd00000000dddddddd00000000ddddd00000dddd077770dd07770dd0770dddd0770770d0777770d0770d0770d0770dd077770dd000000000000000000000000
+ddd077777770ddddddd077777770dddd07770ddd0777770d0777770d0770dddd0770770d0777770d0770d0770d0770dd0777770d000000000000000000000000
+ddd0777777770dddddd0777777770ddd07770ddd0770000d0770770d0770dddd0770770d0770000d0770d0770d0770dd0770770d000000000000000000000000
+ddd0000000770dddddd0000000770ddd00770ddd0770dddd0770770d0770dddd0770770d0770dddd0770d0770d0770dd0770770d000000000000000000000000
+ddd5555550770dddddd5555550770ddd50770ddd07700ddd0770770d0770dddd0770770d077000dd0770d0770d0770dd0770770d000000000000000000000000
+dddd000000770dddddddd00000770dddd0770ddd077770dd0770770d0770dddd0770770d077770dd0770d0770d0770dd0770770d000000000000000000000000
+dddd077777705ddddddd077777770dddd0770dddd077770d0770770d0770dddd0770770d077770dd077000770d0770dd0770770d000000000000000000000000
+dddd07777770ddddddd0777777705dddd0770ddddd00770d0770770d0770dddd0770770d077000dd077070770d0770dd0770770d000000000000000000000000
+dddd000000770dddddd077000005ddddd0770dddddd0770d0770770d0770dddd0770770d0770dddd077070770d0770dd0770770d000000000000000000000000
+dddd555550770dddddd07705555dddddd0770ddd0000770d0770770d0770000d0777770d0770000d077070770d0770dd0770770d000000000000000000000000
+ddd0000000770dddddd0770000000ddd007700dd0777770d0777770d0777770dd07770dd0777770d077777770d0770dd0770770d000000000000000000000000
+ddd0777777770dddddd0777777770ddd077770dd077770ddd07770dd0777770ddd070ddd0777770dd0770770dd0770dd0770770d000000000000000000000000
+ddd0777777705dddddd0777777770ddd077770dd00000ddddd000ddd0000000dddd0dddd0000000ddd00000ddd0000dd0000000d000000000000000000000000
+ddd000000005ddddddd0000000000ddd000000dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd000000000000000000000000
+ddd55555555dddddddd5555555555ddd555555dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd000000000000000000000000
 __label__
 55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
 55555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555
