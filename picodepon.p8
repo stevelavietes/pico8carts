@@ -233,7 +233,7 @@ end
 
 
 lvlnames = {
- "easy", "norm", "hard"}
+ "easy", "med", "hard"}
 
 lvlcolors = {3, 9, 8}
 
@@ -244,7 +244,7 @@ function levelselect_draw(
  y += 9
  
  if g_accepted[idx] then
-  rect(x - 1, y - 1, x + 56,
+  rect(x - 1, y - 1, x + 55,
     y + 9, 7)
  end
  
@@ -262,8 +262,12 @@ function levelselect_draw(
   
   rect(x, y, x + 18, y + 8, 1)
   
+  local xx = x + 2
+  if i == 2 then
+   xx += 2
+  end
   print(lvlnames[i],
-    x + 2, y + 2, fgcolor)
+    xx, y + 2, fgcolor)
   x += 18
  end
  
