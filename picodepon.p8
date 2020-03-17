@@ -20,12 +20,26 @@ autoraisespeedstart = {
 }
 
 autoraisespeeddec = {
- 1000, 360, 300,
+ 1000, 360, 350,
 }
 
 autoraiseholdmult = {
  60, 45, 30,
 }
+
+garbageprob = {
+ 32, 64, 96
+}
+
+garbagesizes = {
+ {3, 1}, {4, 1}, {5, 1},
+ {6, 1}, {6, 2},
+}
+
+garbagerange = {
+ 2, 4, 5
+}
+
 
 function defconsts()
  shakesmall = hexstr2array(
@@ -901,7 +915,23 @@ function board_raise(b)
   for i = 1, #b.matchrecs do
    b.matchrecs[i].y -= 1
   end
-  --todo, adjust matches
+  
+  if not b.target then
+   if rnd(256) < 
+     garbageprob[
+       b.level] then
+
+    local s =
+      garbagesizes[
+        flr(rnd(
+          garbagerange[
+            b.level])) + 1]
+
+    board_appendgarbage(b,
+      s[1], s[2])
+   end
+  end
+  
  
  elseif b.raiseoffset == 2 then
   if b.cursstate == cs_idle and
