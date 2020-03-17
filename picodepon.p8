@@ -798,7 +798,6 @@ function board_cursinput(b)
   else   
    maskpress(bnot(shl(1, 5)),
      b.contidx)
-   -- todo pending bump shake   
    
    if (
      stateisswappable(bk1.state)
@@ -1007,7 +1006,6 @@ function board_step(b)
    b.autoraisehold -= 1
   end
   
-  --todo, autoraise
   if #b.matchrecs == 0
     and b.autoraisehold == 0
     then
@@ -1133,7 +1131,6 @@ function board_step(b)
   
   local chainmax = 0
   
-  -- todo, metal match count
   local rx = x1 - horzrun.len
   newmatchminy = min(
      newmatchminy, y1)
@@ -1178,7 +1175,6 @@ function board_step(b)
     newmatchchainmax, chainmax)
  end
  
- --todo function checkvertrun
  local checkvertrun = function(
    x1, y1)
   if vertruns[x1].len < 3 then
@@ -1274,9 +1270,6 @@ function board_step(b)
    newmatchminy = min(
      newmatchminy, ry)
    
-   --todo: metal
-   --todo: seqidx
-   
    ::cont::
    
   	ry += 1
@@ -1349,7 +1342,6 @@ function board_step(b)
      if bk.count > 0 then
       bk.count -= 1
       
-      -- todo chain reset
       if bk.count ==
        chainresetcount then
        bk.chain = 0
@@ -1409,9 +1401,6 @@ function board_step(b)
     checkvertrun(x, y + 1)
     vertruns[x].btype = 0
     vertruns[x].len = 0
-    
-   
-    -- todo, garbage
     
     if prevrow and
       bk.state == bs_garbage and
@@ -1485,11 +1474,8 @@ function board_step(b)
  
  
  if #newmatchseqs > 0 then
-  --b.matchrecs
-  
   local seqidxstartr = {0}
   
-  --todo, check garbage
   for i = 1, #newmatchseqs do
    
    local ms = newmatchseqs[i]
@@ -1564,7 +1550,6 @@ function board_step(b)
      
      -- walk up and max chain
      for y = m.y - 1, 1, -1 do
-      -- todo
       local runbk =
         board_getrow(b, y)[m.x]
        
@@ -1798,10 +1783,8 @@ function block_draw(b, x, y, ry,
   elseif b.count > 0 then
    idx += bounceframes[b.count]
   elseif squashed then
-  	-- todo column squash
   	idx = idx + squashframes[
   	  squashframe + 1]
-  	
   end
   
   
@@ -2044,7 +2027,6 @@ function board_draw(b)
 		cx += b.cursbumpx
 		cy += b.cursbumpy
 		
-		  -- todo draw swapping blocks
 		if b.cursstate == cs_swapping
 		  then
 		 local bk1, bk2 =
@@ -2431,10 +2413,6 @@ function updategame()
 	 	end
 	 
 	 elseif mb.count == 77 then
-	  -- send garbage
-	  -- todo
-	  --  matchcount
-	  --  matchchain
 	  
 	  local gt = mb.matchcount
 	  if gt < 10 then
