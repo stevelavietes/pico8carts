@@ -273,6 +273,9 @@ end
 function startselectmenu()
  g_gamestate = gs_selectmenu
  g_accepted = {false, false}
+ -- clear mean items
+ menuitem(1)
+ menuitem(2)
 end
 
 function selectmenu_step()
@@ -390,6 +393,10 @@ end
 
 
 function startgame()
+ 
+ menuitem(1, "cancel game", 
+   startselectmenu)
+ 
  g_gamestate = gs_gamestart
  g_gamecount = 0
  
