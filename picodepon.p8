@@ -1607,11 +1607,16 @@ function board_step(b)
     0, matchcount, mx, my)
   add(matchbubs, bub)
   
+  bub.matchcount = 0
+  bub.matchchain =
+    metalcount - 2
+    
   if b.target then
-   bub.target = b.target
-   bub.matchcount = 0
-   bub.matchchain =
-     metalcount - 2
+   bub.target = b.target 
+  else
+   bub.target = b
+   bub.targetpos =
+     {70, b.y}
   end
     
  end
@@ -1650,8 +1655,15 @@ function board_step(b)
   
  end
  
- if b.target and lastbub then
-  lastbub.target = b.target
+ if lastbub then
+  if b.target then
+   lastbub.target = b.target
+  else
+   lastbub.target = b
+   lastbub.targetpos =
+     {70, b.y}
+  end
+  
   lastbub.matchcount = 
     matchcount
   lastbub.matchchain =
@@ -2394,27 +2406,40 @@ function updategame()
 	  
 	  gt *= mb.matchchain
 	  
+	  local sendfnc = 
+	    board_appendgarbage
+	    
+	  if mb.targetpos then
+	    sendfnc =
+	      board_addtoscore
+	  end
+	  
 	  if mb.matchcount == 0 then
 	   for i = 1, mb.matchchain do
-	    board_appendgarbage(
-	      mb.target, 6, 1).metal =
+	    if mb.targetpos then
+	     sendfnc(
+	       mb.target, 9, 1)
+	    else
+	     sendfnc(
+	       mb.target, 6, 1).metal =
 	        true
+	    end
 	   end
 	   
 	  elseif gt <= 6 then
-	   board_appendgarbage(
+	   sendfnc(
 	     mb.target, gt, 1)
 	  else
 	   local rem = gt % 6
 	   if rem == 0 or rem >= 3
 	     then
 	    
-	    board_appendgarbage(
+	    sendfnc(
 	      mb.target, 6,
 	        flr(gt / 6))
 	    
 	    if rem > 0 then
-	     board_appendgarbage(
+	     sendfnc(
 	       mb.target, rem, 1
 	         ).count = 0
 	    end
@@ -2424,12 +2449,12 @@ function updategame()
 	    local trimtotal = gt - 3
 	    while trimtotal > 0 do
 	     if trimtotal < 6 then
-	      board_appendgarbage(
+	      sendfnc(
 	       mb.target, trimtotal, 1
 	         ).count = dur
 	      break
 	     else
-	      board_appendgarbage(
+	      sendfnc(
 	       mb.target, 6, 1
 	         ).count = dur
 	      
@@ -2444,11 +2469,21 @@ function updategame()
 	  goto skip
 	 elseif mb.count == 69 then
 	  if mb.target then
-	   mb.dx = (mb.target.x + 2 - 
-	     mb.x) / 8
 	   
-	   mb.dy = (mb.target.y - 16 - 
-	     mb.y) / 8  
+	   if mb.targetpos then
+	    mb.dx = 
+	      (mb.targetpos[1] - 
+		       mb.x) / 8
+		   mb.dy = 
+	      (mb.targetpos[2] - 
+		       mb.y) / 8
+	   else
+		   mb.dx = (mb.target.x + 2 - 
+		     mb.x) / 8
+		   
+		   mb.dy = (mb.target.y - 16 - 
+		     mb.y) / 8  
+	   end
 	  end
 	 end
 	 
@@ -2573,6 +2608,12 @@ function board_appendgarbage(b,
  add(b.pendinggarbage, pg)
  
  return pg 
+end
+
+
+function board_addtoscore(b,
+  width, height)
+ b.score += width * height
 end
 
 function board_pendingstep(b)
