@@ -337,8 +337,8 @@ function rndcloud(x, y)
 end
 
 clouds = {
- rndcloud(30, 12, -1),
- rndcloud(90, 50, -1),
+ rndcloud(30, 7, -1),
+ rndcloud(90, 45, -1),
 }
 
 function mainmenu_draw()
