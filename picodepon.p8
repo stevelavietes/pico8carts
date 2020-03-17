@@ -1363,7 +1363,7 @@ function board_step(b)
     if (bounceframecount -
       bk.count) < 2 then
      
-     checkhorzrun(x)
+     checkhorzrun(x, y)
      horzrun.btype = 0
      horzrun.len = 1
      
