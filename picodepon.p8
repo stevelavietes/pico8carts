@@ -333,7 +333,7 @@ function rndcloud(x, y)
  return cloud_new(
    def[1], def[2], def[3],
      def[4], x, y,
-       -rnd(0.25) - 0.1)
+       -rnd(0.25) - 0.25)
 end
 
 clouds = {
