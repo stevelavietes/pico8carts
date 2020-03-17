@@ -2614,6 +2614,7 @@ end
 function board_addtoscore(b,
   width, height)
  b.score += width * height
+ return {}
 end
 
 function board_pendingstep(b)
