@@ -518,7 +518,7 @@ function selectmenu_draw()
   
   local f1 = function()
 	  if i == g_chars[1] and 
-	    g_accepted[1] > 0 then 
+	    g_accepted[1] > 0 then   
 	   local p = nil
 	   if g_accepted[1] == 1 then
 	    p = 0
@@ -563,11 +563,11 @@ function levelselect_draw(
   idx, x, y)
   
  spr(68 + idx, x, y)
- y += 9
+ y += 10
  
- if g_accepted[idx] > 0 then
+ if g_accepted[idx] == 0 then
   rect(x - 1, y - 1, x + 55,
-    y + 9, 7)
+    y + 9, 6)
  end
  
  for i = 1, 3 do
