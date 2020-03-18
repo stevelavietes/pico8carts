@@ -458,15 +458,18 @@ end
 function selectmenu_draw()
  rectfill(0, 0, 127, 20, 13)
  
- levelselect_draw(1, 1, 22)
+ levelselect_draw(1, 1, 25)
  
  if g_numplayers == 1 then
   solo_draw(3, 3)  
  else
-  levelselect_draw(2, 65, 22)
+  levelselect_draw(2, 65, 25)
   vs_draw(3, 3)
  end
 
+ line(0, 50, 127, 50, 1)
+ --rectfill(0, 56,  127, 127, 13)
+ 
 
  local drawcurs = function(
    x, y, c, p)
