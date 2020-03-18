@@ -76,8 +76,8 @@ end
 
 function _init()
  frame = 2
- pframe = 1 --prevframe
- cstate = 0 --controllers
+ pframe = 1
+ cstate = 0
  prevcstate = 0
  squashframe = 0
  squashcount = 0
@@ -371,7 +371,6 @@ clouddefs = {
  {6, 0, 6, 4},
  {12, 0, 4, 3},
  {16, 0, 5, 3},
- --{12, 3, 5, 2},
  {17, 3, 3, 2}
 }
 
@@ -435,7 +434,6 @@ end
 function startselectmenu()
  g_gamestate = gs_selectmenu
  g_accepted = {0, 0}
- -- clear mean items
  menuitem(1)
  menuitem(2)
 end
@@ -795,8 +793,7 @@ function board_new()
  b.toppedoutframecount = 0
  
  b.score = 0
- b.lines = 0
- 
+
  b.lost = false
  return b
 
@@ -905,8 +902,7 @@ function board_addgarbage(b,
 		   bk.garbageheight = forceh
 		  end
    end
-  end
-  --for xx = 
+  end 
  end
 
 end
@@ -1035,7 +1031,7 @@ function board_cursinput(b)
     and (canswap(bk1, bk1below)
      and canswap(bk2, bk2below))
     then
-   -- swap shit
+   
    bk1.state = bs_swapping
    bk2.state = bs_swapping
    b.cursstate = cs_swapping
@@ -1115,9 +1111,6 @@ function board_raise(b)
   if b.cursy > 0 then
    b.cursy -= 1
   end
-  
-  b.lines += 1
-
   b.rowstart =
     (b.rowstart + 1) % 13
   
@@ -1326,7 +1319,7 @@ function board_step(b)
    postswap(b.cursx + 2,
      b.cursy + 1)
      
-   -- unset dpad states
+
    maskpress(bnot(7),
      b.contidx)
    
@@ -1557,7 +1550,6 @@ function board_step(b)
      if bkbelow.state == bs_idle
        and bkbelow.btype == 0
        then
-						--stop()
 						 
       bkbelow.btype = bk.btype
       bkbelow.fallframe =
@@ -1616,8 +1608,6 @@ function board_step(b)
        bk.btype then
       horzrun.len += 1
      else
-      --we don't match but
-      --what's before us might
       checkhorzrun(x, y)
       horzrun.btype = bk.btype
       horzrun.len = 1
@@ -1653,8 +1643,6 @@ function board_step(b)
       bk.state == bs_garbage and
       bk.garbagex == 0 then
       
-      --local bkbelow =
-      --  prevrow[x]
       
       local clearbelow = true
       for i = x,
@@ -2031,17 +2019,13 @@ function block_draw(b, x, y, ry,
   local idx = blocktileidxs[
   		b.btype]
   
-  --if ry == 13 then
-  -- idx += 1
-  
   if b.count > 0 then
    idx += bounceframes[b.count]
   elseif squashed then
   	idx = idx + squashframes[
   	  squashframe + 1]
   end
-  
-  
+
   spr(idx, x, y)
  
  
@@ -2421,7 +2405,6 @@ function board_drawsolohud(b)
  end
  
  drawstat("score", b.score, 0)
- --drawstat("lines", b.lines, 12)
  drawstat("speed",
    61 - b.autoraisespeed, 12)
  
