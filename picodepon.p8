@@ -70,6 +70,10 @@ gs_gamestart = 2
 gs_gameplay = 3
 gs_gameend = 4
 
+function resetwins()
+ g_wins = {0, 0}
+end
+
 function _init()
  frame = 2
  pframe = 1 --prevframe
@@ -82,6 +86,8 @@ function _init()
 
  g_numplayers = 1
  g_levels = {2, 2}
+ resetwins()
+ 
  g_gamestate = gs_mainmenu
  
  g_chars = {1, 4}
@@ -183,7 +189,10 @@ function _draw()
 		
 	 palt(0, true)
 	 
-	 clock_draw(52, 0)
+	 clock_draw(53, 0)
+	 if #boards > 1 then
+   wins_draw(53, 8)
+	 end
 	 
 	 for i = 1, #matchbubs do
 	  matchbub_draw(matchbubs[i])
@@ -199,14 +208,54 @@ function _draw()
  end
 end
 
+
+function wins_draw(x, y)
+ rectfill(
+	   x + 1, y - 1, x + 20,
+	     y + 13, 1)
+	 
+ rectfill(
+   x + 2, y + 6, x + 9,
+     y + 12, 12)
+ 
+ rectfill(
+   x + 11, y + 6, x + 19,
+     y + 12, 14)
+     
+ print("wins", x + 4, y, 7)
+ 
+ local p = function(x, y, v)
+  if v < 10 then
+   x += 2
+  end
+  print(v, x, y, 7)
+ end
+ 
+ p(x + 3, y + 7, g_wins[1])
+ p(x + 12, y + 7, g_wins[2])
+ 
+ if g_gamestate == gs_gameend
+   and g_gamecount < 18 then
+  palt(12, true)
+  puff_draw(x + 5, y + 4,
+    g_gamecount)
+  palt(12, false)
+ end
+ 
+end
+
 function clock_draw(x, y)
 	
 	rectfill(x - 2, y - 1,
 	  x + 24, y + 5, 1)
+	
 	if g_minutes < 10 then
 	 print("0", x, y, 7)
 	 x += 5
 	end
+	
+	
+	
 	
 	print(g_minutes, x, y, 7)
 	print(":", x + 5, y, 7)
@@ -215,6 +264,7 @@ function clock_draw(x, y)
 	 x += 5
 	end
 	print(g_seconds, x + 10, y, 7)
+	
 	
 end
 
@@ -467,8 +517,9 @@ function selectmenu_draw()
   vs_draw(3, 3)
  end
 
+ rectfill(0, 50,  127, 127, 1)
+ 
  line(0, 50, 127, 50, 1)
- --rectfill(0, 56,  127, 127, 13)
  
 
  local drawcurs = function(
@@ -543,7 +594,7 @@ function selectmenu_draw()
 	  end
 	 end
 	 
-	 if frame % 32 < 16 then
+	 if (frame + 8) % 32 < 16 then
 	  f1()
 	  f2()
 	 else
@@ -632,6 +683,7 @@ function startgame()
 	  boards[1].nextlinerandomseed
 	for i = 1, #boards do
 	 local b = boards[i]
+	 b.idx = i
 	 srand(s)
   board_fill(b, 6)
   b.nextlinerandomseed = nlrd
@@ -1927,8 +1979,14 @@ function board_step(b)
  
 end
 
+
 function board_lose(b)
  b.lose = true
+ 
+ if b.target then
+  g_wins[b.target.idx] += 1 
+ end
+ 
  for i = 1, 12 do
   local row = board_getrow(b, i)
   for j = 1, 6 do
@@ -2086,6 +2144,18 @@ function board_getyorg(b)
  return y
 end
 
+function puff_draw(x, y, pc)
+ 
+ local n = pc / 17
+ local g = n * 16
+ local d = (n^0.75) * 16
+	spr(48, x - d, y - d + g)
+	spr(48, x + d, y - d + g)
+	spr(48, x - d, y + d + g)
+	spr(48, x + d, y + d + g)
+
+end
+
 function board_draw(b)
  local x = b.x
  local y = b.y
@@ -2180,28 +2250,13 @@ function board_draw(b)
 	for i = 1, #b.matchrecs do
 	 local m = b.matchrecs[i]
 	 
-	 --[[
-	 local sx = (m.x - 1) * 8 + x
-	 local sy = (m.y - 1) * 8 + y
-	 print(m.seqidx, sx, sy) 
-	 --]]
-	 
 	 if m.puffcount != 255 and 
 	   m.puffcount < 18 then
 	 
-	  local sx = (m.x - 1) * 8 + x
-	  local sy = (m.y - 1) * 8 + y
+	  puff_draw((m.x - 1) * 8 + x,
+	    (m.y - 1) * 8 + y,
+	      m.puffcount)
 	  
-	  local n = m.puffcount / 17
-	  local g = n * 16
-	  local d = (n^0.75) * 16
-	 	spr(48, sx - d, sy - d + g)
-	 	spr(48, sx + d, sy - d + g)
-	 	spr(48, sx - d, sy + d + g)
-	 	spr(48, sx + d, sy + d + g)
-	 	
-	 	
-	 	
 	 end
 	
 	end
@@ -2319,7 +2374,7 @@ function board_draw(b)
 		 
 	 else
 	  local s =
-		   sin(frame / 30) - 0.5
+		   sin(frame / 30)
 	  y += s * 6
 	  x += 4
 	  spr(90, x, y, 2, 2)
@@ -2329,7 +2384,7 @@ function board_draw(b)
 	 palt(13, false)
 	 
 	 if g_gamecount >= 160 then
-	  local yy = 110 +
+	  local yy = 114 +
 	    (180 - g_gamecount)
    
    rect(31, yy - 1, 97, yy + 7,
