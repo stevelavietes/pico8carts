@@ -588,7 +588,7 @@ function selectmenu_draw()
 	   if g_accepted[2] == 1 then
 	    p = 16
 	   end
-	   drawcurs(x, y, 14, 16) 
+	   drawcurs(x, y, 14, p) 
 	  end
 	 end
 	 
