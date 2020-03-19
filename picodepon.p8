@@ -20,11 +20,11 @@ blocktileidxs = {
 }
 
 autoraisespeedstart = {
- 60, 20, 8,
+ 60, 20, 12,
 }
 
 autoraisespeeddec = {
- 1000, 600, 500,
+ 1000, 600, 600,
 }
 
 autoraiseholdmult = {
