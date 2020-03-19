@@ -445,7 +445,7 @@ function selectmenu_step()
  
  local fields = {
   {g_levels, 3},
-  {g_chars, 8},
+  {g_chars, 6},
  }
  for i = 1, g_numplayers do
   
@@ -485,14 +485,14 @@ function selectmenu_step()
    end
    
    if newpress(2, i - 1) then
-    if f[1][i] > 4 then
-     f[1][i] -= 4
+    if f[1][i] > 3 then
+     f[1][i] -= 3
     end
    end
    
    if newpress(3, i - 1) then
-    if f[1][i] + 4 <= f[2] then
-     f[1][i] += 4
+    if f[1][i] + 3 <= f[2] then
+     f[1][i] += 3
     end
    end
 
@@ -567,11 +567,11 @@ function selectmenu_draw()
   palt() 
  end
  
- for i = 1, 8 do
-  local x = 7 + (i - 1) * 30
+ for i = 1, 6 do
+  local x = 12 + (i - 1) * 40
   local y = 60
-  if i > 4 then
-   y += 30
+  if i > 3 then
+   y += 34
    x -= 120
   end
   
