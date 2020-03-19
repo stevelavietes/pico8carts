@@ -441,7 +441,7 @@ end
 function selectmenu_step()
  
  local acceptedmin = 3
- local acceptedmax = -1
+ local acceptedmax = 0
  
  local fields = {
   {g_levels, 3},
