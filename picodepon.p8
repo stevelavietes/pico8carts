@@ -377,7 +377,7 @@ clouddefs = {
 function rndcloud(x, y)
  local def = clouddefs[
    flr(rnd(#clouddefs)) + 1]
-   
+
  return cloud_new(
    def[1], def[2], def[3],
      def[4], x, y,
@@ -400,26 +400,19 @@ function mainmenu_draw()
  end
  
  
- local drawkat = function(y)
+ local drawlogo = function(y)
   spr(112, 1, y, 3, 1)
   spr(115, 26, y, 2, 1)
   spr(117, 43, y, 2, 1)
+  spr(71, 1, y + 11, 8, 1)
  end
  
- 
- pal(9, 0)
- pal(10, 0)
  pal(7, 0)
  pal(6, 0)
- 
- drawkat(67)
- 
- spr(71, 1, 77, 8, 1)
- 
+ drawlogo(67)
  pal()
- drawkat(66)
+ drawlogo(66)
  
- spr(71, 1, 76, 8, 1)
  line(0, 86, 128, 86, 0)
  solo_draw(45, 92)
  vs_draw(45, 110)
@@ -435,7 +428,7 @@ function startselectmenu()
  g_gamestate = gs_selectmenu
  g_accepted = {0, 0}
  menuitem(1)
- menuitem(2)
+--menuitem(2)
 end
 
 function selectmenu_step()
