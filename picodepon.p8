@@ -698,6 +698,14 @@ function startgame()
  for i = 1, #boards do
   local b = boards[i]
   b.idx = i
+  b.level = g_levels[i]
+  b.autoraisespeed = 
+    autoraisespeedstart[
+      g_levels[i]]
+  
+  if b.level == 3 then
+   b.blocktypecount = 6
+  end
   srand(s)
   board_fill(b, 6)
   b.nextlinerandomseed = nlrd
@@ -705,12 +713,6 @@ function startgame()
    b.x = boardxpos[i]
    b.contidx = i - 1
   end
-  
-  b.level = g_levels[i]
-  b.autoraisespeed = 
-    autoraisespeedstart[
-      g_levels[i]]
-  
   
  end
 
@@ -769,7 +771,7 @@ function board_new()
   end
  end
 
- b.blocktypecount = 6
+ b.blocktypecount = 5
 
 
  b.cursx = 0
