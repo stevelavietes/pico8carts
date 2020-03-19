@@ -817,6 +817,7 @@ function board_new()
 
 end
 
+
 function board_getrow(b, idx)
  return b.blocks[(
    (idx + b.rowstart - 1) % 13
@@ -956,7 +957,6 @@ function _cursdir(b, bidx)
   b.cursrepeatpause -= 1
  end
 
- return false
 end
 
 function stateisswappable(s)
@@ -965,7 +965,6 @@ function stateisswappable(s)
    then
   return true
  end
- return false
 end
 
 function hasblock(bk, bkbelow)
@@ -978,17 +977,15 @@ function hasblock(bk, bkbelow)
    then
   return true
  end
- return false
 end
 
 function canswap(bk, bkbelow)
-  if bk.btype == 0 or (
-     not bkbelow
-     or bkbelow.btype > 0
-     ) then
-   return true
-  end
-  return false
+ if bk.btype == 0 or (
+    not bkbelow
+    or bkbelow.btype > 0
+    ) then
+  return true
+ end
 end
 
 function board_getcursblocks(
