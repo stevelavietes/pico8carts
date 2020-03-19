@@ -1975,7 +1975,7 @@ function board_lose(b)
   g_wins[b.target.idx] += 1 
  end
  
- for i = 1, 12 do
+ for i = 1, 13 do
   local row = board_getrow(b, i)
   for j = 1, 6 do
    local bk = row[j]
