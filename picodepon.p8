@@ -7,13 +7,13 @@ coyotehangtime = 12
 manualraiserepeatframes = 5
 squashholdframes = 3
 flashframes = 45
-faceframes = 26
+--faceframes = 26
 flashandfaceframes = 71
 popoffset = 9
-chainresetcount = 7
-postclearholdframes = 3
+--chainresetcount = 7
+--postclearholdframes = 3
 boardxpos = {3, 77}
-toppedoutboardframelimit = 120
+--toppedoutboardframelimit = 120
 
 blocktileidxs = {
   1, 17, 33, 49, 8, 24, 40
@@ -1599,8 +1599,8 @@ function board_step(b)
      if bk.count > 0 then
       bk.count -= 1
       
-      if bk.count ==
-       chainresetcount then
+      -- chainresetcount
+      if bk.count == 7 then
        bk.chain = 0
       end
      
@@ -1790,8 +1790,8 @@ function board_step(b)
    
    if bk.count >= m.dur then
     m.dur = 0
-    bk.count =
-      postclearholdframes
+    -- postclearholdframes
+    bk.count = 3
     if bk.state == bs_matching
       then
      bk.state =
@@ -1972,9 +1972,9 @@ function board_step(b)
     #b.matchrecs == 0 then
    b.toppedoutframecount += 1
    
+   -- toppedoutboardframelimit
    if b.toppedoutframecount >=
-     toppedoutboardframelimit
-       then
+     120 then
     board_lose(b) 
    end
   end
