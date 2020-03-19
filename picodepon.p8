@@ -50,7 +50,7 @@ function defconsts()
   "010011001110001111")
  shakelarge = hexstr2array(
   "010101010101010010010011001100111023332111456665422269abbbba8"
-	)
+ )
 
  bubdeltax = hexstr2array(
   "444444444444444444444444444444444444444400112222333343443434344445558",
@@ -97,13 +97,13 @@ end
 
 
 function _update60()
-	pframe = frame
-	frame += 1
-	
-	prevcstate = cstate
-	cstate = btn()
-	
-	if g_gamestate == gs_mainmenu
+ pframe = frame
+ frame += 1
+ 
+ prevcstate = cstate
+ cstate = btn()
+ 
+ if g_gamestate == gs_mainmenu
    then
   mainmenu_step()
  elseif g_gamestate
@@ -128,11 +128,11 @@ function _update60()
   end
  
   
-	 updategame()
-	end
-	
-	if g_gamestate == gs_gameend
-	  then
+  updategame()
+ end
+ 
+ if g_gamestate == gs_gameend
+   then
   
   if g_gamecount < 180 then
    g_gamecount += 1
@@ -146,8 +146,8 @@ function _update60()
     end
    end
   end
-  	  
-	end
+     
+ end
 
 end
 
@@ -183,37 +183,37 @@ function _draw()
   
   palt(0, false)
   
-	 for i = 1, #boards do
-		 board_draw(boards[i])
-		end
-		
-	 palt(0, true)
-	 
-	 clock_draw(53, 0)
-	 if #boards > 1 then
+  for i = 1, #boards do
+   board_draw(boards[i])
+  end
+  
+  palt(0, true)
+  
+  clock_draw(53, 0)
+  if #boards > 1 then
    wins_draw(53, 8)
-	 end
-	 
-	 for i = 1, #matchbubs do
-	  matchbub_draw(matchbubs[i])
-	 end
-	 
-	 if g_gamestate == gs_gamestart
-	   and g_gamecount < 20 then
-	  trans(
-	     flr((20 - g_gamecount) / 4))
-	   
-	 end
-	 
+  end
+  
+  for i = 1, #matchbubs do
+   matchbub_draw(matchbubs[i])
+  end
+  
+  if g_gamestate == gs_gamestart
+    and g_gamecount < 20 then
+   trans(
+      flr((20 - g_gamecount) / 4))
+    
+  end
+  
  end
 end
 
 
 function wins_draw(x, y)
  rectfill(
-	   x + 1, y - 1, x + 20,
-	     y + 13, 1)
-	 
+    x + 1, y - 1, x + 20,
+      y + 13, 1)
+  
  rectfill(
    x + 2, y + 6, x + 9,
      y + 12, 12)
@@ -245,27 +245,27 @@ function wins_draw(x, y)
 end
 
 function clock_draw(x, y)
-	
-	rectfill(x - 2, y - 1,
-	  x + 24, y + 5, 1)
-	
-	if g_minutes < 10 then
-	 print("0", x, y, 7)
-	 x += 5
-	end
-	
-	
-	
-	
-	print(g_minutes, x, y, 7)
-	print(":", x + 5, y, 7)
-	if g_seconds < 10 then
-	 print("0", x + 10, y, 7)
-	 x += 5
-	end
-	print(g_seconds, x + 10, y, 7)
-	
-	
+ 
+ rectfill(x - 2, y - 1,
+   x + 24, y + 5, 1)
+ 
+ if g_minutes < 10 then
+  print("0", x, y, 7)
+  x += 5
+ end
+ 
+ 
+ 
+ 
+ print(g_minutes, x, y, 7)
+ print(":", x + 5, y, 7)
+ if g_seconds < 10 then
+  print("0", x + 10, y, 7)
+  x += 5
+ end
+ print(g_seconds, x + 10, y, 7)
+ 
+ 
 end
 
 
@@ -301,7 +301,7 @@ function solo_draw(x, y)
  palt(0, false)
  spr(85, x, y, 3, 2)
  spr(86, x + 24, y, 1, 2)
-	palt()
+ palt()
 end
 
 function vs_draw(x, y)
@@ -309,7 +309,7 @@ function vs_draw(x, y)
  palt(0, false)
  spr(88, x, y, 1, 2)
  spr(85, x + 8, y, 1, 2)
-	palt()
+ palt()
 end
 
 
@@ -334,7 +334,7 @@ function cloud_new(
    if mget(sx + x, sy + y) > 0
      then
     add(row, blocktileidxs[
-  		  flr(rnd(6)) + 1])
+      flr(rnd(6)) + 1])
    else
     add(row, 0)
    end
@@ -417,9 +417,9 @@ function mainmenu_draw()
  spr(71, 1, 77, 8, 1)
  
  pal()
-	drawkat(66)
+ drawkat(66)
  
-	spr(71, 1, 76, 8, 1)
+ spr(71, 1, 76, 8, 1)
  line(0, 86, 128, 86, 0)
  solo_draw(45, 92)
  vs_draw(45, 110)
@@ -569,39 +569,39 @@ function selectmenu_draw()
   
   
   local f1 = function()
-	  if i == g_chars[1] and 
-	    g_accepted[1] > 0 then   
-	   local p = nil
-	   if g_accepted[1] == 1 then
-	    p = 0
-	   end
-	   drawcurs(x, y, 12, p)
-	  end
+   if i == g_chars[1] and 
+     g_accepted[1] > 0 then   
+    local p = nil
+    if g_accepted[1] == 1 then
+     p = 0
+    end
+    drawcurs(x, y, 12, p)
+   end
   end
   
   local f2 = function()
-	  if g_numplayers == 2
-	    and g_accepted[2] > 0
-	    and i == g_chars[2] then
-	   
-	   local p = nil
-	   if g_accepted[2] == 1 then
-	    p = 16
-	   end
-	   drawcurs(x, y, 14, p) 
-	  end
-	 end
-	 
-	 if (frame + 8) % 32 < 16 then
-	  f1()
-	  f2()
-	 else
-	  f2()
-	  f1()
-	 end
+   if g_numplayers == 2
+     and g_accepted[2] > 0
+     and i == g_chars[2] then
+    
+    local p = nil
+    if g_accepted[2] == 1 then
+     p = 16
+    end
+    drawcurs(x, y, 14, p) 
+   end
+  end
+  
+  if (frame + 8) % 32 < 16 then
+   f1()
+   f2()
+  else
+   f2()
+   f1()
+  end
   
  end
-	
+ 
 
 end
 
@@ -676,27 +676,27 @@ function startgame()
   boards[2].target = boards[1]
  end
 
-	local s = rnd(31767)
-	local nlrd =
-	  boards[1].nextlinerandomseed
-	for i = 1, #boards do
-	 local b = boards[i]
-	 b.idx = i
-	 srand(s)
+ local s = rnd(31767)
+ local nlrd =
+   boards[1].nextlinerandomseed
+ for i = 1, #boards do
+  local b = boards[i]
+  b.idx = i
+  srand(s)
   board_fill(b, 6)
   b.nextlinerandomseed = nlrd
   if #boards > 1 then
    b.x = boardxpos[i]
    b.contidx = i - 1
-	 end
-	 
-	 b.level = g_levels[i]
-	 b.autoraisespeed = 
-	   autoraisespeedstart[
-	     g_levels[i]]
-	 
-	 
-	end
+  end
+  
+  b.level = g_levels[i]
+  b.autoraisespeed = 
+    autoraisespeedstart[
+      g_levels[i]]
+  
+  
+ end
 
  
 
@@ -722,17 +722,17 @@ squashframes = {
 
 function block_new()
  return {
- 	btype=0,
- 	state=bs_idle,
- 	count=0,
- 	count2=0,
- 	fallframe=0,
- 	chain=0,
- 	fallenonce=false,
- 	garbagex=0,
- 	garbagey=0,
- 	garbagewidth=0,
- 	garbageheight=0,
+  btype=0,
+  state=bs_idle,
+  count=0,
+  count2=0,
+  fallframe=0,
+  chain=0,
+  fallenonce=false,
+  garbagex=0,
+  garbagey=0,
+  garbagewidth=0,
+  garbageheight=0,
  }
 end
 
@@ -741,23 +741,23 @@ cs_idle = 0
 cs_swapping = 1
 
 function board_new()
-	local b = {}
+ local b = {}
 
-	b.blocks = {}
-	for i = 1, 13 do
+ b.blocks = {}
+ for i = 1, 13 do
   local row = {}
   b.blocks[i] = row
   
   for j = 1, 6 do
    row[j] = block_new()
   end
-	end
+ end
 
  b.blocktypecount = 6
 
 
-	b.cursx = 0
-	b.cursy = 6
+ b.cursx = 0
+ b.cursy = 6
  b.cursstate = cs_idle
  b.curscount = 0
  b.cursrepeatpause = 0
@@ -802,8 +802,8 @@ end
 function board_getrow(b, idx)
  return b.blocks[(
    (idx + b.rowstart - 1) % 13
-   		) + 1]
-   	
+     ) + 1]
+    
 end
 
 function board_fill(b, startidx)
@@ -840,8 +840,8 @@ function board_fill(b, startidx)
        row2[x].btype
     end 
    end
-			
-			
+   
+   
    
    
    if horzruntype > 0 or
@@ -888,19 +888,19 @@ function board_addgarbage(b,
     local bk = row[xx]
     
     bk.state = bs_garbage
-		  bk.garbagex = xx - x
-		  bk.garbagey = -(yy - y)
-		  bk.garbagewidth = width
-		  bk.garbageheight = height
-		  bk.btype = 10
-		  bk.fallenonce = false
-		  
-		  if forcey then
-		   bk.garbagey = forcey
-		  end
-		  if forceh then
-		   bk.garbageheight = forceh
-		  end
+    bk.garbagex = xx - x
+    bk.garbagey = -(yy - y)
+    bk.garbagewidth = width
+    bk.garbageheight = height
+    bk.btype = 10
+    bk.fallenonce = false
+    
+    if forcey then
+     bk.garbagey = forcey
+    end
+    if forceh then
+     bk.garbageheight = forceh
+    end
    end
   end 
  end
@@ -914,10 +914,10 @@ function _cursdir(b, bidx)
    then return false end
   
  if newpress(bidx, b.contidx)
-		 then
-		b.cursrepeatpause = 0
-		b.cursrepeatcount = 0
-	end
+   then
+  b.cursrepeatpause = 0
+  b.cursrepeatcount = 0
+ end
 
  if b.cursrepeatpause == 0
    then
@@ -930,7 +930,7 @@ function _cursdir(b, bidx)
    b.cursrepeatpause = 0
    if frame % 2 > 0 then
      -- play sound
-  	end
+   end
    
   end
   return true
@@ -974,14 +974,14 @@ function canswap(bk, bkbelow)
 end
 
 function board_getcursblocks(
-	 b, below)
+  b, below)
  local off = 1
  if below then
   off += 1
  end
  local row =
     board_getrow(b, b.cursy
-    		+ off)
+      + off)
  
  return row[b.cursx + 1],
    row[b.cursx + 2]
@@ -991,17 +991,17 @@ cursshakeframes = {
  -1, -1, 0, 0, 1, 1, 0, 0
 }
 function board_cursinput(b)
-	if g_gamestate != gs_gameplay
-	  then
-	 return
-	end
+ if g_gamestate != gs_gameplay
+   then
+  return
+ end
 
-	b.cursbumpx = 0
-	b.cursbumpy = 0
-	
-	if b.cursstate != cs_idle then
-	 return
-	end
+ b.cursbumpx = 0
+ b.cursbumpy = 0
+ 
+ if b.cursstate != cs_idle then
+  return
+ end
  
  if newpress(5, b.contidx) then
   local bk1, bk2 =
@@ -1010,12 +1010,12 @@ function board_cursinput(b)
   local bk1below = nil
   local bk2below = nil
   if b.cursy < 12 then
-  	bk1below, bk2below =
-  	  board_getcursblocks(b, 1)
-  	--[[
-  	local belowrow =
-  	  board_getrow(b,
-  	    b.cursy + 2)
+   bk1below, bk2below =
+     board_getcursblocks(b, 1)
+   --[[
+   local belowrow =
+     board_getrow(b,
+       b.cursy + 2)
    bk1below =
      belowrow[b.cursx + 1]
    bk2below =
@@ -1064,21 +1064,21 @@ function board_cursinput(b)
  
  
  if b.cursy > 0 and
- 	 (not (b.cursy == 1
- 	   and b.raiseoffset > 3))
- 	 and _cursdir(b, 2) then
+   (not (b.cursy == 1
+     and b.raiseoffset > 3))
+   and _cursdir(b, 2) then
   b.cursy -= 1
   sfx(3)
  end
  
  if b.cursy < 11 and
- 	 _cursdir(b, 3) then
+   _cursdir(b, 3) then
   b.cursy += 1
   sfx(3)
  end
  
  if b.cursx > 0 and
- 	  _cursdir(b, 0) then
+    _cursdir(b, 0) then
   b.cursx -= 1
   sfx(3)
  end
@@ -1094,8 +1094,8 @@ end
 
 
 function board_raise(b)
-	local toprow =
-	  board_getrow(b, 1)
+ local toprow =
+   board_getrow(b, 1)
 
  for i = 1, 6 do
   if toprow[i].btype > 0 then
@@ -1280,38 +1280,38 @@ function board_step(b)
    
    
    function postswap(x, y)
-   	local bmid = board_getrow(
-   		 b, y)[x]
-   	
-   	local bdown = nil
-   	if y < 13 then
-   	 bdown = board_getrow(
-   		 b, y + 1)[x]
-   	end
-   	
-   	local bup = nil
-   	if y > 1 then
-   	 bup = board_getrow(
-   		 b, y - 1)[x]
-   	end
-   	
-   	if bmid.btype > 0 then
-   	 if bdown then
-   	  if bdown.btype == 0 then
-   	   bdown.state = bs_coyote
-   	   bdown.count =
-   	     coyotehangtime
-   	  end
-   	 end
-   	 bmid.count = 0
-   	else
-   	 if bup then
-   	  if bup.btype > 0 then
-   	   bmid.state = bs_coyote
-   	   bmid.count = coyotehangtime
-   	  end
-   	 end
-   	end
+    local bmid = board_getrow(
+      b, y)[x]
+    
+    local bdown = nil
+    if y < 13 then
+     bdown = board_getrow(
+      b, y + 1)[x]
+    end
+    
+    local bup = nil
+    if y > 1 then
+     bup = board_getrow(
+      b, y - 1)[x]
+    end
+    
+    if bmid.btype > 0 then
+     if bdown then
+      if bdown.btype == 0 then
+       bdown.state = bs_coyote
+       bdown.count =
+         coyotehangtime
+      end
+     end
+     bmid.count = 0
+    else
+     if bup then
+      if bup.btype > 0 then
+       bmid.state = bs_coyote
+       bmid.count = coyotehangtime
+      end
+     end
+    end
    end
    
    postswap(b.cursx + 1,
@@ -1512,8 +1512,8 @@ function board_step(b)
    
    ::cont::
    
-  	ry += 1
-  	pad += popoffset
+   ry += 1
+   pad += popoffset
   end
   
   newmatchchainmax = max(
@@ -1544,13 +1544,13 @@ function board_step(b)
      and bk.btype > 0 then
     
     if prevrow then
-   	
+    
      local bkbelow = prevrow[x]
 
      if bkbelow.state == bs_idle
        and bkbelow.btype == 0
        then
-						 
+       
       bkbelow.btype = bk.btype
       bkbelow.fallframe =
         frame
@@ -1931,9 +1931,9 @@ function board_step(b)
  if garbagefallarea > 0 then
   if garbagefallarea > 4 then
    b.shakevalues = shakelarge
- 	else
- 	 b.shakevalues = shakesmall
- 	end
+  else
+   b.shakevalues = shakesmall
+  end
   b.shakecount = #b.shakevalues
  end
  
@@ -1980,18 +1980,18 @@ function board_lose(b)
   for j = 1, 6 do
    local bk = row[j]
    if bk.btype > 0 then
-	   if bk.state != bs_garbage
-	     and bk.state !=
-	       bs_garbagematching
-	     then
-	    bk.state = bs_matching
-	     
-	   else
-	    bk.state =
-	      bs_garbagematching
-	   end
-	   bk.count2 = 100
-	   bk.count = flashframes + 2
+    if bk.state != bs_garbage
+      and bk.state !=
+        bs_garbagematching
+      then
+     bk.state = bs_matching
+      
+    else
+     bk.state =
+       bs_garbagematching
+    end
+    bk.count2 = 100
+    bk.count = flashframes + 2
    end
   end
  end
@@ -2010,20 +2010,20 @@ end
 function block_draw(b, x, y, ry,
   squashed)
  if b.btype == 0
- 		or b.bstate == bs_swapping
- 		then
- 	return
+   or b.bstate == bs_swapping
+   then
+  return
  end
  
  if b.state == bs_idle then
   local idx = blocktileidxs[
-  		b.btype]
+    b.btype]
   
   if b.count > 0 then
    idx += bounceframes[b.count]
   elseif squashed then
-  	idx = idx + squashframes[
-  	  squashframe + 1]
+   idx = idx + squashframes[
+     squashframe + 1]
   end
 
   spr(idx, x, y)
@@ -2033,7 +2033,7 @@ function block_draw(b, x, y, ry,
    then
   
   local idx = blocktileidxs[
-  		b.btype]
+    b.btype]
   
   if b.count < flashframes then
    if frame % 2 == 0 then
@@ -2051,49 +2051,49 @@ function block_draw(b, x, y, ry,
    then
   
   
- 	if b.garbagex == 0 and
- 	  b.garbagey == 0 then
- 	 
- 	 local top = y -
- 	   (b.garbageheight - 1) * 8
- 	 
- 	 local right = x +
- 	   b.garbagewidth * 8 - 1
- 	 
- 	 local left = x
- 	 local bottom = y + 7
- 	 
- 	 local bg = 0
- 	 local fg = 5
- 	 if b.btype > 10 then
- 	  bg = 5
- 	  fg = 0
- 	 end
- 	 
- 	 rectfill(left, top, right,
- 	   bottom, bg)
- 	 rect(left + 1, top + 1,
- 	   right - 1, bottom - 1, fg)
- 	 
- 	 palt(13, true)
- 	 
+  if b.garbagex == 0 and
+    b.garbagey == 0 then
+   
+   local top = y -
+     (b.garbageheight - 1) * 8
+   
+   local right = x +
+     b.garbagewidth * 8 - 1
+   
+   local left = x
+   local bottom = y + 7
+   
+   local bg = 0
+   local fg = 5
+   if b.btype > 10 then
+    bg = 5
+    fg = 0
+   end
+   
+   rectfill(left, top, right,
+     bottom, bg)
+   rect(left + 1, top + 1,
+     right - 1, bottom - 1, fg)
+   
+   palt(13, true)
+   
    local idx = 31
    if (frame % 120) < 10 then
     idx = 47
    end
    
- 	 spr(idx,
- 	   (right - left) / 2 +
- 	   left - 3,
- 	   (bottom - top) / 2 +
- 	   top - 3, 1, 1,
- 	   	frame % 320 < 160
- 	     )
- 	  
- 	 palt(13, false)
- 	
- 	end
- 	 	
+   spr(idx,
+     (right - left) / 2 +
+     left - 3,
+     (bottom - top) / 2 +
+     top - 3, 1, 1,
+      frame % 320 < 160
+       )
+    
+   palt(13, false)
+  
+  end
+    
  
  elseif b.state ==
    bs_garbagematching then
@@ -2106,7 +2106,7 @@ function block_draw(b, x, y, ry,
   elseif b.count < b.count2 then
   else
    idx = blocktileidxs[
-  		b.btype]
+    b.btype]
 
   end
   
@@ -2133,10 +2133,10 @@ function puff_draw(x, y, pc)
  local n = pc / 17
  local g = n * 16
  local d = (n^0.75) * 16
-	spr(48, x - d, y - d + g)
-	spr(48, x + d, y - d + g)
-	spr(48, x - d, y + d + g)
-	spr(48, x + d, y + d + g)
+ spr(48, x - d, y - d + g)
+ spr(48, x + d, y - d + g)
+ spr(48, x - d, y + d + g)
+ spr(48, x + d, y + d + g)
 
 end
 
@@ -2192,199 +2192,199 @@ function board_draw(b)
  clip(0, y, 128, 128 - y)
  
  y -= b.raiseoffset
-	
-	if b.shakecount > 0 and
-	  b.shakevalues then
-	 
-	 b.shakecount -= 1
-	 y = y - b.shakevalues[
-	   b.shakecount + 1] / 2
-	else
-	 b.shakevalues = nil
-	end
-	
-	local yy = y
-	
-	-- draw blocks
-	for ty = 1, 13 do
-	 local row = board_getrow(b, ty)
-		local xx = x
-	 
-	 for tx = 1, 6 do
-	  local bk = row[tx]
-	  
-	  block_draw(bk, xx, yy, ty,
-	    squashed[tx])
-	  
-	  xx += 8
-	 end
-	
-		yy += 8
-	end
-	
-	
-	-- shadow
-	palt(0, true)
-	map(6, 4, x, yy - 8, 6, 1)
-	palt(0, false)
-	
-	clip()
-	
-	palt(12, true)
-	for i = 1, #b.matchrecs do
-	 local m = b.matchrecs[i]
-	 
-	 if m.puffcount != 255 and 
-	   m.puffcount < 18 then
-	 
-	  puff_draw((m.x - 1) * 8 + x,
-	    (m.y - 1) * 8 + y,
-	      m.puffcount)
-	  
-	 end
-	
-	end
-	palt(12, false)
-	
-	if b.autoraisehold > 0 then
-	 local top = max(b.y, 128 -
-	   (b.autoraisehold / 2))
-	   
-	 local x = b.x - 2
-	 if b.x > 63 then
-	  x = b.x + 49
-	 end
+ 
+ if b.shakecount > 0 and
+   b.shakevalues then
   
-  line(x, top, x, 127, 11)	
-	
-	end
-	
-	-- draw cursors
+  b.shakecount -= 1
+  y = y - b.shakevalues[
+    b.shakecount + 1] / 2
+ else
+  b.shakevalues = nil
+ end
+ 
+ local yy = y
+ 
+ -- draw blocks
+ for ty = 1, 13 do
+  local row = board_getrow(b, ty)
+  local xx = x
+  
+  for tx = 1, 6 do
+   local bk = row[tx]
+   
+   block_draw(bk, xx, yy, ty,
+     squashed[tx])
+   
+   xx += 8
+  end
+ 
+  yy += 8
+ end
+ 
+ 
+ -- shadow
+ palt(0, true)
+ map(6, 4, x, yy - 8, 6, 1)
+ palt(0, false)
+ 
+ clip()
+ 
+ palt(12, true)
+ for i = 1, #b.matchrecs do
+  local m = b.matchrecs[i]
+  
+  if m.puffcount != 255 and 
+    m.puffcount < 18 then
+  
+   puff_draw((m.x - 1) * 8 + x,
+     (m.y - 1) * 8 + y,
+       m.puffcount)
+   
+  end
+ 
+ end
+ palt(12, false)
+ 
+ if b.autoraisehold > 0 then
+  local top = max(b.y, 128 -
+    (b.autoraisehold / 2))
+    
+  local x = b.x - 2
+  if b.x > 63 then
+   x = b.x + 49
+  end
+  
+  line(x, top, x, 127, 11) 
+ 
+ end
+ 
+ -- draw cursors
  if g_gamestate != gs_gameend
    then
-		local cx = x + b.cursx * 8
-		local cy = y + b.cursy * 8
-		
-		cx += b.cursbumpx
-		cy += b.cursbumpy
-		
-		if b.cursstate == cs_swapping
-		  then
-		 local bk1, bk2 =
-	  	  board_getcursblocks(b)
-	  	
-	  if bk1.btype > 0 then
-	   local idx = blocktileidxs[
-	  		 bk1.btype]
-	  	
-	  	spr(idx, cx + b.curscount * 2,
-	  	  cy)
-	  end
-	  
-	  if bk2.btype > 0 then
-	   local idx = blocktileidxs[
-	  		 bk2.btype]
-	  		 
-	  	spr(idx, cx + 8
-	  	  - b.curscount * 2, cy)
-	  end
-	  
-		end
-		
-		local off = 0
-		if frame % 32 < 15 then
-		 off = 1
-		end
-		
-		palt(13, true)
-		spr(16, cx - 4 - off,
-		  cy - 4 - off)
-		spr(16, cx - 4 - off,
-			 cy + 3 + off, 1, 1,
-			 		false, true)
-		spr(16, cx + 12 + off,
-			 cy - 4 - off, 1, 1,
-			 		true, false)
-		spr(16, cx + 12 + off,
-			 cy + 3 + off, 1, 1,
-			 		true, true)
-		spr(32, cx + 4,
-			 cy - 4 - off, 1, 1)
-		spr(32, cx + 4,
-			 cy + 3 + off, 1, 1,
-			   false, true)
-	end
-	
-	board_drawpending(b)
-	palt(13, false)
-	
-	if g_gamestate == gs_gamestart
-	  then
-	 
-	 local num =
-	   flr(g_gamecount/60)
-	 
-	 local w = 2
-	 local x = b.x + 16
-	 local y = b.y + 36
-	 
-	 if num == 2 then
-	  w = 1
-	  x += 6
-	 end
-	 
-	 palt(13, true)
-	 spr(80 + num * 2, x, y,
-	   w, 2)
-	 palt(13, false)
-	 
-	end
-	
-	
-	if g_gamestate == gs_gameend
-	  then
-	 
-	 palt(13, true)
-	 local y = b.y + 32
-	 local x = b.x + 10
-		if b.lose then
-		 local s =
-		   sin(frame / 60) - 0.5
-		 x += s * 3
-		 spr(87, x, y, 1, 2)
-		 spr(86, x + 7, y, 1, 2)
-		 spr(85, x + 14, y, 1, 2)
-		 spr(89, x + 21, y, 1, 2)
-		 
-	 else
-	  local s =
-		   sin(frame / 30)
-	  y += s * 6
-	  x += 4
-	  spr(90, x, y, 2, 2)
-	  spr(92, x + 15, y, 1, 2)
-	  
-	 end
-	 palt(13, false)
-	 
-	 if g_gamecount >= 160 then
-	  local yy = 114 +
-	    (180 - g_gamecount)
+  local cx = x + b.cursx * 8
+  local cy = y + b.cursy * 8
+  
+  cx += b.cursbumpx
+  cy += b.cursbumpy
+  
+  if b.cursstate == cs_swapping
+    then
+   local bk1, bk2 =
+      board_getcursblocks(b)
+    
+   if bk1.btype > 0 then
+    local idx = blocktileidxs[
+      bk1.btype]
+    
+    spr(idx, cx + b.curscount * 2,
+      cy)
+   end
+   
+   if bk2.btype > 0 then
+    local idx = blocktileidxs[
+      bk2.btype]
+      
+    spr(idx, cx + 8
+      - b.curscount * 2, cy)
+   end
+   
+  end
+  
+  local off = 0
+  if frame % 32 < 15 then
+   off = 1
+  end
+  
+  palt(13, true)
+  spr(16, cx - 4 - off,
+    cy - 4 - off)
+  spr(16, cx - 4 - off,
+    cy + 3 + off, 1, 1,
+      false, true)
+  spr(16, cx + 12 + off,
+    cy - 4 - off, 1, 1,
+      true, false)
+  spr(16, cx + 12 + off,
+    cy + 3 + off, 1, 1,
+      true, true)
+  spr(32, cx + 4,
+    cy - 4 - off, 1, 1)
+  spr(32, cx + 4,
+    cy + 3 + off, 1, 1,
+      false, true)
+ end
+ 
+ board_drawpending(b)
+ palt(13, false)
+ 
+ if g_gamestate == gs_gamestart
+   then
+  
+  local num =
+    flr(g_gamecount/60)
+  
+  local w = 2
+  local x = b.x + 16
+  local y = b.y + 36
+  
+  if num == 2 then
+   w = 1
+   x += 6
+  end
+  
+  palt(13, true)
+  spr(80 + num * 2, x, y,
+    w, 2)
+  palt(13, false)
+  
+ end
+ 
+ 
+ if g_gamestate == gs_gameend
+   then
+  
+  palt(13, true)
+  local y = b.y + 32
+  local x = b.x + 10
+  if b.lose then
+   local s =
+     sin(frame / 60) - 0.5
+   x += s * 3
+   spr(87, x, y, 1, 2)
+   spr(86, x + 7, y, 1, 2)
+   spr(85, x + 14, y, 1, 2)
+   spr(89, x + 21, y, 1, 2)
+   
+  else
+   local s =
+     sin(frame / 30)
+   y += s * 6
+   x += 4
+   spr(90, x, y, 2, 2)
+   spr(92, x + 15, y, 1, 2)
+   
+  end
+  palt(13, false)
+  
+  if g_gamecount >= 160 then
+   local yy = 114 +
+     (180 - g_gamecount)
    
    rect(31, yy - 1, 97, yy + 7,
     0)
-	  rectfill(32, yy, 96,
-	    yy + 6, 1)
-	  print("❎ to continue",
-	    34, yy + 1, 7)
-	  
-	 end
-	end
-	
-	if not b.target then
-	 board_drawsolohud(b)
-	end
-	
+   rectfill(32, yy, 96,
+     yy + 6, 1)
+   print("❎ to continue",
+     34, yy + 1, 7)
+   
+  end
+ end
+ 
+ if not b.target then
+  board_drawsolohud(b)
+ end
+ 
 end
 
 function board_drawsolohud(b)
@@ -2464,83 +2464,83 @@ function board_breakgarbage(
  seqidxstartr[1] += numblocks
  
  for i = 0, h - 1 do
- 	if y < 1 then
- 	 break
- 	end
- 	local rx = x + (w - 1)
- 	
- 	local bk = board_getrow(
- 	  b, y)[rx]
- 	
- 	
- 	local _check = function
- 	  (xx, xo, yo)
- 	 local bk2 =
- 	   board_getrow(b, y + yo)[
- 	     xx + xo]
- 	 
- 	 if bk2.state == bs_garbage
- 	   and bk2.btype ==
- 	     bk.btype then
- 	  return max(
- 	    board_breakgarbage(b,
- 	      xx + xo, y + yo, dur,
- 	        chain,
- 	          seqidxstartr),
- 	            maxdur)
- 	 end
- 	 
- 	 return maxdur
- 	end
- 	
+  if y < 1 then
+   break
+  end
+  local rx = x + (w - 1)
   
- 	-- check left
- 	if x > 1 then
- 		maxdur = _check(x, -1, 0)
- 	end
- 	
- 	
- 	-- check right
- 	if rx < wmax then
- 		maxdur = _check(rx, 1, 0)
- 	end
- 	
- 	for j = 0, w - 1 do
- 	 
- 	 bk = board_getrow(b, y)[rx]
- 	 
- 	 --check down
- 	 if i == 0 and y < 12 then
- 	  maxdur = _check(rx, 0, 1) 
- 	 end
- 	 
- 	 --check up
- 	 if y > 1 and i == h - 1 then
- 	  maxdur = _check(rx, 0, -1)
- 	 end
- 	 
- 	 
- 	 local m = matchrec_new()
- 	 m.x = rx
- 	 m.y = y
- 	 m.dur = dur
- 	 m.chain = chain
- 	 seqidx += 1
- 	 m.seqidx = seqidx
- 	 bk.count = 0
- 	 bk.count2 = pad
- 	 bk.btype = flr(rnd(
- 	   b.blocktypecount)) + 1
- 	 bk.state =
- 	   bs_garbagematching
- 	 rx -= 1
- 	 pad += popoffset
- 	 
- 	 add(b.matchrecs, m)
- 	 add(matchrecs, m)
- 	end
- 	
- 	y -= 1
+  local bk = board_getrow(
+    b, y)[rx]
+  
+  
+  local _check = function
+    (xx, xo, yo)
+   local bk2 =
+     board_getrow(b, y + yo)[
+       xx + xo]
+   
+   if bk2.state == bs_garbage
+     and bk2.btype ==
+       bk.btype then
+    return max(
+      board_breakgarbage(b,
+        xx + xo, y + yo, dur,
+          chain,
+            seqidxstartr),
+              maxdur)
+   end
+   
+   return maxdur
+  end
+  
+  
+  -- check left
+  if x > 1 then
+   maxdur = _check(x, -1, 0)
+  end
+  
+  
+  -- check right
+  if rx < wmax then
+   maxdur = _check(rx, 1, 0)
+  end
+  
+  for j = 0, w - 1 do
+   
+   bk = board_getrow(b, y)[rx]
+   
+   --check down
+   if i == 0 and y < 12 then
+    maxdur = _check(rx, 0, 1) 
+   end
+   
+   --check up
+   if y > 1 and i == h - 1 then
+    maxdur = _check(rx, 0, -1)
+   end
+   
+   
+   local m = matchrec_new()
+   m.x = rx
+   m.y = y
+   m.dur = dur
+   m.chain = chain
+   seqidx += 1
+   m.seqidx = seqidx
+   bk.count = 0
+   bk.count2 = pad
+   bk.btype = flr(rnd(
+     b.blocktypecount)) + 1
+   bk.state =
+     bs_garbagematching
+   rx -= 1
+   pad += popoffset
+   
+   add(b.matchrecs, m)
+   add(matchrecs, m)
+  end
+  
+  y -= 1
  end
  
  if maxdur > dur then
@@ -2590,12 +2590,12 @@ function newpress(bidx, cidx)
   return false
  end
 
-	if _press(bidx, cidx,
-	  prevcstate) then
-	 return false
-	end
-	
-	return true
+ if _press(bidx, cidx,
+   prevcstate) then
+  return false
+ end
+ 
+ return true
 end
 
 function maskpress(bidx, cidx)
@@ -2612,157 +2612,157 @@ end
 
 function updategame()
  squashcount =
-	  (squashcount + 1) % 3
-	
-	if squashcount == 0 then
-	 squashframe =
-	   (squashframe + 1) % 6
-	end
-	
-	if g_gamestate == gs_gamestart
-	  then
-	 
-	 --todo sfx
-	 
-	 if g_gamecount < 180 then
-	  g_gamecount += 1
-	  
-	  if g_gamecount == 180 then
-	   g_gamestate = gs_gameplay
-	   --todo sfx
-	  end
+   (squashcount + 1) % 3
+ 
+ if squashcount == 0 then
+  squashframe =
+    (squashframe + 1) % 6
+ end
+ 
+ if g_gamestate == gs_gamestart
+   then
+  
+  --todo sfx
+  
+  if g_gamecount < 180 then
+   g_gamecount += 1
+   
+   if g_gamecount == 180 then
+    g_gamestate = gs_gameplay
+    --todo sfx
+   end
 
-	 end
-	 
-	 return
-	end
-	
-	for i = 1, #boards do
-	 board_step(boards[i])
-	end
-	
-	
-	local newmatchbubs = {}
-	for i = 1, #matchbubs do
-	 local mb = matchbubs[i]
-	 mb.count += 1
-	 
-	 if mb.count == 40 then
-	  if not mb.target then
-	   goto skip
-	 	end
-	 
-	 elseif mb.count == 77 then
-	  
-	  local gt = mb.matchcount
-	  if gt < 10 then
-	   gt -= 1
-	  end
-	  
-	  gt *= mb.matchchain
-	  
-	  local sendfnc = 
-	    board_appendgarbage
-	    
-	  if mb.targetpos then
-	    sendfnc =
-	      board_addtoscore
-	  end
-	  
-	  if mb.matchcount == 0 then
-	   for i = 1, mb.matchchain do
-	    if mb.targetpos then
-	     sendfnc(
-	       mb.target, 9, 1)
-	    else
-	     sendfnc(
-	       mb.target, 6, 1).metal =
-	        true
-	    end
-	   end
-	   
-	  elseif gt <= 6 then
-	   sendfnc(
-	     mb.target, gt, 1)
-	  else
-	   local rem = gt % 6
-	   if rem == 0 or rem >= 3
-	     then
-	    
-	    sendfnc(
-	      mb.target, 6,
-	        flr(gt / 6))
-	    
-	    if rem > 0 then
-	     sendfnc(
-	       mb.target, rem, 1
-	         ).count = 0
-	    end
-	   else
-	    local dur = 60
-	    
-	    local trimtotal = gt - 3
-	    while trimtotal > 0 do
-	     if trimtotal < 6 then
-	      sendfnc(
-	       mb.target, trimtotal, 1
-	         ).count = dur
-	      break
-	     else
-	      sendfnc(
-	       mb.target, 6, 1
-	         ).count = dur
-	      
-	      trimtotal -= 6
-	     end
-	     dur = 0
-	    end
-	    
-	   end
-	  end
-	  
-	  goto skip
-	 elseif mb.count == 69 then
-	  if mb.target then
-	   
-	   if mb.targetpos then
-	    mb.dx = 
-	      (mb.targetpos[1] - 
-		       mb.x) / 8
-		   mb.dy = 
-	      (mb.targetpos[2] - 
-		       mb.y) / 8
-	   else
-		   mb.dx = (mb.target.x + 2 - 
-		     mb.x) / 8
-		   
-		   mb.dy = (mb.target.y - 16 - 
-		     mb.y) / 8  
-	   end
-	  end
-	 end
-	 
-	 if mb.dx then
-	  mb.x += mb.dx
-	  mb.y += mb.dy
-	 else
-	  
-	  mb.y = mb.y -
-	   bubdeltay[mb.count] / 2
-	  
-	  local div = 2
-	  if mb.x > 64 then
-	   div = -2
-	  end
-	  mb.x = mb.x +
-	    bubdeltax[mb.count] / div
-		 
-	 end
-	 
-	 add(newmatchbubs, mb)
-	 ::skip::
-	end
-	matchbubs = newmatchbubs
+  end
+  
+  return
+ end
+ 
+ for i = 1, #boards do
+  board_step(boards[i])
+ end
+ 
+ 
+ local newmatchbubs = {}
+ for i = 1, #matchbubs do
+  local mb = matchbubs[i]
+  mb.count += 1
+  
+  if mb.count == 40 then
+   if not mb.target then
+    goto skip
+   end
+  
+  elseif mb.count == 77 then
+   
+   local gt = mb.matchcount
+   if gt < 10 then
+    gt -= 1
+   end
+   
+   gt *= mb.matchchain
+   
+   local sendfnc = 
+     board_appendgarbage
+     
+   if mb.targetpos then
+     sendfnc =
+       board_addtoscore
+   end
+   
+   if mb.matchcount == 0 then
+    for i = 1, mb.matchchain do
+     if mb.targetpos then
+      sendfnc(
+        mb.target, 9, 1)
+     else
+      sendfnc(
+        mb.target, 6, 1).metal =
+         true
+     end
+    end
+    
+   elseif gt <= 6 then
+    sendfnc(
+      mb.target, gt, 1)
+   else
+    local rem = gt % 6
+    if rem == 0 or rem >= 3
+      then
+     
+     sendfnc(
+       mb.target, 6,
+         flr(gt / 6))
+     
+     if rem > 0 then
+      sendfnc(
+        mb.target, rem, 1
+          ).count = 0
+     end
+    else
+     local dur = 60
+     
+     local trimtotal = gt - 3
+     while trimtotal > 0 do
+      if trimtotal < 6 then
+       sendfnc(
+        mb.target, trimtotal, 1
+          ).count = dur
+       break
+      else
+       sendfnc(
+        mb.target, 6, 1
+          ).count = dur
+       
+       trimtotal -= 6
+      end
+      dur = 0
+     end
+     
+    end
+   end
+   
+   goto skip
+  elseif mb.count == 69 then
+   if mb.target then
+    
+    if mb.targetpos then
+     mb.dx = 
+       (mb.targetpos[1] - 
+         mb.x) / 8
+     mb.dy = 
+       (mb.targetpos[2] - 
+         mb.y) / 8
+    else
+     mb.dx = (mb.target.x + 2 - 
+       mb.x) / 8
+     
+     mb.dy = (mb.target.y - 16 - 
+       mb.y) / 8  
+    end
+   end
+  end
+  
+  if mb.dx then
+   mb.x += mb.dx
+   mb.y += mb.dy
+  else
+   
+   mb.y = mb.y -
+    bubdeltay[mb.count] / 2
+   
+   local div = 2
+   if mb.x > 64 then
+    div = -2
+   end
+   mb.x = mb.x +
+     bubdeltax[mb.count] / div
+   
+  end
+  
+  add(newmatchbubs, mb)
+  ::skip::
+ end
+ matchbubs = newmatchbubs
  
 end
 
@@ -2957,9 +2957,9 @@ function board_drawpending(b)
 
  
  
-	local x = b.x
-	  + b.pendingoffset
-	local y = b.y - 11
+ local x = b.x
+   + b.pendingoffset
+ local y = b.y - 11
  for i = 1, min(4,
    #b.pendinggarbage) do
   
