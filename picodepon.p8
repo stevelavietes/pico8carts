@@ -187,7 +187,7 @@ function _draw()
    board_draw(boards[i])
   end
   
-  palt(0, true)
+  palt()--0, true)
   
   clock_draw(53, 0)
   if #boards > 1 then
@@ -359,7 +359,7 @@ function cloud_draw(c)
   end
   yy += 8
  end
- palt(0, true)
+ palt()
  
  pal(1, 0)
  map(c.sx, c.sy, c.x, c.y,
@@ -1027,15 +1027,6 @@ function board_cursinput(b)
   if b.cursy < 12 then
    bk1below, bk2below =
      board_getcursblocks(b, 1)
-   --[[
-   local belowrow =
-     board_getrow(b,
-       b.cursy + 2)
-   bk1below =
-     belowrow[b.cursx + 1]
-   bk2below =
-     belowrow[b.cursx + 2]
-  --]]
   end
   
   if stateisswappable(bk1.state)
@@ -2017,7 +2008,7 @@ function board_lose(b)
  matchbubs = {}
  
  b.shakevalues = shakelarge
- b.shakecount = #b.shakevalues
+ b.shakecount = #shakelarge
  
  
 end
