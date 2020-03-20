@@ -195,9 +195,11 @@ function _draw()
    
    
    char_draw(g_chars[1],
-    charidlefr(), 41, 0, true)
+    charidlefr(boards[1]),
+      41, 0, true)
    char_draw(g_chars[2],
-    charidlefr(), 66, 0)
+    charidlefr(boards[2]),
+      66, 0)
    
    clock_draw(53, 24)
   else
