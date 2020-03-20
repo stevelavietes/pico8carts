@@ -2426,6 +2426,8 @@ function charidlefr(b)
    end
    
    return 2
+  elseif b.autoraisehold > 0 then
+   return 2
   end
   
   return 1
