@@ -189,7 +189,7 @@ function _draw()
   
   palt()--0, true)
   
-  clock_draw(53, 24)
+  
   if #boards > 1 then
    wins_draw(53, 33)
    
@@ -199,6 +199,9 @@ function _draw()
    char_draw(g_chars[2],
     charidlefr(), 66, 0)
    
+   clock_draw(53, 24)
+  else
+   clock_draw(69, 82)
   end
   
   for i = 1, #matchbubs do
