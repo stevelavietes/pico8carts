@@ -2977,11 +2977,13 @@ function board_pendingstep(b)
 end
 
 function board_drawpending(b)
-
- 
- 
  local x = b.x
-   + b.pendingoffset + 2
+   + b.pendingoffset
+ 
+ if b.idx > 1 then
+  x += 10
+ end
+
  local y = b.y - 11
  for i = 1, min(4,
    #b.pendinggarbage) do
