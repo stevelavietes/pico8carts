@@ -2449,7 +2449,7 @@ function board_drawsolohud(b)
  
  
  char_draw(g_chars[1],
-   charidlefr(), 68, 56)
+   charidlefr(b), 68, 56)
  
  
  
