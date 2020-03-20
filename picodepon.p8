@@ -187,7 +187,6 @@ function _draw()
    board_draw(boards[i])
   end
   
-  palt()--0, true)
   
   
   if #boards > 1 then
@@ -205,6 +204,8 @@ function _draw()
   else
    clock_draw(69, 82)
   end
+  
+  palt()--0, true)
   
   for i = 1, #matchbubs do
    matchbub_draw(matchbubs[i])
