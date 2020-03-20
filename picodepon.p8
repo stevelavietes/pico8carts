@@ -595,7 +595,13 @@ function selectmenu_draw()
   end
 
   palt(0, false)
-  char_draw(i, 0, x + 3, y)
+  
+  local fr = 0
+  if g_accepted[1] == 2 or
+    g_accepted[2] == 2 then
+   fr = 2
+  end
+  char_draw(i, fr, x + 3, y)
 
   local f1 = function()
    if i == g_chars[1] and 
