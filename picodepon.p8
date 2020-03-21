@@ -592,36 +592,26 @@ function selectmenu_draw()
   
   char_draw(i, fr, x + 3, y)
 
-  local f1 = function()
-   if i == g_chars[1] and 
-     g_accepted[1] > 0 then   
+  local f1 = function(j, c)
+   if j > g_numplayers then
+    return
+   end
+   if i == g_chars[j] and
+     g_accepted[j] > 0 then
     local p = nil
-    if g_accepted[1] == 1 then
+    if g_accepted[j] == 1 then
      p = 0
     end
-    drawcurs(x + 3, y, 12, p)
+    drawcurs(x + 3, y, c, p)
    end
   end
-  
-  local f2 = function()
-   if g_numplayers == 2
-     and g_accepted[2] > 0
-     and i == g_chars[2] then
-    
-    local p = nil
-    if g_accepted[2] == 1 then
-     p = 16
-    end
-    drawcurs(x + 3, y, 14, p) 
-   end
-  end
-  
+
   if (frame + 8) % 32 < 16 then
-   f1()
-   f2()
+   f1(1, 12)
+   f1(2, 14)
   else
-   f2()
-   f1()
+   f1(2, 14)
+   f1(1, 12)
   end
   
  end
