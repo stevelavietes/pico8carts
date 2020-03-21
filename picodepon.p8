@@ -3023,7 +3023,7 @@ function board_drawpending(b)
  for i = 1, min(4,
    #b.pendinggarbage) do
   
-  --palt(13, true)
+  palt(13, true)
   --palt(0, false)
   
   local pg =
