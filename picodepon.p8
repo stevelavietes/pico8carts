@@ -5,6 +5,16 @@ cartdata "picodepon_high_scores"
 hiscores = {dget(0), dget(1),
   dget(2)}
 
+function hexstr2array(s, off)
+ local a = {}
+ --tonum
+ if not off then off = 0 end
+ for i = 1, #s do
+  add(a, tonum(
+    '0x' .. sub(s, i, i)) + off)
+ end
+ return a
+end
 
 --constants
 bounceframecount = 10
@@ -928,7 +938,7 @@ end
 function _cursdir(b, bidx)
  
  if not press(bidx, b.contidx)
-   then return false end
+   then return end
   
  if newpress(bidx, b.contidx)
    then
@@ -967,7 +977,7 @@ end
 
 function hasblock(bk, bkbelow)
  if not bk then
-  return false
+  return
  end
  if bk.btype > 0 and
    (not bkbelow or
@@ -1000,9 +1010,9 @@ function board_getcursblocks(
    row[b.cursx + 2]
 end
 
-cursshakeframes = {
- -1, -1, 0, 0, 1, 1, 0, 0
-}
+cursshakeframes =
+  hexstr2array("00112211", -1)
+
 function board_cursinput(b)
  if g_gamestate != gs_gameplay
    then
@@ -2593,19 +2603,6 @@ function board_breakgarbage(
  return maxdur   
 end
 
-
-function hexstr2array(s, off)
- local a = {}
- --tonum
- if not off then off = 0 end
- for i = 1, #s do
-  add(a, tonum(
-    '0x' .. sub(s, i, i)) + off)
- end
- return a
-end
-
-
 function _press(
   bidx, cidx, state)
  if cidx > 0 then
@@ -2617,7 +2614,6 @@ function _press(
   return true
  end
  
- return false
 end
 
 function press(bidx, cidx)
@@ -2627,12 +2623,12 @@ end
 
 function newpress(bidx, cidx)
  if not press(bidx, cidx) then
-  return false
+  return
  end
 
  if _press(bidx, cidx,
    prevcstate) then
-  return false
+  return
  end
  
  return true
