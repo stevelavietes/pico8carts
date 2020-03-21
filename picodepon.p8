@@ -1,6 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
+cartdata "picodepon_high_scores"
+hiscores = {dget(0), dget(1),
+  dget(2)}
+
+
 --constants
 bounceframecount = 10
 coyotehangtime = 12
@@ -43,8 +48,6 @@ garbagesizes = {
 garbagerange = {
  2, 4, 5
 }
-
-hiscores = {0, 0, 0}
 
 function defconsts()
  shakesmall = hexstr2array(
@@ -2914,9 +2917,12 @@ function board_addtoscore(b,
   width, height)
  b.score += width * height
 
- hiscores[g_levels[1]] = max(
-   hiscores[g_levels[1]],
+	local l = g_levels[1]
+ hiscores[l] = max(
+   hiscores[l],
      b.score)
+
+ dset(l - 1, hiscores[l])
 
  return {}
 end
