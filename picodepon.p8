@@ -470,13 +470,13 @@ function selectmenu_step()
    end
    
    if newpress(2, i - 1) then
-    if f[1][i] > 3 then
+    if f[1][i] > 4 then
      f[1][i] -= 4
     end
    end
    
    if newpress(3, i - 1) then
-    if f[1][i] + 3 <= f[2] then
+    if f[1][i] + 4 <= f[2] then
      f[1][i] += 4
     end
    end
@@ -583,10 +583,13 @@ function selectmenu_draw()
   palt(0, false)
   
   local fr = 0
-  if g_accepted[1] == 2 or
-    g_accepted[2] == 2 then
-   fr = 2
+  for j = 1, 2 do
+   if g_accepted[j] == 2 and
+     g_chars[j] == i then
+    fr = 2
+   end
   end
+  
   char_draw(i, fr, x + 3, y)
 
   local f1 = function()
