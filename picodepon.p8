@@ -44,6 +44,7 @@ garbagerange = {
  2, 4, 5
 }
 
+hiscores = {0, 0, 0}
 
 function defconsts()
  shakesmall = hexstr2array(
@@ -508,6 +509,12 @@ function char_draw(
   
 end
 
+function hiscore_draw(x, y)
+ drawlabeledtext(x, y,
+    "hi score",
+       hiscores[g_levels[1]])
+end
+
 
 function selectmenu_draw()
  rectfill(0, 0, 127, 20, 13)
@@ -515,7 +522,8 @@ function selectmenu_draw()
  levelselect_draw(1, 1, 25)
  
  if g_numplayers == 1 then
-  solo_draw(3, 3)  
+  solo_draw(3, 3)
+  hiscore_draw(65, 35)
  else
   levelselect_draw(2, 65, 25)
   vs_draw(3, 3)
@@ -2410,28 +2418,38 @@ function charidlefr(b)
  return 0
 end
 
+
+function drawlabeledtext(
+   x, y, label, value)
+  local w = #label * 5
+  local wf = w + 19
+  rectfill(x, y,
+    x + wf, y + 8, 1)
+
+  print(label, x + 2, y + 2, 7)
+  x += w - 2
+  rectfill(x, y + 1,
+    x + 20, y + 7, 13)
+
+  print(value,
+    x + 2, y + 2, 7)
+end
+
+
+
 function board_drawsolohud(b)
  local x = b.x + 60
  local y = b.y
  
- local drawstat = function(
-   label, value, offset)
-  local yy = y + offset
-  rectfill(x, yy,
-    x + 23, yy + 8, 1)
-  rectfill(x + 24, yy, x + 44,
-    yy + 8, 13)
-  rect(x, yy, x + 44, yy + 8, 1)
-  print(label, x + 2, yy + 2, 7)
-  print(value,
-    x + 25, yy + 2, 7)  
- end
+ hiscore_draw(18, 0)
  
- drawstat("score", b.score, 0)
- drawstat("speed",
-   61 - b.autoraisespeed, 12)
- 
- 
+ drawlabeledtext(x, y,
+   "score", b.score, 0)
+ drawlabeledtext(x, y + 12,
+   "speed",
+     61 - b.autoraisespeed, 12)
+
+
  char_draw(g_chars[1],
    charidlefr(b), 68, 56)
  
@@ -2895,6 +2913,11 @@ end
 function board_addtoscore(b,
   width, height)
  b.score += width * height
+
+ hiscores[g_levels[1]] = max(
+   hiscores[g_levels[1]],
+     b.score)
+
  return {}
 end
 
