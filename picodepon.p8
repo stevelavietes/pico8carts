@@ -16,6 +16,10 @@ function hexstr2array(s, off)
  return a
 end
 
+function palt00()
+ palt(0, false)
+end
+
 --constants
 bounceframecount = 10
 coyotehangtime = 12
@@ -195,7 +199,7 @@ function _draw()
    end
   end
   
-  palt(0, false)
+  palt00()
   
   for i = 1, #boards do
    board_draw(boards[i])
@@ -325,7 +329,7 @@ end
 
 function solo_draw(x, y)
  palt(13, true)
- palt(0, false)
+ palt00()
  spr(85, x, y, 3, 2)
  spr(86, x + 24, y, 1, 2)
  palt()
@@ -333,7 +337,7 @@ end
 
 function vs_draw(x, y)
  palt(13, true)
- palt(0, false)
+ palt00()
  spr(88, x, y, 1, 2)
  spr(85, x + 8, y, 1, 2)
  palt()
@@ -359,7 +363,7 @@ function cloud_new(
 end
 
 function cloud_draw(c)
- palt(0, false)
+ palt00()
  map(c.tx, c.ty, c.x, c.y,
    c.w, c.h)
  palt()
@@ -552,7 +556,7 @@ function selectmenu_draw()
   
   pal(7, c)
   palt(13, true)
-  palt(0, false)
+  palt00()
   
   local off = 0
   if p then
@@ -590,7 +594,7 @@ function selectmenu_draw()
    x -= 128
   end
 
-  palt(0, false)
+  palt00()
   
   local fr = 0
   for j = 1, 2 do
@@ -2178,7 +2182,7 @@ function board_draw(b)
   1)
  
  
- palt(0, false)
+ palt00()
  
  
  rectfill(x - 2, y - 1,
@@ -2240,7 +2244,7 @@ function board_draw(b)
  -- shadow
  palt(0, true)
  map(6, 4, x, yy - 8, 6, 1)
- palt(0, false)
+ palt00()
  
  clip()
  
@@ -2826,7 +2830,7 @@ function matchbub_draw(mb)
  end
  
  palt(13, true)
- palt(0, false)
+ palt00()
  local offset = 7
  local textoffset = 6
  local bgs = 64
@@ -3010,7 +3014,7 @@ function board_drawpending(b)
    #b.pendinggarbage) do
   
   palt(13, true)
-  --palt(0, false)
+  --palt00()
   
   local pg =
     b.pendinggarbage[i]
@@ -3023,7 +3027,7 @@ function board_drawpending(b)
    matchbub_draw(pg.bub)
    x += 11
    
-   palt(0, false)
+   palt00()
   else
    
    spr(53 + pg.width, x, y)
