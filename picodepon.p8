@@ -441,6 +441,7 @@ function startselectmenu()
  g_gamestate = gs_selectmenu
  g_accepted = {0, 0}
  menuitem(1)
+ matchsfx(1)
 --menuitem(2)
 end
 
