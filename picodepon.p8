@@ -200,13 +200,10 @@ function _draw()
   end
   
   palt00()
-  
-  for i = 1, #boards do
-   board_draw(boards[i])
-  end
-  
-  
-  
+
+  foreach(boards, board_draw)
+
+
   if #boards > 1 then
    wins_draw(53, 33)
    
@@ -225,9 +222,8 @@ function _draw()
   
   palt()--0, true)
   
-  for i = 1, #matchbubs do
-   matchbub_draw(matchbubs[i])
-  end
+  foreach(matchbubs,
+    matchbub_draw)
   
   if g_gamestate == gs_gamestart
     and g_gamecount < 20 then
@@ -1181,9 +1177,9 @@ function board_raise(b)
    lasttype = t
   end
   
-  
-  for i = 1, #b.matchrecs do
-   b.matchrecs[i].y -= 1
+  for mrec in all(b.matchrecs)
+    do
+   mrec.y -= 1
   end
   
   if not b.target then
@@ -1435,12 +1431,11 @@ function board_step(b)
    rx += 1
   end
   
-  if chainmax > 1 then
-   for i = 1, #matchseq do
-    matchseq[i].chain =
-      chainmax
+  --if chainmax > 1 then
+   for mrec in all(matchseq) do
+    mrec.chain = chainmax
    end
-  end
+  --end
   
   newmatchchainmax = max(
     newmatchchainmax, chainmax)
@@ -1483,9 +1478,10 @@ function board_step(b)
     pad = hmatchseq[1].dur
     dur = pad + runlendur
     
-    for i = 1, #hmatchseq do
-     hmatchseq[i].dur = dur
-    end  
+    for mrec in all(hmatchseq)
+      do
+     mrec.dur = dur
+    end
     
     chainmax = max(chainmax,
       hmatchseq[1].chain)
@@ -1504,10 +1500,11 @@ function board_step(b)
   local matchseq = nil
   if hmatchseq then
    matchseq = hmatchseq
-   for i = 1, #matchseq do
-    matchseq[i].chain =
-      chainmax
+
+   for mrec in all(matchseq) do
+    mrec.chain = chainmax
    end
+
    runoffset = #matchseq - 1
   else
    matchseq = {}
@@ -1742,9 +1739,8 @@ function board_step(b)
  if #newmatchseqs > 0 then
   local seqidxstartr = {0}
   
-  for i = 1, #newmatchseqs do
-   
-   local ms = newmatchseqs[i]
+  for ms in all(newmatchseqs)
+    do
    matchcount += #ms
    for j = 1, #ms do
     local m = ms[j]
@@ -1790,10 +1786,7 @@ function board_step(b)
  
  local activematches = {}
  
- for i = 1, #b.matchrecs do
-  local m =
-    b.matchrecs[i]
-  
+ for m in all(b.matchrecs) do 
   local keep = true
   if m.dur > 0 then
    local bk = board_getrow(b,
@@ -2270,9 +2263,7 @@ function board_draw(b)
  clip()
  
  palt(12, true)
- for i = 1, #b.matchrecs do
-  local m = b.matchrecs[i]
-  
+ for m in all(b.matchrecs) do 
   if m.puffcount != 255 and 
     m.puffcount < 18 then
   
@@ -2619,10 +2610,9 @@ function board_breakgarbage(
  end
  
  if maxdur > dur then
-  for i = 1, #matchrecs do
-   matchrecs[i].dur = maxdur
+  for mrec in all(matchrecs) do
+   mrec.dur = maxdur
   end
- 
  end
  
  return maxdur   
@@ -2698,14 +2688,10 @@ function updategame()
   return
  end
  
- for i = 1, #boards do
-  board_step(boards[i])
- end
- 
+ foreach(boards, board_step)
  
  local newmatchbubs = {}
- for i = 1, #matchbubs do
-  local mb = matchbubs[i]
+ for mb in all(matchbubs) do
   mb.count += 1
   
   if mb.count == 40 then
