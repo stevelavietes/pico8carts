@@ -533,6 +533,18 @@ function hiscore_draw(x, y)
 end
 
 
+names = {
+ "m.burg",
+ "stevel",
+ "violet",
+ "bal",
+ "dancer",
+ "jelpi",
+ "ana",
+ "paul n",
+}
+
+
 function selectmenu_draw()
  rectfill(0, 0, 127, 20, 13)
  
@@ -587,8 +599,8 @@ function selectmenu_draw()
  end
  
  for i = 1, 8 do
-  local x = 3 + (i - 1) * 32
-  local y = 60
+  local x = 2 + (i - 1) * 32
+  local y = 56
   if i > 4 then
    y += 34
    x -= 128
@@ -605,7 +617,8 @@ function selectmenu_draw()
   end
   
   char_draw(i, fr, x + 3, y)
-
+  print(names[i], x + 4,
+    y + 24, 6)
   local f1 = function(j, c)
    if j > g_numplayers then
     return
@@ -1988,6 +2001,7 @@ function board_step(b)
  
  
 end
+
 
 function matchsfx(n)
  sfx(4, -1, 0, min(n + 2, 7))
