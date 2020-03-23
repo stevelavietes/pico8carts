@@ -284,7 +284,7 @@ function wins_draw(x, y)
  if g_gamestate == gs_gameend
    and g_gamecount < 18 then
   palt(12, true)
-  puff_draw(x + 5, y + 4,
+  puff_draw(x + 7, y + 4,
     g_gamecount)
   palt(12, false)
  end
