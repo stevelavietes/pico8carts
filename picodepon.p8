@@ -442,6 +442,7 @@ function startselectmenu()
  g_accepted = {0, 0}
  menuitem(1)
  matchsfx(1)
+ music(-1)
 --menuitem(2)
 end
 
