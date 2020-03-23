@@ -7,8 +7,7 @@ hiscores = {dget(0), dget(1),
 
 function hexstr2array(s, off)
  local a = {}
- --tonum
- if not off then off = 0 end
+ off = off or 0
  for i = 1, #s do
   add(a, tonum(
     '0x' .. sub(s, i, i)) + off)
@@ -16,8 +15,21 @@ function hexstr2array(s, off)
  return a
 end
 
+--[[
+function resethiscores()
+ for i = 1, 3 do
+  hiscores[i] = 0
+  dset(i - 1, 0)
+ end
+end
+--]]
+
 function palt00()
  palt(0, false)
+end
+
+function palt131()
+ palt(13, true)
 end
 
 --constants
@@ -88,10 +100,6 @@ gs_gamestart = 2
 gs_gameplay = 3
 gs_gameend = 4
 
-function resetwins()
- g_wins = {0, 0}
-end
-
 function _init()
  frame = 2
  pframe = 1
@@ -104,8 +112,8 @@ function _init()
 
  g_numplayers = 1
  g_levels = {2, 2}
- resetwins()
- 
+ g_wins = {0, 0}
+
  g_gamestate = gs_mainmenu
  
  g_chars = {1, 4}
@@ -335,7 +343,7 @@ function mainmenu_step()
 end
 
 function solo_draw(x, y)
- palt(13, true)
+ palt131()
  palt00()
  spr(85, x, y, 3, 2)
  spr(86, x + 24, y, 1, 2)
@@ -343,7 +351,7 @@ function solo_draw(x, y)
 end
 
 function vs_draw(x, y)
- palt(13, true)
+ palt131()
  palt00()
  spr(88, x, y, 1, 2)
  spr(85, x + 8, y, 1, 2)
@@ -576,7 +584,7 @@ function selectmenu_draw()
    x, y, c, p)
   
   pal(7, c)
-  palt(13, true)
+  palt131()
   palt00()
   
   local off = 0
@@ -2123,7 +2131,7 @@ function block_draw(b, x, y, ry,
    rect(left + 1, top + 1,
      right - 1, bottom - 1, fg)
    
-   palt(13, true)
+   palt131()
    
    local idx = 31
    if (frame % 120) < 10 then
@@ -2354,7 +2362,7 @@ function board_draw(b)
    off = 1
   end
   
-  palt(13, true)
+  palt131()
   spr(16, cx - 4 - off,
     cy - 4 - off)
   spr(16, cx - 4 - off,
@@ -2391,7 +2399,7 @@ function board_draw(b)
    x += 6
   end
   
-  palt(13, true)
+  palt131()
   spr(80 + num * 2, x, y,
     w, 2)
   palt(13, false)
@@ -2402,7 +2410,7 @@ function board_draw(b)
  if g_gamestate == gs_gameend
    then
   
-  palt(13, true)
+  palt131()
   local y = b.y + 32
   local x = b.x + 10
   if b.lose then
@@ -2867,7 +2875,7 @@ function matchbub_draw(mb)
   return
  end
  
- palt(13, true)
+ palt131()
  palt00()
  local offset = 7
  local textoffset = 6
@@ -3051,7 +3059,7 @@ function board_drawpending(b)
  for i = 1, min(4,
    #b.pendinggarbage) do
   
-  palt(13, true)
+  palt131()
   --palt00()
   
   local pg =
