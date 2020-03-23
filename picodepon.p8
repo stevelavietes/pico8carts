@@ -634,7 +634,7 @@ function selectmenu_draw()
    end
    if i == g_chars[j] and
      g_accepted[j] > 0 then
-    local p = nil
+    local p
     if g_accepted[j] == 1 then
      p = 0
     end
@@ -1058,8 +1058,8 @@ function board_cursinput(b)
   local bk1, bk2 =
     board_getcursblocks(b)
    
-  local bk1below = nil
-  local bk2below = nil
+  local bk1below
+  local bk2below
   if b.cursy < 12 then
    bk1below, bk2below =
      board_getcursblocks(b, 1)
@@ -1325,13 +1325,13 @@ function board_step(b)
     local bmid = board_getrow(
       b, y)[x]
     
-    local bdown = nil
+    local bdown
     if y < 13 then
      bdown = board_getrow(
       b, y + 1)[x]
     end
     
-    local bup = nil
+    local bup
     if y > 1 then
      bup = board_getrow(
       b, y - 1)[x]
@@ -1478,7 +1478,7 @@ function board_step(b)
   local runbtype =
     vertruns[x1].btype
   
-  local hmatchseq = nil
+  local hmatchseq
   
   for r = 1, runlen do
    local runbk =
@@ -1512,7 +1512,7 @@ function board_step(b)
    ry += 1
   end
  
-  local matchseq = nil
+  local matchseq
   if hmatchseq then
    matchseq = hmatchseq
 
@@ -1526,7 +1526,7 @@ function board_step(b)
    add(newmatchseqs, matchseq) 
   end
   
-  local mrec = nil
+  local mrec
   ry = y1
   for r = 1, runlen do
    local runbk =
@@ -1564,8 +1564,8 @@ function board_step(b)
  
  end
  
- local prevrow = nil
- local row = nil
+ local prevrow
+ local row
  for y = 12, 1, -1 do
   row = rows[y]
   horzrun.len = 0
@@ -1879,7 +1879,7 @@ function board_step(b)
  
  local holdtotal = 0
  
- local lastbub = nil
+ local lastbub
  
  local buboffset = 0
  
@@ -2542,7 +2542,7 @@ function board_breakgarbage(
  local pad = basedur
  
  local maxdur = dur
- local maxdurtmp = nil
+ --local maxdurtmp = nil
  
  local matchrecs = {}
  
@@ -2670,7 +2670,7 @@ function newpress(bidx, cidx)
 end
 
 function maskpress(bidx, cidx)
- local v = nil
+ local v
  if cidx > 0 then
   v = shl(bidx, 8) + 255
  else
@@ -2969,7 +2969,7 @@ function board_pendingstep(b)
   local row =
     board_getrow(b, 1)
   
-  local dropx = nil
+  local dropx
   if b.forcex then
    for i = b.forcex,
      b.forcex + pg.width - 1 do
