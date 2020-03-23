@@ -949,7 +949,7 @@ function board_addgarbage(b,
     bk.garbageheight = height
     bk.btype = 10
     bk.fallenonce = false
-    
+    bk.fallframe = frame
     if forcey then
      bk.garbagey = forcey
     end
