@@ -15,14 +15,14 @@ function hexstr2array(s, off)
  return a
 end
 
---[[
+
 function resethiscores()
  for i = 1, 3 do
   hiscores[i] = 0
   dset(i - 1, 0)
  end
 end
---]]
+
 
 function palt00()
  palt(0, false)
@@ -118,7 +118,8 @@ function _init()
  
  g_chars = {1, 4}
  
- 
+ menuitem(2, "reset hi scores",
+   resethiscores)
 end
 
 
