@@ -2232,10 +2232,18 @@ function board_draw(b)
  local r2 = board_getrow(b, 2)
  local squashed = {}
 
+ local _sqtest = function(bk)
+  if bk.btype > 0
+    and bk.fallframe != frame
+      then
+   return true
+  end
+ end
+ 
  for i = 1, 6 do
   squashed[i] = (
-    r1[i].btype > 0 or
-      r2[i].btype > 0)
+    _sqtest(r1[i]) or
+      _sqtest(r2[i]))
   if squashed[i] then
    g_anysquashed = true
   end
