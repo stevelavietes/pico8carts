@@ -554,7 +554,7 @@ end
 names = {
  "jelpi",
  "bal",
- "danz-h",
+ "dancer",
  "space8",
  "paul n",
  "m-burg",
