@@ -547,8 +547,8 @@ names = {
  "bal",
  "danz-h",
  "space8",
- "paul-n",
- "m.burg",
+ "paul n",
+ "m-burg",
  "rmaker",
  "ana",
 }
