@@ -235,9 +235,9 @@ function _draw()
     charidlefr(boards[2]),
       66, 0)
    
-   clock_draw(53, 24)
+   clock_draw(54, 24)
   else
-   clock_draw(69, 82)
+   clock_draw(70, 82)
   end
   
   palt()--0, true)
@@ -292,27 +292,20 @@ function wins_draw(x, y)
 end
 
 function clock_draw(x, y)
- 
  rectfill(x - 2, y - 1,
-   x + 24, y + 5, 1)
+   x + 21, y + 5, 1)
  
+ local s = ''
  if g_minutes < 10 then
-  print("0", x, y, 7)
-  x += 5
+  s = s .. "0"
  end
- 
- 
- 
- 
- print(g_minutes, x, y, 7)
- print(":", x + 5, y, 7)
+ s = s .. g_minutes .. ":"
  if g_seconds < 10 then
-  print("0", x + 10, y, 7)
-  x += 5
+  s = s .. "0"
  end
- print(g_seconds, x + 10, y, 7)
  
- 
+ s = s .. g_seconds
+ print(s, x, y, 7)
 end
 
 
@@ -556,7 +549,7 @@ names = {
  "bal",
  "dancer",
  "space8",
- "paul n",
+ "lqdrm",
  "m-burg",
  "rainy",
  "ana",
