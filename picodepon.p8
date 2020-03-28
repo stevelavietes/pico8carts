@@ -113,13 +113,13 @@ function _init()
  g_numplayers = 1
  g_levels = {2, 2}
  g_wins = {0, 0}
-
- g_gamestate = gs_mainmenu
  
  g_chars = {1, 4}
  
  menuitem(2, "reset hi scores",
    resethiscores)
+
+ startmainmenu()
 end
 
 
@@ -439,6 +439,11 @@ function mainmenu_draw()
  spr(15, 36, y)
 end
 
+function startmainmenu()
+	g_gamestate = gs_mainmenu
+	music "20"
+end
+
 function startselectmenu()
  g_gamestate = gs_selectmenu
  g_accepted = {0, 0}
@@ -475,6 +480,7 @@ function selectmenu_step()
    
    if newpress(5, i - 1) then
      g_accepted[i] += 1
+     sfx '1'
    end
   end
   
@@ -482,27 +488,33 @@ function selectmenu_step()
    local f = fields[
      g_accepted[i] + 1]
    
-   if newpress(0, i - 1) then
+   local cidx = i - 1
+
+   if newpress(0, cidx) then
     if f[1][i] > 1 then
      f[1][i] -= 1
+     sfx '3'
     end
    end
    
-   if newpress(1, i - 1) then
+   if newpress(1, cidx) then
     if f[1][i] < f[2] then
      f[1][i] += 1
+     sfx '3'
     end
    end
    
-   if newpress(2, i - 1) then
+   if newpress(2, cidx) then
     if f[1][i] > 4 then
      f[1][i] -= 4
+     sfx '3'
     end
    end
    
-   if newpress(3, i - 1) then
+   if newpress(3, cidx) then
     if f[1][i] + 4 <= f[2] then
      f[1][i] += 4
+     sfx '3'
     end
    end
 
@@ -517,7 +529,7 @@ function selectmenu_step()
  if acceptedmax == 0 then
   for i = 1, g_numplayers do
    if newpress(4, i - 1) then
-    g_gamestate = gs_mainmenu
+    startmainmenu()
    end
   end
  end
@@ -1080,7 +1092,7 @@ function board_cursinput(b)
    bk2.state = bs_swapping
    b.cursstate = cs_swapping
    b.curscount = 0
-   sfx(9)
+   sfx '9'
    return
   else   
    maskpress(bnot(shl(1, 5)),
@@ -1112,25 +1124,25 @@ function board_cursinput(b)
      and b.raiseoffset > 3))
    and _cursdir(b, 2) then
   b.cursy -= 1
-  sfx(3)
+  sfx '3'
  end
  
  if b.cursy < 11 and
    _cursdir(b, 3) then
   b.cursy += 1
-  sfx(3)
+  sfx '3'
  end
  
  if b.cursx > 0 and
     _cursdir(b, 0) then
   b.cursx -= 1
-  sfx(3)
+  sfx '3'
  end
  
  if b.cursx < 4 and
    _cursdir(b, 1) then
   b.cursx += 1
-  sfx(3)
+  sfx '3'
  end
  
 end
@@ -1620,7 +1632,7 @@ function board_step(b)
      bk.count =
        bounceframecount
      --sfxdrop
-     sfx(10)
+     sfx '10'
     else
      -- not falling
      if bk.count > 0 then
@@ -1725,7 +1737,7 @@ function board_step(b)
        if bk.fallframe ==
          pframe then
          
-        sfx(10)
+        sfx '10'
        elseif bk.garbagey == 0
          and not bk.fallenonce
          then
@@ -2707,14 +2719,14 @@ function updategame()
   
   if g_gamecount < 180 then
    if g_gamecount % 60 == 0 then
-    sfx(5)
+    sfx '5'
    end
 
    g_gamecount += 1
    
    if g_gamecount == 180 then
     g_gamestate = gs_gameplay
-    sfx(6)
+    sfx '6'
     music '0'
    end
 
