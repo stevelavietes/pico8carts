@@ -743,6 +743,8 @@ function startgame()
     autoraisespeedstart[
       g_levels[i]]
   
+  b.garbageprob =
+    garbageprob[b.level]
   if b.level == 3 then
    b.blocktypecount = 6
   end
@@ -1195,8 +1197,7 @@ function board_raise(b)
   
   if not b.target then
    if rnd(256) < 
-     garbageprob[
-       b.level] then
+     b.garbageprob then
 
     local s =
       garbagesizes[
@@ -1249,6 +1250,8 @@ function board_step(b)
   b.autoraisedeccounter = 0
   if b.autoraisespeed > 3 then
     b.autoraisespeed -= 1
+  elseif b.garbageprob < 96 then
+   b.garbageprob += 2
   end
  end
  
