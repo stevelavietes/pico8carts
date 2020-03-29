@@ -32,19 +32,14 @@ function palt131()
  palt(13, true)
 end
 
---constants
 bounceframecount = 10
 coyotehangtime = 12
 manualraiserepeatframes = 5
 squashholdframes = 3
 flashframes = 45
---faceframes = 26
 flashandfaceframes = 71
 popoffset = 9
---chainresetcount = 7
---postclearholdframes = 3
 boardxpos = {3, 77}
---toppedoutboardframelimit = 120
 
 blocktileidxs = {
   1, 17, 33, 49, 8, 24, 40
@@ -93,7 +88,6 @@ function defconsts()
  )
 end
 
---game state
 gs_mainmenu = 0
 gs_selectmenu = 1
 gs_gamestart = 2
@@ -240,18 +234,15 @@ function _draw()
    clock_draw(70, 82)
   end
   
-  palt()--0, true)
+  palt()
   
   foreach(matchbubs,
     matchbub_draw)
-  
-  if g_gamestate == gs_gamestart
-    and g_gamecount < 20 then
-   trans(
-      flr((20 - g_gamecount) / 4))
-    
-  end
-  
+
+ if g_trans then
+  trans(g_trans)
+ end
+
  end
 end
 
@@ -450,7 +441,6 @@ function startselectmenu()
  menuitem(1)
  matchsfx(1)
  music '-1'
---menuitem(2)
 end
 
 function selectmenu_step()
@@ -770,7 +760,6 @@ function startgame()
 
 end
 
---block state
 bs_idle = 0
 bs_matching = 1
 bs_swapping = 2
@@ -804,7 +793,6 @@ function block_new()
  }
 end
 
---cursor state
 cs_idle = 0
 cs_swapping = 1
 
@@ -862,9 +850,7 @@ function board_new()
  
  b.score = 0
 
- --b.lost = false
  return b
-
 end
 
 
@@ -997,10 +983,6 @@ function _cursdir(b, bidx)
 
   else
    b.cursrepeatpause = 0
-   if frame % 2 > 0 then
-     -- play sound
-   end
-   
   end
   return true
  else
@@ -2730,6 +2712,8 @@ function updategame()
     music '0'
    end
 
+   g_trans = flr((20 -
+     g_gamecount) / 4)
   end
   
   return
