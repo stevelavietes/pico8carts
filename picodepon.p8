@@ -1252,6 +1252,10 @@ function board_step(b)
   end
  end
  
+ if b.autoraisehold > 0 then
+  b.autoraisehold -= 1
+ end
+
  if press(4, b.contidx) then
   
   local raise = true
@@ -1279,11 +1283,7 @@ function board_step(b)
    board_raise(b)
  else
   b.manualraise = 0
-  
-  if b.autoraisehold > 0 then
-   b.autoraisehold -= 1
-  end
-  
+
   if #b.matchrecs == 0
     and b.autoraisehold == 0
     then
