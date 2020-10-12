@@ -41,3 +41,4 @@ Click the thumbnail to play the games for free on the Pico8 BBS!
 |-----|----|----|
 |[![One Euro Filter](https://www.lexaloffle.com/bbs/thumbs/pico42459.png)](https://www.lexaloffle.com/bbs/?tid=29646)|[![Performance Tests](https://www.lexaloffle.com/bbs/thumbs/pico44897.png)](https://www.lexaloffle.com/bbs/?tid=30032)|[![Easing Function Gallery](https://www.lexaloffle.com/bbs/thumbs/pico44294.png)](https://www.lexaloffle.com/bbs/?pid=41657&tid=29488)|
 |[source](https://github.com/stevelavietes/pico8carts/blob/master/one_euro_filter.p8)|[source](https://github.com/stevelavietes/pico8carts/blob/master/performance_test_gallery.p8)|[source](https://github.com/stevelavietes/pico8carts/blob/master/easing_gallery.p8)|
+|07/14/2017|10/4/2017|09/18/2017|
