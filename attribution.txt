@@ -1,0 +1,25 @@
+Music and Additional Sounds by @tesselode
+
+Thanks to the amazing members of the pico8 community who generously donated their inspiring characters to our little game!
+
+From left to right, top to bottom on the character select screen:
+
+- Jelpi by @lexaloffle, creator of pico8 (https://www.lexaloffle.com/bbs/?pid=9975)
+- Balthazar from "Myrrhs Edge" by @thattomhall, @SquirrelTweets and Toby Hefflin (https://www.lexaloffle.com/bbs/?pid=71393)
+- Dancer Hero by @TRASEVOL_DOG (https://twitter.com/TRASEVOL_DOG/status/946788526162661376?s=20)
+- Spaceman from "Spaceman8" by @ilkkke and @kometbomb (https://www.lexaloffle.com/bbs/?tid=28485)
+- Ana from "Dank Tombs" by @krajzeg (https://www.lexaloffle.com/bbs/?tid=29709)
+- Madeline from "Celeste" by @NoelFB and @@MattThorson (https://www.lexaloffle.com/bbs/?tid=2145)
+- Rainy from "Rainmaker" by @benjamin_soule_ and @castpixel (https://www.lexaloffle.com/bbs/?tid=2806)
+and finally @liquiddream aka Paul Nicholas as himself, sprite by @somepx
+
+Also thanks to the other folks who offered to let us use their characters!  If we do an expansion cart we'll be back in touch!
+
+----
+
+Just wanted to give you a heads up, we have a pretty complete (we think) build of the game if you'd like to try it out:
+https://github.com/ssteinbach/pico8carts/blob/release_test/picodepon.p8
+
+if you see any issues please let us know!  
+
+And thanks again for letting us use your character!
