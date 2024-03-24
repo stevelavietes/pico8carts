@@ -133,8 +133,8 @@ function make_ef_ui_single()
    t.frame = (t.frame + t.direction)
 
    if (
-    (t.direction > 0 and t.frame == t.current_loop_duration)
-    or (t.direction < 0 and t.frame == 0)
+    (t.direction > 0 and t.frame >= t.current_loop_duration)
+    or (t.direction < 0 and t.frame <= 0)
    ) then
     -- @note for recording
     -- @{ 
